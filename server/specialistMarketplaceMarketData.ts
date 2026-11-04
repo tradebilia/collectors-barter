@@ -15,6 +15,7 @@ import { lookupHakes } from './hakesMarketData';
 import { lookupLcg, LCG_GALLERY_URL, LCG_MAX_RECORDS } from './lcgMarketData';
 import { lookupPcgsCertification } from './pcgsMarketData';
 import { autographReplicaReasonFromText } from '../shared/testAiAutographEvidence';
+import { autographMarketExclusionReason, buildVisualTargetMetadata } from './testAiVisualSourceFilter';
 
 export type SpecialistMarketplaceLookupInput = {
   sourceId: SandboxSpecialistSourceId;
@@ -964,14 +965,23 @@ function buildWeissCompletedLotSearchUrl(query: string): string {
   return `${WEISS_PUBLIC_COMPLETED_LOTS_ENDPOINT}?${search.toString()}`;
 }
 
-function parseWeissPublicSearchResponse(input: SpecialistMarketplaceLookupInput, requestUrl: string, payload: WeissPublicSearchResponse): SpecialistMarketplaceLookupResult {
+function autographTargetMetadata(input: SpecialistMarketplaceLookupInput): string {
+  return buildVisualTargetMetadata({
+    title: input.title,
+    category: input.category,
+    itemType: 'signed_item',
+    fullItemDetails: parseDetails(input.itemDetails),
+  });
+}
+
+function parseWeissPublicSearchResponse(input: SpecialistMarketplaceLookupInput, requestUrl: string, payload: WeissPublicSearchResponse, query: string): SpecialistMarketplaceLookupResult {
   const source = getSandboxSpecialistSource('weiss')!;
   const lots = Array.isArray(payload.data) ? payload.data.slice(0, SOURCE_RULES.weiss!.recordCap) : [];
   const base = {
     source: 'weiss' as const,
     label: source.label,
     searchContract: source.searchContract,
-    query: text(input.title).slice(0, 240),
+    query,
     sales: [] as SpecialistMarketplaceRecord[],
     context: [] as SpecialistMarketplaceRecord[],
     requestUrl,
@@ -997,6 +1007,12 @@ function parseWeissPublicSearchResponse(input: SpecialistMarketplaceLookupInput,
     const grade = extractGrade(`${title} ${description}`);
     const certificationCompany = extractCertificationCompany(`${title} ${description}`);
     const identity = identityReview(input, title, description, grade, certificationCompany);
+    const sharedAutographExclusion = normalize(input.category).replace(/_/g, ' ') === 'autographs'
+      ? autographMarketExclusionReason(autographTargetMetadata(input), { title, description })
+      : null;
+    const admittedIdentity = sharedAutographExclusion
+      ? { matched: false, matchedTokens: [], reason: sharedAutographExclusion }
+      : identity;
     const record: SpecialistMarketplaceRecord = {
       sourceId: 'weiss',
       provider: source.label,
@@ -1017,14 +1033,14 @@ function parseWeissPublicSearchResponse(input: SpecialistMarketplaceLookupInput,
       buyerPremiumIncluded: completed ? false : null,
       winningBid: completed ? winningBid : null,
       buyerPremiumPercentage: null,
-      identityMatched: identity.matched,
-      matchedTokens: identity.matchedTokens,
+      identityMatched: admittedIdentity.matched,
+      matchedTokens: admittedIdentity.matchedTokens,
       exclusionReason: !completed
         ? 'The public Weiss result did not provide completed lot and auction flags, completed date, positive final leading bid, and explicit USD currency together.'
-        : !identity.matched
-          ? identity.reason ?? 'Identity could not be confirmed.'
+        : !admittedIdentity.matched
+          ? admittedIdentity.reason ?? 'Identity could not be confirmed.'
           : null,
-      valuationEligible: completed && identity.matched,
+      valuationEligible: completed && admittedIdentity.matched,
     };
     return record;
   });
@@ -1422,7 +1438,7 @@ async function lookupWeissPublicCompletedLots(input: SpecialistMarketplaceLookup
     if (!response.ok) return { ...empty, status: 'error' as const, messages: [`Weiss public completed-lot search returned HTTP ${response.status}; no retry, pagination, login, or workaround was attempted.`] };
     if (!isAllowedSourceUrl('weiss', response.url)) return { ...empty, status: 'error' as const, messages: ['Weiss public completed-lot search redirected outside the allowlisted contract; the response was not parsed.'] };
     if (!/json/i.test(response.headers.get('content-type') ?? '')) return { ...empty, status: 'error' as const, messages: ['Weiss public completed-lot search returned an unsupported response type; it was not parsed.'] };
-    return parseWeissPublicSearchResponse(input, response.url, await response.json() as WeissPublicSearchResponse);
+    return parseWeissPublicSearchResponse(input, response.url, await response.json() as WeissPublicSearchResponse, query);
   } catch (error) {
     const timedOut = error instanceof Error && error.name === 'TimeoutError';
     return { ...empty, status: 'error' as const, messages: [timedOut ? 'Weiss public completed-lot search timed out; no retry was attempted.' : 'Weiss public completed-lot search could not be reached; no access workaround was attempted.'] };

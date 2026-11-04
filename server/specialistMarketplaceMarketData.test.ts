@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildGoldinSearchQueries, buildGoldinSearchQuery, buildSpecialistMarketplaceRequest, identityReview, lookupSpecialistMarketplace, parseSpecialistMarketplaceHtml, resolveComicBookRealmAnalyzerUrl } from './specialistMarketplaceMarketData';
+import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
 
 const goldinMarioLotUrl = 'https://goldin.co/item/1990-nes-nintendo-usa-super-mario-bros-3-right-variation-late-producti9parx';
 const videoGame = {
@@ -412,6 +413,8 @@ describe('bounded specialist marketplace adapters', () => {
     });
     expect(result.context).toHaveLength(1);
     expect(result.context[0]).toMatchObject({ completed: false, price: null, valuationEligible: false });
+    expect(result.query).toBe(buildMarketplaceSearchDefinition(weissComic).query);
+    expect(result.query).not.toBe(weissComic.title);
     expect(result.messages.join(' ')).toMatch(/passed deterministic completed-sale and identity checks and are valuation candidates/i);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const requestUrl = String(fetchMock.mock.calls[0]?.[0]);
@@ -488,6 +491,36 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.context).toHaveLength(1);
     expect(result.context[0]).toMatchObject({ title: 'Star Wars (1982) VHS CGC 9.4 A+ Sealed', identityMatched: false, valuationEligible: false });
     expect(result.context[0]?.exclusionReason).toMatch(/Year conflicts with the selected item \(1982 vs 1990\)/i);
+  });
+
+  it('keeps a Weiss signed photo out of a signed-baseball valuation', async () => {
+    const response = new Response(JSON.stringify({
+      total_count: 1,
+      data: [{
+        id: 48137393,
+        auction_id: 1803424,
+        number: '42',
+        name: 'Barry Bonds Autographed Baseball Photos',
+        description_html: 'Barry Bonds signed photograph lot, authenticated.',
+        is_completed: true,
+        leading_bid_amount_cents: 125000,
+        auction: { id: 1803424, name: 'Sports Memorabilia Auction', is_completed: true, completes_at: 1788998400, currency_code: 'USD' },
+      }],
+    }), { status: 200, headers: { 'content-type': 'application/json' } });
+    Object.defineProperty(response, 'url', { value: 'https://api-frontend.nextlot.net/api/frontend/v1/sites/2218285/search/lots' });
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'weiss',
+      title: 'Barry Bonds signed baseball',
+      category: 'autographs',
+      itemDetails: JSON.stringify({ signer: 'Barry Bonds', signedItemType: 'Baseball', authenticationCompany: 'BAS' }),
+    });
+
+    expect(result.sales).toHaveLength(0);
+    expect(result.context).toHaveLength(1);
+    expect(result.context[0]).toMatchObject({ identityMatched: false, valuationEligible: false, completed: true });
+    expect(result.context[0]?.exclusionReason).toMatch(/signed photo|signed photograph|target is a signed baseball/i);
   });
 
   it('reports Weiss HTTP 403 without retrying or displaying a synthetic result', async () => {

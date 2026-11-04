@@ -179,7 +179,7 @@ function autographObjectType(value: unknown): string {
   const text = String(value ?? "").trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
   if (!text || /^(?:other|unknown|n\/a|not applicable)$/.test(text)) return "";
   if (/\b(?:trading\s+card|sports\s+card|baseball\s+card|card)\b/.test(text)) return "card";
-  if (/\b(?:8\s*[x×]\s*10|8x10|photograph|photo|picture)\b/.test(text)) return "photo";
+  if (/\b(?:8\s*[x×]\s*10|8x10|photographs?|photos?|pictures?)\b/.test(text)) return "photo";
   if (/\b(?:baseball\s+(?:glove|mitt)|catcher(?:'s)?\s+mitt|first\s+baseman(?:'s)?\s+mitt)\b/.test(text)) return "baseball glove";
   if (/\bboxing\s+glove\b/.test(text)) return "boxing glove";
   if (/\b(?:baseball|softball)\s+bat\b/.test(text)) return "baseball bat";
