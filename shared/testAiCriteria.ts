@@ -152,7 +152,7 @@ export function buildStructuredItemQuery(category: string, itemDetails: unknown,
 	        : normalizedCategory === 'stamps'
 	              ? ['catalogNumber', 'scottNumber', 'denomination', 'year', 'country', 'catalog', 'series', 'perforation', 'watermark', 'overprintSurcharge']
 	              : normalizedCategory === 'autographs'
-	                ? ['signer', 'signedItemType', 'autographCategory', 'authenticationCompany', 'customAuthenticationCompany', 'inscription', 'inscriptionText']
+	                ? ['signer', 'signedItemType', 'authenticationCompany', 'customAuthenticationCompany', 'inscription', 'inscriptionText']
 	              : ['subject', 'name', 'year', 'setName', 'series', 'catalogNumber', 'issueNumber'];
   const gradingCompany = resolveTestAiGradingCompany(details);
   const manufacturer = normalizedCategory === 'sports_cards' ? resolveTestAiManufacturer(details) : '';

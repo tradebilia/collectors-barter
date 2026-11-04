@@ -42,7 +42,7 @@ describe('Test AI manufacturer criteria', () => {
     expect(buildStructuredItemQuery('autographs', {
       signer: 'Wayne Gretzky', signedItemType: 'Hockey Puck', autographCategory: 'Sports',
       authenticationCompany: 'JSA', inscriptionText: 'HOF',
-    })).toBe('autograph Wayne Gretzky Hockey Puck Sports JSA HOF');
+    })).toBe('autograph Wayne Gretzky Hockey Puck JSA HOF');
   });
 
   it('replaces Other with the custom grading-company field', () => {
