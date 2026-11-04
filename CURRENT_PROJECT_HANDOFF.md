@@ -1,7 +1,7 @@
 
 
-## Autographs source coverage approvals added — November 4, 2026
+## Disney Pins single-pin scoring normalization — November 4, 2026
 
-Added exactly three Autographs entries to the clean-start Matching whitelist: `autographs:ebay_active` (eBay Active Listings), `autographs:sold_comps` (Sold-Comps / eBay Sold), and `autographs:goldin` (Goldin Auction Results). The three previously approved Movie entries remain Matching. All other historical source-test results remain preserved for auditability but stay Pending until separately retested.
+Fixed the shared Disney Pins metadata scorer so the stored `single_pin` item type is normalized to the same `individual_pin` scoring path already used by the visual-selection logic. Before this repair, valid Disney Pins targets were recognized for selection but the scorer rejected the raw alias and returned `0/100`, causing the visual cap to become zero and every candidate to be held out before image comparison. `pin_set` and `collection_lot` behavior remains unchanged.
 
-Validation passed: source applicability UI tests **38/38**, TypeScript, production build, exact-whitelist audit, diff check, and forbidden-path audit. No database, migration, seed, destructive, credential, provider, deployment, publishing, or domain changes were made.
+Added regression coverage proving a `single_pin` target receives identity points. Validation passed: visual-filter and category-comparable tests **223/223**, TypeScript, production build, diff check, and forbidden-path audit. No database, migration, seed, destructive, credential, provider, deployment, publishing, or domain changes were made.

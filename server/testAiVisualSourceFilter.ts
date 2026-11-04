@@ -4199,7 +4199,7 @@ function disneyPinsNumberMatches(targetValue: unknown, listing: VisualSourceCand
 }
 export function disneyPinsIndividualVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
   const details = extractTargetItemDetails(targetMetadata);
-  const itemType = normalizedChoice(metadataValue(targetMetadata, 'itemType') || details.itemType);
+  const itemType = disneyPinsTargetItemType(targetMetadata);
   if (normalizedChoice(metadataValue(targetMetadata, 'category')) !== 'disney_pins' || itemType !== 'individual_pin') return { score: 0, matched: [], unknown: [] };
   const matched: string[] = [], unknown: string[] = []; let score = 0;
   const add=(field: typeof DISNEY_PINS_INDIVIDUAL_SCORE_FIELDS[number][0], points:number, result:boolean|null)=>{ if(result===true){score+=points;matched.push(field)} else if(result===null) unknown.push(field); };
@@ -4217,7 +4217,7 @@ export function disneyPinsIndividualVisualScore(listing: VisualSourceCandidate, 
 }
 export function disneyPinsSetVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
   const details = extractTargetItemDetails(targetMetadata);
-  const itemType = normalizedChoice(metadataValue(targetMetadata, 'itemType') || details.itemType);
+  const itemType = disneyPinsTargetItemType(targetMetadata);
   if (normalizedChoice(metadataValue(targetMetadata, 'category')) !== 'disney_pins' || itemType !== 'pin_set') return { score: 0, matched: [], unknown: [] };
   const matched: string[] = [], unknown: string[] = []; let score = 0;
   const add=(field: typeof DISNEY_PINS_SET_SCORE_FIELDS[number][0], points:number, result:boolean|null)=>{ if(result===true){score+=points;matched.push(field)} else if(result===null) unknown.push(field); };

@@ -3065,6 +3065,24 @@ describe("visual source filter", () => {
     expect(score.matched).toEqual(expect.arrayContaining(["pinName", "character", "series", "year", "pinTradingEvent", "limitedEdition", "openEdition"]));
   });
 
+  it("normalizes the stored single_pin value before scoring Disney Pins", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Donald Duck Pin - Black & White Snapshots",
+      category: "disney_pins",
+      itemType: "single_pin",
+      fullItemDetails: {
+        pinName: "Black & White Snapshots", character: "Donald Duck", series: "Snapshots",
+        year: "2024", pinTradingEvent: "Disney", limitedEdition: "no", openEdition: "yes",
+      },
+    });
+    const score = disneyPinsIndividualVisualScore({
+      title: "Donald Duck Pin - Black & White Snapshots Disney Pin",
+      itemDetails: JSON.stringify({ pinName: "Black & White Snapshots", character: "Donald Duck", series: "Snapshots", year: "2024", pinTradingEvent: "Disney", limitedEdition: "no", openEdition: "yes" }),
+    }, target);
+    expect(score.score).toBeGreaterThan(0);
+    expect(score.matched).toEqual(expect.arrayContaining(["pinName", "character", "series"]));
+  });
+
   it("scores Disney Pins / Pin Set and excludes Collection/Lot from ranking", () => {
     const target = buildVisualTargetMetadata({
       title: "Villains Collection",
