@@ -65,6 +65,7 @@ import {
 	  autographMultiSignatureReason,
 	  autographValuationEligibility,
 	  autographObjectTypeMismatchReason,
+	  autographMarketExclusionReason,
 	  autographReplicaReason,
 	  isAutographSignedItemTarget,
 	  pokemonVisualCap,
@@ -423,6 +424,16 @@ describe("visual source filter", () => {
     expect(result.removedCount).toBe(2);
     expect(result.preVisualExcludedCount).toBe(2);
     expect(mockedInvokeLLM).not.toHaveBeenCalled();
+  });
+
+  it("excludes parenthesized multi-item Autographs lots from a single-item market range", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Barry Bonds signed baseball",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Barry Bonds", signedItemType: "Baseball", authenticationCompany: "BAS" },
+    });
+    expect(autographMarketExclusionReason(target, { title: "(36) Signed Baseballs" })).toMatch(/multi-item|lot filter|single item/i);
   });
 
   it("applies Pokémon Single Card identity filters and ranking", () => {

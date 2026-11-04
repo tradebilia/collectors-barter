@@ -1,7 +1,7 @@
 
 
-## Weiss Autographs signed-object gate repaired — November 4, 2026
+## Weiss multi-item Autographs lot gate repaired — November 4, 2026
 
-The Weiss specialist mapper now applies the shared `autographMarketExclusionReason` gate using the canonical `buildVisualTargetMetadata` contract before a completed lot can enter `sales`. A Weiss lot that says `Photo`, `Photograph`, `Photos`, or `Pictures` is therefore retained as context-only when the target is a signed baseball; it has `identityMatched: false`, `valuationEligible: false`, and cannot affect valuation. The shared object vocabulary now recognizes singular and plural photo wording across marketplace sources.
+The shared Autographs admission gate now also applies the deterministic multi-item lot filter to specialist records. Weiss titles in the provider form `(36) Signed Baseballs` are recognized as a 36-item lot and remain context-only when the target is one signed baseball; they cannot enter valuation. The shared title vocabulary now recognizes parenthesized quantities followed by signed/autographed baseballs, balls, bats, cards, photos, figures, items, pieces, pucks, tickets, and similar explicitly plural forms.
 
-Added a Barry Bonds regression proving a completed `Barry Bonds Autographed Baseball Photos` lot is not admitted for a `Barry Bonds signed baseball` target. Weiss specialist tests passed **44/44**, shared Autographs visual-filter tests passed **205/205**, TypeScript passed, production build passed, and `git diff --check` passed. No database, migration, seed, destructive, credential, provider, deployment, or publishing changes were made. P0 safeguard markers and database protections remain unchanged.
+Added the exact Weiss regression and a source-neutral shared Autographs regression. Validation passed: Weiss specialist tests **45/45**, shared Autographs visual-filter tests **206/206**, TypeScript, production build, `git diff --check`, and forbidden-path audit. No database, migration, seed, destructive, credential, provider, deployment, or publishing changes were made. P0 safeguard markers and database protections remain unchanged.

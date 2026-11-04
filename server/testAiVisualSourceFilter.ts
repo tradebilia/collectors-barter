@@ -276,7 +276,9 @@ export function autographObjectTypeMismatchReason(targetMetadata: string, listin
 }
 
 export function autographMarketExclusionReason(targetMetadata: string, listing: VisualSourceCandidate): string | null {
-  return autographReplicaReason(listing) ?? autographObjectTypeMismatchReason(targetMetadata, listing);
+  return autographReplicaReason(listing)
+    ?? autographObjectTypeMismatchReason(targetMetadata, listing)
+    ?? multiItemLotReason(listing, targetMetadata);
 }
 
 export function autographMarketRelevanceScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
@@ -3390,6 +3392,7 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
 const MULTI_ITEM_TITLE_PATTERNS = [
   /\b(?:mixed\s+)?(?:lot|bundle|group|collection|assortment)\b/i,
   /\b(?:set|pair|duo|trio|multipack|multi[-\s]?pack|box\s+of|pack\s+of)\b/i,
+  /\(\s*\d+\s*\)\s*(?:signed\s+|autographed\s+)?(?:baseballs?|balls?|bats?|cards?|comics?|figures?|items?|photos?|photographs?|pieces?|posters?|pucks?|tickets?)\b/i,
   /\b(?:\d+)\s*(?:coin|coins|card|cards|comic|comics|figure|figures|item|items|piece|pieces)\b/i,
   /\b(?:coins?|cards?|comics?|issues?|figures?)\s+\d+\s*[-–]\s*\d+\b/i,
   /#?\d+\s*(?:\+|,|\/)\s*#?\d+(?:\s*(?:\+|,|\/)\s*#?\d+)+/i,

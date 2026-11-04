@@ -523,6 +523,36 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.context[0]?.exclusionReason).toMatch(/signed photo|signed photograph|target is a signed baseball/i);
   });
 
+  it('keeps a Weiss multi-baseball lot out of a single signed-baseball valuation', async () => {
+    const response = new Response(JSON.stringify({
+      total_count: 1,
+      data: [{
+        id: 48137394,
+        auction_id: 1803425,
+        number: '482',
+        name: '(36) Signed Baseballs',
+        description_html: 'Thirty-six signed baseballs from a private collection.',
+        is_completed: true,
+        leading_bid_amount_cents: 32000,
+        auction: { id: 1803425, name: 'Sports Memorabilia Auction', is_completed: true, completes_at: 1788998400, currency_code: 'USD' },
+      }],
+    }), { status: 200, headers: { 'content-type': 'application/json' } });
+    Object.defineProperty(response, 'url', { value: 'https://api-frontend.nextlot.net/api/frontend/v1/sites/2218285/search/lots' });
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'weiss',
+      title: 'Barry Bonds signed baseball',
+      category: 'autographs',
+      itemDetails: JSON.stringify({ signer: 'Barry Bonds', signedItemType: 'Baseball', authenticationCompany: 'BAS' }),
+    });
+
+    expect(result.sales).toHaveLength(0);
+    expect(result.context).toHaveLength(1);
+    expect(result.context[0]).toMatchObject({ identityMatched: false, valuationEligible: false, completed: true });
+    expect(result.context[0]?.exclusionReason).toMatch(/multi-item|lot filter|single item/i);
+  });
+
   it('reports Weiss HTTP 403 without retrying or displaying a synthetic result', async () => {
     const fetchMock = vi.fn(async () => new Response('Forbidden', { status: 403, headers: { 'content-type': 'text/plain' } }));
     vi.stubGlobal('fetch', fetchMock);
