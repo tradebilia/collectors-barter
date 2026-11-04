@@ -822,8 +822,8 @@ function MarketplaceQueryBanner({ item, query, isLoading, omitGradingCriteria = 
   const visibleQuery = query || structuredQuery || 'No structured item fields supplied';
   return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
     <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search criteria / request <span className="font-normal text-cyan-200/60">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'structured preview'})</span></p>
-    <p className="mt-0.5 break-words text-[9px] text-cyan-200/80"><span className="font-semibold">Structured fields:</span> {structuredQuery || 'none — provider request should not be sent'}</p>
-    <p className="mt-0.5 break-words font-mono text-[10px] text-gray-200">"{visibleQuery}"</p>
+    <p className="mt-0.5 break-words text-[9px] text-cyan-200/80"><span className="font-semibold">Structured fields received:</span> {structuredQuery || 'none — provider request should not be sent'}</p>
+    <p className="mt-0.5 break-words font-mono text-[10px] text-gray-200"><span className="font-sans font-semibold text-cyan-200/80">Actual search sent:</span> "{visibleQuery}"</p>
   </div>;
 }
 

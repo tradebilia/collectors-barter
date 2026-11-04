@@ -44,6 +44,12 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('403 error');
   });
 
+  it('labels received fields separately from the actual provider search', () => {
+    expect(source).toContain('Structured fields received:');
+    expect(source).toContain('Actual search sent:');
+    expect(source).not.toContain('<span className="font-semibold">Structured fields:</span>');
+  });
+
   it('omits NGC Auction Central from the pending coverage tracker without removing the source registry', () => {
     expect(source).toContain("const SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS = new Set(['ngc'])");
     expect(source).toContain('!SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS.has(source.id)');
