@@ -2316,6 +2316,42 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([{ title: "Disney Pin Collection Lot of 5", imageUrl: "https://example.com/true-lot.jpg" }], target)[0]?.rationale).toContain("collection, lot");
   });
 
+  it("allows a single Disney Pin through the full pre-visual filter despite eBay Collection/Lot metadata", async () => {
+    mockedInvokeLLM.mockResolvedValue(structuredVisualResponse({
+      reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The Eeyore pin artwork and backing presentation match the target." }],
+    }) as never);
+    const target = buildVisualTargetMetadata({
+      title: "Eeyore Name Tag Mystery Pin",
+      category: "disney_pins",
+      itemType: "single_pin",
+      fullItemDetails: { pinName: "Eeyore Name Tag Mystery", character: "Eeyore", series: "HKDL" },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "ebay",
+      sourceLabel: "eBay Active Listings",
+      targetImageUrl: "https://example.com/eeyore-target.jpg",
+      targetMetadata: target,
+      listings: [
+        {
+          title: "Disney Pin HKDL Eeyore Name Tag Mystery Collection",
+          itemType: "Collection/Lot",
+          itemDetails: JSON.stringify({ pinName: "Eeyore Name Tag Mystery", character: "Eeyore", series: "HKDL" }),
+          imageUrl: "https://example.com/eeyore-single.jpg",
+        },
+        {
+          title: "Disney Eeyore and Piglet Pin Set of 2",
+          itemType: "Collection/Lot",
+          imageUrl: "https://example.com/eeyore-set.jpg",
+        },
+      ],
+    });
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
+    expect(result.reviewedCount).toBe(1);
+    expect(result.listings.map((listing) => listing.title)).toEqual(["Disney Pin HKDL Eeyore Name Tag Mystery Collection"]);
+    expect(result.contextListings?.map((listing) => listing.title)).toEqual(["Disney Eeyore and Piglet Pin Set of 2"]);
+    expect(result.contextListings?.[0]?.visualReviewRationale).toContain("multi-item");
+  });
+
   it("requires a focused escalation for every initial mismatch against a graded target", () => {
     const args = {
       title: "Mario Bros. 3 NES Nintendo Game PSA Graded 9.0 CIB Complete In Box Oval Seal",

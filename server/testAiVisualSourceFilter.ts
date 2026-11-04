@@ -492,7 +492,8 @@ function disneyPinsCandidateItemType(listing: VisualSourceCandidate): "individua
   const structuredQuantity = [listing.lotQuantity, listing.itemCount, listing.numberOfPins, listing.quantity, details.lotQuantity, details.itemCount, details.numberOfPins, details.quantity]
     .map((candidate) => Number(candidate))
     .find((candidate) => Number.isFinite(candidate) && candidate > 1);
-  const explicitMultiItemStructuredType = /(?:lot|bundle|mixed|assortment|group\s+of|multipack|multi\s*pack)/i.test(value);
+  const broadProviderCollectionLotLabel = /^collection\s*[/_-]\s*lot$/i.test(value);
+  const explicitMultiItemStructuredType = !broadProviderCollectionLotLabel && /(?:lot|bundle|mixed|assortment|group\s+of|multipack|multi\s*pack)/i.test(value);
   const explicitMultiItemTitle = /\b(?:mixed\s+)?(?:lot|bundle|multipack|multi[-\s]?pack|assortment|group\s+of|set\s+of\s+\d+|(?:[2-9]|[1-9]\d|[1-9]\d{2})\s+pins?)\b/i.test(title)
     || /\bcollection\s+(?:of\s+)?\d+\s+pins?\b/i.test(title)
     || /\bcollection\s+lot\b/i.test(title);
@@ -3416,6 +3417,7 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
 const MULTI_ITEM_TITLE_PATTERNS = [
   /\b(?:mixed\s+)?(?:lot|bundle|group|collection|assortment)\b/i,
   /\b(?:set|pair|duo|trio|multipack|multi[-\s]?pack|box\s+of|pack\s+of)\b/i,
+  /\b(?:of|contains?|includes?)\s*\d+\s+(?:pins?|coins?|cards?|comics?|figures?|items?|pieces?)\b/i,
   /\(\s*\d+\s*\)\s*(?:signed\s+|autographed\s+)?(?:baseballs?|balls?|bats?|cards?|comics?|figures?|items?|photos?|photographs?|pieces?|posters?|pucks?|tickets?)\b/i,
   /\b(?:\d+)\s*(?:coin|coins|card|cards|comic|comics|figure|figures|item|items|piece|pieces)\b/i,
   /\b(?:coins?|cards?|comics?|issues?|figures?)\s+\d+\s*[-–]\s*\d+\b/i,
@@ -3474,11 +3476,12 @@ function candidateMultiItemReason<T extends VisualSourceCandidate>(listing: T, t
     ? text.replace(/\bbase\s+set\b/gi, "base")
     : category === "vintage_toys" && targetType === "lego"
       ? text.replace(/\blego\s+[^;]{0,80}?\bset\b/gi, (match) => match.replace(/\bset\b/gi, "edition"))
-      : category === "disney_pins" && targetType === "individual_pin"
-        // “Collection” is often part of a named single-pin edition (for
-        // example, “Mystery Collection”). Keep explicit lot/quantity words
-        // active, but do not reject a single pin on that word alone.
-        ? text.replace(/\bcollection\b/gi, "edition")
+      : category === "disney_pins" && (targetType === "individual_pin" || targetType === "single_pin")
+        // eBay may put the broad product label “Collection/Lot” in structured
+        // metadata even when the title names one pin. Ignore that provider
+        // label only; preserve title evidence such as “Collection Lot”, “Pair”,
+        // “Set of 5”, and explicit quantities.
+        ? `${(/\bcollection\s*[/_-]\s*lot\b/i.test(details) ? details.replace(/\bcollection\s*[/_-]\s*lot\b/gi, "") : details)} ${(/\bcollection\s+lot\b/i.test(title) ? title : title.replace(/\bcollection\b/gi, "edition"))}`
       : text;
   const matchedPattern = MULTI_ITEM_TITLE_PATTERNS.find(pattern => pattern.test(categoryAwareText));
   if (matchedPattern) {
