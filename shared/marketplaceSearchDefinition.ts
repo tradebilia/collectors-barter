@@ -184,7 +184,12 @@ export function buildMarketplaceSearchDefinition(input: MarketplaceSearchDefinit
     ]
     : [];
   const standardFallbacks = category === 'autographs' ? [] : unique([query, input.title, baseQuery]);
-  const mergedFallbacks = unique([query, ...fallbackQueries, ...autographFallbacks, ...standardFallbacks]).slice(0, 10);
+  // The primary query is returned separately as `query`. Keep this list to
+  // distinct fallback forms only so adapters and the UI never label the
+  // primary query as “Fallback 1”.
+  const mergedFallbacks = unique([...fallbackQueries, ...autographFallbacks, ...standardFallbacks])
+    .filter((candidate) => candidate !== query)
+    .slice(0, 10);
 
   return {
     category,

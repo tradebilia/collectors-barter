@@ -67,7 +67,10 @@ function queryKeyword(input: AdditionalSoldCompsInput): string {
 }
 
 function queryCandidates(input: AdditionalSoldCompsInput): string[] {
-  return buildMarketplaceSearchDefinition(input).fallbackQueries.slice(0, MAX_FALLBACK_QUERIES + 1);
+  const definition = buildMarketplaceSearchDefinition(input);
+  return [definition.query, ...definition.fallbackQueries]
+    .filter((candidate, index, candidates) => candidate && candidates.indexOf(candidate) === index)
+    .slice(0, MAX_FALLBACK_QUERIES + 1);
 }
 
 function uniqueByKey<T>(items: T[], key: (item: T) => string): T[] {

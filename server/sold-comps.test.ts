@@ -83,7 +83,6 @@ describe('Sold-Comps API key validation', () => {
       preserveGrade: true,
       prioritizeFallbackQueries: true,
       fallbackQueries: [
-        'autograph Marlon Brando Paper Entertainment East Coast Authenticators',
         'autograph Marlon Brando Paper East Coast Authenticators',
         'autograph Marlon Brando Paper',
       ],

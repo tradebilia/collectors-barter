@@ -361,7 +361,7 @@ function hasConditionOnlyEvidence(item: any): boolean {
 export function buildSoldCompsQueryCandidates(query: string, options?: { preserveGrade?: boolean; fallbackQueries?: string[]; prioritizeFallbackQueries?: boolean }): string[] {
   const precise = query.trim();
   if (options?.prioritizeFallbackQueries && options.fallbackQueries?.length) {
-    return [...new Set(options.fallbackQueries.map((candidate) => candidate.trim()).filter(Boolean))];
+    return [...new Set([precise, ...options.fallbackQueries.map((candidate) => candidate.trim()).filter(Boolean)])];
   }
   const withoutGrade = buildEbayBrowseQuery(precise, { preserveGrade: false });
   const withoutProviderOrGrade = withoutGrade
