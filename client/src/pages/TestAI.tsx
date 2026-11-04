@@ -456,16 +456,22 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'movies:ebay_active': 'match',
   'movies:sold_comps': 'match',
   'movies:mercari_sold_comps': 'match',
+  'autographs:ebay_active': 'match',
+  'autographs:sold_comps': 'match',
+  'autographs:goldin': 'match',
 };
 
 // Clean-start coverage policy: historical match results remain above for
-// auditability, but only these three newly approved Movie paths are currently
-// allowed to appear in the Matching column. All other category/source pairs
-// remain Pending until retested after the recent engine changes.
+// auditability, but only the explicitly approved Movie and Autographs paths
+// below are currently allowed to appear in the Matching column. All other
+// category/source pairs remain Pending until retested after recent changes.
 const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set([
   'movies:ebay_active',
   'movies:sold_comps',
   'movies:mercari_sold_comps',
+  'autographs:ebay_active',
+  'autographs:sold_comps',
+  'autographs:goldin',
 ]);
 
 const SOURCE_COVERAGE_CATEGORY_ORDER = ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'] as const;
