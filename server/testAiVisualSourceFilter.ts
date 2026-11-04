@@ -5671,6 +5671,9 @@ export async function filterVisualSourceCandidates<
         : review);
       const primaryReview = reconciledPrimaryReviews.find((review) => review.candidateIndex === candidate.candidateIndex);
       const needsDisneyAdjudication = isDisneyPinsMetadata(targetMetadata) && primaryReview?.verdict === "match";
+      const canAttemptThirdDisneyReview = needsDisneyAdjudication
+        && primaryReview?.confidence === "high"
+        && disneyPinsEvidenceIsExact(primaryReview.visualEvidence);
       // Every image-bearing coin candidate must receive the independent
       // high-resolution identity pass. The first pass is preliminary evidence
       // only; its normalized verdict must never be able to skip adjudication.
@@ -5760,6 +5763,7 @@ export async function filterVisualSourceCandidates<
           ];
       let galleryReviews: VisualSourceReview[] = [];
       let galleryError: unknown;
+      let galleryTimedOut = false;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
         try {
           const response = await invokeVisualReview({ model: needsFocusedGradeEscalation ? "gpt-5" : "gpt-5-mini", messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 1800, reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
@@ -5783,6 +5787,43 @@ export async function filterVisualSourceCandidates<
           galleryError = new Error("The high-resolution visual-review call returned a structured reply without the required review decision.");
         } catch (error) {
           galleryError = error;
+          if (error instanceof VisualReviewTimeoutError) galleryTimedOut = true;
+        }
+      }
+      let thirdDisneyAttempted = false;
+      if (!galleryReviews.length && canAttemptThirdDisneyReview && galleryTimedOut) {
+        thirdDisneyAttempted = true;
+        try {
+          const response = await invokeVisualReview({
+            model: "gpt-5-mini",
+            messages: [{
+              role: "user",
+              content: [
+                ...galleryContent,
+                {
+                  type: "text",
+                  text: "THIRD CONFIRMATION ATTEMPT: The prior independent visual call timed out. Perform one final independent comparison now. Do not reuse the timeout as a decision and do not assume the first result is correct. Return exactly one structured review only after checking all five Disney identity evidence fields.",
+                },
+              ],
+            }],
+            maxCompletionTokens: 1800,
+            temperature: 0,
+            response_format: { type: "json_object" as const },
+          }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
+          const raw = response.choices[0]?.message?.content;
+          const thirdText = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
+          if (!thirdText.trim()) throw new Error("The third Disney visual confirmation returned no structured content");
+          galleryReviews = normalizeSingleCandidateVisualReview(
+            parseAnalyzerResponse(thirdText),
+            preparedListings.length,
+            candidate.candidateIndex,
+          );
+          if (!galleryReviews.length) {
+            galleryError = new Error("The third Disney visual confirmation returned no usable review decision.");
+          }
+        } catch (error) {
+          galleryError = error;
+          if (error instanceof VisualReviewTimeoutError) galleryTimedOut = true;
         }
       }
       if (!galleryReviews.length) {
@@ -5794,7 +5835,11 @@ export async function filterVisualSourceCandidates<
                   ...initialAudit,
                   retryStatus: "failed",
                   adjudicationStatus: "unavailable",
-                  retryReason: galleryError instanceof VisualReviewTimeoutError
+                  retryReason: thirdDisneyAttempted
+                    ? galleryError instanceof VisualReviewTimeoutError
+                      ? "The independent second visual adjudication timed out; the third Disney confirmation attempt also timed out before returning a structured decision."
+                      : "The independent second visual adjudication timed out; the third Disney confirmation attempt did not return a usable decision."
+                    : galleryError instanceof VisualReviewTimeoutError
                     ? "The high-resolution visual-review call timed out before returning a structured decision."
                     : galleryError instanceof Error && galleryError.message.includes("required review decision")
                     ? "The high-resolution visual-review call returned a reply without the required decision, so its fallback format was tried but also did not return a usable decision."
@@ -5815,6 +5860,7 @@ export async function filterVisualSourceCandidates<
                 ...initialAudit,
                 adjudicationStatus: needsDisneyAdjudication || needsCoinAdjudication ? (galleryReviews.length ? "confirmed" : "unavailable") : undefined,
                 finalPass: galleryReviews.length ? "high_resolution_retry" : "initial",
+                ...(thirdDisneyAttempted ? { retryReason: "The independent second visual adjudication timed out; a third Disney confirmation attempt was made." } : {}),
                 finalEvidence: review.visualEvidence,
               } satisfies NonNullable<VisualSourceReview["visualAudit"]>,
             }

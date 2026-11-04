@@ -3463,6 +3463,17 @@ describe("visual source filter", () => {
     expect(source).toContain("controller.abort()");
   });
 
+  it("adds one candidate-scoped Disney timeout retry without treating timeout as approval", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    expect(source).toContain("let galleryTimedOut = false");
+    expect(source).toContain("let thirdDisneyAttempted = false");
+    expect(source).toContain("if (!galleryReviews.length && canAttemptThirdDisneyReview && galleryTimedOut)");
+    expect(source).toContain("THIRD CONFIRMATION ATTEMPT");
+    expect(source).toContain("third Disney confirmation attempt also timed out");
+    expect(source).toContain('adjudicationStatus: "unavailable"');
+    expect(source).not.toContain("timeoutFallbackDisneyVisualMatch");
+  });
+
   it("explains timeout and partial-review states in the eBay Active UI", () => {
     const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
     expect(pageSource).toContain("maximum 2 minutes");
