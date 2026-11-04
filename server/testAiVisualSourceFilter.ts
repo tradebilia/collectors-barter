@@ -4230,7 +4230,7 @@ export function disneyPinsSetVisualScore(listing: VisualSourceCandidate, targetM
   add('missingPins',5,disneyPinsValueMatches(details.missingPins,listing,['missingPins','missing']));
   return {score,matched,unknown};
 }
-export function disneyPinsVisualCap(score: number): number { if(score>=90) return 8; if(score>=80) return 6; if(score>=70) return 4; if(score>=60) return 2; return 0; }
+export function disneyPinsVisualCap(score: number): number { if(score>=90) return 8; if(score>=80) return 6; if(score>=70) return 4; if(score>=40) return 2; return 0; }
 
 const MUSIC_SCORE_FIELDS = [
   ['artist', 25],
@@ -5077,9 +5077,9 @@ function selectDisneyPinsVisualCandidates<T extends VisualSourceCandidate>(candi
     .map((candidate,index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index+1 } as T }));
   const cap = disneyPinsVisualCap(Number(ranked[0]?.item.metadataMatchScore ?? 0));
   const label = setTarget ? 'Disney Pins / Pin Set' : 'Disney Pins / Individual Pin';
-  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 60).slice(0,cap);
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 40).slice(0,cap);
   const selectedKeys = new Set(selected.map((candidate)=>candidate.candidateIndex));
-  const excluded = ranked.filter((candidate)=>!selectedKeys.has(candidate.candidateIndex)).map((entry)=>({ ...entry.item, evidenceDisposition:'pre_vision_score_excluded', visualReviewStatus:'not_reviewed', visualReviewRationale:Number(entry.item.metadataMatchScore ?? 0)<60 ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.` : `${label} visual cap reached (${cap}); higher-scoring candidates were selected first.`, evidenceReasons:[entry.imageUrls.length===0?'no candidate image available; retained as context-only':Number(entry.item.metadataMatchScore ?? 0)<60?'metadata score below minimum (60)':`visual-review cap reached (${cap})`] } as T));
+  const excluded = ranked.filter((candidate)=>!selectedKeys.has(candidate.candidateIndex)).map((entry)=>({ ...entry.item, evidenceDisposition:'pre_vision_score_excluded', visualReviewStatus:'not_reviewed', visualReviewRationale:Number(entry.item.metadataMatchScore ?? 0)<40 ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 40.` : `${label} visual cap reached (${cap}); higher-scoring candidates were selected first.`, evidenceReasons:[entry.imageUrls.length===0?'no candidate image available; retained as context-only':Number(entry.item.metadataMatchScore ?? 0)<40?'metadata score below minimum (40)':`visual-review cap reached (${cap})`] } as T));
   return {selected,excluded,cap,ranked};
 }
 

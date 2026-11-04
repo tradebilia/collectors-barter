@@ -1,7 +1,7 @@
 
 
-## Disney Pins single-pin scoring normalization — November 4, 2026
+## Disney Pins visual-analysis minimum lowered to 40 — November 4, 2026
 
-Fixed the shared Disney Pins metadata scorer so the stored `single_pin` item type is normalized to the same `individual_pin` scoring path already used by the visual-selection logic. Before this repair, valid Disney Pins targets were recognized for selection but the scorer rejected the raw alias and returned `0/100`, causing the visual cap to become zero and every candidate to be held out before image comparison. `pin_set` and `collection_lot` behavior remains unchanged.
+Updated only the Disney Pins visual-admission band: candidates scoring **40–59/100** may now enter visual analysis, capped at two candidates. Scores of **60–69** remain capped at two, 70–79 at four, 80–89 at six, and 90–100 at eight. Scores below 40 remain excluded. Exclusion wording and evidence reasons now correctly identify 40 as the minimum. Pin-set and collection/lot safeguards remain unchanged.
 
-Added regression coverage proving a `single_pin` target receives identity points. Validation passed: visual-filter and category-comparable tests **223/223**, TypeScript, production build, diff check, and forbidden-path audit. No database, migration, seed, destructive, credential, provider, deployment, publishing, or domain changes were made.
+Validation passed: Disney Pins visual-filter tests **207/207**, TypeScript, production build, threshold-reference audit, and diff safety checks. No database, migration, seed, destructive, credential, provider, deployment, publishing, or domain changes were made.
