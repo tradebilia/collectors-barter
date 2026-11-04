@@ -343,6 +343,41 @@ describe('Sold-Comps API key validation', () => {
     expect(mismatch.evidenceReasons?.[0]).toContain('visual comparison flag');
   });
 
+  it('evaluates Disney Sold-Comps candidates independently when one match sits beside a mismatch and timeout', () => {
+    const context = { category: 'disney_pins', targetItemType: 'single_pin', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null, visualReviewRequired: true };
+    const confirmedMatch = annotateSoldComparableCandidate({
+      title: 'Disney Pin Trading Around the World Eeyore Limited Edition',
+      soldPrice: '6',
+      evidenceDisposition: 'context_only',
+      evidenceReasons: [],
+      visualReviewStatus: 'match',
+      visualAudit: {
+        retryStatus: 'performed',
+        finalPass: 'high_resolution_retry',
+        adjudicationStatus: 'confirmed',
+        finalEvidence: { characterMatches: true, artworkMatches: true, silhouetteMatches: true, backingCardMatches: true, setDesignMatches: true },
+      },
+    }, context);
+    const mismatch = annotateSoldComparableCandidate({
+      title: 'Disney Pin Trading Around the World Eeyore Variant',
+      soldPrice: '38',
+      visualReviewStatus: 'mismatch',
+      visualReviewRationale: 'The artwork and silhouette differ.',
+    }, context);
+    const timeout = annotateSoldComparableCandidate({
+      title: 'Disney Pin Trading Around the World Eeyore Limited Edition',
+      soldPrice: '25',
+      evidenceDisposition: 'warning_review',
+      visualReviewStatus: 'match',
+      visualAdmissionReason: 'The independent Disney Pin image comparison did not complete; the initial AI result is retained for context only and cannot enter valuation.',
+    }, context);
+
+    expect(confirmedMatch.evidenceDisposition).toBe('valuation_eligible');
+    expect(confirmedMatch.evidenceReasons).toEqual([]);
+    expect(mismatch.evidenceDisposition).toBe('warning_review');
+    expect(timeout.evidenceDisposition).toBe('warning_review');
+  });
+
   it('promotes the exact Rambo CGC 9.8 completed sale after confirmed visual matching', () => {
     const candidate = annotateSoldComparableCandidate(
       {

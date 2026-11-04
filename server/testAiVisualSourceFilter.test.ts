@@ -2165,6 +2165,54 @@ describe("visual source filter", () => {
     expect(confirmed.listings[0]).not.toHaveProperty("evidenceDisposition");
   });
 
+  it("clears only the stale provisional Disney blocker when the same candidate later confirms", () => {
+    const exactEvidence = {
+      slabVisible: false,
+      gradingLabelVisible: false,
+      graderVisible: false,
+      numericGradeVisible: false,
+      gradeMatches: false,
+      rawOrLooseVisible: false,
+      characterMatches: true,
+      artworkMatches: true,
+      silhouetteMatches: true,
+      backingCardMatches: true,
+      setDesignMatches: true,
+    };
+    const review = {
+      candidateIndex: 0,
+      verdict: "match" as const,
+      confidence: "high" as const,
+      rationale: "The independent review confirms the exact Disney Pin.",
+      visualEvidence: exactEvidence,
+      visualAudit: {
+        imageCount: 1,
+        initialVerdict: "match" as const,
+        initialConfidence: "high" as const,
+        retryStatus: "performed" as const,
+        adjudicationStatus: "confirmed" as const,
+        finalPass: "high_resolution_retry" as const,
+        initialEvidence: exactEvidence,
+        finalEvidence: exactEvidence,
+      },
+    };
+    const result = applyVisualSourceReviews(
+      [{
+        title: "Disney Eeyore Around the World Pin",
+        evidenceDisposition: "warning_review",
+        evidenceReasons: [],
+        visualAdmissionReason: "The independent Disney Pin image comparison did not complete; the initial AI result is retained for context only and cannot enter valuation.",
+      }],
+      [review],
+      1,
+      { requireExactMatch: true },
+    );
+
+    expect(result.listings[0]).toMatchObject({ visualReviewStatus: "match" });
+    expect(result.listings[0]).not.toHaveProperty("visualAdmissionReason");
+    expect(result.listings[0]).not.toHaveProperty("evidenceDisposition");
+  });
+
   it("fails closed when the independent Disney retry is unavailable", () => {
     const exactEvidence = {
       slabVisible: false,

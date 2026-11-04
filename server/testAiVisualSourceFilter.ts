@@ -1394,8 +1394,17 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
     listings: listings.map((listing, index) => {
       const review = reviewsByIndex.get(index);
       if (!review) return listing;
+      const completedDisneyMatch = options?.requireExactMatch === true && hasCompletedDisneyPinsAdjudication(review);
+      const staleDisneyAdmissionReason = String((listing as any)?.visualAdmissionReason ?? '').trim()
+        === "The independent Disney Pin image comparison did not complete; the initial AI result is retained for context only and cannot enter valuation.";
+      const cleanCompletedDisneyListing = completedDisneyMatch && staleDisneyAdmissionReason
+        ? (() => {
+            const { visualAdmissionReason: _visualAdmissionReason, evidenceDisposition: _evidenceDisposition, ...cleanListing } = listing as any;
+            return cleanListing as T;
+          })()
+        : listing;
       return {
-        ...listing,
+        ...cleanCompletedDisneyListing,
         visualReviewStatus: review.verdict,
         visualReviewRationale: review.rationale,
         ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
