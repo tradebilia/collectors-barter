@@ -25,6 +25,8 @@ export type FileContent = {
 
 export type MessageContent = string | TextContent | ImageContent | FileContent;
 
+export type LlmProvider = "manus_forge" | "openai";
+
 export type Message = {
   role: Role;
   content: MessageContent | MessageContent[];
@@ -57,6 +59,7 @@ export type ToolChoice =
 
 export type InvokeParams = {
   messages: Message[];
+  provider?: LlmProvider;
   signal?: AbortSignal;
   tools?: Tool[];
   toolChoice?: ToolChoice;
@@ -357,10 +360,13 @@ const fetchWithBackoff = async (
 };
 
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
-  assertApiKey();
+  const provider = params.provider ?? "manus_forge";
+  const apiKey = provider === "openai" ? ENV.openaiApiKey : ENV.forgeApiKey;
+  if (!apiKey) throw new Error(`${provider === "openai" ? "OpenAI" : "Manus Forge"} API key is not configured.`);
 
   const {
     messages,
+    provider: _provider,
     signal,
     tools,
     toolChoice,
@@ -431,12 +437,15 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.response_format = normalizedResponseFormat;
   }
 
-  const response = await fetchWithBackoff(resolveApiUrl(), {
+  const endpoint = provider === "openai"
+    ? `${ENV.openaiApiUrl.replace(/\/$/, "")}/chat/completions`
+    : resolveApiUrl();
+  const response = await fetchWithBackoff(endpoint, {
     method: "POST",
     signal,
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
+      authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify(payload),
   });

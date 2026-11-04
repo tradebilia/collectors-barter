@@ -8,6 +8,8 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  openaiApiUrl: process.env.OPENAI_BASE_URL ?? process.env.OPENAI_API_BASE ?? "https://api.openai.com/v1",
+  openaiApiKey: process.env.TRADEBILIA_OPENAI_API_KEY ?? process.env.OPENAI_API_KEY ?? "",
   manusApiKey: process.env.MANUS_API_KEY ?? "",
   // eBay API
   ebayClientId: process.env.EBAY_PROD_CLIENT_ID ?? "",
@@ -26,8 +28,7 @@ export const ENV = {
   etsyRedirectUri: process.env.ETSY_REDIRECT_URI ?? "",
   // Encryption key for OAuth tokens at rest
   encryptionKey: process.env.ENCRYPTION_KEY ?? "",
-  // OpenAI for trade analysis
-  openaiApiKey: process.env.TRADEBILIA_OPENAI_API_KEY ?? "", // key refreshed 2026-08-06
+  // OpenAI is shared by trade analysis and the sandbox visual-provider toggle.
   // ReefAPI read-only marketplace aggregation
   reefApiKey: process.env.REEF_API_KEY ?? "",
   // Apify Whatnot Reference actor

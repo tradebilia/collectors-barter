@@ -2437,7 +2437,9 @@ describe("visual source filter", () => {
     expect(source).toContain("INDEPENDENT HIGH-RESOLUTION GRADING ADJUDICATION");
     expect(source).toContain("Do not rely on or repeat any preliminary verdict");
     expect(source).toContain("A visible transparent slab plus a grading label and readable grade is graded—not raw");
-    expect(source).toContain('model: needsFocusedGradeEscalation ? "gpt-5" : "gpt-5-mini"');
+    expect(source).toContain('provider: args.visualProvider');
+    expect(source).toContain('args.visualProvider === "openai" ? "gpt-4o-mini"');
+    expect(source).toContain('needsFocusedGradeEscalation ? "gpt-5" : "gpt-5-mini"');
     expect(source).toContain('reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined');
   });
 

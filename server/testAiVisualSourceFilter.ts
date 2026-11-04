@@ -1,4 +1,4 @@
-import { invokeLLM, type ImageContent, type TextContent } from "./_core/llm";
+import { invokeLLM, type ImageContent, type TextContent, type LlmProvider } from "./_core/llm";
 import { parseAnalyzerResponse } from "./testAiResponse";
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from "../shared/testAiMetadataConflict";
 import {
@@ -5308,6 +5308,7 @@ export async function filterVisualSourceCandidates<
 	  sourceLabel: string;
 	  targetImageUrl?: string | null;
 	  targetMetadata: string;
+	  visualProvider?: LlmProvider;
 		  listings: T[];
 		  ignoreSubjectiveConditionDifferences?: boolean;
 		  reviewDeadlineAt?: number;
@@ -5648,7 +5649,7 @@ export async function filterVisualSourceCandidates<
       let candidateError: unknown;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
         try {
-          const response = await invokeVisualReview({ model: "gpt-5-mini", messages: [{ role: "user", content }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
+          const response = await invokeVisualReview({ provider: args.visualProvider, model: args.visualProvider === "openai" ? "gpt-4o-mini" : "gpt-5-mini", messages: [{ role: "user", content }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
           const raw = response.choices[0]?.message?.content;
           text = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
           if (text.trim()) break;
@@ -5766,7 +5767,7 @@ export async function filterVisualSourceCandidates<
       let galleryTimedOut = false;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
         try {
-          const response = await invokeVisualReview({ model: needsFocusedGradeEscalation ? "gpt-5" : "gpt-5-mini", messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 1800, reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
+          const response = await invokeVisualReview({ provider: args.visualProvider, model: args.visualProvider === "openai" ? "gpt-4o-mini" : (needsFocusedGradeEscalation ? "gpt-5" : "gpt-5-mini"), messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 1800, reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
           const raw = response.choices[0]?.message?.content;
           const galleryText = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
           if (!galleryText.trim()) throw new Error("The gallery visual review returned no structured content");
@@ -5795,7 +5796,8 @@ export async function filterVisualSourceCandidates<
         thirdDisneyAttempted = true;
         try {
           const response = await invokeVisualReview({
-            model: "gpt-5-mini",
+            provider: args.visualProvider,
+            model: args.visualProvider === "openai" ? "gpt-4o-mini" : "gpt-5-mini",
             messages: [{
               role: "user",
               content: [

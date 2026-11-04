@@ -1515,6 +1515,7 @@ export const testAIRouter = router({
       imageUrl: z.string().url().optional(),
       includeVisualReview: z.boolean().optional(),
       statedTradeValue: z.number().finite().nonnegative().optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -1815,6 +1816,7 @@ export const testAIRouter = router({
               targetImageUrl: input.imageUrl,
               targetMetadata,
               listings: visualInputListings,
+              visualProvider: input.visualProvider,
               ignoreSubjectiveConditionDifferences: true,
             })
           : await filterVisualSourceCandidates({
@@ -1823,6 +1825,7 @@ export const testAIRouter = router({
               targetImageUrl: null,
               targetMetadata,
               listings: visualInputListings,
+              visualProvider: input.visualProvider,
               ignoreSubjectiveConditionDifferences: true,
             });
         const combinedVisualFilter = visualActiveFilter
@@ -1993,6 +1996,7 @@ export const testAIRouter = router({
       targetMetadata: z.string().min(1).max(12000),
       listings: z.array(z.record(z.string(), z.any())).max(VISUAL_REVIEW_MAX_CANDIDATES),
       reviewDeadlineAt: z.number().int().optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -2001,6 +2005,7 @@ export const testAIRouter = router({
         sourceLabel: 'eBay active listings',
         targetImageUrl: input.targetImageUrl,
         targetMetadata: input.targetMetadata,
+        visualProvider: input.visualProvider,
         listings: input.listings.map((listing) => ({
           ...listing,
           imageUrl: typeof listing.imageUrl === 'string' ? listing.imageUrl : null,
@@ -2340,6 +2345,7 @@ export const testAIRouter = router({
       title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
       certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), itemType: z.string().nullish(), imageUrl: z.string().url().nullish(), sourceUrl: z.string().url().nullish(),
       historyWindow: z.enum(['recent_12_months', 'historical', 'all']).optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -2356,6 +2362,7 @@ export const testAIRouter = router({
               sourceRole: 'marketplace',
         sourceLabel: 'Goldin specialist auction records',
         targetImageUrl: input.imageUrl,
+        visualProvider: input.visualProvider,
         targetMetadata: buildVisualTargetMetadata({
           title: input.title,
           category: input.category,
@@ -2400,6 +2407,7 @@ export const testAIRouter = router({
       itemType: z.string().optional(),
       statedTradeValue: z.number().finite().nonnegative().optional(),
       imageUrl: z.string().url().optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -2947,6 +2955,7 @@ export const testAIRouter = router({
       // An already-open Test AI tab needs a distinct query key when the
       // visual-admission contract changes.
       visualReviewVersion: z.string().max(80).optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -3010,6 +3019,7 @@ export const testAIRouter = router({
           sourceLabel: visualSourceLabel,
           targetImageUrl: safeTargetImage,
           targetMetadata,
+          visualProvider: input.visualProvider,
           ignoreSubjectiveConditionDifferences: true,
           listings: assessment.eligible.map(toVisualCandidate),
         });

@@ -3439,7 +3439,7 @@ function ComicBookRealmSection({
     </div>
   );
 }
-function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, onSales }: { source: SandboxSpecialistSource; item: SelectedItem; side: 'left' | 'right'; onEvidenceObservation?: (observation: EvidenceSourceObservation) => void; onSales?: (sales: any[]) => void }) {
+function SandboxSpecialistSection({ source, item, side, visualProvider, onEvidenceObservation, onSales }: { source: SandboxSpecialistSource; item: SelectedItem; side: 'left' | 'right'; visualProvider: 'manus_forge' | 'openai'; onEvidenceObservation?: (observation: EvidenceSourceObservation) => void; onSales?: (sales: any[]) => void }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const automatic = source.searchContract === 'automatic_title_search';
   const locatorRequired = source.searchContract === 'public_locator_required';
@@ -3476,6 +3476,7 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
       imageUrl: item.primaryPhotoUrl ?? undefined,
       sourceUrl: normalizedSourceUrl || undefined,
       historyWindow: source.id.endsWith('_reef') ? historyWindow : undefined,
+      visualProvider,
     },
     { enabled: enabled && !blocked, retry: false, ...(refreshOnMount ? { staleTime: 0, refetchOnMount: 'always' as const } : {}) },
   );
@@ -4468,10 +4469,11 @@ function normalizeNgcGradeForDisplay(value: string): string {
   return match ? String(Number(match[1])) : value.trim();
 }
 
-function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayEvidenceData, ebayLoading, onEbayVisualReview, soldCompsData, soldCompsLoading, mercariSoldCompsData, mercariSoldCompsLoading, tcgplayerSoldCompsData, tcgplayerSoldCompsLoading, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary, onSpecialistSales }: {
+function DataColumn({ item, searchItem, side, visualProvider, enabledSources, ebayData, ebayEvidenceData, ebayLoading, onEbayVisualReview, soldCompsData, soldCompsLoading, mercariSoldCompsData, mercariSoldCompsLoading, tcgplayerSoldCompsData, tcgplayerSoldCompsLoading, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary, onSpecialistSales }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
+  visualProvider: 'manus_forge' | 'openai';
   enabledSources: Set<SourceId>;
   ebayData: any;
   ebayEvidenceData?: any;
@@ -4587,7 +4589,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayEvid
       {enabledSources.has('comic_book_realm') && <ComicBookRealmSection item={queryItem} side={side} />}
       {enabledSources.has('pwcc') && <PwccSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('gocollect') && <PlaceholderSection sourceId="gocollect" side={side} />}
-      {SANDBOX_SPECIALIST_SOURCES.filter((source) => source.id !== 'comicconnect' && source.id !== 'comic_book_realm' && enabledSources.has(source.id)).map((source) => <SandboxSpecialistSection key={source.id} source={source} item={queryItem} side={side} onEvidenceObservation={onSpecialistObservation} onSales={(sales) => onSpecialistSales?.(source.id, sales)} />)}
+      {SANDBOX_SPECIALIST_SOURCES.filter((source) => source.id !== 'comicconnect' && source.id !== 'comic_book_realm' && enabledSources.has(source.id)).map((source) => <SandboxSpecialistSection key={source.id} source={source} item={queryItem} side={side} visualProvider={visualProvider} onEvidenceObservation={onSpecialistObservation} onSales={(sales) => onSpecialistSales?.(source.id, sales)} />)}
     </div>
   );
 }
@@ -4606,6 +4608,7 @@ export default function TestAI() {
   const [rightGoldinSales, setRightGoldinSales] = useState<any[]>([]);
   const [rightEvidenceSummary, setRightEvidenceSummary] = useState<NormalizedEvidenceSummary | null>(null);
   const [rightEbayVisualReview, setRightEbayVisualReview] = useState<any | null>(null);
+  const [visualProvider, setVisualProvider] = useState<'manus_forge' | 'openai'>('manus_forge');
   const leftIsCollectionLot = isCollectionLotItemType(leftItem?.itemType);
   const rightIsCollectionLot = isCollectionLotItemType(rightItem?.itemType);
   const leftSourcesEnabled = leftIsCollectionLot ? new Set<SourceId>() : leftSources;
@@ -4777,11 +4780,11 @@ export default function TestAI() {
   const rightSearchItem = buildSearchableItem(rightItem, rightPSAQuery, rightBeckettQuery, rightCgcQuery, rightPcgsCoinFactsQuery.data);
 
   const leftEbayQuery = trpc.testAI.getEbayData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl, includeVisualReview: true, statedTradeValue: Number(leftSearchItem.estimatedValue) || undefined } : { title: '', category: '' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl, includeVisualReview: true, visualProvider, statedTradeValue: Number(leftSearchItem.estimatedValue) || undefined } : { title: '', category: '' },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('ebay_active') }
   );
   const rightEbayQuery = trpc.testAI.getEbayData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails, imageUrl: rightSearchItem.primaryPhotoUrl, includeVisualReview: true, statedTradeValue: Number(rightSearchItem.estimatedValue) || undefined } : { title: '', category: '' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails, imageUrl: rightSearchItem.primaryPhotoUrl, includeVisualReview: true, visualProvider, statedTradeValue: Number(rightSearchItem.estimatedValue) || undefined } : { title: '', category: '' },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('ebay_active') }
   );
 
@@ -4884,22 +4887,22 @@ export default function TestAI() {
   );
 
   const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl, visualProvider } : { title: '', category: '' },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('sold_comps') }
   );
   const rightSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl, visualProvider } : { title: '', category: '' },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('sold_comps') }
   );
   // Bump only when the server-side Mercari visual-admission contract changes.
   // This makes an already-open Test AI page request the new result.
   const mercariVisualReviewVersion = 'music-condition-gate-v2';
   const leftMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion } : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion, visualProvider } : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('mercari_sold_comps'), retry: false }
   );
   const rightMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion } : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion, visualProvider } : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('mercari_sold_comps'), retry: false }
   );
   const leftTcgplayerSoldCompsQuery = trpc.testAI.getTcgplayerSoldCompsData.useQuery(
@@ -4934,6 +4937,14 @@ export default function TestAI() {
           </div>
           <button onClick={() => navigate('/admin')} className="text-gray-400 hover:text-white text-sm transition-colors">← Back to Admin</button>
         </div>
+        <div className="max-w-7xl mx-auto mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-violet-500/30 bg-violet-950/20 px-3 py-2 text-xs">
+          <span className="font-semibold text-violet-200">Visual analysis provider</span>
+          <select aria-label="Visual analysis provider" value={visualProvider} onChange={(event) => setVisualProvider(event.target.value as 'manus_forge' | 'openai')} className="rounded border border-violet-400/40 bg-slate-950 px-2 py-1 text-violet-100">
+            <option value="manus_forge">Manus Forge (default)</option>
+            <option value="openai">OpenAI (sandbox test)</option>
+          </select>
+          <span className="text-slate-400">Changing this reruns enabled visual-review sources with the selected provider.</span>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
@@ -4957,8 +4968,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {leftItem && !leftIsCollectionLot && <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSourcesEnabled} ebayData={leftEbayQuery.data} ebayEvidenceData={leftEbayVisualReview ? { ...leftEbayQuery.data, ...leftEbayVisualReview } : leftEbayQuery.data} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isFetching} soldCompsData={leftSoldCompsQuery.data} soldCompsLoading={leftSoldCompsQuery.isFetching} mercariSoldCompsData={leftMercariSoldCompsQuery.data} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={leftTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isFetching} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isFetching} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isFetching} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isFetching} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isFetching} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isFetching} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isFetching} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isFetching} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isFetching} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isFetching} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isFetching} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />}
-            {rightItem && !rightIsCollectionLot && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSourcesEnabled} ebayData={rightEbayQuery.data} ebayEvidenceData={rightEbayVisualReview ? { ...rightEbayQuery.data, ...rightEbayVisualReview } : rightEbayQuery.data} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isFetching} soldCompsData={rightSoldCompsQuery.data} soldCompsLoading={rightSoldCompsQuery.isFetching} mercariSoldCompsData={rightMercariSoldCompsQuery.data} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={rightTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isFetching} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isFetching} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isFetching} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isFetching} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isFetching} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isFetching} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isFetching} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isFetching} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isFetching} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isFetching} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isFetching} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
+            {leftItem && !leftIsCollectionLot && <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" visualProvider={visualProvider} enabledSources={leftSourcesEnabled} ebayData={leftEbayQuery.data} ebayEvidenceData={leftEbayVisualReview ? { ...leftEbayQuery.data, ...leftEbayVisualReview } : leftEbayQuery.data} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isFetching} soldCompsData={leftSoldCompsQuery.data} soldCompsLoading={leftSoldCompsQuery.isFetching} mercariSoldCompsData={leftMercariSoldCompsQuery.data} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={leftTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isFetching} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isFetching} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isFetching} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isFetching} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isFetching} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isFetching} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isFetching} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isFetching} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isFetching} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isFetching} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isFetching} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />}
+            {rightItem && !rightIsCollectionLot && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" visualProvider={visualProvider} enabledSources={rightSourcesEnabled} ebayData={rightEbayQuery.data} ebayEvidenceData={rightEbayVisualReview ? { ...rightEbayQuery.data, ...rightEbayVisualReview } : rightEbayQuery.data} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isFetching} soldCompsData={rightSoldCompsQuery.data} soldCompsLoading={rightSoldCompsQuery.isFetching} mercariSoldCompsData={rightMercariSoldCompsQuery.data} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={rightTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isFetching} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isFetching} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isFetching} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isFetching} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isFetching} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isFetching} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isFetching} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isFetching} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isFetching} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isFetching} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isFetching} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
           </div>
         )}
 
