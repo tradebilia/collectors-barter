@@ -2165,7 +2165,7 @@ describe("visual source filter", () => {
     expect(confirmed.listings[0]).not.toHaveProperty("evidenceDisposition");
   });
 
-  it("preserves a complete primary Disney match when the independent retry is unavailable", () => {
+  it("fails closed when the independent Disney retry is unavailable", () => {
     const exactEvidence = {
       slabVisible: false,
       gradingLabelVisible: false,
@@ -2205,7 +2205,10 @@ describe("visual source filter", () => {
       { requireExactMatch: true },
     );
     expect(result.listings[0]).toMatchObject({ visualReviewStatus: "match" });
-    expect(result.listings[0]).not.toHaveProperty("evidenceDisposition");
+    expect(result.listings[0]).toMatchObject({
+      evidenceDisposition: "warning_review",
+      visualAdmissionReason: "The independent Disney Pin image comparison did not complete; the initial AI result is retained for context only and cannot enter valuation.",
+    });
     expect(result.listings[0]).toMatchObject({ visualAudit: { adjudicationStatus: "unavailable" } });
   });
 
@@ -2252,7 +2255,9 @@ describe("visual source filter", () => {
     expect(source).toContain("needsDisneyAdjudication");
     expect(source).toContain("INDEPENDENT DISNEY PINS IDENTITY ADJUDICATION");
     expect(source).toContain("Disney Pins require an independent second visual adjudication");
-    expect(disneyPinsVisualInstruction("category=disney_pins")).toContain("Same character, similar colors, or a shared series is never sufficient");
+    expect(source).toContain("The primary job is exact image comparison");
+    expect(source).toContain("the initial result is provisional audit evidence only and cannot enter valuation");
+    expect(disneyPinsVisualInstruction("category=disney_pins")).toContain("Same character, similar colors, a shared series, or a shared backing card is never sufficient");
   });
 
   it("holds Disney Pins collections, lots, and wrong item forms before visual review", () => {

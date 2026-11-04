@@ -769,7 +769,7 @@ export function coinAdmissionReason(review: VisualSourceReview | undefined, targ
 
 export function disneyPinsVisualInstruction(metadata: string): string {
   return isDisneyPinsMetadata(metadata)
-    ? " DISNEY PINS POLICY: Disney Pins are not graded collectibles in this workflow. Ignore grader, certification-company, slab, label, numeric-grade, and raw-versus-graded signals completely, including stale structured fields or title wording. Do not mark a Disney Pin mismatch or unreadable because a grading field is absent or inconsistent. Same character, similar colors, or a shared series is never sufficient. Treat character, exact artwork, pose, silhouette, backing card/backing logo, event or set design, edition markings, and pin count/form as mandatory identity gates. Return match only when every applicable visible identity detail is confirmed and the structured evidence booleans characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, and setDesignMatches are all true. If any detail differs, is obscured, or cannot be independently confirmed, return rough_match, unreadable, or mismatch; those outcomes remain manual-review evidence and cannot enter analyzer valuation."
+    ? " DISNEY PINS POLICY: Disney Pins are not graded collectibles in this workflow. Ignore grader, certification-company, slab, label, numeric-grade, and raw-versus-graded signals completely, including stale structured fields or title wording. Do not mark a Disney Pin mismatch or unreadable because a grading field is absent or inconsistent. The primary job is exact image comparison: decide whether the pictured target and candidate are the same specific pin, not merely the same character, franchise, series, or backing-card family. Same character, similar colors, a shared series, or a shared backing card is never sufficient. A different pose, silhouette, shape, artwork, edition mark, event/set design, or pin layout is a mismatch even when the character is identical. Treat character, exact artwork, pose, silhouette, backing card/backing logo, event or set design, edition markings, and pin count/form as mandatory identity gates. Return match only when every applicable visible identity detail is confirmed and the structured evidence booleans characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, and setDesignMatches are all true. If any detail differs, is obscured, or cannot be independently confirmed, return mismatch or unreadable/manual review rather than guessing. The independent high-resolution adjudication is authoritative; if it does not complete, the initial result is provisional audit evidence only and cannot enter valuation."
     : "";
 }
 
@@ -794,7 +794,7 @@ export function enforceDisneyPinsExactEvidence(review: VisualSourceReview, targe
   };
 }
 
-/** A Disney Pin may reach analyzer evidence after confirmed adjudication or a complete primary match whose independent retry was unavailable. */
+/** A Disney Pin may reach analyzer evidence only after the independent adjudication completes. */
 export function hasCompletedDisneyPinsAdjudication(review: VisualSourceReview | undefined): boolean {
   return Boolean(
     review?.verdict === "match"
@@ -806,9 +806,8 @@ export function hasCompletedDisneyPinsAdjudication(review: VisualSourceReview | 
 }
 
 /**
- * A provider/model failure is not an identity mismatch. Preserve a complete,
- * high-confidence primary Disney match as provisional evidence, while keeping
- * the unavailable adjudication visible in the audit trail for manual review.
+ * This remains an audit classifier only. An unavailable independent review is
+ * never an admission path and must remain context-only.
  */
 export function hasUnavailableDisneyPinsAdjudication(review: VisualSourceReview | undefined): boolean {
   return Boolean(
@@ -1400,11 +1399,13 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
         visualReviewStatus: review.verdict,
         visualReviewRationale: review.rationale,
         ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
-        ...((review.verdict === "mismatch" || (options?.requireExactMatch && !hasCompletedDisneyPinsAdjudication(review) && !hasUnavailableDisneyPinsAdjudication(review)) || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? ""))))
+        ...((review.verdict === "mismatch" || (options?.requireExactMatch && !hasCompletedDisneyPinsAdjudication(review)) || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? ""))))
           ? {
               evidenceDisposition: "warning_review",
               ...(options?.requireCoinExactMatch && options.targetMetadata
                 ? { visualAdmissionReason: coinAdmissionReason(review, options.targetMetadata, String(listing.title ?? "")) }
+                : options?.requireExactMatch && hasUnavailableDisneyPinsAdjudication(review)
+                ? { visualAdmissionReason: "The independent Disney Pin image comparison did not complete; the initial AI result is retained for context only and cannot enter valuation." }
                 : {}),
             }
           : {}),
