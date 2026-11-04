@@ -2306,13 +2306,18 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([{ title: "Minnie Mouse Black & White Snapshots Disney Pin", imageUrl: "https://example.com/wrong-character.jpg" }], target)[0]?.rationale).toContain("pin name differs");
     expect(buildDeclaredIdentityReviews([{ title: "DLR PWP Collection Sepia Snapshots Donald Duck Black White Disney Pin (A2)", imageUrl: "https://example.com/single-pin.jpg" }], target)).toHaveLength(0);
     const eeyoreTarget = buildVisualTargetMetadata({
-      title: "Eeyore Pin",
+      title: "Around the World Eeyore Pin",
       category: "disney_pins",
       itemType: "single_pin",
-      fullItemDetails: { pinName: "Eeyore", character: "Eeyore" },
+      fullItemDetails: { pinName: "Around the World Eeyore", character: "Eeyore", series: "Around the World" },
     });
     expect(buildDeclaredIdentityReviews([{ title: "Disney Pin HKDL Eeyore Name Tag Mystery Collection", imageUrl: "https://example.com/mystery-collection-pin.jpg" }], eeyoreTarget)).toHaveLength(0);
     expect(buildDeclaredIdentityReviews([{ title: "UK Disney Store Winnie the Pooh Eeyore and Piglet Christmas 2002 Pin E7", imageUrl: "https://example.com/character-pin.jpg" }], eeyoreTarget)).toHaveLength(0);
+    expect(buildDeclaredIdentityReviews([{ title: "Disney Trading Pin * Eeyore * Sitting * From Winnie the Pooh", imageUrl: "https://example.com/sitting-eeyore.jpg" }], eeyoreTarget)).toHaveLength(0);
+    expect(buildDeclaredIdentityReviews([{ title: "2003 Official WDW Walt Disney World Pin Eeyore Donkey Pink Bow Winnie the Pooh", imageUrl: "https://example.com/bow-eeyore.jpg" }], eeyoreTarget)).toHaveLength(0);
+    expect(buildDeclaredIdentityReviews([{ title: "Disney Trading Pin Minnie Mouse Sitting From Winnie the Pooh", imageUrl: "https://example.com/minnie.jpg" }], eeyoreTarget)[0]?.rationale).toContain("pin name differs");
+    expect(isMultiItemLot({ title: "Disney Sitting Eeyore Pooh 2008 Pin C4", itemType: "Collection", imageUrl: "https://example.com/provider-label.jpg" }, eeyoreTarget)).toBe(false);
+    expect(isMultiItemLot({ title: "Disney Sitting Eeyore Pooh 2008 Pin C4 Collection Lot of 5", itemType: "Collection", imageUrl: "https://example.com/real-lot.jpg" }, eeyoreTarget)).toBe(true);
     expect(buildDeclaredIdentityReviews([{ title: "Disney Pin Collection Lot of 5", imageUrl: "https://example.com/true-lot.jpg" }], target)[0]?.rationale).toContain("collection, lot");
   });
 
@@ -3139,6 +3144,24 @@ describe("visual source filter", () => {
     }, target);
     expect(score.score).toBeGreaterThan(0);
     expect(score.matched).toEqual(expect.arrayContaining(["pinName", "character", "series"]));
+  });
+  it("credits character-only marketplace titles enough to reach the Disney single-pin visual threshold", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Around the World Eeyore Pin",
+      category: "disney_pins",
+      itemType: "single_pin",
+      fullItemDetails: { pinName: "Around the World Eeyore", character: "Eeyore", series: "Around the World" },
+    });
+    for (const title of [
+      "Eeyore From Winnie The Pooh Disneyland D Fantasy Pin (LE 200)",
+      "DISNEY TRADING PIN * EEYORE * SITTING * FROM WINNIE THE POOH",
+      "2003 Official WDW Walt Disney World Pin EEYORE Donkey Pink Bow Winnie the Pooh",
+    ]) {
+      const score = disneyPinsIndividualVisualScore({ title }, target);
+      expect(score.score).toBeGreaterThanOrEqual(40);
+      expect(disneyPinsVisualCap(score.score)).toBeGreaterThan(0);
+      expect(score.matched).toContain("pinName");
+    }
   });
 
   it("scores Disney Pins / Pin Set and excludes Collection/Lot from ranking", () => {

@@ -439,6 +439,23 @@ describe('Sold-Comps API key validation', () => {
     expect(single.evidenceDisposition).toBe('valuation_eligible');
   });
 
+  it('does not treat a Disney pin release year as a lot quantity in the eBay pre-vision path', () => {
+    expect(extractSoldCompLotQuantity('Disney Sitting Eeyore Pooh 2008 Pin C4')).toBeNull();
+    expect(hasExplicitSoldCompLot('Disney Sitting Eeyore Pooh 2008 Pin C4')).toBe(false);
+    expect(extractSoldCompLotQuantity('Disney Eeyore Pooh Set of 2 Pins')).toBe(2);
+    expect(extractSoldCompLotQuantity('Disney Eeyore Pooh Collection Lot of 3')).toBe(3);
+
+    const targetMetadata = 'title=Around the World Eeyore Pin; category=disney_pins; itemType=single_pin; itemDetails={"pinName":"Around the World Eeyore","character":"Eeyore","series":"Around the World"}';
+    const assessment = assessSoldCompsPreVisionCandidates({
+      category: 'disney_pins',
+      targetMetadata,
+      listings: [{ title: 'Disney Sitting Eeyore Pooh 2008 Pin C4', soldPrice: '25' }],
+      ignoreSubjectiveConditionDifferences: true,
+    });
+    expect(assessment.eligible.map((listing) => listing.title)).toEqual(['Disney Sitting Eeyore Pooh 2008 Pin C4']);
+    expect(assessment.excluded).toHaveLength(0);
+  });
+
   it('keeps generic bundles and counted multi-item titles out of valuation without inventing a quantity', () => {
     const context = { category: 'vintage_toys', targetItemType: 'single_item', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null };
     const bundle = annotateSoldComparableCandidate({ title: 'Hot Wheels AAR Cuda Multipack', soldPrice: '20' }, context);

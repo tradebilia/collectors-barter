@@ -1,5 +1,26 @@
 import { buildMarketplaceTitleEvidence } from './testAiTitleEvidence';
 
+/**
+ * Extract an explicit multi-item quantity from marketplace title text.
+ * Four-digit release years such as "2008 Pin" are not quantities.
+ */
+export function extractMarketplaceLotQuantity(title: unknown): number | null {
+  const normalized = String(title ?? '').trim();
+  const explicitLot = normalized.match(/\b(?:lot|bundle|collection)\s+of\s+(\d+)\b/i);
+  if (explicitLot) {
+    const quantity = Number(explicitLot[1]);
+    return Number.isInteger(quantity) && quantity > 1 ? quantity : null;
+  }
+  const countedItems = /\b(\d{1,4})\s*(?:cards?|comics?|pins?|games?|records?|items?|pieces?|cars?|vehicles?)\b/gi;
+  for (const match of normalized.matchAll(countedItems)) {
+    const rawQuantity = match[1];
+    const quantity = Number(rawQuantity);
+    const isReleaseYear = rawQuantity.length === 4 && quantity >= 1700 && quantity <= 2099;
+    if (!isReleaseYear && Number.isInteger(quantity) && quantity > 1) return quantity;
+  }
+  return null;
+}
+
 export type MarketplaceCandidateStatus = 'active' | 'completed' | 'closed' | 'unknown';
 export type MarketplaceCandidatePriceBasis = 'asking' | 'sold' | 'realized' | 'closed' | 'unknown';
 export type MarketplaceCandidateEvidenceSource = 'structured' | 'title' | 'description' | 'image' | 'unknown';

@@ -23,7 +23,7 @@ import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { AUTOGRAPH_SEARCH_DESIGNATION, buildComicsOriginalArtQueries, buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
-import { normalizeMarketplaceCandidate } from '../shared/testAiMarketplaceCandidate';
+import { extractMarketplaceLotQuantity, normalizeMarketplaceCandidate } from '../shared/testAiMarketplaceCandidate';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { deterministicTradeComparison, marketProfileForPrompt, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
@@ -955,19 +955,7 @@ export function hasSingleSportsCardForm(title: string): boolean {
  * exists. The quantity is retained for transparent UI/audit messaging.
  */
 export function extractSoldCompLotQuantity(title: string): number | null {
-  const normalized = String(title ?? '').trim();
-  const explicitLot = normalized.match(/\b(?:lot|bundle|collection)\s+of\s+(\d+)\b/i);
-  if (explicitLot) {
-    const quantity = Number(explicitLot[1]);
-    return Number.isInteger(quantity) && quantity > 1 ? quantity : null;
-  }
-  const countedItems = normalized.match(/\b(\d+)\s*(?:cards?|comics?|pins?|games?|records?|items?|pieces?|cars?|vehicles?)\b/i);
-  if (countedItems) {
-    const quantity = Number(countedItems[1]);
-    return Number.isInteger(quantity) && quantity > 1 ? quantity : null;
-  }
-  if (/\b(?:multi[- ]?pack|multipack|bundle|collection)\b/i.test(normalized)) return null;
-  return null;
+  return extractMarketplaceLotQuantity(title);
 }
 
 export function hasExplicitSoldCompLot(title: string): boolean {

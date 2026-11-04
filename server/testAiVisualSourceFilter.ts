@@ -9,6 +9,7 @@ import {
 } from "../shared/testAiTitleEvidence";
 import { classifyStampFormat, stampFormatsCompatible } from "./stampFormat";
 import { autographReplicaReasonFromText } from "../shared/testAiAutographEvidence";
+import { extractMarketplaceLotQuantity } from "../shared/testAiMarketplaceCandidate";
 
 export type VisualSourceCandidate = {
   title?: string | null;
@@ -492,7 +493,7 @@ function disneyPinsCandidateItemType(listing: VisualSourceCandidate): "individua
   const structuredQuantity = [listing.lotQuantity, listing.itemCount, listing.numberOfPins, listing.quantity, details.lotQuantity, details.itemCount, details.numberOfPins, details.quantity]
     .map((candidate) => Number(candidate))
     .find((candidate) => Number.isFinite(candidate) && candidate > 1);
-  const broadProviderCollectionLotLabel = /^collection\s*[/_-]\s*lot$/i.test(value);
+  const broadProviderCollectionLotLabel = /^collection(?:\s*[/_-]\s*lot)?$/i.test(value);
   const explicitMultiItemStructuredType = !broadProviderCollectionLotLabel && /(?:lot|bundle|mixed|assortment|group\s+of|multipack|multi\s*pack)/i.test(value);
   const explicitMultiItemTitle = /\b(?:mixed\s+)?(?:lot|bundle|multipack|multi[-\s]?pack|assortment|group\s+of|set\s+of\s+\d+|(?:[2-9]|[1-9]\d|[1-9]\d{2})\s+pins?)\b/i.test(title)
     || /\bcollection\s+(?:of\s+)?\d+\s+pins?\b/i.test(title)
@@ -517,7 +518,7 @@ function disneyPinsValuesConflict(targetValue: unknown, candidateValue: unknown)
   return !target.includes(candidate) && !candidate.includes(target);
 }
 
-function disneyPinsPinNameValuesConflict(targetValue: unknown, candidateValue: unknown): boolean {
+function disneyPinsPinNameValuesConflict(targetValue: unknown, candidateValue: unknown, targetCharacter?: unknown): boolean {
   const genericWords = new Set(["disney", "trading", "pin", "pins"]);
   const meaningfulWords = (value: unknown) => disneyPinsComparableValue(value)
     .split(" ")
@@ -525,6 +526,12 @@ function disneyPinsPinNameValuesConflict(targetValue: unknown, candidateValue: u
   const targetWords = meaningfulWords(targetValue);
   const candidateWords = meaningfulWords(candidateValue);
   if (!targetWords.length || !candidateWords.length) return false;
+  // Marketplace titles often use a catalog, event, pose, or film-franchise
+  // description instead of repeating the inventory pin's full display name.
+  // For a single-pin target, a clear match on the declared character is
+  // enough to defer the remaining name/pose distinction to image review.
+  const characterWords = meaningfulWords(targetCharacter);
+  if (characterWords.length && characterWords.every((word) => candidateWords.includes(word))) return false;
   return !targetWords.every((word) => candidateWords.includes(word));
 }
 
@@ -589,7 +596,7 @@ function disneyPinsIdentityConflict(targetMetadata: string, listing: VisualSourc
   for (const [label, targetValue, aliases, titlePatterns] of checks) {
     const candidateValue = disneyPinsExplicitValue(listing, aliases, titlePatterns);
     const conflicts = label === "pin name"
-      ? disneyPinsPinNameValuesConflict(targetValue, candidateValue)
+      ? disneyPinsPinNameValuesConflict(targetValue, candidateValue, target.character)
       : disneyPinsValuesConflict(targetValue, candidateValue);
     if (conflicts) return `Disney Pins ${label} differs: target explicitly declares ${String(targetValue)}, but the candidate explicitly declares ${candidateValue}.`;
   }
@@ -3470,6 +3477,10 @@ function candidateMultiItemReason<T extends VisualSourceCandidate>(listing: T, t
   const details = [listing.saleForm, listing.itemType, listing.productType, listing.form, candidateDetails.saleForm, candidateDetails.itemType, candidateDetails.productType, candidateDetails.form]
     .filter(value => value != null).map(String).join(" ");
   const text = `${title} ${details}`.trim();
+  const titleQuantity = extractMarketplaceLotQuantity(title);
+  if (titleQuantity) {
+    return `Pre-visual lot filter: listing declares ${titleQuantity} items, but the target is a single item.`;
+  }
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   const targetType = targetItemTypeValue(targetMetadata);
   const categoryAwareText = category === "pokemon" && targetType === "single_card"
@@ -3481,7 +3492,7 @@ function candidateMultiItemReason<T extends VisualSourceCandidate>(listing: T, t
         // metadata even when the title names one pin. Ignore that provider
         // label only; preserve title evidence such as “Collection Lot”, “Pair”,
         // “Set of 5”, and explicit quantities.
-        ? `${(/\bcollection\s*[/_-]\s*lot\b/i.test(details) ? details.replace(/\bcollection\s*[/_-]\s*lot\b/gi, "") : details)} ${(/\bcollection\s+lot\b/i.test(title) ? title : title.replace(/\bcollection\b/gi, "edition"))}`
+        ? `${details.replace(/\bcollection(?:\s*[/_-]\s*lot)?\b/gi, "")} ${(/\bcollection\s+lot\b/i.test(title) ? title : title.replace(/\bcollection\b/gi, "edition"))}`
       : text;
   const matchedPattern = MULTI_ITEM_TITLE_PATTERNS.find(pattern => pattern.test(categoryAwareText));
   if (matchedPattern) {
@@ -4204,6 +4215,18 @@ function disneyPinsValueMatches(targetValue: unknown, listing: VisualSourceCandi
   if (candidate.includes(target) || target.includes(candidate)) return true;
   return patterns.some((pattern) => pattern.test(canonicalCandidateTitle(listing))) ? true : explicit ? false : null;
 }
+function disneyPinsPinNameMatches(targetValue: unknown, targetCharacter: unknown, listing: VisualSourceCandidate): boolean | null {
+  const direct = disneyPinsValueMatches(targetValue, listing, ["pinName", "name"]);
+  if (direct === true) return true;
+  const details = disneyPinsCandidateDetails(listing);
+  const explicitPinName = firstMeaningfulValue(details.pinName, details.name, labeledCandidateValue(details, ["pinName", "name"]));
+  // If the provider supplied a specific pin name, respect that declaration.
+  // Only use character evidence as a fallback when the provider omitted the
+  // structured pin name and the title clearly names the target character.
+  if (explicitPinName) return direct;
+  const characterMatch = disneyPinsValueMatches(targetCharacter, listing, ["character", "characters"]);
+  return characterMatch === true ? true : direct;
+}
 function disneyPinsBooleanMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], positive: RegExp, negative: RegExp): boolean | null {
   const target = disneyPinsScoreText(targetValue);
   if (!/^(?:yes|no|true|false)$/.test(target)) return null;
@@ -4235,7 +4258,7 @@ export function disneyPinsIndividualVisualScore(listing: VisualSourceCandidate, 
   if (normalizedChoice(metadataValue(targetMetadata, 'category')) !== 'disney_pins' || itemType !== 'individual_pin') return { score: 0, matched: [], unknown: [] };
   const matched: string[] = [], unknown: string[] = []; let score = 0;
   const add=(field: typeof DISNEY_PINS_INDIVIDUAL_SCORE_FIELDS[number][0], points:number, result:boolean|null)=>{ if(result===true){score+=points;matched.push(field)} else if(result===null) unknown.push(field); };
-  add('pinName',25,disneyPinsValueMatches(disneyPinsTargetValue(details,['pinName','name'],extractTargetTitle(targetMetadata)),listing,['pinName','name']));
+  add('pinName',25,disneyPinsPinNameMatches(disneyPinsTargetValue(details,['pinName','name'],extractTargetTitle(targetMetadata)),details.character,listing));
   add('character',15,disneyPinsValueMatches(details.character,listing,['character','characters']));
   add('series',15,disneyPinsValueMatches(details.series,listing,['series']));
   add('year',10,disneyPinsYearMatches(details.year,listing));
