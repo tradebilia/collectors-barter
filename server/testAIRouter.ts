@@ -1032,6 +1032,25 @@ export function annotateSoldComparableCandidate(
     ? item.evidenceReasons.map((reason: unknown) => String(reason ?? '').trim()).filter(Boolean)
     : [];
   const confirmedVisualIdentity = carriedVisualStatus === 'match';
+  const normalizedCategory = String(context.category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const disneyFinalEvidence = carriedVisualAudit?.finalEvidence;
+  const completedDisneyVisualMatch = normalizedCategory === 'disney_pins'
+    && confirmedVisualIdentity
+    && carriedVisualAudit?.retryStatus === 'performed'
+    && carriedVisualAudit?.finalPass === 'high_resolution_retry'
+    && disneyFinalEvidence?.characterMatches === true
+    && disneyFinalEvidence?.artworkMatches === true
+    && disneyFinalEvidence?.silhouetteMatches === true
+    && disneyFinalEvidence?.backingCardMatches === true
+    && disneyFinalEvidence?.setDesignMatches === true;
+  // A provisional Disney warning can survive the visual-review transport merge.
+  // The completed independent adjudication is authoritative for that same row;
+  // it may clear only the known unavailable-review blocker, never hard evidence
+  // reasons such as a lot, price-safety exclusion, or objective conflict.
+  const effectiveVisualAdmissionReason = completedDisneyVisualMatch
+    && /^The independent Disney Pin image comparison did not complete;/i.test(visualAdmissionReason)
+    ? ''
+    : visualAdmissionReason;
   const metadataUncertaintyReasons = new Set([
     'grading or authentication company is not stated in the marketplace title',
     'grade is not stated or cannot be normalized from the marketplace title',
@@ -1050,26 +1069,27 @@ export function annotateSoldComparableCandidate(
   // provisional label only when every deterministic check above is clean.
   // Rough matches, mismatches, unreviewed rows, objective conflicts, lots,
   // stale/invalid sales, and special context-only branches remain excluded.
-  const canPromoteConfirmedVisualMatch = carriedDisposition === 'context_only'
-    && carriedVisualStatus === 'match'
-    && !visualAdmissionReason
+  const canPromoteConfirmedVisualMatch = confirmedVisualIdentity
+    && (carriedDisposition === undefined || carriedDisposition === 'context_only' || (carriedDisposition === 'warning_review' && completedDisneyVisualMatch))
+    && !effectiveVisualAdmissionReason
     && carriedEvidenceReasons.length === 0;
   if (carriedDisposition && carriedDisposition !== 'valuation_eligible' && !canPromoteConfirmedVisualMatch) {
     reasons.push(`source visual/evidence disposition retained: ${carriedDisposition}`);
   }
-  if (visualAdmissionReason) reasons.push(visualAdmissionReason);
+  if (effectiveVisualAdmissionReason) reasons.push(effectiveVisualAdmissionReason);
 
   const evidenceDisposition: SoldComparableDisposition = carriedDisposition && carriedDisposition !== 'valuation_eligible' && !canPromoteConfirmedVisualMatch
     ? carriedDisposition
     : effectiveReasons.length ? 'warning_review' : 'valuation_eligible';
+  const { visualAdmissionReason: _staleVisualAdmissionReason, ...itemWithoutVisualAdmissionReason } = item ?? {};
   return {
-    ...item,
+    ...itemWithoutVisualAdmissionReason,
     evidenceDisposition,
     evidenceReasons: effectiveReasons,
     lotQuantity: item?.lotQuantity ?? lotQuantity,
     visualReviewStatus: carriedVisualStatus,
     visualReviewRationale: carriedVisualRationale,
-    visualAdmissionReason: visualAdmissionReason || undefined,
+    ...(effectiveVisualAdmissionReason ? { visualAdmissionReason: effectiveVisualAdmissionReason } : {}),
     // Preserve first-pass/retry provenance for the Evidence Review UI. The
     // visual filter creates this audit object, but the Sold-Comps annotation
     // layer must carry it forward into the returned listing record.
