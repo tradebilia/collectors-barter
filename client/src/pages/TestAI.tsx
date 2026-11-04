@@ -458,6 +458,16 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'movies:mercari_sold_comps': 'match',
 };
 
+// Clean-start coverage policy: historical match results remain above for
+// auditability, but only these three newly approved Movie paths are currently
+// allowed to appear in the Matching column. All other category/source pairs
+// remain Pending until retested after the recent engine changes.
+const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set([
+  'movies:ebay_active',
+  'movies:sold_comps',
+  'movies:mercari_sold_comps',
+]);
+
 const SOURCE_COVERAGE_CATEGORY_ORDER = ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'] as const;
 
 // Sources intentionally omitted from this manual coverage list. This does
@@ -478,9 +488,12 @@ function SourceCoverageTracker() {
       const applies = source.categories === '*' || source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category);
       return applies && !isSandboxSiteBlockedSource(source.sourceId);
     });
-    const activeSources = applicableSources.filter((source) => SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] === 'match');
+    const activeSources = applicableSources.filter((source) => {
+      const key = `${category}:${source.sourceId}`;
+      return SOURCE_TEST_RESULTS[key] === 'match' && SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key);
+    });
     const pendingSourceIds = Array.from(new Set([
-      ...applicableSources.filter((source) => SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] !== 'match').map((source) => source.sourceId),
+      ...applicableSources.filter((source) => !SOURCE_COVERAGE_CONFIRMED_MATCHES.has(`${category}:${source.sourceId}`)).map((source) => source.sourceId),
       ...SANDBOX_SPECIALIST_SOURCES.filter((source) => source.evidenceMode === 'context_only_until_adapter' && !SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS.has(source.id) && source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category)).map((source) => source.id),
     ]));
     return { category, activeSources, pendingSourceIds };

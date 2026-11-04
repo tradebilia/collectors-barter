@@ -67,14 +67,18 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("'movies:ebay_active': 'match'");
     expect(source).toContain("'movies:sold_comps': 'match'");
     expect(source).toContain("'movies:mercari_sold_comps': 'match'");
-    expect(source).not.toContain('SOURCE_COVERAGE_CONFIRMED_MATCHES');
+    expect(source).toContain('const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set([');
+    expect(source).toContain('SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key)');
+    expect(source).toContain('!SOURCE_COVERAGE_CONFIRMED_MATCHES.has(`${category}:${source.sourceId}`)');
     expect(source).toContain('const categories = SOURCE_COVERAGE_CATEGORY_ORDER.map((category) => {');
   });
 
-  it('uses the source-test result map directly for normal matching and pending display', () => {
+  it('keeps the clean-start policy limited to the three approved Movie sources', () => {
     expect(source).not.toContain('SOURCE_COVERAGE_RESET_TO_PENDING');
-    expect(source).toContain("SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] === 'match'");
-    expect(source).toContain("SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] !== 'match'");
+    expect(source).toContain('historical match results remain above for');
+    expect(source).toContain('auditability, but only these three newly approved Movie paths');
+    expect(source).toContain('All other category/source pairs');
+    expect(source).toContain("return SOURCE_TEST_RESULTS[key] === 'match' && SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key);");
   });
 
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {
