@@ -488,8 +488,18 @@ function disneyPinsTargetItemType(targetMetadata: string): "individual_pin" | "p
 function disneyPinsCandidateItemType(listing: VisualSourceCandidate): "individual_pin" | "pin_set" | "collection_lot" | "" {
   const details = candidateStructuredDetails(listing);
   const value = normalizedChoice(listing.itemType ?? listing.productType ?? listing.form ?? listing.saleForm ?? details.itemType ?? details.productType ?? details.form);
-  const title = String(listing.title ?? "");
-  if (/collection|lot|bundle|mixed|assortment|group\s+of|set\s+of\s+\d+/i.test(value) || /collection|lot|bundle|mixed\s+lot|assortment|set\s+of\s+\d+/i.test(title)) return "collection_lot";
+  const title = canonicalCandidateTitle(listing);
+  const structuredQuantity = [listing.lotQuantity, listing.itemCount, listing.numberOfPins, listing.quantity, details.lotQuantity, details.itemCount, details.numberOfPins, details.quantity]
+    .map((candidate) => Number(candidate))
+    .find((candidate) => Number.isFinite(candidate) && candidate > 1);
+  const explicitMultiItemStructuredType = /(?:lot|bundle|mixed|assortment|group\s+of|multipack|multi\s*pack)/i.test(value);
+  const explicitMultiItemTitle = /\b(?:mixed\s+)?(?:lot|bundle|multipack|multi[-\s]?pack|assortment|group\s+of|set\s+of\s+\d+|(?:[2-9]|[1-9]\d|[1-9]\d{2})\s+pins?)\b/i.test(title)
+    || /\bcollection\s+(?:of\s+)?\d+\s+pins?\b/i.test(title)
+    || /\bcollection\s+lot\b/i.test(title);
+  // eBay sometimes supplies the broad Collection/Lot product label for a
+  // single named pin. Treat that label, and the word “collection” in a title,
+  // as ambiguous unless quantity or stronger multi-item wording confirms it.
+  if (structuredQuantity || explicitMultiItemStructuredType || explicitMultiItemTitle) return "collection_lot";
   if (/pin_set|set/.test(value) || /(?:pin|pins)\s+(?:set|collection)|set\s+of\s+(?:pins?|\d+)/i.test(title)) return "pin_set";
   if (/individual_pin|single_pin/.test(value) || /(?:single|individual|one)\s+pin\b/i.test(title)) return "individual_pin";
   return "";
@@ -3464,6 +3474,11 @@ function candidateMultiItemReason<T extends VisualSourceCandidate>(listing: T, t
     ? text.replace(/\bbase\s+set\b/gi, "base")
     : category === "vintage_toys" && targetType === "lego"
       ? text.replace(/\blego\s+[^;]{0,80}?\bset\b/gi, (match) => match.replace(/\bset\b/gi, "edition"))
+      : category === "disney_pins" && targetType === "individual_pin"
+        // “Collection” is often part of a named single-pin edition (for
+        // example, “Mystery Collection”). Keep explicit lot/quantity words
+        // active, but do not reject a single pin on that word alone.
+        ? text.replace(/\bcollection\b/gi, "edition")
       : text;
   const matchedPattern = MULTI_ITEM_TITLE_PATTERNS.find(pattern => pattern.test(categoryAwareText));
   if (matchedPattern) {

@@ -2304,7 +2304,16 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([{ title: "2011 Walt Disney World Pin 84196 WDW Donald Duck Black & White Snapshots", imageUrl: "https://example.com/catalog.jpg" }], target)).toHaveLength(0);
     expect(buildDeclaredIdentityReviews([{ title: "Disney Trading Pin - Donald Duck Black & White Snapshots", imageUrl: "https://example.com/trading.jpg" }], target)).toHaveLength(0);
     expect(buildDeclaredIdentityReviews([{ title: "Minnie Mouse Black & White Snapshots Disney Pin", imageUrl: "https://example.com/wrong-character.jpg" }], target)[0]?.rationale).toContain("pin name differs");
-    expect(buildDeclaredIdentityReviews([{ title: "DLR PWP Collection Sepia Snapshots Donald Duck Black White Disney Pin (A2)", imageUrl: "https://example.com/lot.jpg" }], target)[0]?.rationale).toContain("collection, lot");
+    expect(buildDeclaredIdentityReviews([{ title: "DLR PWP Collection Sepia Snapshots Donald Duck Black White Disney Pin (A2)", imageUrl: "https://example.com/single-pin.jpg" }], target)).toHaveLength(0);
+    const eeyoreTarget = buildVisualTargetMetadata({
+      title: "Eeyore Pin",
+      category: "disney_pins",
+      itemType: "single_pin",
+      fullItemDetails: { pinName: "Eeyore", character: "Eeyore" },
+    });
+    expect(buildDeclaredIdentityReviews([{ title: "Disney Pin HKDL Eeyore Name Tag Mystery Collection", imageUrl: "https://example.com/mystery-collection-pin.jpg" }], eeyoreTarget)).toHaveLength(0);
+    expect(buildDeclaredIdentityReviews([{ title: "UK Disney Store Winnie the Pooh Eeyore and Piglet Christmas 2002 Pin E7", imageUrl: "https://example.com/character-pin.jpg" }], eeyoreTarget)).toHaveLength(0);
+    expect(buildDeclaredIdentityReviews([{ title: "Disney Pin Collection Lot of 5", imageUrl: "https://example.com/true-lot.jpg" }], target)[0]?.rationale).toContain("collection, lot");
   });
 
   it("requires a focused escalation for every initial mismatch against a graded target", () => {
