@@ -64,19 +64,17 @@ describe('manual Test AI selector boundary', () => {
 
   it('never duplicates a confirmed category/source match in the pending tracker', () => {
     expect(source).toContain("'vintage toys:goldin': 'match'");
-    expect(source).toContain("const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set([");
-    expect(source).toContain("'movies:ebay_active',");
-    expect(source).toContain("'movies:sold_comps',");
-    expect(source).toContain("'movies:mercari_sold_comps',");
-    expect(source).toContain('!SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key)');
+    expect(source).toContain("'movies:ebay_active': 'match'");
+    expect(source).toContain("'movies:sold_comps': 'match'");
+    expect(source).toContain("'movies:mercari_sold_comps': 'match'");
+    expect(source).not.toContain('SOURCE_COVERAGE_CONFIRMED_MATCHES');
     expect(source).toContain('const categories = SOURCE_COVERAGE_CATEGORY_ORDER.map((category) => {');
   });
 
-  it('keeps every non-approved historical match pending while the post-change verification reset is active', () => {
-    expect(source).toContain('const SOURCE_COVERAGE_RESET_TO_PENDING = true;');
-    expect(source).toContain("SOURCE_TEST_RESULTS[key] === 'match' && (!SOURCE_COVERAGE_RESET_TO_PENDING || SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key))");
-    expect(source).toContain("SOURCE_TEST_RESULTS[key] !== 'match' || (SOURCE_COVERAGE_RESET_TO_PENDING && !SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key))");
-    expect(source).toContain('previous source-test matches are retained for audit history but are pending recheck');
+  it('uses the source-test result map directly for normal matching and pending display', () => {
+    expect(source).not.toContain('SOURCE_COVERAGE_RESET_TO_PENDING');
+    expect(source).toContain("SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] === 'match'");
+    expect(source).toContain("SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] !== 'match'");
   });
 
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {
