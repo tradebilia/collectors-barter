@@ -6084,8 +6084,22 @@ export async function filterVisualSourceCandidates<
       reviewedCandidateCount,
       { requireExactMatch: isDisneyPinsMetadata(targetMetadata), requireCoinExactMatch: isCoinMetadata(targetMetadata), targetMetadata: targetMetadata },
     );
-	    const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
+    const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
+    // Ranking indexes can be stale after visual-review rows are merged back
+    // into the display shape. A completed Disney adjudication is authoritative
+    // and must stay valuation-facing so Mercari annotation can promote it.
+    const completedDisneyMatchIndexes = new Set(
+      applied.listings.flatMap((listing, index) => isDisneyPinsMetadata(targetMetadata)
+        && isCompletedDisneyPinsAdjudication(String(listing.visualReviewStatus ?? ''), (listing as any).visualAudit)
+        && !preVisualUniversalReasons.has(index)
+        && !declaredConflictIndexes.has(index)
+        && !preVisualLotReasons.has(index)
+        && !imageLessIndexes.has(index)
+        ? [index]
+        : []),
+    );
     const contextIndexes = new Set([...preVisualUniversalReasons.keys(), ...declaredConflictIndexes, ...preVisualLotReasons.keys(), ...preVisualScoreExcludedIndexes, ...imageLessIndexes]);
+    for (const index of completedDisneyMatchIndexes) contextIndexes.delete(index);
     const contextListings = applied.listings.filter((_, index) => contextIndexes.has(index));
     const visibleListings = applied.listings.filter((_, index) => !contextIndexes.has(index));
     const completedWithTimeout = timedOutCount > 0 || deadlineReached;
