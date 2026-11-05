@@ -43,6 +43,9 @@ export type VisualSourceReview = {
   visualEvidence?: VisualEvidence;
   visualAudit?: {
     imageCount: number;
+    provider?: LlmProvider;
+    initialModel?: string;
+    finalModel?: string;
     initialVerdict: VisualSourceReview["verdict"] | "no_decision";
     initialConfidence: VisualSourceReview["confidence"] | "no_decision";
     retryStatus: "not_needed" | "performed" | "failed";
@@ -463,6 +466,12 @@ async function invokeVisualReview(
   } finally {
     clearTimeout(timer);
   }
+}
+
+function visualReviewModel(provider: LlmProvider | undefined, pass: "initial" | "retry", focusedGradeEscalation = false): string {
+  if (provider === "openai") return "gpt-6-luna";
+  if (pass === "retry" && focusedGradeEscalation) return "gpt-5";
+  return "gpt-5-mini";
 }
 
 type GradingConflictArgs = {
@@ -890,6 +899,9 @@ export function normalizeVisualSourceReviews(
       visualAudit: row?.visualAudit && typeof row.visualAudit === "object" && RETRY_STATUSES.has(row.visualAudit.retryStatus) && FINAL_PASSES.has(row.visualAudit.finalPass)
         ? {
             imageCount: Number.isInteger(row.visualAudit.imageCount) && row.visualAudit.imageCount >= 0 ? row.visualAudit.imageCount : 0,
+            provider: row.visualAudit.provider === "openai" || row.visualAudit.provider === "manus_forge" ? row.visualAudit.provider : undefined,
+            initialModel: typeof row.visualAudit.initialModel === "string" ? row.visualAudit.initialModel.trim() : undefined,
+            finalModel: typeof row.visualAudit.finalModel === "string" ? row.visualAudit.finalModel.trim() : undefined,
             initialVerdict: VERDICTS.has(row.visualAudit.initialVerdict) ? row.visualAudit.initialVerdict : "no_decision",
             initialConfidence: CONFIDENCES.has(row.visualAudit.initialConfidence) ? row.visualAudit.initialConfidence : "no_decision",
             retryStatus: row.visualAudit.retryStatus,
@@ -5649,7 +5661,7 @@ export async function filterVisualSourceCandidates<
       let candidateError: unknown;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
         try {
-          const response = await invokeVisualReview({ provider: args.visualProvider, model: args.visualProvider === "openai" ? "gpt-4o-mini" : "gpt-5-mini", messages: [{ role: "user", content }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
+          const response = await invokeVisualReview({ provider: args.visualProvider, model: visualReviewModel(args.visualProvider, "initial"), messages: [{ role: "user", content }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
           const raw = response.choices[0]?.message?.content;
           text = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
           if (text.trim()) break;
@@ -5696,6 +5708,9 @@ export async function filterVisualSourceCandidates<
       const focusedCandidateImage = embeddedFocusedCandidateImage ?? promoteEbayImageUrl(candidate.imageUrl) ?? candidate.imageUrl;
       const initialAudit: NonNullable<VisualSourceReview["visualAudit"]> = {
         imageCount: candidate.imageUrls.length,
+        provider: args.visualProvider ?? "manus_forge",
+        initialModel: visualReviewModel(args.visualProvider, "initial"),
+        finalModel: visualReviewModel(args.visualProvider, "initial"),
         initialVerdict: primaryReview?.verdict ?? "no_decision" as const,
         initialConfidence: primaryReview?.confidence ?? "no_decision" as const,
         retryStatus: needsGalleryReview ? "performed" as const : "not_needed" as const,
@@ -5767,7 +5782,7 @@ export async function filterVisualSourceCandidates<
       let galleryTimedOut = false;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
         try {
-          const response = await invokeVisualReview({ provider: args.visualProvider, model: args.visualProvider === "openai" ? "gpt-4o-mini" : (needsFocusedGradeEscalation ? "gpt-5" : "gpt-5-mini"), messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 1800, reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
+          const response = await invokeVisualReview({ provider: args.visualProvider, model: visualReviewModel(args.visualProvider, "retry", needsFocusedGradeEscalation), messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 1800, reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
           const raw = response.choices[0]?.message?.content;
           const galleryText = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
           if (!galleryText.trim()) throw new Error("The gallery visual review returned no structured content");
@@ -5797,7 +5812,7 @@ export async function filterVisualSourceCandidates<
         try {
           const response = await invokeVisualReview({
             provider: args.visualProvider,
-            model: args.visualProvider === "openai" ? "gpt-4o-mini" : "gpt-5-mini",
+            model: visualReviewModel(args.visualProvider, "retry"),
             messages: [{
               role: "user",
               content: [
@@ -5834,8 +5849,9 @@ export async function filterVisualSourceCandidates<
             ? {
                 ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, targetMetadata), targetMetadata, String(candidate.item.title ?? "")),
                 visualAudit: {
-                  ...initialAudit,
-                  retryStatus: "failed",
+                ...initialAudit,
+                finalModel: visualReviewModel(args.visualProvider, "retry"),
+                retryStatus: "failed",
                   adjudicationStatus: "unavailable",
                   retryReason: thirdDisneyAttempted
                     ? galleryError instanceof VisualReviewTimeoutError
@@ -5860,6 +5876,9 @@ export async function filterVisualSourceCandidates<
               ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, targetMetadata), targetMetadata, String(candidate.item.title ?? "")),
               visualAudit: {
                 ...initialAudit,
+                finalModel: thirdDisneyAttempted
+                  ? visualReviewModel(args.visualProvider, "retry")
+                  : visualReviewModel(args.visualProvider, "retry", needsFocusedGradeEscalation),
                 adjudicationStatus: needsDisneyAdjudication || needsCoinAdjudication ? (galleryReviews.length ? "confirmed" : "unavailable") : undefined,
                 finalPass: galleryReviews.length ? "high_resolution_retry" : "initial",
                 ...(thirdDisneyAttempted ? { retryReason: "The independent second visual adjudication timed out; a third Disney confirmation attempt was made." } : {}),

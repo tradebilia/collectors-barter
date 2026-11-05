@@ -2438,8 +2438,11 @@ describe("visual source filter", () => {
     expect(source).toContain("Do not rely on or repeat any preliminary verdict");
     expect(source).toContain("A visible transparent slab plus a grading label and readable grade is graded—not raw");
     expect(source).toContain('provider: args.visualProvider');
-    expect(source).toContain('args.visualProvider === "openai" ? "gpt-4o-mini"');
-    expect(source).toContain('needsFocusedGradeEscalation ? "gpt-5" : "gpt-5-mini"');
+    expect(source).toContain('if (provider === "openai") return "gpt-6-luna"');
+    expect(source).toContain('model: visualReviewModel(args.visualProvider, "initial")');
+    expect(source).toContain('model: visualReviewModel(args.visualProvider, "retry", needsFocusedGradeEscalation)');
+    expect(source).toContain('initialModel: visualReviewModel(args.visualProvider, "initial")');
+    expect(source).toContain('finalModel: visualReviewModel(args.visualProvider, "initial")');
     expect(source).toContain('reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined');
   });
 
