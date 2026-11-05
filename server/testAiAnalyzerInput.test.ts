@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 const routerSource = readFileSync(new URL('./testAIRouter.ts', import.meta.url), 'utf8');
 const clientSource = readFileSync(new URL('../client/src/pages/TestAI.tsx', import.meta.url), 'utf8');
+const llmSource = readFileSync(new URL('./_core/llm.ts', import.meta.url), 'utf8');
+const envSource = readFileSync(new URL('./_core/env.ts', import.meta.url), 'utf8');
 
 describe('Test AI analyzer input compatibility', () => {
   it('accepts nullable certification metadata for both analyzer items', () => {
@@ -30,6 +32,12 @@ describe('Test AI analyzer input compatibility', () => {
     expect(routerSource).toContain("responseKind: Array.isArray(visualText) ? 'content_parts' : typeof visualText");
     expect(clientSource).toContain('Vision provider status:');
     expect(clientSource).toContain('Image-Review Impact Check');
+  });
+
+  it('pairs the OpenAI proxy credential with the Manus proxy endpoint', () => {
+    expect(envSource).toContain('openaiProxyApiKey: process.env.OPENAI_API_KEY ?? ""');
+    expect(llmSource).toContain('isManusOpenAiProxy(ENV.openaiApiUrl) ? ENV.openaiProxyApiKey : ENV.openaiApiKey');
+    expect(llmSource).toContain('api\\.manus\\.im\\/api\\/llm-proxy\\/v1');
   });
 
   it('forwards the sandbox visual-provider toggle to every image-review source', () => {

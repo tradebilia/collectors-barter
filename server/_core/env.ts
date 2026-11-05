@@ -9,6 +9,7 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   openaiApiUrl: process.env.OPENAI_BASE_URL ?? process.env.OPENAI_API_BASE ?? "https://api.openai.com/v1",
+  openaiProxyApiKey: process.env.OPENAI_API_KEY ?? "",
   openaiApiKey: process.env.TRADEBILIA_OPENAI_API_KEY ?? process.env.OPENAI_API_KEY ?? "",
   manusApiKey: process.env.MANUS_API_KEY ?? "",
   // eBay API

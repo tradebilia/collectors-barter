@@ -291,6 +291,9 @@ const RETRY_MAX_RETRIES = 4;
 const RETRY_BASE_DELAY_MS = 500;
 const RETRY_MAX_DELAY_MS = 30_000;
 
+const isManusOpenAiProxy = (url: string): boolean =>
+  /(^|\.)api\.manus\.im\/api\/llm-proxy\/v1\/?$/i.test(url.replace(/^https?:\/\//i, ""));
+
 type FetchInit = NonNullable<Parameters<typeof fetch>[1]>;
 
 const sleep = (ms: number) =>
@@ -361,7 +364,9 @@ const fetchWithBackoff = async (
 
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   const provider = params.provider ?? "manus_forge";
-  const apiKey = provider === "openai" ? ENV.openaiApiKey : ENV.forgeApiKey;
+  const apiKey = provider === "openai"
+    ? (isManusOpenAiProxy(ENV.openaiApiUrl) ? ENV.openaiProxyApiKey : ENV.openaiApiKey)
+    : ENV.forgeApiKey;
   if (!apiKey) throw new Error(`${provider === "openai" ? "OpenAI" : "Manus Forge"} API key is not configured.`);
 
   const {
