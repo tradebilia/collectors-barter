@@ -3230,6 +3230,30 @@ describe("visual source filter", () => {
     }
   });
 
+  it("scores Disney Designer Princess Collection title variants before visual review", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Disney Designer Ultimate Princess Collection",
+      category: "disney_pins",
+      itemType: "single_pin",
+      fullItemDetails: {
+        pinName: "Disney Designer Ultimate Princess Collection Aurora",
+        character: "Princess Aurora",
+        series: "Disney Designer Ultimate Princess Collection",
+        year: "2022",
+        limitedEdition: "yes",
+      },
+    });
+    for (const title of [
+      "Limited Edition Disney's Ultimate Princess Collection ‘Aurora’ Trading Pin",
+      "Disney Aurora Ultimate Princess Collection Pin",
+    ]) {
+      const score = disneyPinsIndividualVisualScore({ title }, target);
+      expect(score.score).toBeGreaterThanOrEqual(40);
+      expect(disneyPinsVisualCap(score.score)).toBeGreaterThan(0);
+      expect(score.matched).toEqual(expect.arrayContaining(["pinName", "character", "series"]));
+    }
+  });
+
   it("scores Disney Pins / Pin Set and excludes Collection/Lot from ranking", () => {
     const target = buildVisualTargetMetadata({
       title: "Villains Collection",

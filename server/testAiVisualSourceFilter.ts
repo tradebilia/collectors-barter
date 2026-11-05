@@ -4213,6 +4213,18 @@ const DISNEY_PINS_SET_SCORE_FIELDS = [
 function disneyPinsScoreText(value: unknown): string {
   return normalizedChoice(value).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
+function disneyPinsMeaningfulTokens(value: unknown, extraIgnored: string[] = []): string[] {
+  const ignored = new Set(['disney', 'trading', 'pin', 'pins', 'designer', 'limited', 'edition', ...extraIgnored]);
+  return disneyPinsScoreText(value)
+    .replace(/[^a-z0-9]+/g, ' ')
+    .split(/\s+/)
+    .filter((token) => token.length >= 2 && !ignored.has(token));
+}
+function disneyPinsTokenEvidenceMatches(targetValue: unknown, candidateValue: unknown, extraIgnored: string[] = []): boolean {
+  const targetTokens = disneyPinsMeaningfulTokens(targetValue, extraIgnored);
+  const candidateTokens = new Set(disneyPinsMeaningfulTokens(candidateValue, extraIgnored));
+  return targetTokens.length > 0 && targetTokens.every((token) => candidateTokens.has(token));
+}
 function disneyPinsTargetValue(details: Record<string, unknown>, aliases: string[], fallback?: unknown): unknown {
   return firstMeaningfulValue(...aliases.map((alias) => details[alias] ?? labeledCandidateValue(details, [alias])), fallback);
 }
@@ -4227,6 +4239,8 @@ function disneyPinsValueMatches(targetValue: unknown, listing: VisualSourceCandi
   const candidate = disneyPinsScoreText(explicit || canonicalCandidateTitle(listing) || sourceText(normalizeVisualSourceCandidate(listing)));
   if (!candidate) return null;
   if (candidate.includes(target) || target.includes(candidate)) return true;
+  const characterAliases = aliases.some((alias) => /^(?:character|characters|characterName)$/i.test(alias));
+  if (!explicit && disneyPinsTokenEvidenceMatches(targetValue, candidate, characterAliases ? ['princess', 'prince', 'queen', 'king'] : [])) return true;
   return patterns.some((pattern) => pattern.test(canonicalCandidateTitle(listing))) ? true : explicit ? false : null;
 }
 function disneyPinsPinNameMatches(targetValue: unknown, targetCharacter: unknown, listing: VisualSourceCandidate): boolean | null {
