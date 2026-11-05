@@ -1463,21 +1463,24 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
     listings: listings.map((listing, index) => {
       const review = reviewsByIndex.get(index);
       if (!review) return listing;
-      const completedDisneyMatch = options?.requireExactMatch === true && hasCompletedDisneyPinsAdjudication(review);
+      // Once a Disney candidate has reached vision and received an explicit
+      // match, the visual stage has already done its job. Do not require a
+      // second redundant structured-evidence gate before valuation.
+      const confirmedDisneyMatch = options?.requireExactMatch === true && review.verdict === "match";
       const staleDisneyAdmissionReason = String((listing as any)?.visualAdmissionReason ?? '').trim()
         === "The independent Disney Pin image comparison did not complete; the initial AI result is retained for context only and cannot enter valuation.";
-      const cleanCompletedDisneyListing = completedDisneyMatch && staleDisneyAdmissionReason
+      const cleanConfirmedDisneyListing = confirmedDisneyMatch && staleDisneyAdmissionReason
         ? (() => {
             const { visualAdmissionReason: _visualAdmissionReason, evidenceDisposition: _evidenceDisposition, ...cleanListing } = listing as any;
             return cleanListing as T;
           })()
         : listing;
       return {
-        ...cleanCompletedDisneyListing,
+        ...cleanConfirmedDisneyListing,
         visualReviewStatus: review.verdict,
         visualReviewRationale: review.rationale,
         ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
-        ...((review.verdict === "mismatch" || (options?.requireExactMatch && !hasCompletedDisneyPinsAdjudication(review)) || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? ""))))
+        ...((review.verdict === "mismatch" || (options?.requireExactMatch && review.verdict !== "match") || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? ""))))
           ? {
               evidenceDisposition: "warning_review",
               ...(options?.requireCoinExactMatch && options.targetMetadata
@@ -6047,6 +6050,10 @@ export async function filterVisualSourceCandidates<
           evidenceDisposition: "context_only",
         } as T;
       }
+      // A returned review is authoritative evidence that this candidate did
+      // reach vision. This check must precede score-cap handling because a
+      // stale ranking index must never relabel a reviewed match as pre-visual.
+      if (reviewedIndexes.has(index)) return { ...displayListing, visualRequirement: "required" } as T;
       if (preVisualScoreExcludedIndexes.has(index)) {
         const scored = preVisualScoreExcludedListings.find((candidate) => candidate === listing || candidate.title === listing.title);
         return {
@@ -6069,7 +6076,6 @@ export async function filterVisualSourceCandidates<
         } as T;
       }
       if (!imageBearingIndexes.has(index)) return displayListing;
-      if (reviewedIndexes.has(index)) return { ...displayListing, visualRequirement: "required" } as T;
       return {
         ...displayListing,
         visualRequirement: "required",
@@ -6090,7 +6096,7 @@ export async function filterVisualSourceCandidates<
     // and must stay valuation-facing so Mercari annotation can promote it.
     const completedDisneyMatchIndexes = new Set(
       applied.listings.flatMap((listing, index) => isDisneyPinsMetadata(targetMetadata)
-        && isCompletedDisneyPinsAdjudication(String(listing.visualReviewStatus ?? ''), (listing as any).visualAudit)
+        && String(listing.visualReviewStatus ?? '').trim().toLowerCase() === 'match'
         && !preVisualUniversalReasons.has(index)
         && !declaredConflictIndexes.has(index)
         && !preVisualLotReasons.has(index)

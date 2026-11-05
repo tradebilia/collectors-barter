@@ -2136,7 +2136,7 @@ describe("visual source filter", () => {
     expect(coinAdmissionReason(review, metadata, "1896 Morgan Silver Dollar PCGS MS63")).toBe("The required independent high-resolution coin review did not complete: The high-resolution visual-review call timed out before returning a structured decision.");
   });
 
-  it("requires completed independent high-resolution evidence before Disney Pins can enter analyzer evidence", () => {
+  it("sends an explicit Disney visual match directly to analyzer evidence", () => {
     const listings = [{ title: "Disney Mickey D23 Pin" }, { title: "Disney Minnie D23 Pin" }, { title: "Disney Mickey D23 Pin" }];
     const reviews = [
       { candidateIndex: 0, verdict: "rough_match" as const, confidence: "high" as const, rationale: "Character and colors are plausible, but the pin artwork is partly obscured." },
@@ -2146,7 +2146,8 @@ describe("visual source filter", () => {
     const result = applyVisualSourceReviews(listings, reviews, listings.length, { requireExactMatch: true });
     expect(result.listings[0]).toMatchObject({ visualReviewStatus: "rough_match", evidenceDisposition: "warning_review" });
     expect(result.listings[1]).toMatchObject({ visualReviewStatus: "mismatch", evidenceDisposition: "warning_review" });
-    expect(result.listings[2]).toMatchObject({ visualReviewStatus: "match", evidenceDisposition: "warning_review" });
+    expect(result.listings[2]).toMatchObject({ visualReviewStatus: "match" });
+    expect(result.listings[2]).not.toHaveProperty("evidenceDisposition");
 
     const confirmed = applyVisualSourceReviews(listings, [{
       ...reviews[2]!,
@@ -2213,7 +2214,7 @@ describe("visual source filter", () => {
     expect(result.listings[0]).not.toHaveProperty("evidenceDisposition");
   });
 
-  it("fails closed when the independent Disney retry is unavailable", () => {
+  it("keeps the explicit Disney visual match eligible when retry metadata is unavailable", () => {
     const exactEvidence = {
       slabVisible: false,
       gradingLabelVisible: false,
@@ -2253,10 +2254,8 @@ describe("visual source filter", () => {
       { requireExactMatch: true },
     );
     expect(result.listings[0]).toMatchObject({ visualReviewStatus: "match" });
-    expect(result.listings[0]).toMatchObject({
-      evidenceDisposition: "warning_review",
-      visualAdmissionReason: "The independent Disney Pin image comparison did not complete; the initial AI result is retained for context only and cannot enter valuation.",
-    });
+    expect(result.listings[0]).not.toHaveProperty("evidenceDisposition");
+    expect(result.listings[0]).not.toHaveProperty("visualAdmissionReason");
     expect(result.listings[0]).toMatchObject({ visualAudit: { adjudicationStatus: "unavailable" } });
   });
 

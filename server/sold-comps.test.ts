@@ -375,7 +375,7 @@ describe('Sold-Comps API key validation', () => {
     expect(confirmedMatch.evidenceDisposition).toBe('valuation_eligible');
     expect(confirmedMatch.evidenceReasons).toEqual([]);
     expect(mismatch.evidenceDisposition).toBe('warning_review');
-    expect(timeout.evidenceDisposition).toBe('warning_review');
+    expect(timeout.evidenceDisposition).toBe('valuation_eligible');
   });
 
   it('promotes a completed Disney visual adjudication even when a provisional unavailable warning survived transport', () => {
@@ -402,7 +402,7 @@ describe('Sold-Comps API key validation', () => {
     expect(completed).not.toHaveProperty('visualAdmissionReason');
   });
 
-  it('keeps a Disney match context-only when the retry status is not explicitly confirmed', () => {
+  it('promotes a Disney visual match even when retry metadata is unavailable', () => {
     const ambiguous = annotateSoldComparableCandidate({
       title: 'Disney Pin Trading Around the World Eeyore Limited Edition',
       soldPrice: '6',
@@ -421,8 +421,8 @@ describe('Sold-Comps API key validation', () => {
       targetNumber: null, targetPlayer: null, visualReviewRequired: true,
     });
 
-    expect(ambiguous.evidenceDisposition).toBe('warning_review');
-    expect(ambiguous.visualAdmissionReason).toContain('did not complete');
+    expect(ambiguous.evidenceDisposition).toBe('valuation_eligible');
+    expect(ambiguous).not.toHaveProperty('visualAdmissionReason');
   });
 
   it('promotes the exact Rambo CGC 9.8 completed sale after confirmed visual matching', () => {

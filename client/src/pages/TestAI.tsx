@@ -1106,8 +1106,11 @@ function formatVisualReviewPrice(listing: any): string {
 
 function hasCompletedVisualReview(listing: any): boolean {
   const status = String(listing?.visualReviewStatus ?? '').trim().toLowerCase();
-  return listing?.visualRequirement !== 'not_required_pre_visual'
-    && ['match', 'rough_match', 'mismatch', 'unreadable'].includes(status);
+  // An explicit verdict can only be produced by the visual-review pipeline.
+  // It must override stale provenance metadata such as a pre-visual marker;
+  // otherwise reviewed matches appear in the “held out before AI analysis”
+  // bucket and are excluded from the valuation-facing presentation.
+  return ['match', 'rough_match', 'mismatch', 'unreadable'].includes(status);
 }
 
 function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: controlledOpen, onOpenChange }: { data: any; targetImageUrl?: string | null; sourceLabel: string; open?: boolean; onOpenChange?: (open: boolean) => void }) {
@@ -4897,7 +4900,7 @@ export default function TestAI() {
   );
   // Bump only when the server-side Mercari visual-admission contract changes.
   // This makes an already-open Test AI page request the new result.
-  const mercariVisualReviewVersion = 'disney-valuation-handoff-v3';
+  const mercariVisualReviewVersion = 'disney-valuation-handoff-v4';
   const leftMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion, visualProvider } : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('mercari_sold_comps'), retry: false }
