@@ -427,7 +427,11 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.reasoning = reasoning;
   }
 
-  if (typeof temperature === 'number') {
+  // GPT-6 Luna only supports its default temperature value. The visual
+  // pipeline deliberately requests temperature=0 for deterministic Forge and
+  // legacy-model reviews, so omit that field only for this OpenAI model.
+  const gpt6LunaUsesDefaultTemperature = provider === "openai" && model === "gpt-6-luna";
+  if (typeof temperature === 'number' && !gpt6LunaUsesDefaultTemperature) {
     payload.temperature = temperature;
   }
 
