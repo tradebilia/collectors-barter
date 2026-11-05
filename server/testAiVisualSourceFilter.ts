@@ -851,8 +851,9 @@ export function enforceDisneyPinsExactEvidence(review: VisualSourceReview, targe
 }
 
 /**
- * A completed confirmed high-resolution visual match is the Disney Pin
- * identity decision. Structured evidence booleans are not a second gate.
+ * Legacy diagnostic classifier for whether a Disney Pin also received the
+ * optional high-resolution retry. It is retained for audit compatibility;
+ * explicit visual matches no longer require this retry for admission.
  */
 export function isCompletedDisneyPinsAdjudication(
   verdict: unknown,
@@ -866,7 +867,7 @@ export function isCompletedDisneyPinsAdjudication(
   );
 }
 
-/** A Disney Pin may reach analyzer evidence only after the confirmed independent adjudication completes. */
+/** Backward-compatible audit helper; not used as the valuation admission gate. */
 export function hasCompletedDisneyPinsAdjudication(review: VisualSourceReview | undefined): boolean {
   return Boolean(review && isCompletedDisneyPinsAdjudication(review.verdict, review.visualAudit));
 }

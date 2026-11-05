@@ -1037,9 +1037,9 @@ export function annotateSoldComparableCandidate(
   const confirmedDisneyVisualMatch = normalizedCategory === 'disney_pins'
     && confirmedVisualIdentity;
   // A provisional Disney warning can survive the visual-review transport merge.
-  // The completed independent adjudication is authoritative for that same row;
-  // it may clear only the known unavailable-review blocker, never hard evidence
-  // reasons such as a lot, price-safety exclusion, or objective conflict.
+  // An explicit visual match is authoritative for that same row and may clear
+  // only the known unavailable-review blocker, never hard evidence reasons
+  // such as a lot, price-safety exclusion, or objective conflict.
   const effectiveVisualAdmissionReason = confirmedDisneyVisualMatch
     && /^The independent Disney Pin image comparison did not complete;/i.test(visualAdmissionReason)
     ? ''
