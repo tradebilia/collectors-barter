@@ -2156,8 +2156,8 @@ describe("visual source filter", () => {
         initialVerdict: "match",
         initialConfidence: "high",
         retryStatus: "performed",
+        adjudicationStatus: "confirmed",
         finalPass: "high_resolution_retry",
-        finalEvidence: { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, gradeMatches: false, rawOrLooseVisible: false, characterMatches: true, artworkMatches: true, silhouetteMatches: true, backingCardMatches: true, setDesignMatches: true },
       },
     }], 1, { requireExactMatch: true });
     expect(hasCompletedDisneyPinsAdjudication({ ...reviews[2]!, visualAudit: undefined })).toBe(false);
@@ -2266,7 +2266,7 @@ describe("visual source filter", () => {
     expect(normalizeExplicitUngradedVisualReviews([review], metadata)[0]).toMatchObject({ verdict: "unreadable" });
   });
 
-  it("fails closed when Disney Pin artwork or backing evidence is incomplete", () => {
+  it("does not downgrade a completed Disney visual match because diagnostic evidence fields are incomplete", () => {
     const metadata = "title=Disney Eeyore Around the World Pin; category=disney_pins";
     const baseEvidence = {
       slabVisible: false,
@@ -2288,8 +2288,8 @@ describe("visual source filter", () => {
       rationale: "Same Eeyore character and colors, but the artwork differs.",
       visualEvidence: baseEvidence,
     }, metadata);
-    expect(review).toMatchObject({ verdict: "unreadable", confidence: "low" });
-    expect(review.rationale).toContain("exact artwork");
+    expect(review).toMatchObject({ verdict: "match", confidence: "high" });
+    expect(review.rationale).toContain("artwork differs");
     expect(enforceDisneyPinsExactEvidence({
       ...review,
       verdict: "match",

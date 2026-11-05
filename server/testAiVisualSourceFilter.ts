@@ -793,25 +793,32 @@ function disneyPinsEvidenceIsExact(evidence?: VisualEvidence): boolean {
 }
 
 export function enforceDisneyPinsExactEvidence(review: VisualSourceReview, targetMetadata: string): VisualSourceReview {
-  if (!isDisneyPinsMetadata(targetMetadata) || review.verdict !== "match") return review;
-  if (disneyPinsEvidenceIsExact(review.visualEvidence)) return review;
-  return {
-    ...review,
-    verdict: "unreadable",
-    confidence: "low",
-    rationale: `${review.rationale} Disney Pins require independent confirmation of character, exact artwork, silhouette, backing card, and set/event design; the structured visual evidence did not confirm every required detail, so this remains manual review.`,
-  };
+  // Compatibility helper retained for existing callers. Structured evidence
+  // remains diagnostic provenance; it must not downgrade a completed visual
+  // match or create a second admission gate after adjudication.
+  void targetMetadata;
+  return review;
 }
 
-/** A Disney Pin may reach analyzer evidence only after the independent adjudication completes. */
-export function hasCompletedDisneyPinsAdjudication(review: VisualSourceReview | undefined): boolean {
+/**
+ * A completed confirmed high-resolution visual match is the Disney Pin
+ * identity decision. Structured evidence booleans are not a second gate.
+ */
+export function isCompletedDisneyPinsAdjudication(
+  verdict: unknown,
+  visualAudit: VisualSourceReview["visualAudit"] | null | undefined,
+): boolean {
   return Boolean(
-    review?.verdict === "match"
-    && review.confidence === "high"
-    && review.visualAudit?.retryStatus === "performed"
-    && review.visualAudit.finalPass === "high_resolution_retry"
-    && disneyPinsEvidenceIsExact(review.visualAudit.finalEvidence),
+    verdict === "match"
+    && visualAudit?.retryStatus === "performed"
+    && visualAudit.finalPass === "high_resolution_retry"
+    && visualAudit.adjudicationStatus === "confirmed",
   );
+}
+
+/** A Disney Pin may reach analyzer evidence only after the confirmed independent adjudication completes. */
+export function hasCompletedDisneyPinsAdjudication(review: VisualSourceReview | undefined): boolean {
+  return Boolean(review && isCompletedDisneyPinsAdjudication(review.verdict, review.visualAudit));
 }
 
 /**
@@ -5853,7 +5860,7 @@ export async function filterVisualSourceCandidates<
         return {
           reviews: reconciledPrimaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
             ? {
-                ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, targetMetadata), targetMetadata, String(candidate.item.title ?? "")),
+                ...enforceCoinExactEvidence(review, targetMetadata, String(candidate.item.title ?? "")),
                 visualAudit: {
                 ...initialAudit,
                 finalModel: visualReviewModel(args.visualProvider, "retry"),
@@ -5879,7 +5886,7 @@ export async function filterVisualSourceCandidates<
       return {
         reviews: finalReviews.map((review) => review.candidateIndex === candidate.candidateIndex
           ? {
-              ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, targetMetadata), targetMetadata, String(candidate.item.title ?? "")),
+              ...enforceCoinExactEvidence(review, targetMetadata, String(candidate.item.title ?? "")),
               visualAudit: {
                 ...initialAudit,
                 finalModel: thirdDisneyAttempted

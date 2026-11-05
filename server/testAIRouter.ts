@@ -34,7 +34,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, isCompletedDisneyPinsAdjudication, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { autographReplicaReasonFromText } from '../shared/testAiAutographEvidence';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
@@ -1034,17 +1034,8 @@ export function annotateSoldComparableCandidate(
     : [];
   const confirmedVisualIdentity = carriedVisualStatus === 'match';
   const normalizedCategory = String(context.category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
-  const disneyFinalEvidence = carriedVisualAudit?.finalEvidence;
   const completedDisneyVisualMatch = normalizedCategory === 'disney_pins'
-    && confirmedVisualIdentity
-    && carriedVisualAudit?.retryStatus === 'performed'
-    && carriedVisualAudit?.finalPass === 'high_resolution_retry'
-    && carriedVisualAudit?.adjudicationStatus === 'confirmed'
-    && disneyFinalEvidence?.characterMatches === true
-    && disneyFinalEvidence?.artworkMatches === true
-    && disneyFinalEvidence?.silhouetteMatches === true
-    && disneyFinalEvidence?.backingCardMatches === true
-    && disneyFinalEvidence?.setDesignMatches === true;
+    && isCompletedDisneyPinsAdjudication(carriedVisualStatus, carriedVisualAudit);
   // A provisional Disney warning can survive the visual-review transport merge.
   // The completed independent adjudication is authoritative for that same row;
   // it may clear only the known unavailable-review blocker, never hard evidence

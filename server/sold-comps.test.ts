@@ -356,7 +356,6 @@ describe('Sold-Comps API key validation', () => {
         retryStatus: 'performed',
         finalPass: 'high_resolution_retry',
         adjudicationStatus: 'confirmed',
-        finalEvidence: { characterMatches: true, artworkMatches: true, silhouetteMatches: true, backingCardMatches: true, setDesignMatches: true },
       },
     }, context);
     const mismatch = annotateSoldComparableCandidate({
