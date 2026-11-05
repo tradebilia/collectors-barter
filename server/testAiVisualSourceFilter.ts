@@ -457,7 +457,15 @@ async function invokeVisualReview(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await invokeLLM({ ...params, signal: controller.signal });
+    try {
+      return await invokeLLM({ ...params, signal: controller.signal });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (params.provider !== "openai" || !/\b400\b/.test(message)) throw error;
+      const inlineMessages = await inlineRemoteImagesForOpenAi(params.messages, controller.signal);
+      if (!inlineMessages) throw error;
+      return await invokeLLM({ ...params, messages: inlineMessages, signal: controller.signal });
+    }
   } catch (error) {
     if (controller.signal.aborted) {
       throw new VisualReviewTimeoutError(`Visual review exceeded the ${timeoutMs / 1000}-second per-candidate limit.`);
@@ -466,6 +474,48 @@ async function invokeVisualReview(
   } finally {
     clearTimeout(timer);
   }
+}
+
+const OPENAI_INLINE_IMAGE_MAX_BYTES = 4_000_000;
+const OPENAI_INLINE_IMAGE_TIMEOUT_MS = 8_000;
+async function inlineRemoteImagesForOpenAi(
+  messages: Parameters<typeof invokeLLM>[0]["messages"],
+  parentSignal: AbortSignal,
+): Promise<Parameters<typeof invokeLLM>[0]["messages"] | null> {
+  let replaced = false;
+  const inlineUrl = async (value: string): Promise<string> => {
+    if (!/^https?:\/\//i.test(value)) return value;
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    parentSignal.addEventListener("abort", abort, { once: true });
+    const timer = setTimeout(() => controller.abort(), OPENAI_INLINE_IMAGE_TIMEOUT_MS);
+    try {
+      const response = await fetch(value, { signal: controller.signal, redirect: "error" });
+      if (!response.ok) return value;
+      const contentType = response.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() ?? "";
+      if (!/^image\/(?:jpeg|jpg|png|webp|gif)$/i.test(contentType)) return value;
+      const declaredLength = Number(response.headers.get("content-length") ?? 0);
+      if (Number.isFinite(declaredLength) && declaredLength > OPENAI_INLINE_IMAGE_MAX_BYTES) return value;
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (!bytes.length || bytes.byteLength > OPENAI_INLINE_IMAGE_MAX_BYTES) return value;
+      replaced = true;
+      return `data:${contentType};base64,${Buffer.from(bytes).toString("base64")}`;
+    } catch {
+      return value;
+    } finally {
+      clearTimeout(timer);
+      parentSignal.removeEventListener("abort", abort);
+    }
+  };
+  const transformed = await Promise.all(messages.map(async (message) => ({
+    ...message,
+    content: Array.isArray(message.content)
+      ? await Promise.all(message.content.map(async (part) => typeof part !== "string" && part.type === "image_url"
+        ? { ...part, image_url: { ...part.image_url, url: await inlineUrl(part.image_url.url) } }
+        : part))
+      : message.content,
+  })));
+  return replaced ? transformed : null;
 }
 
 function visualReviewModel(provider: LlmProvider | undefined, pass: "initial" | "retry", focusedGradeEscalation = false): string {

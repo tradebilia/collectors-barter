@@ -11,7 +11,7 @@ export function extractMarketplaceLotQuantity(title: unknown): number | null {
     const quantity = Number(explicitLot[1]);
     return Number.isInteger(quantity) && quantity > 1 ? quantity : null;
   }
-  const countedItems = /\b(\d{1,4})\s*(?:cards?|comics?|pins?|games?|records?|items?|pieces?|cars?|vehicles?)\b/gi;
+  const countedItems = /(?:\b|\()?(\d{1,4})\)?\s*(?:(?:signed|autographed)\s+)?(?:cards?|comics?|pins?|games?|records?|items?|pieces?|cars?|vehicles?|baseballs?|footballs?|basketballs?|hockey\s+pucks?)\b/gi;
   for (const match of normalized.matchAll(countedItems)) {
     const rawQuantity = match[1];
     const quantity = Number(rawQuantity);
