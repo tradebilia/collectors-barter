@@ -2371,6 +2371,14 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([{ title: "Disney Trading Pin Minnie Mouse Sitting From Winnie the Pooh", imageUrl: "https://example.com/minnie.jpg" }], eeyoreTarget)[0]?.rationale).toContain("pin name differs");
     expect(isMultiItemLot({ title: "Disney Sitting Eeyore Pooh 2008 Pin C4", itemType: "Collection", imageUrl: "https://example.com/provider-label.jpg" }, eeyoreTarget)).toBe(false);
     expect(isMultiItemLot({ title: "Disney Sitting Eeyore Pooh 2008 Pin C4 Collection Lot of 5", itemType: "Collection", imageUrl: "https://example.com/real-lot.jpg" }, eeyoreTarget)).toBe(true);
+    const princessTarget = buildVisualTargetMetadata({
+      title: "Disney Designer Ultimate Princess Collection",
+      category: "disney_pins",
+      itemType: "single_pin",
+      fullItemDetails: { pinName: "Disney Designer Ultimate Princess Collection Aurora", character: "Aurora", series: "Disney Designer Ultimate Princess Collection" },
+    });
+    expect(isMultiItemLot({ title: "Disney Designer Ultimate Princess Collection Aurora Hinged Pin Limited Edition", itemType: "Collection/Lot", imageUrl: "https://example.com/princess-single.jpg" }, princessTarget)).toBe(false);
+    expect(isMultiItemLot({ title: "Disney Designer Ultimate Princess Collection Aurora Collection Lot of 3", itemType: "Collection/Lot", imageUrl: "https://example.com/princess-lot.jpg" }, princessTarget)).toBe(true);
     expect(buildDeclaredIdentityReviews([{ title: "Disney Pin Collection Lot of 5", imageUrl: "https://example.com/true-lot.jpg" }], target)[0]?.rationale).toContain("collection, lot");
   });
 

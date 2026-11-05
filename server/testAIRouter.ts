@@ -23,7 +23,7 @@ import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { AUTOGRAPH_SEARCH_DESIGNATION, buildComicsOriginalArtQueries, buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
-import { extractMarketplaceLotQuantity, normalizeMarketplaceCandidate } from '../shared/testAiMarketplaceCandidate';
+import { extractMarketplaceLotQuantity, isExplicitMultiItemListing, normalizeMarketplaceCandidate } from '../shared/testAiMarketplaceCandidate';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { deterministicTradeComparison, marketProfileForPrompt, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
@@ -566,7 +566,7 @@ export function assessSoldCompsPreVisionCandidates(args: {
     if (args.targetIsGraded && hasConditionOnlyEvidence(item) && !hasExplicitGradedEvidence(item, metadata)) {
       reasons.push('graded target: candidate has explicit condition-only evidence but no grader or graded-item evidence');
     }
-    if (hasExplicitSoldCompLot(String(item?.title ?? '')) && !isMovieBoxSetTarget(args.category, args.targetMetadata)) {
+    if (isExplicitMultiItemListing(item, args.targetMetadata) && !isMovieBoxSetTarget(args.category, args.targetMetadata)) {
       reasons.push('candidate is an explicit lot, bundle, multipack, or collection; total price is not directly comparable to one target item');
     }
     const priceSafety = evaluateSoldCompPriceSafety(args.statedTradeValue, marketplaceCandidatePrice(item));
@@ -979,6 +979,7 @@ export function annotateSoldComparableCandidate(
     targetNumber: string | null;
     targetPlayer: string | null;
     statedTradeValue?: number | null;
+    targetMetadata?: string;
     visualReviewRequired?: boolean;
     visualReview?: VisualSourceReview;
   },
@@ -999,7 +1000,7 @@ export function annotateSoldComparableCandidate(
   const carriedVisualRationale = item?.visualReviewRationale ?? context.visualReview?.rationale ?? null;
   const carriedVisualAudit = item?.visualAudit ?? context.visualReview?.visualAudit ?? null;
 
-  if (hasExplicitSoldCompLot(title) && !isMovieBoxSetTarget(context.category, context.targetItemType)) {
+  if (isExplicitMultiItemListing(item, context.targetMetadata ?? '') && !isMovieBoxSetTarget(context.category, context.targetItemType)) {
     reasons.push(lotQuantity
       ? `candidate is a multi-item lot of ${lotQuantity}; total lot price is not directly comparable to one target item and is retained as context only`
       : 'candidate is a multi-item lot or bundle; total lot price is not directly comparable to one target item and is retained as context only');
@@ -2876,6 +2877,7 @@ export const testAIRouter = router({
           targetNumber,
           targetPlayer: playerName,
           statedTradeValue: input.statedTradeValue,
+          targetMetadata: soldCompsTargetMetadata,
           visualReviewRequired: Boolean(safeTargetImage),
         }));
         const canonicalListings = attachCanonicalProvenance('sold_comps', annotatedListings.map((item: any) => ({
@@ -3089,6 +3091,7 @@ export const testAIRouter = router({
           category: normalizedCategory,
           targetItemType: input.itemType ?? '',
           certificationCompany: input.certificationCompany ?? '',
+          targetMetadata,
           targetGrade: targetGrade || null,
           targetNumber: null,
           targetPlayer: null,
@@ -3183,6 +3186,7 @@ export const testAIRouter = router({
           category: normalizedCategory,
           targetItemType: input.itemType ?? '',
           certificationCompany: '',
+          targetMetadata,
           targetGrade: null,
           targetNumber: null,
           targetPlayer: null,

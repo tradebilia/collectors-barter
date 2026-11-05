@@ -9,7 +9,7 @@ import {
 } from "../shared/testAiTitleEvidence";
 import { classifyStampFormat, stampFormatsCompatible } from "./stampFormat";
 import { autographReplicaReasonFromText } from "../shared/testAiAutographEvidence";
-import { extractMarketplaceLotQuantity } from "../shared/testAiMarketplaceCandidate";
+import { extractMarketplaceLotQuantity, isExplicitMultiItemListing } from "../shared/testAiMarketplaceCandidate";
 
 export type VisualSourceCandidate = {
   title?: string | null;
@@ -3456,6 +3456,9 @@ const MULTI_ITEM_TITLE_PATTERNS = [
 function targetDescribesMultipleItems(targetMetadata: string): boolean {
   const title = extractTargetTitle(targetMetadata);
   const details = extractTargetItemDetails(targetMetadata);
+  const targetCategory = normalizedChoice(metadataValue(targetMetadata, "category"));
+  const targetType = targetItemTypeValue(targetMetadata);
+  const disneyIndividualPin = targetCategory === "disney_pins" && (targetType === "individual_pin" || targetType === "single_pin");
   const detailText = [
     details.itemType,
     details.productType,
@@ -3470,7 +3473,9 @@ function targetDescribesMultipleItems(targetMetadata: string): boolean {
     details.isLot,
     details.bundle,
   ].filter(value => value != null).map(String).join(" ");
-  const combined = `${title} ${detailText}`;
+  const combined = disneyIndividualPin
+    ? `${title} ${detailText}`.replace(/\bcollection\b/gi, "series")
+    : `${title} ${detailText}`;
   if (MULTI_ITEM_TITLE_PATTERNS.some(pattern => pattern.test(combined))) return true;
   const normalizedDetailType = String(
     metadataValue(targetMetadata, "itemType")
@@ -3503,22 +3508,9 @@ function candidateMultiItemReason<T extends VisualSourceCandidate>(listing: T, t
   if (titleQuantity) {
     return `Pre-visual lot filter: listing declares ${titleQuantity} items, but the target is a single item.`;
   }
-  const category = normalizedChoice(metadataValue(targetMetadata, "category"));
-  const targetType = targetItemTypeValue(targetMetadata);
-  const categoryAwareText = category === "pokemon" && targetType === "single_card"
-    ? text.replace(/\bbase\s+set\b/gi, "base")
-    : category === "vintage_toys" && targetType === "lego"
-      ? text.replace(/\blego\s+[^;]{0,80}?\bset\b/gi, (match) => match.replace(/\bset\b/gi, "edition"))
-      : category === "disney_pins" && (targetType === "individual_pin" || targetType === "single_pin")
-        // eBay may put the broad product label “Collection/Lot” in structured
-        // metadata even when the title names one pin. Ignore that provider
-        // label only; preserve title evidence such as “Collection Lot”, “Pair”,
-        // “Set of 5”, and explicit quantities.
-        ? `${details.replace(/\bcollection(?:\s*[/_-]\s*lot)?\b/gi, "")} ${(/\bcollection\s+lot\b/i.test(title) ? title : title.replace(/\bcollection\b/gi, "edition"))}`
-      : text;
-  const matchedPattern = MULTI_ITEM_TITLE_PATTERNS.find(pattern => pattern.test(categoryAwareText));
-  if (matchedPattern) {
-    const label = /\b(?:lot|bundle|group|collection|assortment)\b/i.test(categoryAwareText) ? "lot or collection language" : "multi-item language";
+  const categoryAwareText = text;
+  if (isExplicitMultiItemListing(listing, targetMetadata)) {
+    const label = /\b(?:lot|bundle|group|collection|assortment)\b/i.test(categoryAwareText) ? "multi-item lot or collection language" : "multi-item language";
     return `Pre-visual lot filter: title or listing metadata contains ${label}; retained as context-only because the target is a single item.`;
   }
   const years = new Set(categoryAwareText.match(/\b(?:17|18|19|20)\d{2}\b/g) ?? []);

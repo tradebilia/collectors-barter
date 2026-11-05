@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { annotateSoldComparableCandidate, applyAutographPriceTailGate, applyIsolatedMarketPriceTailGate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromQuery, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata } from './testAIRouter';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
+import { isExplicitMultiItemListing } from '../shared/testAiMarketplaceCandidate';
 
 describe('Sold-Comps API key validation', () => {
   it('accepts the configured SOLID_COMPS_API_KEY name without exposing its value', () => {
@@ -536,6 +537,31 @@ describe('Sold-Comps API key validation', () => {
     });
     expect(assessment.eligible.map((listing) => listing.title)).toEqual(['Disney Sitting Eeyore Pooh 2008 Pin C4']);
     expect(assessment.excluded).toHaveLength(0);
+  });
+
+  it('treats Disney Designer Ultimate Princess Collection as a series, not a multi-item lot', () => {
+    const targetMetadata = 'title=Disney Designer Ultimate Princess Collection; category=disney_pins; itemType=single_pin; itemDetails={"pinName":"Disney Designer Ultimate Princess Collection Aurora","character":"Aurora","series":"Disney Designer Ultimate Princess Collection"}';
+    const candidate = {
+      title: 'Disney Designer Ultimate Princess Collection Aurora Hinged Pin Limited Edition',
+      itemType: 'Collection/Lot',
+      soldPrice: '125',
+    };
+    expect(isExplicitMultiItemListing(candidate, targetMetadata)).toBe(false);
+    const assessment = assessSoldCompsPreVisionCandidates({
+      category: 'disney_pins',
+      targetMetadata,
+      listings: [candidate],
+      ignoreSubjectiveConditionDifferences: true,
+    });
+    expect(assessment.eligible.map((listing) => listing.title)).toEqual([candidate.title]);
+    expect(assessment.excluded).toHaveLength(0);
+  });
+
+  it('still excludes explicit Disney pin quantities and collection lots', () => {
+    const targetMetadata = 'title=Disney Designer Ultimate Princess Collection; category=disney_pins; itemType=single_pin; itemDetails={"character":"Aurora","series":"Disney Designer Ultimate Princess Collection"}';
+    expect(isExplicitMultiItemListing({ title: 'Disney Designer Ultimate Princess Collection Aurora Collection Lot of 3' }, targetMetadata)).toBe(true);
+    expect(isExplicitMultiItemListing({ title: 'Disney Designer Ultimate Princess Collection Aurora Set of 2 Pins' }, targetMetadata)).toBe(true);
+    expect(isExplicitMultiItemListing({ title: 'Disney Designer Ultimate Princess Collection Aurora Hinged Pin', itemType: 'Collection/Lot' }, targetMetadata)).toBe(false);
   });
 
   it('keeps generic bundles and counted multi-item titles out of valuation without inventing a quantity', () => {

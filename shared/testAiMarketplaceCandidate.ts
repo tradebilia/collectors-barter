@@ -21,6 +21,100 @@ export function extractMarketplaceLotQuantity(title: unknown): number | null {
   return null;
 }
 
+type MultiItemTargetContext = {
+  category: string;
+  itemType: string;
+};
+
+function parseTargetMetadata(metadata: string): MultiItemTargetContext {
+  const category = metadata.match(/(?:^|;)\s*category=([^;]*)/i)?.[1]?.trim() ?? "";
+  const itemType = metadata.match(/(?:^|;)\s*(?:itemType|productType|form)=([^;]*)/i)?.[1]?.trim() ?? "";
+  return {
+    category: category.toLowerCase().replace(/[\s-]+/g, "_"),
+    itemType: itemType.toLowerCase().replace(/[\s-]+/g, "_"),
+  };
+}
+
+function candidateStructuredDetails(listing: Record<string, unknown>): Record<string, unknown> {
+  const raw = listing.itemDetails ?? listing.item_details ?? listing.details ?? listing.specifics;
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) return raw as Record<string, unknown>;
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed as Record<string, unknown>;
+    } catch {
+      // Provider metadata is advisory; malformed details must not become an
+      // implicit multi-item exclusion.
+    }
+  }
+  return {};
+}
+
+/**
+ * Decide whether a marketplace record is explicitly a multi-item listing.
+ *
+ * For ordinary categories, the historical conservative behavior remains:
+ * collection, bundle, lot, and multipack language is treated as non-comparable.
+ * Disney Pins are target-aware because “Collection” is frequently the series
+ * name or a broad eBay product label for one named pin. For an individual-pin
+ * target, that ambiguous word alone is not enough; explicit quantity or strong
+ * multi-item wording is still required.
+ */
+export function isExplicitMultiItemListing(listing: unknown, targetMetadata = ""): boolean {
+  const record = listing && typeof listing === "object" ? listing as Record<string, unknown> : {};
+  const details = candidateStructuredDetails(record);
+  const title = String(record.title ?? record.itemTitle ?? record.listingTitle ?? record.productName ?? record.name ?? "").trim();
+  const structuredValues = [
+    record.lotQuantity,
+    record.itemCount,
+    record.numberOfItems,
+    record.numberOfPins,
+    record.quantity,
+    details.lotQuantity,
+    details.itemCount,
+    details.numberOfItems,
+    details.numberOfPins,
+    details.quantity,
+  ];
+  if (structuredValues.some((value) => {
+    const quantity = Number(value);
+    return Number.isFinite(quantity) && quantity > 1;
+  })) return true;
+  if (extractMarketplaceLotQuantity(title) !== null) return true;
+
+  const context = parseTargetMetadata(targetMetadata);
+  const disneyIndividualPin = context.category === "disney_pins"
+    && /(?:individual_pin|single_pin)/.test(context.itemType);
+  const structuredTypes = [
+    record.itemType,
+    record.productType,
+    record.form,
+    record.saleForm,
+    details.itemType,
+    details.productType,
+    details.form,
+    details.saleForm,
+  ].filter((value) => value != null).map(String).map((value) => value.trim()).filter(Boolean);
+  const structuredType = structuredTypes.join(" ");
+  const explicitStructuredMultiItem = structuredTypes.some((value) =>
+    /(?:lot|bundle|mixed|assortment|group\s+of|multipack|multi\s*pack)/i.test(value)
+    && !/^(?:collection|collection\s*[/_-]\s*lot)$/i.test(value),
+  );
+  if (explicitStructuredMultiItem) return true;
+
+  const explicitTitleMultiItem = /\b(?:mixed\s+)?(?:lot|bundle|multipack|multi[-\s]?pack|assortment|group\s+of|set\s+of\s+\d+|collection\s+lot|collection\s+of\s+\d+|(?:[2-9]|[1-9]\d|[1-9]\d{2})\s+pins?)\b/i.test(title)
+    || /\b(?:cards?|comics?|issues?|figures?)\s+\d+\s*[-–]\s*\d+\b/i.test(title)
+    || /#?\d+\s*(?:\+|,|\/)\s*#?\d+(?:\s*(?:\+|,|\/)\s*#?\d+)+/i.test(title);
+  if (explicitTitleMultiItem) return true;
+
+  // A bare “Collection” is ambiguous only for a single Disney Pin. A bare
+  // “Set” still denotes a multi-item presentation and remains excluded.
+  const legoProductTarget = context.category === "vintage_toys" && context.itemType === "lego";
+  if (/\b(?:set|pair|duo|trio)\b/i.test(title) && !legoProductTarget) return true;
+  if (disneyIndividualPin) return false;
+  return /\b(?:collection|lot)\b/i.test(title) || /\b(?:collection|lot)\b/i.test(structuredType);
+}
+
 export type MarketplaceCandidateStatus = 'active' | 'completed' | 'closed' | 'unknown';
 export type MarketplaceCandidatePriceBasis = 'asking' | 'sold' | 'realized' | 'closed' | 'unknown';
 export type MarketplaceCandidateEvidenceSource = 'structured' | 'title' | 'description' | 'image' | 'unknown';
