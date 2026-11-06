@@ -2931,6 +2931,23 @@ describe("visual source filter", () => {
     expect(reviews).toHaveLength(1);
     expect(reviews[0]?.rationale).toContain("vehicle type differs");
   });
+  it("does not hard-block a Vintage Toys vehicle for working-feature differences", () => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "70 Plymouth AAR Cuda Hot Wheels",
+      category: "vintage_toys",
+      itemType: "vehicle",
+      fullItemDetails: {
+        vehicleName: "Plymouth AAR Cuda",
+        vehicleType: "Car",
+        brand: "Hot Wheels",
+        workingFeatures: "Yes",
+      },
+    });
+    expect(buildDeclaredIdentityReviews([
+      { title: "2026 Hot Wheels 70 Plymouth AAR Cuda Gold Super Treasure Hunt W Protector STH" },
+      { title: "2026 Hot Wheels 70 Plymouth AAR Cuda Gold Super Treasure Hunt", itemDetails: JSON.stringify({ workingFeatures: "No" }) },
+    ], targetMetadata)).toEqual([]);
+  });
   it("promotes an unreadable review only when title and gallery rationale explicitly confirm the grade", () => {
     const result = conservativeGradedVisualReviews([
       { candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The AFA 75+ grade is clearly readable in the additional gallery image and matches the target; the holder and item also match.", visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false }, }

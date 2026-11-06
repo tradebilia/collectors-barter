@@ -195,6 +195,9 @@ export function findMaterialMetadataConflicts(
     && !((options.ignoreSubjectiveConditionDifferences || targetIsGraded) && ['condition', 'mediaCondition'].includes(field))
     && !((options.ignoreSubjectiveConditionDifferences || targetIsGraded) && field === 'sealedStatus' && !targetHasExplicitSealedState)
     && !(category === 'music' && ['condition', 'mediaCondition'].includes(field))
+    // Working-feature status is optional operational context for Vintage Toys,
+    // not a hard identity discriminator for visual matching.
+    && !(category === 'vintage_toys' && field === 'workingFeatures')
     && !isIndividualCertificateOrHolderIdentifier(field));
   const candidateTitle = String(
     candidate.title

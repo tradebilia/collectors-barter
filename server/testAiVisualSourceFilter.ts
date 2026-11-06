@@ -2866,7 +2866,6 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
     addYear("year", targetDetails.year, ["year", "releaseYear"]);
     addText("vehicle type", targetDetails.vehicleType, ["vehicleType", "type"]);
     addText("packaging type", targetDetails.packagingType, ["packagingType", "packageType", "packaging"]);
-    addText("working features", targetDetails.workingFeatures, ["workingFeatures", "features"]);
   }
   const title = canonicalCandidateTitle(listing);
   for (const [label, targetValue, aliases, kind] of checks) {
