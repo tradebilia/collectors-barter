@@ -34,7 +34,7 @@ function imageUrl(value: unknown): unknown {
   if (typeof value === 'string') return value;
   if (value && typeof value === 'object') {
     const record = value as Record<string, unknown>;
-    return record.imageUrl ?? record.url ?? record.src;
+    return record.imageUrl ?? record.thumbnailUrl ?? record.image_url ?? record.thumbnail_url ?? record.url ?? record.src ?? record.href;
   }
   return null;
 }
@@ -43,9 +43,7 @@ function ebayImageValues(item: Record<string, unknown>): unknown[] {
   return [
     item.imageUrl,
     item.thumbnailUrl,
-    (item.image as Record<string, unknown> | undefined)?.imageUrl,
-    (item.image as Record<string, unknown> | undefined)?.thumbnailUrl,
-    (item.image as Record<string, unknown> | undefined)?.url,
+    item.image,
     ...(Array.isArray(item.thumbnailImages) ? item.thumbnailImages : []),
     ...(Array.isArray(item.additionalImages) ? item.additionalImages : []),
     ...(Array.isArray(item.galleryImages) ? item.galleryImages : []),

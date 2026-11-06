@@ -79,6 +79,22 @@ describe('shared eBay/Mercari marketplace adapter contract', () => {
     });
   });
 
+  it('normalizes fallback eBay image aliases from strings and provider objects', () => {
+    const candidate = normalizeEbayMarketplaceCandidate({
+      title: '1998 Donkey Kong Nintendo AFA 7.5',
+      thumbnailImages: [{ url: 'https://img.test/fallback-front.jpg' }],
+      galleryImages: [{ image_url: 'https://img.test/fallback-back.jpg' }],
+      images: [{ src: 'https://img.test/fallback-label.jpg' }],
+    }, { sourceId: 'sold_comps', saleStatus: 'completed', priceBasis: 'sold' });
+
+    expect(candidate.imageUrls).toEqual([
+      'https://img.test/fallback-front.jpg',
+      'https://img.test/fallback-back.jpg',
+      'https://img.test/fallback-label.jpg',
+    ]);
+    expect(candidate.imageUrl).toBe('https://img.test/fallback-front.jpg');
+  });
+
   it.each([
     ['eBay', () => normalizeEbayMarketplaceCandidate({ title: 'Moonlighting DVD set for parts', condition: 'Used', imageUrls: moonlightingImages }, { sourceId: 'ebay_active', saleStatus: 'active', priceBasis: 'asking' })],
     ['Mercari', () => normalizeMercariSoldCandidate({ itemId: 'mercari-parts', title: 'Moonlighting DVD set for parts', price: 5, condition: 'Used', images: moonlightingImages })?.canonicalCandidate],

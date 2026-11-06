@@ -60,9 +60,11 @@ describe("Test AI eBay active-listing responsiveness", () => {
   });
 
   it("normalizes all supported eBay image aliases before visual admission", () => {
-    expect(routerSource).toContain("item?.image?.thumbnailUrl");
-    expect(routerSource).toContain("item?.image?.url");
-    expect(routerSource).toContain(".map((url) => promoteEbayImageUrl(url))");
+    expect(routerSource).toContain("item?.image,");
+    expect(routerSource).toContain("value.image_url");
+    expect(routerSource).toContain("value.thumbnail_url");
+    expect(routerSource).toContain("value.href");
+    expect(routerSource).toContain(".map((value) => promoteEbayImageUrl(imageValue(value) ?? value))");
     expect(routerSource).toContain("const imageUrls = collectEbayImageUrls(item);");
   });
 

@@ -141,20 +141,23 @@ async function fetchEbayListings(query: string, token: string, limit = 25, offse
 }
 
 function collectEbayImageUrls(item: any): string[] {
+  const imageValue = (value: any): string | null => {
+    if (typeof value === 'string') return value;
+    if (!value || typeof value !== 'object') return null;
+    return value.imageUrl ?? value.thumbnailUrl ?? value.image_url ?? value.thumbnail_url ?? value.url ?? value.src ?? value.href ?? null;
+  };
   const imageValues = [
     item?.imageUrl,
     item?.thumbnailUrl,
-    item?.image?.imageUrl,
-    item?.image?.thumbnailUrl,
-    item?.image?.url,
-    ...(Array.isArray(item?.thumbnailImages) ? item.thumbnailImages.map((image: any) => image?.imageUrl) : []),
-    ...(Array.isArray(item?.additionalImages) ? item.additionalImages.map((image: any) => image?.imageUrl) : []),
-    ...(Array.isArray(item?.galleryImages) ? item.galleryImages.map((image: any) => typeof image === 'string' ? image : image?.imageUrl) : []),
+    item?.image,
+    ...(Array.isArray(item?.thumbnailImages) ? item.thumbnailImages : []),
+    ...(Array.isArray(item?.additionalImages) ? item.additionalImages : []),
+    ...(Array.isArray(item?.galleryImages) ? item.galleryImages : []),
     ...(Array.isArray(item?.imageUrls) ? item.imageUrls : []),
-    ...(Array.isArray(item?.images) ? item.images.map((image: any) => typeof image === 'string' ? image : image?.imageUrl) : []),
+    ...(Array.isArray(item?.images) ? item.images : []),
   ];
   return Array.from(new Set(imageValues
-    .map((url) => promoteEbayImageUrl(url))
+    .map((value) => promoteEbayImageUrl(imageValue(value) ?? value))
     .filter((url): url is string => Boolean(url)))).slice(0, 8);
 }
 
