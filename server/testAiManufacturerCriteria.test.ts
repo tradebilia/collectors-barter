@@ -184,6 +184,25 @@ describe('Test AI manufacturer criteria', () => {
     expect(definition.fallbackQueries).not.toContain(definition.query);
   });
 
+  it('omits condition from every Disney Pins marketplace query', () => {
+    const definition = buildMarketplaceSearchDefinition({
+      title: 'Disney Princess Aurora Designer Collection Pin',
+      category: 'disney_pins',
+      itemType: 'individual_pin',
+      condition: 'mint',
+      itemDetails: {
+        character: 'Aurora',
+        pinName: 'Princess Aurora Designer Collection',
+        edition: 'Limited Edition',
+      },
+    });
+    const allQueries = [definition.query, definition.baseQuery, ...definition.fallbackQueries];
+    expect(allQueries.length).toBeGreaterThan(0);
+    expect(allQueries.every((query) => !/\bmint\b/i.test(query))).toBe(true);
+    expect(definition.query).toContain('Aurora');
+    expect(definition.query).toContain('Limited Edition');
+  });
+
   it('does not put a zero placeholder grade into a coin query', () => {
     const definition = buildMarketplaceSearchDefinition({
       title: '1982 Mexican coin',
