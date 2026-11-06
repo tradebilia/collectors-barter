@@ -2882,6 +2882,16 @@ describe("visual source filter", () => {
     expect(source).toContain("carded/on-card/blister-card");
   });
 
+  it("exposes base-casting-first Vintage Toys guidance without hard-mismatching variants", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    expect(source).toContain("VINTAGE-TOY VISUAL IDENTITY");
+    expect(source).toContain("base casting identity means the same visible vehicle model/body shape");
+    expect(source).toContain("Treasure Hunt or Super Treasure Hunt status");
+    expect(source).toContain("do not by themselves prove a different vehicle");
+    expect(source).toContain("variant difference explicitly");
+    expect(source).toContain("title metadata can explain a variant but cannot override matching visible base-casting evidence");
+  });
+
   it("promotes an unreadable review only when title and gallery rationale explicitly confirm the grade", () => {
     const result = conservativeGradedVisualReviews([
       { candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The AFA 75+ grade is clearly readable in the additional gallery image and matches the target; the holder and item also match.", visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false }, }
