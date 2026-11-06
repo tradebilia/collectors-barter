@@ -462,6 +462,9 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'disney pins:ebay_active': 'match',
   'disney pins:sold_comps': 'match',
   'disney pins:mercari_sold_comps': 'match',
+  'music:ebay_active': 'match',
+  'music:sold_comps': 'match',
+  'music:mercari_sold_comps': 'match',
 };
 
 // Clean-start coverage policy: historical match results remain above for
@@ -478,6 +481,9 @@ const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set([
   'disney pins:ebay_active',
   'disney pins:sold_comps',
   'disney pins:mercari_sold_comps',
+  'music:ebay_active',
+  'music:sold_comps',
+  'music:mercari_sold_comps',
 ]);
 
 const SOURCE_COVERAGE_CATEGORY_ORDER = ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'] as const;

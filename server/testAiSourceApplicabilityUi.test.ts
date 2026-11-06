@@ -93,6 +93,15 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("'disney pins:mercari_sold_comps'");
   });
 
+  it('places the three approved Music source tests in Matching', () => {
+    expect(source).toContain("'music:ebay_active': 'match'");
+    expect(source).toContain("'music:sold_comps': 'match'");
+    expect(source).toContain("'music:mercari_sold_comps': 'match'");
+    expect(source).toContain("'music:ebay_active'");
+    expect(source).toContain("'music:sold_comps'");
+    expect(source).toContain("'music:mercari_sold_comps'");
+  });
+
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {
     expect(source).toContain("label: 'TCGdex Pokémon Catalog'");
     expect(source).toContain("status: 'live' as const");
