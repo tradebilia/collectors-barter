@@ -2888,10 +2888,35 @@ describe("visual source filter", () => {
     expect(source).toContain("base casting identity means the same visible vehicle model/body shape");
     expect(source).toContain("Treasure Hunt or Super Treasure Hunt status");
     expect(source).toContain("do not by themselves prove a different vehicle");
+    expect(source).toContain("do not infer a different vehicle type merely because the title omits that generic word");
     expect(source).toContain("variant difference explicitly");
     expect(source).toContain("title metadata can explain a variant but cannot override matching visible base-casting evidence");
   });
 
+  it("does not convert a Cuda model title into a false vehicle-type conflict", () => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "70 Plymouth AAR Cuda Hot Wheels",
+      category: "vintage_toys",
+      itemType: "vehicle",
+      fullItemDetails: { vehicleName: "Plymouth AAR Cuda", vehicleType: "Car", brand: "Hot Wheels" },
+    });
+    expect(buildDeclaredIdentityReviews([
+      { title: "2026 Hot Wheels 70 Plymouth AAR Cuda Gold Super Treasure Hunt" },
+    ], targetMetadata)).toEqual([]);
+  });
+  it("still blocks an explicitly different Vintage Toys vehicle form", () => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "70 Plymouth AAR Cuda Hot Wheels",
+      category: "vintage_toys",
+      itemType: "vehicle",
+      fullItemDetails: { vehicleName: "Plymouth AAR Cuda", vehicleType: "Car", brand: "Hot Wheels" },
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "Plymouth AAR Cuda Hot Wheels aircraft model" },
+    ], targetMetadata);
+    expect(reviews).toHaveLength(1);
+    expect(reviews[0]?.rationale).toContain("vehicle type differs");
+  });
   it("promotes an unreadable review only when title and gallery rationale explicitly confirm the grade", () => {
     const result = conservativeGradedVisualReviews([
       { candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The AFA 75+ grade is clearly readable in the additional gallery image and matches the target; the holder and item also match.", visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false }, }

@@ -1629,7 +1629,7 @@ function vintageToyPackagingInstruction(metadata: string): string {
 }
 function vintageToyVisualInstruction(metadata: string): string {
   if (normalizedChoice(metadataValue(metadata, "category")) !== "vintage_toys") return "";
-  return " VINTAGE-TOY VISUAL IDENTITY: Compare the two images first and distinguish the base toy/casting from release variants. For die-cast vehicles such as Hot Wheels, Matchbox, and similar toys, base casting identity means the same visible vehicle model/body shape, proportions, grille, hood, windows, wheels, and overall silhouette. Treasure Hunt or Super Treasure Hunt status, paint color, livery/decoration, wheel variation, tampo details, card art, protector, and release-year wording are variant or presentation evidence; they do not by themselves prove a different vehicle or justify a high-confidence mismatch. Do not interpret a catalog or release year in a title as the vehicle model year unless the images or structured metadata clearly establish that distinction. If the images show the same base casting but a different variant, state the variant difference explicitly and use rough_match/manual review when exact variant identity affects comparability; do not describe it as a different vehicle type. Only return a high-confidence mismatch when the visible base casting/model is materially different, the target and candidate are different toy forms, or an explicit packaging/form gate conflicts. The image comparison remains authoritative after the candidate reaches visual review; title metadata can explain a variant but cannot override matching visible base-casting evidence.";
+  return " VINTAGE-TOY VISUAL IDENTITY: Compare the two images first and distinguish the base toy/casting from release variants. For die-cast vehicles such as Hot Wheels, Matchbox, and similar toys, base casting identity means the same visible vehicle model/body shape, proportions, grille, hood, windows, wheels, and overall silhouette. Treasure Hunt or Super Treasure Hunt status, paint color, livery/decoration, wheel variation, tampo details, card art, protector, and release-year wording are variant or presentation evidence; they do not by themselves prove a different vehicle or justify a high-confidence mismatch. A model name such as Plymouth AAR Cuda is the vehicle identity; do not require the generic word car in the candidate title, and do not infer a different vehicle type merely because the title omits that generic word. Do not interpret a catalog or release year in a title as the vehicle model year unless the images or structured metadata clearly establish that distinction. If the images show the same base casting but a different variant, state the variant difference explicitly and use rough_match/manual review when exact variant identity affects comparability; do not describe it as a different vehicle type. Only return a high-confidence mismatch when the visible base casting/model is materially different, the target and candidate are different toy forms, or an explicit packaging/form gate conflicts. The image comparison remains authoritative after the candidate reaches visual review; title metadata can explain a variant but cannot override matching visible base-casting evidence.";
 }
 function videoGameFormInstruction(metadata: string): string {
   if (normalizedChoice(metadataValue(metadata, "category")) !== "video_games") return "";
@@ -2774,7 +2774,21 @@ function vintageToyState(value: unknown): string {
   if (/^(?:no|false|0|incomplete|not_working|untested|opened|loose|missing)$/.test(normalized)) return "no";
   return normalized;
 }
-
+function vintageToyExplicitVehicleType(value: unknown): string {
+  const text = vintageToyComparableValue(value);
+  if (!text) return "";
+  if (/\b(?:aircraft|airplane|plane|jet)\b/.test(text)) return "aircraft";
+  if (/\b(?:boat|ship|yacht)\b/.test(text)) return "boat";
+  if (/\b(?:motorcycle|motorbike)\b/.test(text)) return "motorcycle";
+  if (/\b(?:train|locomotive)\b/.test(text)) return "train";
+  if (/\b(?:truck|pickup|semi)\b/.test(text)) return "truck";
+  if (/\b(?:spaceship|space ship|rocket)\b/.test(text)) return "spaceship";
+  if (/\b(?:car|coupe|sedan|roadster|automobile)\b/.test(text)) return "car";
+  return "";
+}
+function vintageToyCanonicalVehicleType(value: unknown): string {
+  return vintageToyExplicitVehicleType(value) || vintageToyComparableValue(value);
+}
 function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "vintage_toys") return null;
   const targetType = vintageToyTargetItemType(targetMetadata);
@@ -2863,6 +2877,18 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
       const targetState = vintageToyState(targetValue);
       const candidateState = vintageToyState(candidateValue || title);
       if (targetState && candidateState && targetState !== candidateState && candidateValue || targetState && candidateState && targetState !== candidateState && /\b(?:complete|incomplete|sealed|opened|tested|untested|working|not\s+working|missing)\b/i.test(title)) return `Vintage Toys ${label} differs: target and candidate explicitly declare different states.`;
+      continue;
+    }
+    if (label === "vehicle type") {
+      // A missing generic word such as "car" is not an explicit conflict;
+      // model names such as Cuda must reach image comparison.
+      const explicitCandidateValue = vintageToyCandidateValue(listing, aliases);
+      const candidateType = explicitCandidateValue
+        ? vintageToyCanonicalVehicleType(explicitCandidateValue)
+        : vintageToyExplicitVehicleType(title);
+      if (!candidateType) continue;
+      const targetType = vintageToyCanonicalVehicleType(targetValue);
+      if (targetType && targetType !== candidateType) return `Vintage Toys ${label} differs: the candidate explicitly declares a different ${label}.`;
       continue;
     }
     if (label === "set number" && !candidateValue) {
