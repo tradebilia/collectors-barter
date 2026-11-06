@@ -459,6 +459,9 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'autographs:ebay_active': 'match',
   'autographs:sold_comps': 'match',
   'autographs:goldin': 'match',
+  'disney pins:ebay_active': 'match',
+  'disney pins:sold_comps': 'match',
+  'disney pins:mercari_sold_comps': 'match',
 };
 
 // Clean-start coverage policy: historical match results remain above for

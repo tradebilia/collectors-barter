@@ -85,6 +85,9 @@ describe('manual Test AI selector boundary', () => {
   });
 
   it('places the three approved Disney Pins source tests in Matching', () => {
+    expect(source).toContain("'disney pins:ebay_active': 'match'");
+    expect(source).toContain("'disney pins:sold_comps': 'match'");
+    expect(source).toContain("'disney pins:mercari_sold_comps': 'match'");
     expect(source).toContain("'disney pins:ebay_active'");
     expect(source).toContain("'disney pins:sold_comps'");
     expect(source).toContain("'disney pins:mercari_sold_comps'");
