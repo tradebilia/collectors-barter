@@ -76,19 +76,10 @@ function appendSearchContext(baseQuery: string, input: MarketplaceSearchDefiniti
   const cert = resolveTestAiGradingCompany(details, input.certificationCompany ?? '');
   const category = categoryName(input.category);
   const grade = normalizeTestAiGrade(input.grade, cert, category);
-  const condition = text(input.condition);
-  const context = category === 'autographs'
-    // Cosmetic condition is not a reliable primary-search anchor for an
-    // ungraded signed item. For graded Autographs, retain the grade and
-    // optional condition because they describe the graded market evidence.
-    ? (grade ? [cert, grade, condition] : [])
-    : cert && grade
-      ? [cert, grade]
-      : grade
-        ? [grade]
-        : condition && !['video_games', 'movies', 'disney_pins'].includes(category)
-          ? [condition]
-          : [];
+  // Cosmetic condition is never a marketplace search term. Keep it available
+  // to downstream candidate matching and valuation, but do not use it to
+  // narrow retrieval. Grading company and grade remain valid search anchors.
+  const context = cert && grade ? [cert, grade] : grade ? [grade] : [];
   return unique([baseQuery, ...context]).join(' ').slice(0, 240).trim();
 }
 
@@ -104,7 +95,6 @@ export function buildMarketplaceSearchDefinition(input: MarketplaceSearchDefinit
   const value = (...keys: string[]) => keys.map((key) => resolveTestAiDetailValue(details, key)).find(Boolean) ?? '';
   const cert = resolveTestAiGradingCompany(details, input.certificationCompany ?? '');
   const grade = text(input.grade);
-  const condition = text(input.condition);
   const fieldsUsed: string[] = [];
   let designation: string | null = null;
   let marketContextOnly = false;

@@ -1528,12 +1528,12 @@ export const testAIRouter = router({
       
       let query = input.title;
       
-      // For comics: use comicTitle + issueNumber + grading/condition
+      // For comics: use comicTitle + issueNumber + grading identity
       // cert_direct = pre-built query from Parse.bot cert data — use title as-is, no rebuilding
       if (input.category === 'cert_direct') {
         query = input.title; // already fully built on the frontend
       }
-      // For comics: use comicTitle + issueNumber + grading/condition
+      // For comics: use comicTitle + issueNumber + grading identity
       else if (input.category === 'comics') {
         const comicTitle = details.comicTitle || input.title;
         const issueNumber = details.issueNumber || '';
@@ -1543,29 +1543,24 @@ export const testAIRouter = router({
           query = `${comicTitle}${issueStr} ${cert} ${grade}`;
         } else if (grade) {
           query = `${comicTitle}${issueStr} ${grade}`;
-        } else if ((grade ? undefined : input.condition)) {
-          query = `${comicTitle}${issueStr} ${(grade ? undefined : input.condition)}`;
         } else {
           query = `${comicTitle}${issueStr}`;
         }
       }
-      // For sports cards: use year + manufacturer + player + card number + grading/condition
+      // For sports cards: use year + manufacturer + player + card number + grading identity
       else if (input.category === 'sports_cards') {
         const baseQuery = buildSportsCardTestAiCriteria(details, input.itemType || '');
-        const isUnopenedProduct = String(input.itemType || '').trim().toLowerCase().replace(/[ -]+/g, '_') === 'unopened_product';
         
         if (cert && grade) {
           query = `${baseQuery} ${cert} ${grade}`.trim();
         } else if (grade) {
           query = `${baseQuery} ${grade}`.trim();
-        } else if ((grade ? undefined : input.condition) && !isUnopenedProduct) {
-          query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         } else {
           query = baseQuery || input.title;
         }
       }
-      // For other categories: use title + grading/condition
-      // For video games: use gameTitle + platform + grading/condition
+      // For other categories: use title + grading identity
+      // For video games: use gameTitle + platform + grading identity
       else if (input.category === 'video_games') {
         const baseQuery = buildVideoGameTestAiCriteria(details, input.title);
         // cert already has custom grading company extracted if it was "Other"
@@ -1573,18 +1568,16 @@ export const testAIRouter = router({
           query = `${baseQuery} ${cert} ${grade}`.trim();
         } else if (grade) {
           query = `${baseQuery} ${grade}`.trim();
-        } else if ((grade ? undefined : input.condition)) {
-          query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         } else {
           query = baseQuery || input.title;
         }
       }
-      // For other categories: use title + grading/condition
+      // For other categories: use title + grading identity
       else {
         if (cert && grade) query = `${input.title} ${cert} ${grade}`;
         else if (grade) query = `${input.title} ${grade}`;
       }
-      // For movies: use title + format + grading/condition
+      // For movies: use title + format + grading identity
       // Override the fallback above if category is movies
       if (input.category === 'movies') {
         const movieTitle = details.title || input.title;
@@ -1595,13 +1588,11 @@ export const testAIRouter = router({
           query = `${baseQuery} ${cert} ${grade}`.trim();
         } else if (grade) {
           query = `${baseQuery} ${grade}`.trim();
-        } else if ((grade ? undefined : input.condition)) {
-          query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         } else {
           query = baseQuery || input.title;
         }
       }
-      // For pokemon: use card identity plus finish, card type, language, and grading/condition
+      // For pokemon: use card identity plus finish, card type, language, and grading identity
       if (input.category === 'pokemon') {
         const year = details.year || '';
         const editionEra = details.editionEra || '';
@@ -1616,8 +1607,6 @@ export const testAIRouter = router({
           query = `${baseQuery} ${cert} ${grade}`.trim();
         } else if (grade) {
           query = `${baseQuery} ${grade}`.trim();
-        } else if ((grade ? undefined : input.condition)) {
-          query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         } else {
           query = baseQuery || input.title;
         }
@@ -2447,17 +2436,15 @@ export const testAIRouter = router({
         const issueStr = issueNumber ? ` #${issueNumber}` : '';
         if (cert && grade) query = `${comicTitle}${issueStr} ${cert} ${grade}`;
         else if (grade) query = `${comicTitle}${issueStr} ${grade}`;
-        else if ((grade ? undefined : input.condition)) query = `${comicTitle}${issueStr} ${(grade ? undefined : input.condition)}`;
         else query = `${comicTitle}${issueStr}`.trim() || input.title;
         }
       }
       // Sports cards
       else if (input.category === 'sports_cards') {
         const baseQuery = buildSportsCardTestAiCriteria(details, input.itemType || '');
-        const isUnopenedProduct = String(input.itemType || '').trim().toLowerCase().replace(/[ -]+/g, '_') === 'unopened_product';
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if ((grade ? undefined : input.condition) && !isUnopenedProduct) query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
+
         else query = baseQuery;
       }
       // Video games
@@ -2465,7 +2452,7 @@ export const testAIRouter = router({
         const baseQuery = buildVideoGameTestAiCriteria(details, input.title);
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if ((grade ? undefined : input.condition)) query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
+
         else query = baseQuery || input.title;
       }
       // Vintage toys
@@ -2477,7 +2464,7 @@ export const testAIRouter = router({
         const baseQuery = parts.join(' ');
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if ((grade ? undefined : input.condition)) query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
+
         else query = baseQuery || input.title;
       }
       // Disney pins
@@ -2494,7 +2481,7 @@ export const testAIRouter = router({
         const parts = [year, scottNumber ? `US#${scottNumber}` : '', cert].filter((p: string) => p);
         const baseQuery = parts.join(' ');
         if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if ((grade ? undefined : input.condition)) query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
+
         else query = baseQuery || input.title;
       }
       // Movies
@@ -2505,7 +2492,7 @@ export const testAIRouter = router({
         const baseQuery = parts.join(' ');
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if ((grade ? undefined : input.condition)) query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
+
         else query = baseQuery || input.title;
       }
       // Autographs
@@ -2532,7 +2519,7 @@ export const testAIRouter = router({
         const baseQuery = parts.join(' ');
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if ((grade ? undefined : input.condition)) query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
+
         else query = baseQuery || input.title;
       }
       // Other categories: use title

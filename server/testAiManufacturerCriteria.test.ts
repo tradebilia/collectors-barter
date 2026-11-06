@@ -119,7 +119,7 @@ describe('Test AI manufacturer criteria', () => {
     expect(definition.fallbackQueries).not.toContain(definition.query);
   });
 
-  it('retains grade and cosmetic condition for a graded Autograph query', () => {
+  it('retains grade but omits cosmetic condition for a graded Autograph query', () => {
     const definition = buildMarketplaceSearchDefinition({
       title: 'Babe Ruth signed baseball',
       category: 'autographs',
@@ -137,7 +137,7 @@ describe('Test AI manufacturer criteria', () => {
 
     expect(definition.query).toContain('PSA');
     expect(definition.query).toContain('9');
-    expect(definition.query.toLowerCase()).toContain('near_mint');
+    expect(definition.query.toLowerCase()).not.toContain('near_mint');
     expect(definition.fallbackQueries).toEqual([
       'autograph Babe Ruth Baseball PSA/DNA',
       'autograph Babe Ruth Baseball',
@@ -182,6 +182,27 @@ describe('Test AI manufacturer criteria', () => {
     expect(definition.query.toLowerCase()).not.toContain('mint');
     expect(definition.fallbackQueries).toContain('Disney Hercules (1997) (Blu-ray) NEW');
     expect(definition.fallbackQueries).not.toContain(definition.query);
+  });
+
+  it.each([
+    'sports_cards', 'comics', 'video_games', 'movies', 'autographs', 'pokemon',
+    'vintage_toys', 'disney_pins', 'stamps', 'music', 'coins',
+  ])('never uses condition as a search term for %s, including fallbacks', (category) => {
+    const definition = buildMarketplaceSearchDefinition({
+      title: 'Example Collectible',
+      category,
+      itemType: 'individual',
+      condition: 'near_mint',
+      grade: category === 'sports_cards' ? '9' : undefined,
+      certificationCompany: category === 'sports_cards' ? 'PSA' : undefined,
+      itemDetails: category === 'autographs'
+        ? { signer: 'Example Signer', signedItemType: 'Baseball' }
+        : category === 'disney_pins'
+          ? { character: 'Aurora', pinName: 'Example Collectible' }
+          : {},
+    });
+    const allQueries = [definition.query, definition.baseQuery, ...definition.fallbackQueries];
+    expect(allQueries.every((query) => !/\bnear_mint\b/i.test(query))).toBe(true);
   });
 
   it('omits condition from every Disney Pins marketplace query', () => {
