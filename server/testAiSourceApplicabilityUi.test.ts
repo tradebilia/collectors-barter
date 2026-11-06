@@ -76,12 +76,18 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('const categories = SOURCE_COVERAGE_CATEGORY_ORDER.map((category) => {');
   });
 
-  it('keeps the clean-start policy limited to the approved Movie and Autographs sources', () => {
+  it('keeps the clean-start policy limited to the explicitly approved category/source paths', () => {
     expect(source).not.toContain('SOURCE_COVERAGE_RESET_TO_PENDING');
     expect(source).toContain('historical match results remain above for');
-    expect(source).toContain('auditability, but only the explicitly approved Movie and Autographs paths');
+    expect(source).toContain('auditability, but only explicitly approved category/source paths');
     expect(source).toContain('category/source pairs remain Pending');
     expect(source).toContain("return SOURCE_TEST_RESULTS[key] === 'match' && SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key);");
+  });
+
+  it('places the three approved Disney Pins source tests in Matching', () => {
+    expect(source).toContain("'disney pins:ebay_active'");
+    expect(source).toContain("'disney pins:sold_comps'");
+    expect(source).toContain("'disney pins:mercari_sold_comps'");
   });
 
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {
