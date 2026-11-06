@@ -3151,6 +3151,22 @@ describe("visual source filter", () => {
     expect(source).toContain('visualRequirement: "required"');
   });
 
+  it("shows target and candidate metadata values when a visual result has a material difference", () => {
+    const result = applyVisualSourceReviews(
+      [{ title: "2026 Hot Wheels 70 Plymouth AAR Cuda", franchise: "Matchbox", imageUrl: "https://example.com/candidate.jpg" }],
+      [{ candidateIndex: 0, verdict: "mismatch", confidence: "high", rationale: "The visible base casting is different." }],
+      1,
+      { targetMetadata: "category=vintage_toys;title=70 Plymouth AAR Cuda;fullItemDetails={\"franchise\":\"Hot Wheels\",\"vehicleName\":\"70 Plymouth AAR Cuda\"}" },
+    );
+    expect(result.listings[0]?.visualReviewRationale).toContain('franchise: target “Hot Wheels” vs candidate “Matchbox”');
+  });
+  it("treats Hot Wheels and HotWheels as the same Vintage Toys franchise spelling", () => {
+    const reviews = buildDeclaredIdentityReviews(
+      [{ title: "2026 Hot Wheels 70 Plymouth AAR Cuda", franchise: "HotWheels" }],
+      "category=vintage_toys;itemType=vehicle;title=70 Plymouth AAR Cuda;fullItemDetails={\"franchise\":\"Hot Wheels\",\"vehicleName\":\"70 Plymouth AAR Cuda\"}",
+    );
+    expect(reviews).toHaveLength(0);
+  });
   it("preserves eBay visual status fields in the response consumed by the image-check panel", () => {
     const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
     expect(routerSource).toContain("visualRequirement: s.visualRequirement ?? null");

@@ -1504,10 +1504,16 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
             return cleanListing as T;
           })()
         : listing;
+      const metadataDifferences = options?.targetMetadata
+        ? visualMetadataDifferenceSummary(options.targetMetadata, listing)
+        : [];
+      const rationaleWithMetadataDifferences = metadataDifferences.length > 0
+        ? `${review.rationale} Metadata differences: ${metadataDifferences.join("; ")}.`
+        : review.rationale;
       return {
         ...cleanConfirmedDisneyListing,
         visualReviewStatus: review.verdict,
-        visualReviewRationale: review.rationale,
+        visualReviewRationale: rationaleWithMetadataDifferences,
         ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
         ...((review.verdict === "mismatch" || (options?.requireExactMatch && review.verdict !== "match") || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? ""))))
           ? {
@@ -2753,7 +2759,7 @@ function vintageToyCandidateItemType(listing: VisualSourceCandidate): string {
 }
 
 function vintageToyComparableValue(value: unknown): string {
-  return normalizeComparableNumberWords(candidateText(value).toLowerCase()).replace(/[’']/g, "").replace(/[_-]+/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+  return normalizeComparableNumberWords(candidateText(value).toLowerCase()).replace(/[’']/g, "").replace(/[_-]+/g, " ").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, "").trim();
 }
 
 function vintageToyValuesConflict(targetValue: unknown, candidateValue: unknown, allowTokenSubset = true): boolean {
@@ -2782,7 +2788,12 @@ function vintageToyState(value: unknown): string {
   return normalized;
 }
 function vintageToyExplicitVehicleType(value: unknown): string {
-  const text = vintageToyComparableValue(value);
+  const text = normalizeComparableNumberWords(candidateText(value).toLowerCase())
+    .replace(/[’']/g, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   if (!text) return "";
   if (/\b(?:aircraft|airplane|plane|jet)\b/.test(text)) return "aircraft";
   if (/\b(?:boat|ship|yacht)\b/.test(text)) return "boat";
@@ -2919,6 +2930,31 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
     if (!candidateValue && vintageToyValuesConflict(targetValue, title)) return `Vintage Toys ${label} differs: the candidate title explicitly identifies a different ${label}.`;
   }
   return null;
+}
+
+function visualMetadataDifferenceSummary(targetMetadata: string, listing: VisualSourceCandidate): string[] {
+  const differences = findMaterialMetadataConflicts(targetMetadata, listing, { ignoreSubjectiveConditionDifferences: true })
+    .map((conflict) => `${conflict.field}: target “${conflict.targetValue}” vs candidate “${conflict.candidateValue}” (${conflict.reason})`);
+  if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "vintage_toys") return differences.slice(0, 12);
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const vintageFields: Array<[string, unknown, string[]]> = [
+    ["brand", targetDetails.brand ?? metadataValue(targetMetadata, "brand"), ["brand", "manufacturer"]],
+    ["franchise", targetDetails.franchise, ["franchise", "series"]],
+    ["vehicle name", targetDetails.vehicleName ?? extractTargetTitle(targetMetadata), ["vehicleName", "name", "title"]],
+    ["year", targetDetails.year, ["year", "releaseYear"]],
+    ["vehicle type", targetDetails.vehicleType, ["vehicleType", "type"]],
+    ["packaging type", targetDetails.packagingType, ["packagingType", "packageType", "packaging"]],
+  ];
+  for (const [label, targetValue, aliases] of vintageFields) {
+    if (!candidateText(targetValue)) continue;
+    const candidateValue = label === "vehicle type"
+      ? (vintageToyCandidateValue(listing, aliases) || vintageToyExplicitVehicleType(canonicalCandidateTitle(listing)))
+      : vintageToyCandidateValue(listing, aliases) || canonicalCandidateTitle(listing);
+    if (!candidateValue || !vintageToyValuesConflict(targetValue, candidateValue)) continue;
+    if (differences.some((difference) => difference.toLowerCase().startsWith(`${label}:`))) continue;
+    differences.push(`${label}: target “${candidateText(targetValue)}” vs candidate “${candidateValue}” (explicit metadata/title difference)`);
+  }
+  return [...new Set(differences)].slice(0, 12);
 }
 
 function vintageToyCompleteness(value: unknown): "complete" | "incomplete" | null {
@@ -3568,12 +3604,13 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`
       : `Facsimile is No, but the title explicitly declares ${title.match(/\b(?:facsimile|reprint|reproduction)\b/i)?.[0] ?? "a reproduction"}.`);
+    const metadataDifferences = visualMetadataDifferenceSummary(targetMetadata, listing);
     return [{
       candidateIndex,
       verdict: "mismatch" as const,
       confidence: "high" as const,
       rationale: fieldConflict
-        ? `${reason} Candidate retained for manual review.`
+        ? `${reason}${metadataDifferences.length > 0 ? ` Metadata differences: ${metadataDifferences.join("; ")}.` : ""} Candidate retained for manual review.`
         : `Declared identity conflict in marketplace title: ${phrase}. Candidate retained for manual review.`,
     }];
   });
