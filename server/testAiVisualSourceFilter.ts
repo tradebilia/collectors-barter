@@ -828,15 +828,43 @@ export function coinAdmissionReason(review: VisualSourceReview | undefined, targ
 
 export function disneyPinsVisualInstruction(metadata: string): string {
   return isDisneyPinsMetadata(metadata)
-    ? " DISNEY PINS POLICY: Disney Pins are not graded collectibles in this workflow. Ignore grader, certification-company, slab, label, numeric-grade, and raw-versus-graded signals completely, including stale structured fields or title wording. Do not mark a Disney Pin mismatch or unreadable because a grading field is absent or inconsistent. The primary job is exact image comparison: decide whether the pictured target and candidate are the same specific pin, not merely the same character, franchise, series, or backing-card family. Same character, similar colors, a shared series, or a shared backing card is never sufficient. A different pose, silhouette, shape, artwork, edition mark, event/set design, or pin layout is a mismatch even when the character is identical. Treat character, exact artwork, pose, silhouette, backing card/backing logo, event or set design, edition markings, and pin count/form as mandatory identity gates. Return match only when every applicable visible identity detail is confirmed and the structured evidence booleans characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, and setDesignMatches are all true. If any detail differs, is obscured, or cannot be independently confirmed, return mismatch or unreadable/manual review rather than guessing. The independent high-resolution adjudication is authoritative; if it does not complete, the initial result is provisional audit evidence only and cannot enter valuation."
+    ? " DISNEY PINS POLICY: Disney Pins are not graded collectibles in this workflow. Ignore grader, certification-company, slab, label, numeric-grade, and raw-versus-graded signals completely, including stale structured fields or title wording. Do not mark a Disney Pin mismatch or unreadable because a grading field is absent or inconsistent. The primary job is exact image comparison: decide whether the pictured target and candidate are the same specific pin, not merely the same character, franchise, series, or backing-card family. Primary pin identity is authoritative: character, exact artwork, pose, silhouette, pin shape, colors, visible design details, and pin count/form must correspond. A different character, artwork, pose, silhouette, shape, or pin layout is a high-confidence mismatch even when the series is the same. Backing card, backing logo, event/set branding, and packaging are secondary evidence: a different generic backing card or packaging variation alone is a soft difference and must not be treated as a hard mismatch when the primary pin artwork matches. Only treat secondary backing/set evidence as a hard identity conflict when the target metadata explicitly identifies a backing-card-specific, event-specific, set-specific, or edition-specific release; in that case, require the corresponding visible secondary evidence. Return visualEvidence booleans based on visible pixels, including characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, and setDesignMatches; the last two remain diagnostic for generic targets and are mandatory only when the target explicitly identifies that secondary release detail. If primary identity is obscured or cannot be independently confirmed, return unreadable/manual review rather than guessing. The independent high-resolution adjudication is authoritative; if it does not complete, the initial result is provisional audit evidence only and cannot enter valuation."
     : "";
 }
 
-function disneyPinsEvidenceIsExact(evidence?: VisualEvidence): boolean {
-  return Boolean(
+function disneyPinsSecondaryIdentityRequired(targetMetadata: string): boolean {
+  const details = extractTargetItemDetails(targetMetadata);
+  const explicitSecondaryValues = [
+    details.backingCard,
+    details.backingCardDesign,
+    details.backingLogo,
+    details.event,
+    details.eventName,
+    details.eventSet,
+    details.setDesign,
+    details.edition,
+    details.editionName,
+    details.release,
+    details.releaseType,
+    details.variant,
+  ];
+  return details.limitedEdition === true || explicitSecondaryValues.some((value) => {
+    const normalized = normalizedChoice(value);
+    return Boolean(normalized) && !/^(?:unknown|n\/?a|none|no|false|not applicable|standard|regular|open edition)$/.test(normalized);
+  });
+}
+
+export function disneyPinsEvidenceIsExact(evidence?: VisualEvidence, targetMetadata = ""): boolean {
+  const primaryIdentityMatches = Boolean(
     evidence?.characterMatches === true &&
     evidence?.artworkMatches === true &&
     evidence?.silhouetteMatches === true &&
+    evidence?.identityMatches !== false,
+  );
+  if (!primaryIdentityMatches) return false;
+  if (!targetMetadata || !isDisneyPinsMetadata(targetMetadata)) return true;
+  if (!disneyPinsSecondaryIdentityRequired(targetMetadata)) return true;
+  return Boolean(
     evidence?.backingCardMatches === true &&
     evidence?.setDesignMatches === true,
   );
@@ -5753,7 +5781,7 @@ export async function filterVisualSourceCandidates<
       const needsDisneyAdjudication = isDisneyPinsMetadata(targetMetadata) && primaryReview?.verdict === "match";
       const canAttemptThirdDisneyReview = needsDisneyAdjudication
         && primaryReview?.confidence === "high"
-        && disneyPinsEvidenceIsExact(primaryReview.visualEvidence);
+        && disneyPinsEvidenceIsExact(primaryReview.visualEvidence, targetMetadata);
       // Every image-bearing coin candidate must receive the independent
       // high-resolution identity pass. The first pass is preliminary evidence
       // only; its normalized verdict must never be able to skip adjudication.
@@ -5807,7 +5835,7 @@ export async function filterVisualSourceCandidates<
         ? [
             {
               type: "text",
-              text: `INDEPENDENT DISNEY PINS IDENTITY ADJUDICATION: Ignore every preliminary verdict and independently compare exactly two images at high detail: first image is TARGET; second image is CANDIDATE ${candidate.candidateIndex}. Disney Pins have no grading-company, slab, numeric-grade, or raw-versus-graded identity gate. Same character, similar colors, or the same series is not enough. Confirm every visible identity detail independently: character, exact artwork, pose, silhouette, pin shape, colors, backing card/backing logo, event or set design, edition markings, and pin count/form. Any material artwork, silhouette, backing, set-design, pose, or edition conflict is mismatch with high confidence. If any required detail is obscured or the images disagree, return unreadable/manual review rather than match. Return match only if all five structured Disney identity booleans are true: characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, and setDesignMatches. Return exactly one JSON review for candidate ${candidate.candidateIndex} using the required visualEvidence object. Target metadata: ${targetMetadata}`,
+              text: `INDEPENDENT DISNEY PINS IDENTITY ADJUDICATION: Ignore every preliminary verdict and independently compare exactly two images at high detail: first image is TARGET; second image is CANDIDATE ${candidate.candidateIndex}. Disney Pins have no grading-company, slab, numeric-grade, or raw-versus-graded identity gate. Primary identity is authoritative: character, exact artwork, pose, silhouette, pin shape, colors, visible design details, and pin count/form must correspond. A different primary pin artwork, pose, silhouette, shape, or layout is a high-confidence mismatch. Backing card, backing logo, event/set branding, and packaging are secondary evidence: a generic backing-card or packaging variation alone is a soft difference and must not reject an otherwise exact primary pin match. Treat secondary evidence as a hard conflict only when the target metadata explicitly identifies a backing-card-specific, event-specific, set-specific, or edition-specific release. Return visualEvidence booleans characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, and setDesignMatches; backingCardMatches and setDesignMatches are diagnostic for generic targets, but must be true when the target explicitly requires that secondary release detail. If primary identity or any explicitly required secondary detail is obscured or cannot be independently confirmed, return unreadable/manual review rather than guessing. Return exactly one JSON review for candidate ${candidate.candidateIndex} using the required visualEvidence object. Target metadata: ${targetMetadata}`,
             },
             { type: "text", text: "TARGET LISTING IMAGE:" },
             { type: "image_url", image_url: { url: target, detail: "high" } },

@@ -15,6 +15,7 @@ import {
   conservativeGradedVisualReviews,
   gradedIdentifierInstruction,
   disneyPinsVisualInstruction,
+  disneyPinsEvidenceIsExact,
   embedPromotedEbayImageForReview,
   enforceDisneyPinsExactEvidence,
   hasCompletedDisneyPinsAdjudication,
@@ -2304,7 +2305,8 @@ describe("visual source filter", () => {
     expect(source).toContain("Disney Pins require an independent second visual adjudication");
     expect(source).toContain("The primary job is exact image comparison");
     expect(source).toContain("the initial result is provisional audit evidence only and cannot enter valuation");
-    expect(disneyPinsVisualInstruction("category=disney_pins")).toContain("Same character, similar colors, a shared series, or a shared backing card is never sufficient");
+    expect(disneyPinsVisualInstruction("category=disney_pins")).toContain("Primary pin identity is authoritative");
+    expect(disneyPinsVisualInstruction("category=disney_pins")).toContain("generic backing card or packaging variation alone is a soft difference");
   });
 
   it("holds Disney Pins collections, lots, and wrong item forms before visual review", () => {
@@ -3508,6 +3510,56 @@ describe("visual source filter", () => {
     expect(source).toContain("third Disney confirmation attempt also timed out");
     expect(source).toContain('adjudicationStatus: "unavailable"');
     expect(source).not.toContain("timeoutFallbackDisneyVisualMatch");
+  });
+
+  it("treats generic Disney backing-card differences as soft evidence", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Cinderella & Gus Glitter Portrait Pin",
+      category: "disney_pins",
+      itemType: "single_pin",
+      itemDetails: { character: "Cinderella", series: "Glitter Portrait" },
+    });
+    expect(disneyPinsEvidenceIsExact({
+      characterMatches: true,
+      artworkMatches: true,
+      silhouetteMatches: true,
+      backingCardMatches: false,
+      setDesignMatches: false,
+      identityMatches: true,
+    }, target)).toBe(true);
+    const instruction = disneyPinsVisualInstruction(target);
+    expect(instruction).toContain("generic backing card or packaging variation alone is a soft difference");
+    expect(instruction).toContain("Primary pin identity is authoritative");
+  });
+
+  it("keeps explicit Disney edition or event backing evidence strict", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Cinderella & Gus Glitter Portrait Pin — 2024 D23 Exclusive",
+      category: "disney_pins",
+      itemType: "single_pin",
+      itemDetails: {
+        character: "Cinderella",
+        series: "Glitter Portrait",
+        edition: "2024 D23 Exclusive",
+        eventName: "D23",
+      },
+    });
+    expect(disneyPinsEvidenceIsExact({
+      characterMatches: true,
+      artworkMatches: true,
+      silhouetteMatches: true,
+      backingCardMatches: false,
+      setDesignMatches: false,
+      identityMatches: true,
+    }, target)).toBe(false);
+    expect(disneyPinsEvidenceIsExact({
+      characterMatches: true,
+      artworkMatches: true,
+      silhouetteMatches: true,
+      backingCardMatches: true,
+      setDesignMatches: true,
+      identityMatches: true,
+    }, target)).toBe(true);
   });
 
   it("explains timeout and partial-review states in the eBay Active UI", () => {
