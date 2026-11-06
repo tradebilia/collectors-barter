@@ -953,6 +953,7 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const [showVisualReview, setShowVisualReview] = useState(false);
   const auditLedger = data?.audit?.ledger ?? [];
+  const retainedAuditRows = auditLedger.filter((row: any) => !(data?.listings ?? []).some((listing: any) => (listing.saleId ?? listing.itemUrl ?? listing.title) === (row.saleId ?? row.itemUrl ?? row.title)));
   const visualReviewRows = (data?.listings ?? []).map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
   const visualMismatchRows = visualReviewRows.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
   const acceptedValuationListings = (data?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
@@ -1039,8 +1040,8 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
           ))}
         </div>
       )}
-      {auditLedger.length > 0 && <details className="rounded border border-gray-700/30 bg-gray-950/35 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">Evidence ledger ({auditLedger.length}) — retained, review, and objective-conflict records</summary><div className="mt-2 max-h-64 space-y-1 overflow-y-auto">{auditLedger.map((row: any, index: number) => <div key={`${row.saleId || row.itemUrl || row.title}-${index}`} className="rounded bg-gray-900/60 p-1.5 text-[9px]"><p className="truncate font-semibold text-gray-200">{row.title || 'Untitled record'}</p><p className={row.evidenceDisposition === 'valuation_eligible' ? 'text-emerald-300' : row.evidenceDisposition === 'rejected_objective_conflict' ? 'text-red-300' : 'text-amber-300'}>{String(row.evidenceDisposition || 'warning_review').replace(/_/g, ' ')}</p><p className="mt-0.5 text-gray-500">{(row.evidenceReasons ?? []).join('; ') || 'No additional warning supplied.'}</p></div>)}</div></details>}
-      {data && !data.listings.length && !data.error && <p className="text-gray-500 text-xs">No sold listings found.</p>}
+      {auditLedger.length > 0 && <details open={retainedAuditRows.length > 0} className="rounded border border-gray-700/30 bg-gray-950/35 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">All retrieved candidates and why they were not accepted ({auditLedger.length})</summary><div className="mt-2 max-h-80 space-y-1 overflow-y-auto">{auditLedger.map((row: any, index: number) => <div key={`${row.saleId || row.itemUrl || row.title}-${index}`} className="rounded bg-gray-900/60 p-1.5 text-[9px]"><p className="truncate font-semibold text-gray-200">{row.title || 'Untitled record'}</p><p className={row.evidenceDisposition === 'valuation_eligible' ? 'text-emerald-300' : row.evidenceDisposition === 'rejected_objective_conflict' ? 'text-red-300' : 'text-amber-300'}>{String(row.evidenceDisposition || 'warning_review').replace(/_/g, ' ')}</p><p className="mt-0.5 text-gray-500">{(row.evidenceReasons ?? []).join('; ') || 'No additional warning supplied.'}</p></div>)}</div></details>}
+      {data && !data.listings.length && !data.error && <p className="text-gray-500 text-xs">No candidates reached the main valuation/review list. See “All retrieved candidates and why they were not accepted” above for every retained record and reason.</p>}
     </div>
   );
 }

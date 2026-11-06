@@ -175,6 +175,16 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("AI mismatch");
   });
 
+  it("keeps eBay Sold-Comps context candidates visible with their reasons", () => {
+    const soldSection = procedureSource("getSoldCompsData: protectedProcedure", "// SoldComps Mercari coverage");
+    expect(soldSection).toContain("const visualContextAuditLedger = (sharedVisualFilter.contextListings ?? []).map");
+    expect(soldSection).toContain("ledger: [...canonicalListings, ...visualContextAuditLedger");
+    expect(soldSection).toContain("visualContextAuditLedger.length");
+    expect(pageSource).toContain("const retainedAuditRows = auditLedger.filter");
+    expect(pageSource).toContain("All retrieved candidates and why they were not accepted");
+    expect(pageSource).toContain("No candidates reached the main valuation/review list");
+  });
+
   it("applies the shared pre-vision gate to active asking prices", () => {
     const result = assessSoldCompsPreVisionCandidates({
       category: "video_games",

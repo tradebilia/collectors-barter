@@ -2858,6 +2858,22 @@ export const testAIRouter = router({
           preVisualExcludedCount: (sharedVisualFilter.preVisualExcludedCount ?? 0) + preVisionAssessment.excluded.length + scoreExcludedListings.length,
           note: `Sold-Comps visual review: ${sharedVisualFilter.note}`,
         };
+        const visualContextAuditLedger = (sharedVisualFilter.contextListings ?? []).map((item: any) => ({
+          ...item,
+          itemUrl: item.itemUrl ?? item.url ?? null,
+          saleId: item.saleId ?? item.id ?? item.url ?? null,
+          sourceId: item.sourceId ?? 'sold_comps',
+          sourceLabel: item.sourceLabel ?? 'eBay Sold-Comps',
+          retrievalQuery: item.retrievalQuery ?? query,
+          price: Number(item.price ?? item.soldPrice ?? 0),
+          currency: item.currency ?? item.soldCurrency ?? null,
+          endedAt: item.endedAt ?? null,
+          imageUrl: item.imageUrl ?? item.thumbnailUrl ?? item.imageUrls?.[0] ?? item.images?.[0] ?? null,
+          evidenceDisposition: item.evidenceDisposition ?? 'context_only',
+          evidenceReasons: item.evidenceReasons ?? [item.visualReviewRationale ?? 'Retained as context-only before visual review.'],
+          visualReviewStatus: item.visualReviewStatus ?? 'not_reviewed',
+          visualReviewRationale: item.visualReviewRationale ?? 'Retained as context-only before visual review.',
+        }));
 
         const annotatedListings = visuallyFiltered.map((item: any, index: number) => annotateSoldComparableCandidate(item, {
           category: input.category,
@@ -2942,8 +2958,8 @@ export const testAIRouter = router({
             objectiveConflicts: rawAuditLedger.length,
             warningReview: canonicalListings.filter((item: any) => item.evidenceDisposition === 'warning_review').length,
             valuationEligible: valuationEligibleListings.length,
-            notVisuallyReviewed: canonicalListings.filter((item: any) => item.visualReviewStatus === 'not_reviewed').length,
-            ledger: [...canonicalListings, ...rawAuditLedger, ...preVisionAuditLedger, ...scoreExcludedListings],
+            notVisuallyReviewed: canonicalListings.filter((item: any) => item.visualReviewStatus === 'not_reviewed').length + visualContextAuditLedger.length + preVisionAuditLedger.length + scoreExcludedListings.length,
+            ledger: [...canonicalListings, ...visualContextAuditLedger, ...rawAuditLedger, ...preVisionAuditLedger, ...scoreExcludedListings],
           },
           error: null,
         };
