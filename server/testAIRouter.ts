@@ -344,6 +344,7 @@ export function filterListingsByTargetGradingState(
 }
 
 const conditionOnlyPattern = /\b(?:mint|near mint|very good|excellent|good|acceptable|like new|raw|loose|ungraded|tested)\b/i;
+const explicitRawOrUngradedPattern = /\b(?:raw|ungraded|un[- ]slabbed|no\s+(?:slab|holder))\b/i;
 
 function hasExplicitGradedEvidence(item: any, metadata: Record<string, string>): boolean {
   const title = String(item?.title ?? '');
@@ -355,8 +356,9 @@ function hasConditionOnlyEvidence(item: any): boolean {
   const condition = String(item?.condition ?? '').trim();
   const conditionDescription = String(item?.conditionDescription ?? item?.condition_description ?? '').trim();
   // “Pre-Owned”, “Used”, and “New (Other)” are marketplace states, not proof
-  // that a collectible is raw or incomplete. Explicit condition/operation
-  // language such as “Tested” is condition-only evidence for a graded target.
+  // that a collectible is raw or incomplete. Keep this helper for diagnostics,
+  // but do not use ordinary condition wording as a hard pre-vision exclusion:
+  // an omitted grade is uncertainty that image review can resolve.
   return conditionOnlyPattern.test(title)
     || conditionOnlyPattern.test(condition)
     || conditionOnlyPattern.test(conditionDescription);
@@ -567,8 +569,11 @@ export function assessSoldCompsPreVisionCandidates(args: {
         reasons.push('Mercari Video Game listing is manual/accessory-only, not the complete target game');
       }
     }
-    if (args.targetIsGraded && hasConditionOnlyEvidence(item) && !hasExplicitGradedEvidence(item, metadata)) {
-      reasons.push('graded target: candidate has explicit condition-only evidence but no grader or graded-item evidence');
+    if (args.targetIsGraded
+      && hasConditionOnlyEvidence(item)
+      && !hasExplicitGradedEvidence(item, metadata)
+      && explicitRawOrUngradedPattern.test(`${String(item?.title ?? '')} ${String(item?.condition ?? '')} ${String(item?.conditionDescription ?? item?.condition_description ?? '')}`)) {
+      reasons.push('graded target: candidate explicitly declares raw/ungraded status and has no grader or graded-item evidence');
     }
     if (isExplicitMultiItemListing(item, args.targetMetadata) && !isMovieBoxSetTarget(args.category, args.targetMetadata)) {
       reasons.push('candidate is an explicit lot, bundle, multipack, or collection; total price is not directly comparable to one target item');

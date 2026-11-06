@@ -172,7 +172,7 @@ describe('Sold-Comps API key validation', () => {
     expect(result.excluded).toHaveLength(0);
   });
 
-  it('excludes condition-only candidates for graded targets but keeps explicit graded evidence', () => {
+  it('sends candidates with omitted grade metadata to visual review while keeping explicit raw evidence out', () => {
     const result = assessSoldCompsPreVisionCandidates({
       category: 'video_games',
       targetMetadata: 'title=The Legend of Zelda; category=video_games; grade=7.5; certificationCompany=PSA; fullItemDetails={"platform":"NES"}',
@@ -181,13 +181,20 @@ describe('Sold-Comps API key validation', () => {
       listings: [
         { title: 'The Legend of Zelda NES Complete Mint Condition', condition: 'Mint', soldPrice: 100 },
         { title: 'The Legend of Zelda NES Tested Authentic', condition: 'Pre-Owned', soldPrice: 110 },
+        { title: 'The Legend of Zelda NES', condition: 'Pre-Owned', soldPrice: 120 },
+        { title: 'The Legend of Zelda NES Raw', condition: 'Pre-Owned', soldPrice: 125 },
         { title: 'The Legend of Zelda NES WATA PSA 7.5 CIB', condition: 'Pre-Owned', soldPrice: 450 },
       ],
     });
-    expect(result.eligible).toHaveLength(1);
-    expect(result.eligible[0].title).toContain('WATA PSA 7.5');
-    expect(result.excluded).toHaveLength(2);
-    expect(result.excluded.map((entry) => entry.reasons.join(' ')).join(' ')).toMatch(/condition-only/i);
+    expect(result.eligible.map((item) => item.title)).toEqual([
+      'The Legend of Zelda NES Complete Mint Condition',
+      'The Legend of Zelda NES Tested Authentic',
+      'The Legend of Zelda NES',
+      'The Legend of Zelda NES WATA PSA 7.5 CIB',
+    ]);
+    expect(result.excluded).toHaveLength(1);
+    expect(result.excluded[0].item.title).toContain('Raw');
+    expect(result.excluded[0].reasons.join(' ')).toMatch(/raw\/ungraded/i);
   });
 
   it('does not exclude a candidate when provider metadata is missing', () => {
