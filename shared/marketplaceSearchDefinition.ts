@@ -45,6 +45,11 @@ function text(value: unknown): string {
   return value == null ? '' : String(value).trim();
 }
 
+function normalizeVintageToyYear(value: unknown): string {
+  const year = text(value);
+  return /^\d{2}$/.test(year) ? `'${year}` : year;
+}
+
 function unique(values: string[]): string[] {
   return [...new Set(values.map(text).filter(Boolean))];
 }
@@ -134,7 +139,7 @@ export function buildMarketplaceSearchDefinition(input: MarketplaceSearchDefinit
     baseTerms = [value('year'), value('editionEra'), value('cardName', 'pokemonName', 'name'), value('cardNumber', 'cardNo', 'number'), value('finish', 'finishVariant'), value('cardType', 'mechanic'), value('language')];
     fieldsUsed.push('year', 'edition/era', 'card name', 'card number', 'finish', 'card type/mechanic', 'language');
   } else if (category === 'vintage_toys') {
-    baseTerms = [value('year'), value('toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName') || input.title, value('brand', 'franchise'), value('line'), value('setNumber'), value('version', 'variant')];
+    baseTerms = [normalizeVintageToyYear(value('year')), value('toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName') || input.title, value('brand', 'franchise'), value('line'), value('setNumber'), value('version', 'variant')];
     fieldsUsed.push('year', 'toy identity', 'brand/franchise', 'line', 'set number', 'version/variant');
   } else if (category === 'disney_pins') {
     baseTerms = ['Disney Pins', value('character'), value('pinName', 'name'), value('edition', 'variant')];

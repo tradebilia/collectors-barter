@@ -184,6 +184,18 @@ describe('Test AI manufacturer criteria', () => {
     expect(definition.fallbackQueries).not.toContain(definition.query);
   });
 
+  it('preserves the apostrophe in two-digit Vintage Toys model years', () => {
+    const definition = buildMarketplaceSearchDefinition({
+      title: "'70 Plymouth AAR Cuda Hot Wheels",
+      category: 'vintage_toys',
+      itemType: 'individual_vehicle',
+      itemDetails: { year: '70', vehicleName: 'Plymouth AAR Cuda', franchise: 'Hot Wheels' },
+    });
+
+    expect(definition.query).toBe("'70 Plymouth AAR Cuda Hot Wheels");
+    expect(definition.fallbackQueries).not.toContain('70 Plymouth AAR Cuda Hot Wheels');
+  });
+
   it.each([
     'sports_cards', 'comics', 'video_games', 'movies', 'autographs', 'pokemon',
     'vintage_toys', 'disney_pins', 'stamps', 'music', 'coins',
