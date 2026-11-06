@@ -1601,9 +1601,16 @@ function targetItemTypeValue(targetMetadata: string): string {
   );
 }
 type VintageToyPackagingForm = "carded" | "loose" | "unknown";
-
+function vintageToyPackagingFormEvidence(value: unknown): string {
+  return String(value ?? "")
+    // Marketplace presentation phrases do not establish whether the toy is
+    // carded or loose. They must not become packaging-form evidence.
+    .replace(/\b(?:w\/|with)\s+protector\b/gi, " ")
+    .replace(/\bin\s+hand\b/gi, " ")
+    .trim();
+}
 function vintageToyPackagingForm(value: unknown): VintageToyPackagingForm {
-  const normalized = normalizedChoice(value);
+  const normalized = normalizedChoice(vintageToyPackagingFormEvidence(value));
   if (/carded|on_card|blister(?:_card|_pack)?/.test(normalized)) return "carded";
   if (/loose|unboxed|no_box/.test(normalized)) return "loose";
   return "unknown";
@@ -2889,6 +2896,18 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
       if (!candidateType) continue;
       const targetType = vintageToyCanonicalVehicleType(targetValue);
       if (targetType && targetType !== candidateType) return `Vintage Toys ${label} differs: the candidate explicitly declares a different ${label}.`;
+      continue;
+    }
+    if (label === "packaging type") {
+      // Packaging is a form comparison, not a token-subset comparison. A
+      // title such as "w/ protector" or "in hand" does not declare carded
+      // or loose form and must reach image review instead of conflicting with
+      // the target merely because it omits the target's form word.
+      const targetForm = vintageToyPackagingForm(targetValue);
+      const candidateForm = vintageToyPackagingForm(candidateValue || title);
+      if (targetForm !== "unknown" && candidateForm !== "unknown" && targetForm !== candidateForm) {
+        return `Vintage Toys packaging form differs: the candidate explicitly declares a different packaging form.`;
+      }
       continue;
     }
     if (label === "set number" && !candidateValue) {

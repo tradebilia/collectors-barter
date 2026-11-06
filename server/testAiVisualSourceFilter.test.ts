@@ -2656,6 +2656,20 @@ describe("visual source filter", () => {
     expect(result[0].rationale).toContain("packaging form differs");
   });
 
+  it("ignores non-form protector and in-hand title phrases for Vintage Toys", () => {
+    const cardedTarget = `title=Hot Wheels 70 Plymouth AAR Cuda; category=vintage_toys; itemType=vehicle; fullItemDetails=${JSON.stringify({ packagingType: "carded" })}`;
+    const looseTarget = `title=Hot Wheels 70 Plymouth AAR Cuda; category=vintage_toys; itemType=vehicle; fullItemDetails=${JSON.stringify({ packagingType: "loose" })}`;
+    expect(buildDeclaredIdentityReviews([
+      { title: "Hot Wheels 70 Plymouth AAR Cuda W/ Protector" },
+    ], cardedTarget)).toEqual([]);
+    expect(buildDeclaredIdentityReviews([
+      { title: "Hot Wheels 70 Plymouth AAR Cuda In Hand" },
+    ], looseTarget)).toEqual([]);
+    expect(buildDeclaredIdentityReviews([
+      { title: "Hot Wheels 70 Plymouth AAR Cuda Carded W/ Protector" },
+    ], looseTarget)[0]?.rationale).toContain("packaging form differs");
+  });
+
   it("holds a sports-card candidate with an explicit parallel conflict before vision", () => {
     const metadata = `title=Mike Trout; category=sports_cards; fullItemDetails=${JSON.stringify({ player: "Mike Trout", year: "2011", manufacturer: "Topps", parallel: "Chrome Refractor" })}`;
     const result = buildDeclaredIdentityReviews([
