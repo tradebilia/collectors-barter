@@ -3567,6 +3567,31 @@ describe("visual source filter", () => {
     expect(instruction).toContain("every marketplace and data source");
   });
 
+  it("normalizes and preserves every structured visual difference", () => {
+    const rows = normalizeVisualSourceReviews({ reviews: [{ candidateIndex: 0, verdict: "mismatch", confidence: "high", rationale: "The images differ.", visualDifferences: [{ field: "artwork", targetObservation: "blue front artwork", candidateObservation: "red front artwork", impact: "material identity difference" }], visualEvidence: {} }] }, 1);
+    expect(rows[0]?.visualDifferences).toEqual([{ field: "artwork", targetObservation: "blue front artwork", candidateObservation: "red front artwork", impact: "material identity difference" }]);
+  });
+  it("merges AI image differences with all deterministic metadata differences for every category", () => {
+    const result = applyVisualSourceReviews(
+      [{ title: "1986 Topps #401", itemDetails: JSON.stringify({ player: "Different Player", setName: "Topps" }), imageUrl: "https://example.com/card.jpg" }],
+      [{ candidateIndex: 0, verdict: "mismatch", confidence: "high", rationale: "The card front differs.", visualDifferences: [{ field: "artwork", targetObservation: "target player portrait", candidateObservation: "different player portrait", impact: "material identity difference" }] }],
+      1,
+      { targetMetadata: `category=sports_cards;title=1986 Topps #401;fullItemDetails=${JSON.stringify({ player: "Cal Ripken Jr.", setName: "Topps" })}` },
+    );
+    expect(result.listings[0]?.visualDifferences).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: "artwork", candidateObservation: "different player portrait" }),
+      expect.objectContaining({ field: "player", targetObservation: "Cal Ripken Jr.", candidateObservation: "Different Player" }),
+    ]));
+    expect(result.listings[0]?.visualReviewRationale).toContain("Differences found:");
+  });
+  it("requires the vision prompt and Test AI UI to expose complete differences", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
+    expect(source).toContain("list every detected material difference in visualDifferences");
+    expect(source).toContain("targetObservation");
+    expect(pageSource).toContain("Why mismatch — all detected differences");
+    expect(pageSource).toContain("VisualDifferenceList");
+  });
   it("shows each reviewed candidate price beside its match or mismatch verdict", () => {
     const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
     expect(pageSource).toContain("formatVisualReviewPrice");

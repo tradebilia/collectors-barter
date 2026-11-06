@@ -118,8 +118,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
   });
 
   it("times out eBay OAuth and Browse calls and reports an actionable redacted state", () => {
-    expect(routerSource).toContain("const EBAY_OAUTH_TIMEOUT_MS = 8_000");
-    expect(routerSource).toContain("const EBAY_BROWSE_TIMEOUT_MS = 8_000");
+    expect(routerSource).toContain("const EBAY_OAUTH_TIMEOUT_MS = 15_000");
+    expect(routerSource).toContain("const EBAY_BROWSE_TIMEOUT_MS = 15_000");
     expect(routerSource).toContain("signal: AbortSignal.timeout(EBAY_OAUTH_TIMEOUT_MS)");
     expect(routerSource).toContain("signal: AbortSignal.timeout(EBAY_BROWSE_TIMEOUT_MS)");
     expect(routerSource).toContain("eBay authorization timed out. Please try the lookup again.");

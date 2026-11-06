@@ -66,9 +66,28 @@ function queryKeyword(input: AdditionalSoldCompsInput): string {
   return buildMarketplaceSearchDefinition(input).query;
 }
 
+function vintageToyMercariFallbacks(input: AdditionalSoldCompsInput): string[] {
+  if (input.category.trim().toLowerCase().replace(/[- ]+/g, '_') !== 'vintage_toys') return [];
+  let details: Record<string, unknown> = {};
+  try {
+    const parsed = input.itemDetails ? JSON.parse(input.itemDetails) : {};
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) details = parsed as Record<string, unknown>;
+  } catch {
+    details = {};
+  }
+  const value = (...keys: string[]) => keys.map((key) => String(details[key] ?? '').trim()).find(Boolean) ?? '';
+  const toyIdentity = value('vehicleName', 'toyName', 'toyNameCharacter', 'playsetName', 'gamePuzzleName', 'modelKitName');
+  const franchise = value('brand', 'franchise');
+  if (!toyIdentity) return [];
+  return [
+    [toyIdentity, franchise].filter(Boolean).join(' '),
+    toyIdentity,
+  ];
+}
+
 function queryCandidates(input: AdditionalSoldCompsInput): string[] {
   const definition = buildMarketplaceSearchDefinition(input);
-  return [definition.query, ...definition.fallbackQueries]
+  return [definition.query, ...vintageToyMercariFallbacks(input), ...definition.fallbackQueries]
     .filter((candidate, index, candidates) => candidate && candidates.indexOf(candidate) === index)
     .slice(0, MAX_FALLBACK_QUERIES + 1);
 }

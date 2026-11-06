@@ -50,6 +50,33 @@ describe('SoldComps additional marketplace adapters', () => {
     expect(result.metrics).toMatchObject({ fallbackQueriesUsed: [expect.any(String)], retrievalCoverage: [{ received: 0, status: 'success' }, { received: 1, status: 'success' }] });
   });
 
+  it('uses broader structured-identity fallbacks for Vintage Toys before the generic title fallback', async () => {
+    process.env.SOLD_COMPS_API_KEY = 'test-key';
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ itemId: 'm-toy', title: 'Hot Wheels Plymouth AAR Cuda', price: '12', soldAt: '2026-09-01' }] }), { status: 200 }));
+    const result = await lookupMercariSoldComps({
+      title: '70 Plymouth AAR Cuda Hot Wheels Treasure Hunt',
+      category: 'vintage_toys',
+      itemDetails: JSON.stringify({ year: '1970', vehicleName: 'Plymouth AAR Cuda', franchise: 'Hot Wheels', variant: 'Treasure Hunt' }),
+    }, fetchMock as unknown as typeof fetch);
+    const requestedKeywords = fetchMock.mock.calls.map(([request]) => new URL(String(request)).searchParams.get('keyword'));
+    expect(requestedKeywords).toEqual([
+      '1970 Plymouth AAR Cuda Hot Wheels Treasure Hunt',
+      'Plymouth AAR Cuda Hot Wheels',
+      'Plymouth AAR Cuda',
+      '70 Plymouth AAR Cuda Hot Wheels Treasure Hunt',
+    ]);
+    expect(result.listings).toHaveLength(1);
+    expect(result.metrics?.fallbackQueriesUsed).toEqual([
+      'Plymouth AAR Cuda Hot Wheels',
+      'Plymouth AAR Cuda',
+      '70 Plymouth AAR Cuda Hot Wheels Treasure Hunt',
+    ]);
+  });
+
   it('normalizes Mercari through the shared candidate contract without collapsing provider evidence', () => {
     const listing = normalizeMercariSoldCandidate({
       itemId: 'm-moonlighting',

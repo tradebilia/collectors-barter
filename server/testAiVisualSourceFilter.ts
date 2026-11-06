@@ -17,6 +17,12 @@ export type VisualSourceCandidate = {
   imageUrls?: string[];
   [key: string]: unknown;
 };
+export type VisualDifference = {
+  field: string;
+  targetObservation: string;
+  candidateObservation: string;
+  impact: string;
+};
 export type VisualEvidence = {
   slabVisible: boolean;
   gradingLabelVisible: boolean;
@@ -40,6 +46,7 @@ export type VisualSourceReview = {
   verdict: "match" | "rough_match" | "mismatch" | "unreadable";
   confidence: "high" | "medium" | "low";
   rationale: string;
+  visualDifferences?: VisualDifference[];
   visualEvidence?: VisualEvidence;
   visualAudit?: {
     imageCount: number;
@@ -962,6 +969,17 @@ export function normalizeVisualSourceReviews(
       // wrap or expand them.
       rationale:
         typeof row?.rationale === "string" ? row.rationale.trim() : "",
+      visualDifferences: Array.isArray(row?.visualDifferences)
+        ? row.visualDifferences
+          .map((difference: any) => ({
+            field: typeof difference?.field === "string" ? difference.field.trim() : "",
+            targetObservation: typeof difference?.targetObservation === "string" ? difference.targetObservation.trim() : "",
+            candidateObservation: typeof difference?.candidateObservation === "string" ? difference.candidateObservation.trim() : "",
+            impact: typeof difference?.impact === "string" ? difference.impact.trim() : "",
+          }))
+          .filter((difference: VisualDifference) => difference.field && difference.targetObservation && difference.candidateObservation && difference.impact)
+          .slice(0, 20)
+        : undefined,
       visualEvidence: row?.visualEvidence && typeof row.visualEvidence === "object"
         ? {
             slabVisible: row.visualEvidence.slabVisible === true,
@@ -1507,13 +1525,28 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
       const metadataDifferences = options?.targetMetadata
         ? visualMetadataDifferenceSummary(options.targetMetadata, listing)
         : [];
-      const rationaleWithMetadataDifferences = metadataDifferences.length > 0
-        ? `${review.rationale} Metadata differences: ${metadataDifferences.join("; ")}.`
-        : review.rationale;
+      const structuredDifferences = Array.isArray(review.visualDifferences) ? review.visualDifferences : [];
+      const structuredDifferenceKeys = new Set(structuredDifferences.map((difference) => `${difference.field}|${difference.targetObservation}|${difference.candidateObservation}`));
+      const metadataDifferenceRows: VisualDifference[] = metadataDifferences.map((difference) => {
+        const match = difference.match(/^([^:]+): target “([^”]*)” vs candidate “([^”]*)” \(?(.*?)\)?$/);
+        return match
+          ? { field: match[1], targetObservation: match[2], candidateObservation: match[3], impact: match[4] || "detected metadata difference" }
+          : { field: "metadata", targetObservation: "target metadata", candidateObservation: difference, impact: "detected metadata difference" };
+      });
+      const allDifferences = [...structuredDifferences, ...metadataDifferenceRows]
+        .filter((difference, index) => {
+          const key = `${difference.field}|${difference.targetObservation}|${difference.candidateObservation}`;
+          return !structuredDifferenceKeys.has(key) || index < structuredDifferences.length;
+        })
+        .slice(0, 30);
+      const differenceText = allDifferences.length > 0
+        ? ` Differences found: ${allDifferences.map((difference) => `${difference.field}: target “${difference.targetObservation}” vs candidate “${difference.candidateObservation}” (${difference.impact})`).join("; ")}.`
+        : "";
       return {
         ...cleanConfirmedDisneyListing,
         visualReviewStatus: review.verdict,
-        visualReviewRationale: rationaleWithMetadataDifferences,
+        visualReviewRationale: `${review.rationale}${differenceText}`,
+        ...(allDifferences.length > 0 ? { visualDifferences: allDifferences } : {}),
         ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
         ...((review.verdict === "mismatch" || (options?.requireExactMatch && review.verdict !== "match") || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? ""))))
           ? {
@@ -5762,6 +5795,21 @@ export async function filterVisualSourceCandidates<
                   verdict: { type: "string", enum: ["match", "rough_match", "mismatch", "unreadable"] },
                   confidence: { type: "string", enum: ["high", "medium", "low"] },
                   rationale: { type: "string" },
+                  visualDifferences: {
+                    type: "array",
+                    maxItems: 20,
+                    items: {
+                      type: "object",
+                      properties: {
+                        field: { type: "string", minLength: 1 },
+                        targetObservation: { type: "string", minLength: 1 },
+                        candidateObservation: { type: "string", minLength: 1 },
+                        impact: { type: "string", minLength: 1 },
+                      },
+                      required: ["field", "targetObservation", "candidateObservation", "impact"],
+                      additionalProperties: false,
+                    },
+                  },
                   visualEvidence: {
                     type: "object",
                     properties: {
@@ -5786,7 +5834,7 @@ export async function filterVisualSourceCandidates<
                     additionalProperties: false,
                   },
                 },
-                required: ["candidateIndex", "verdict", "confidence", "rationale", "visualEvidence"],
+                required: ["candidateIndex", "verdict", "confidence", "rationale", "visualDifferences", "visualEvidence"],
                 additionalProperties: false,
               },
             },
@@ -5829,7 +5877,7 @@ export async function filterVisualSourceCandidates<
       const content: Array<TextContent | ImageContent> = [
         {
           type: "text",
-          text: `You are a strict visual identity reviewer for ${args.sourceLabel}. You are reviewing exactly one candidate. First classify the TARGET and CANDIDATE as graded/slabbed or raw/ungraded from the images. A visible slab, certification label, encapsulation, or grading holder means graded; an exposed item without a slab means raw/ungraded. Graded-versus-raw status is a mandatory identity gate: if the target is graded and the candidate is visibly raw, mark mismatch with high confidence; if the target is raw and the candidate is visibly graded, mark mismatch with high confidence. Do not override this visual decision because the title, series, grade, or price looks similar. If either image is too obscured to determine graded/raw status, use unreadable or low-confidence manual review rather than accepting it. If the candidate title explicitly declares a grader or numeric grade but the primary image appears raw, loose, un-slabbed, or missing its label, this is a grading-evidence conflict: do not finalize a hard mismatch from the primary image alone. Use the additional gallery images and high-detail view to verify the slab, grader, and grade; if they remain unclear or contradictory, return unreadable/manual review. When the target is graded, the candidate numeric or descriptive grade is also mandatory: a holder or grader name alone is not enough. If the candidate grade is not clearly readable or cannot be confirmed to match the target, use unreadable/manual review and state that limitation in the rationale. Return visualEvidence booleans based only on visible pixels, never on title claims: slabVisible, gradingLabelVisible, graderVisible, numericGradeVisible, gradeMatches, rawOrLooseVisible, characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, setDesignMatches, identityMatches, dateMatches, varietyMatches, mintMarkMatches, and denominationMatches. A graded match requires the first five fields true and rawOrLooseVisible false; otherwise use unreadable/manual review rather than match. If structured target metadata names a grade qualifier, label designation, or comic certification label status, that is also a mandatory identity fact: confirm the same explicit label evidence in the candidate title or images, otherwise use unreadable/manual review rather than infer it. After that gate, compare the TARGET cover/front image to the CANDIDATE cover/front image. For comics, the same series or character is not enough: the visible cover art, title treatment, issue number, language, edition, printing, and variant must correspond. If the candidate cover art is materially different from the target cover, mark mismatch with high confidence, even if the title, slab, grade, or series appears similar. Candidate title text is evidence: Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, edition, or a different issue are conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Use rough_match only when the cover is plausibly the same but cropped, obscured, or low quality. Use unreadable only when the image cannot be inspected.${gradedIdentifierInstruction()}${disneyPinsVisualInstruction(targetMetadata)}${explicitUngradedTargetInstruction(targetMetadata)}${gradedCoinInstruction(targetMetadata)}${coinVisualInstruction(targetMetadata)}${sportsCardSetInstruction(targetMetadata)}${vintageToyPackagingInstruction(targetMetadata)}${vintageToyVisualInstruction(targetMetadata)}${videoGameFormInstruction(targetMetadata)}${videoGameGraderEquivalenceInstruction(targetMetadata)} Return exactly one JSON review for candidate ${candidate.candidateIndex}: {"reviews":[{"candidateIndex":${candidate.candidateIndex},"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"...","visualEvidence":{"slabVisible":true,"gradingLabelVisible":true,"graderVisible":true,"numericGradeVisible":true,"gradeMatches":true,"rawOrLooseVisible":false,"characterMatches":true,"artworkMatches":true,"silhouetteMatches":true,"backingCardMatches":true,"setDesignMatches":true,"identityMatches":true,"dateMatches":true,"varietyMatches":true,"mintMarkMatches":true,"denominationMatches":true}}]}. Target metadata: ${targetMetadata}`,
+          text: `You are a strict visual identity reviewer for ${args.sourceLabel}. You are reviewing exactly one candidate. First classify the TARGET and CANDIDATE as graded/slabbed or raw/ungraded from the images. A visible slab, certification label, encapsulation, or grading holder means graded; an exposed item without a slab means raw/ungraded. Graded-versus-raw status is a mandatory identity gate: if the target is graded and the candidate is visibly raw, mark mismatch with high confidence; if the target is raw and the candidate is visibly graded, mark mismatch with high confidence. Do not override this visual decision because the title, series, grade, or price looks similar. If either image is too obscured to determine graded/raw status, use unreadable or low-confidence manual review rather than accepting it. If the candidate title explicitly declares a grader or numeric grade but the primary image appears raw, loose, un-slabbed, or missing its label, this is a grading-evidence conflict: do not finalize a hard mismatch from the primary image alone. Use the additional gallery images and high-detail view to verify the slab, grader, and grade; if they remain unclear or contradictory, return unreadable/manual review. When the target is graded, the candidate numeric or descriptive grade is also mandatory: a holder or grader name alone is not enough. If the candidate grade is not clearly readable or cannot be confirmed to match the target, use unreadable/manual review and state that limitation in the rationale. Before the JSON, list every detected material difference in visualDifferences. Include image-observed differences such as artwork, silhouette, pose, color, packaging, grading holder, label, grade, item form, or readability; include an entry even when the difference is only a soft variant. Use exact observations from the target and candidate images, never vague phrases such as “looks different”. If no difference is detected, return an empty array. Return visualEvidence booleans based only on visible pixels, never on title claims: slabVisible, gradingLabelVisible, graderVisible, numericGradeVisible, gradeMatches, rawOrLooseVisible, characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, setDesignMatches, identityMatches, dateMatches, varietyMatches, mintMarkMatches, and denominationMatches. A graded match requires the first five fields true and rawOrLooseVisible false; otherwise use unreadable/manual review rather than match. If structured target metadata names a grade qualifier, label designation, or comic certification label status, that is also a mandatory identity fact: confirm the same explicit label evidence in the candidate title or images, otherwise use unreadable/manual review rather than infer it. After that gate, compare the TARGET cover/front image to the CANDIDATE cover/front image. For comics, the same series or character is not enough: the visible cover art, title treatment, issue number, language, edition, printing, and variant must correspond. If the candidate cover art is materially different from the target cover, mark mismatch with high confidence, even if the title, slab, grade, or series appears similar. Candidate title text is evidence: Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, edition, or a different issue are conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Use rough_match only when the cover is plausibly the same but cropped, obscured, or low quality. Use unreadable only when the image cannot be inspected.${gradedIdentifierInstruction()}${disneyPinsVisualInstruction(targetMetadata)}${explicitUngradedTargetInstruction(targetMetadata)}${gradedCoinInstruction(targetMetadata)}${coinVisualInstruction(targetMetadata)}${sportsCardSetInstruction(targetMetadata)}${vintageToyPackagingInstruction(targetMetadata)}${vintageToyVisualInstruction(targetMetadata)}${videoGameFormInstruction(targetMetadata)}${videoGameGraderEquivalenceInstruction(targetMetadata)} Return exactly one JSON review for candidate ${candidate.candidateIndex}: {"reviews":[{"candidateIndex":${candidate.candidateIndex},"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"...","visualDifferences":[{"field":"artwork","targetObservation":"...","candidateObservation":"...","impact":"material identity difference"}],"visualEvidence":{"slabVisible":true,"gradingLabelVisible":true,"graderVisible":true,"numericGradeVisible":true,"gradeMatches":true,"rawOrLooseVisible":false,"characterMatches":true,"artworkMatches":true,"silhouetteMatches":true,"backingCardMatches":true,"setDesignMatches":true,"identityMatches":true,"dateMatches":true,"varietyMatches":true,"mintMarkMatches":true,"denominationMatches":true}}]}. Target metadata: ${targetMetadata}`,
         },
         { type: "text", text: "TARGET LISTING IMAGE:" },
         { type: "image_url", image_url: { url: target, detail: "high" } },
