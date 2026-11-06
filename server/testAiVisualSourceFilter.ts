@@ -10,6 +10,7 @@ import {
 import { classifyStampFormat, stampFormatsCompatible } from "./stampFormat";
 import { autographReplicaReasonFromText } from "../shared/testAiAutographEvidence";
 import { extractMarketplaceLotQuantity, isExplicitMultiItemListing } from "../shared/testAiMarketplaceCandidate";
+import { parseTestAiDetails } from "../shared/testAiCriteria";
 
 export type VisualSourceCandidate = {
   title?: string | null;
@@ -1217,11 +1218,10 @@ function metadataText(value: unknown, fallback = "unknown"): string {
 }
 
 function visualMetadataDetails(value: unknown): Record<string, unknown> {
-  if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
+  if (value && typeof value === "object" && !Array.isArray(value)) return parseTestAiDetails(value);
   if (typeof value !== "string" || !value.trim() || /^unknown$/i.test(value.trim())) return {};
   try {
-    const parsed = JSON.parse(value);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+    return parseTestAiDetails(value);
   } catch {
     // Several legacy source contracts allow free-text details. Preserve that
     // text for the visual prompt rather than silently deleting it; deterministic
@@ -1232,6 +1232,12 @@ function visualMetadataDetails(value: unknown): Record<string, unknown> {
 
 function firstMeaningfulValue(...values: unknown[]): unknown {
   return values.find((value) => String(value ?? "").trim() !== "");
+}
+
+function resolvedVisualFieldValue(value: unknown, details: Record<string, unknown>, key: string): unknown {
+  if (String(value ?? "").trim().toLowerCase() !== "other") return value;
+  const customKey = `custom${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+  return firstMeaningfulValue(details[key], details[customKey]);
 }
 
 function normalizedVisualCategory(value: unknown): string {
@@ -1250,22 +1256,22 @@ export function buildVisualTargetMetadata(input: VisualTargetMetadataInput): str
     input.fullItemDetails ?? input.itemDetails ?? input.details ?? input.catalog,
     ),
   };
-  const topLevelCondition = firstMeaningfulValue(input.condition);
+  const topLevelCondition = resolvedVisualFieldValue(input.condition, details, "condition");
   if (topLevelCondition !== undefined && firstMeaningfulValue(details.condition, details.mediaCondition) === undefined) {
     details.condition = topLevelCondition;
   }
-  const itemType = metadataText(firstMeaningfulValue(input.itemType, details.itemType, details.productType, details.form));
-  const grade = metadataText(firstMeaningfulValue(input.grade, details.grade));
+  const itemType = metadataText(firstMeaningfulValue(resolvedVisualFieldValue(input.itemType, details, "itemType"), details.itemType, details.productType, details.form));
+  const grade = metadataText(firstMeaningfulValue(resolvedVisualFieldValue(input.grade, details, "grade"), details.grade));
   const certificationCompany = metadataText(
     firstMeaningfulValue(
-      input.certificationCompany,
-      input.grader,
+      resolvedVisualFieldValue(input.certificationCompany, details, "certificationCompany"),
+      resolvedVisualFieldValue(input.grader, details, "grader"),
       details.certificationCompany,
       details.gradingCompany,
       details.grader,
     ),
   );
-  const isGraded = metadataText(firstMeaningfulValue(input.isGraded, details.isGraded, details.graded));
+  const isGraded = metadataText(firstMeaningfulValue(resolvedVisualFieldValue(input.isGraded, details, "isGraded"), details.isGraded, details.graded));
   return [
     `title=${metadataText(input.title, "structured item")}`,
     `category=${normalizedVisualCategory(input.category)}`,
@@ -1587,8 +1593,7 @@ function extractTargetItemDetails(metadata: string): Record<string, unknown> {
   const raw = metadata.match(/(?:^|;)\s*(?:fullItemDetails|itemDetails|details|catalog)=(.*)$/i)?.[1]?.trim();
   if (!raw || raw.toLowerCase() === "unknown") return {};
   try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    return parseTestAiDetails(raw);
   } catch {
     return {};
   }

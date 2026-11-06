@@ -2690,6 +2690,34 @@ describe("visual source filter", () => {
     expect(wrongReviews[0]?.rationale).not.toContain("vehicle name:");
   });
 
+  it("uses a custom value when a target field is stored as Other", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Nintendo Donkey Kong plush",
+      category: "vintage_toys",
+      itemType: "plush",
+      fullItemDetails: { toyName: "Donkey Kong", brand: "Other", customBrand: "Nintendo" },
+    });
+    expect(target).toContain('"brand":"Nintendo"');
+    expect(target).not.toContain('"brand":"Other"');
+    expect(buildDeclaredIdentityReviews([
+      { title: "Nintendo Donkey Kong plush" },
+    ], target)).toEqual([]);
+  });
+
+  it("applies the Other-to-custom rule to non-brand fields too", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Example Game Nintendo Switch",
+      category: "video_games",
+      itemType: "game",
+      fullItemDetails: { gameTitle: "Example Game", platform: "Other", customPlatform: "Nintendo Switch" },
+    });
+    expect(target).toContain('"platform":"Nintendo Switch"');
+    expect(target).not.toContain('"platform":"Other"');
+    expect(buildDeclaredIdentityReviews([
+      { title: "Example Game Nintendo Switch" },
+    ], target)).toEqual([]);
+  });
+
   it("holds a sports-card candidate with an explicit parallel conflict before vision", () => {
     const metadata = `title=Mike Trout; category=sports_cards; fullItemDetails=${JSON.stringify({ player: "Mike Trout", year: "2011", manufacturer: "Topps", parallel: "Chrome Refractor" })}`;
     const result = buildDeclaredIdentityReviews([
