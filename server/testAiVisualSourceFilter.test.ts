@@ -2670,6 +2670,26 @@ describe("visual source filter", () => {
     ], looseTarget)[0]?.rationale).toContain("packaging form differs");
   });
 
+  it("uses the structured plush identity instead of the full graded display title", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Nintendo Donkey Kong 1998 AFA 7.5",
+      category: "vintage_toys",
+      itemType: "plush",
+      grade: "7.5",
+      certificationCompany: "AFA",
+      fullItemDetails: { toyName: "Donkey Kong", brand: "Nintendo", year: "1998" },
+    });
+    expect(buildDeclaredIdentityReviews([
+      { title: "Nintendo Collectibles Talking Plush Character Donkey Kong 15 inch 1998 Graded AFA", imageUrl: "https://example.com/donkey-kong.jpg" },
+    ], target)).toEqual([]);
+    const wrongReviews = buildDeclaredIdentityReviews([
+      { title: "Nintendo Collectibles Talking Plush Character Diddy Kong 15 inch 1998 Graded AFA", imageUrl: "https://example.com/diddy-kong.jpg" },
+    ], target);
+    expect(wrongReviews[0]?.rationale).toContain("toy name or character differs");
+    expect(wrongReviews[0]?.rationale).toContain("toy name or character:");
+    expect(wrongReviews[0]?.rationale).not.toContain("vehicle name:");
+  });
+
   it("holds a sports-card candidate with an explicit parallel conflict before vision", () => {
     const metadata = `title=Mike Trout; category=sports_cards; fullItemDetails=${JSON.stringify({ player: "Mike Trout", year: "2011", manufacturer: "Topps", parallel: "Chrome Refractor" })}`;
     const result = buildDeclaredIdentityReviews([

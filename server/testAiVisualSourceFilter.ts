@@ -2899,7 +2899,10 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
     addState("complete status", targetDetails.complete, ["complete", "isComplete", "completeness"]);
     addState("original box", targetDetails.originalBoxIncluded, ["originalBoxIncluded", "boxIncluded"]);
   } else if (targetType === "plush/stuffed toy") {
-    addText("toy name or character", targetDetails.toyNameCharacter ?? extractTargetTitle(targetMetadata), ["toyNameCharacter", "toyName", "character", "name", "title"]);
+    // Prefer structured identity fields over the full display title. Display
+    // titles can contain brand, year, grader, and grade text; treating that
+    // entire string as the toy name falsely rejects descriptive listings.
+    addText("toy name or character", targetDetails.toyNameCharacter ?? targetDetails.toyName ?? targetDetails.character ?? extractTargetTitle(targetMetadata), ["toyNameCharacter", "toyName", "character", "name", "title"]);
     addText("brand", targetDetails.brand, ["brand", "manufacturer"]);
     addYear("year", targetDetails.year, ["year", "releaseYear"]);
     addState("tags", targetDetails.tagsAttached, ["tagsAttached", "tags"]);
@@ -2970,10 +2973,12 @@ function visualMetadataDifferenceSummary(targetMetadata: string, listing: Visual
     .map((conflict) => `${conflict.field}: target “${conflict.targetValue}” vs candidate “${conflict.candidateValue}” (${conflict.reason})`);
   if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "vintage_toys") return differences.slice(0, 12);
   const targetDetails = extractTargetItemDetails(targetMetadata);
+  const vintageTargetType = vintageToyTargetItemType(targetMetadata);
+  const isPlushTarget = vintageTargetType === "plush/stuffed toy";
   const vintageFields: Array<[string, unknown, string[]]> = [
     ["brand", targetDetails.brand ?? metadataValue(targetMetadata, "brand"), ["brand", "manufacturer"]],
     ["franchise", targetDetails.franchise, ["franchise", "series"]],
-    ["vehicle name", targetDetails.vehicleName ?? extractTargetTitle(targetMetadata), ["vehicleName", "name", "title"]],
+    [isPlushTarget ? "toy name or character" : "vehicle name", isPlushTarget ? (targetDetails.toyNameCharacter ?? targetDetails.toyName ?? targetDetails.character ?? extractTargetTitle(targetMetadata)) : (targetDetails.vehicleName ?? extractTargetTitle(targetMetadata)), isPlushTarget ? ["toyNameCharacter", "toyName", "character", "name", "title"] : ["vehicleName", "name", "title"]],
     ["year", targetDetails.year, ["year", "releaseYear"]],
     ["vehicle type", targetDetails.vehicleType, ["vehicleType", "type"]],
     ["packaging type", targetDetails.packagingType, ["packagingType", "packageType", "packaging"]],
