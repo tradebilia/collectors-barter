@@ -11,6 +11,7 @@ import { classifyStampFormat, stampFormatsCompatible } from "./stampFormat";
 import { autographReplicaReasonFromText } from "../shared/testAiAutographEvidence";
 import { extractMarketplaceLotQuantity, isExplicitMultiItemListing } from "../shared/testAiMarketplaceCandidate";
 import { parseTestAiDetails, resolveTestAiDetailValue } from "../shared/testAiCriteria";
+import { canonicalVideoGameGrader } from "../shared/videoGameGraderEquivalence";
 
 export type VisualSourceCandidate = {
   title?: string | null;
@@ -4073,7 +4074,7 @@ const SPORTS_CARD_SCORE_FIELDS = [
   ['serialNumberedStatus', 2],
 ] as const;
 const VIDEO_GAME_GAME_SCORE_FIELDS = [
-  ['gameTitle', 30], ['platform', 20], ['releaseYear', 15], ['region', 10], ['edition', 10], ['productForm', 10], ['upcEan', 5],
+  ['gameTitle', 25], ['platform', 20], ['releaseYear', 15], ['region', 10], ['edition', 10], ['productForm', 5], ['gradingCompany', 5], ['grade', 5], ['upcEan', 5],
 ] as const;
 const VIDEO_GAME_CONSOLE_SCORE_FIELDS = [
   ['consoleName', 30], ['modelNumber', 20], ['region', 15], ['workingCondition', 15], ['originalBoxIncluded', 10], ['cablesIncluded', 5], ['controllersIncluded', 5],
@@ -4139,6 +4140,28 @@ function videoGameScoreProductForm(targetMetadata: string, listing: VisualSource
   if (!targetForm || !candidateForm) return null;
   return targetForm === candidateForm;
 }
+function videoGameScoreGradingCompany(targetValue: unknown, listing: VisualSourceCandidate): boolean | null {
+  const target = videoGameScoreText(targetValue);
+  if (!target || /^(?:unknown|n a|na|none|raw|ungraded|not applicable)$/.test(target)) return null;
+  const structuredCandidate = videoGameCandidateValue(listing, ['gradingCompany', 'certificationCompany', 'grader']);
+  const titleEvidence = titleGradeEvidence(canonicalCandidateTitle(listing));
+  const candidate = videoGameScoreText(structuredCandidate || titleEvidence?.grader || '');
+  if (!candidate || /^(?:unknown|n a|na|none|raw|ungraded|not applicable)$/.test(candidate)) return null;
+  return canonicalVideoGameGrader('video_games', candidate) === canonicalVideoGameGrader('video_games', target);
+}
+function videoGameScoreGrade(targetValue: unknown, listing: VisualSourceCandidate): boolean | null {
+  const target = videoGameScoreText(targetValue);
+  if (!target || /^(?:unknown|n a|na|none|raw|ungraded|not applicable)$/.test(target)) return null;
+  const structuredCandidate = videoGameCandidateValue(listing, ['grade', 'numericGrade', 'gameGrade']);
+  const titleEvidence = titleGradeEvidence(canonicalCandidateTitle(listing));
+  const candidate = videoGameScoreText(structuredCandidate || titleEvidence?.grade || '');
+  if (!candidate || /^(?:unknown|n a|na|none|raw|ungraded|not applicable)$/.test(candidate)) return null;
+  const targetNumeric = target.match(/\d+(?:\.\d+)?/)?.[0];
+  const candidateNumeric = candidate.match(/\d+(?:\.\d+)?/)?.[0];
+  return targetNumeric && candidateNumeric
+    ? Number(targetNumeric) === Number(candidateNumeric)
+    : candidate === target;
+}
 function videoGameScore<T extends readonly (readonly [string, number])[]>(
   listing: VisualSourceCandidate,
   targetMetadata: string,
@@ -4159,7 +4182,9 @@ function videoGameScore<T extends readonly (readonly [string, number])[]>(
     add('releaseYear', 15, videoGameScoreValueMatches(firstMeaningfulValue(target.releaseYear, target.year), listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/], 'year'));
     add('region', 10, videoGameScoreValueMatches(target.region, listing, ['region'], [/(?:NTSC-U|NTSC-J|PAL|Region\s+Free)/i], 'region'));
     add('edition', 10, videoGameScoreValueMatches(target.edition, listing, ['edition', 'releaseType'], [], 'edition'));
-    add('productForm', 10, videoGameScoreProductForm(targetMetadata, listing));
+    add('productForm', 5, videoGameScoreProductForm(targetMetadata, listing));
+    add('gradingCompany', 5, videoGameScoreGradingCompany(firstMeaningfulValue(metadataValue(targetMetadata, 'certificationCompany'), target.gradingCompany, target.certificationCompany, target.grader), listing));
+    add('grade', 5, videoGameScoreGrade(firstMeaningfulValue(metadataValue(targetMetadata, 'grade'), target.grade, target.numericGrade), listing));
     add('upcEan', 5, videoGameScoreValueMatches(firstMeaningfulValue(target.upc, target.ean), listing, ['upc', 'ean', 'barcode'], [/(?:UPC|EAN|barcode)\s*[:#]?\s*([0-9]{8,14})/i], 'upc'));
   } else if (targetType === 'console') {
     add('consoleName', 30, videoGameScoreValueMatches(firstMeaningfulValue(target.consoleName, extractTargetTitle(targetMetadata)), listing, ['consoleName', 'platform', 'title'], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|Sega\s+Genesis|Sega\s+Saturn|Dreamcast|PS[1-5]|Xbox(?:\s+(?:360|One|Series\s+X\/S))?)/i], 'name'));

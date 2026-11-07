@@ -729,6 +729,14 @@ describe("visual source filter", () => {
     expect(gameScore.matched).toEqual(expect.arrayContaining(["gameTitle", "platform", "releaseYear", "region", "edition", "upcEan"]));
     expect(gameScore.unknown).toContain("productForm");
 
+    const gradedGameTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", grade: "9.8", certificationCompany: "PSA", fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" } });
+    const gradedGameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard PSA 9.8", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gradedGameTarget);
+    expect(gradedGameScore.score).toBe(100);
+    expect(gradedGameScore.matched).toEqual(expect.arrayContaining(["gradingCompany", "grade"]));
+
+    const structuredGradedGameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES", gradingCompany: "PSA", grade: "9.8", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gradedGameTarget);
+    expect(structuredGradedGameScore.score).toBe(100);
+
     const consoleTarget = buildVisualTargetMetadata({ title: "Nintendo NES", category: "video_games", itemType: "console", fullItemDetails: { consoleName: "NES", modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" } });
     const consoleScore = videoGameConsoleVisualScore({ title: "Nintendo NES NES-001 Working NTSC-U", itemDetails: JSON.stringify({ modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" }) }, consoleTarget);
     expect(consoleScore.score).toBe(100);
