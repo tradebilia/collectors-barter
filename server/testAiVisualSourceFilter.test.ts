@@ -451,9 +451,14 @@ describe("visual source filter", () => {
       title: "1999 Pokémon Charizard Base Set #4/102 English Holo Regular Holo Rare Wizards",
       itemDetails: JSON.stringify({ cardName: "Charizard", setName: "Base Set", cardNumber: "4/102", language: "English", finish: "Holo", cardType: "Regular", rarity: "Holo Rare", editionEra: "Wizards" }),
     }, target);
-    expect(score.score).toBe(100);
+    expect(score.score).toBe(90);
     expect(score.matched).toEqual(expect.arrayContaining(["cardName", "setName", "cardNumber", "language", "finish", "cardType"]));
     expect(pokemonVisualCap(score.score)).toBe(8);
+
+    const gradedTarget = buildVisualTargetMetadata({ title: "1999 Pokémon Charizard #4/102", category: "pokemon", itemType: "single_card", grade: "9.8", certificationCompany: "PSA", fullItemDetails: { cardName: "Charizard", setName: "Base Set", cardNumber: "4/102", language: "English", finish: "Holo", cardType: "Regular", rarity: "Holo Rare", editionEra: "Wizards" } });
+    const gradedScore = pokemonVisualScore({ title: "1999 Pokémon Charizard Base Set #4/102 English Holo Regular Holo Rare Wizards PSA 9.8" , itemDetails: JSON.stringify({ cardName: "Charizard", setName: "Base Set", cardNumber: "4/102", language: "English", finish: "Holo", cardType: "Regular", rarity: "Holo Rare", editionEra: "Wizards" }) }, gradedTarget);
+    expect(gradedScore.score).toBe(100);
+    expect(gradedScore.matched).toEqual(expect.arrayContaining(["gradingCompany", "grade"]));
     expect(buildDeclaredIdentityReviews([{ title: "1999 Pokémon Charizard Base Set #4/130 English Holo" }], target)[0]?.rationale).toContain("Card/catalog number differs");
     expect(buildDeclaredIdentityReviews([{ title: "1999 Pokémon Charizard Base Set #4/102" }], target)).toEqual([]);
   });
@@ -474,12 +479,12 @@ describe("visual source filter", () => {
   it("applies Pokémon Set and Unopened Product filters while preserving unknown fields", () => {
     const setTarget = buildVisualTargetMetadata({ title: "Pokémon Base Set Complete Set", category: "pokemon", itemType: "set", fullItemDetails: { setName: "Base Set", language: "English", setType: "Complete Set", numberOfCardsInSet: "102", year: "1999" } });
     const setScore = pokemonVisualScore({ title: "Pokémon Base Set English Complete Set of 102 Cards 1999" }, setTarget);
-    expect(setScore.score).toBe(95);
+    expect(setScore.score).toBe(85);
     expect(buildDeclaredIdentityReviews([{ title: "Pokémon Jungle Complete Set English", itemDetails: JSON.stringify({ setName: "Jungle", numberOfCardsInSet: "64" }) }], setTarget)[0]?.rationale).toContain("set differs");
 
     const productTarget = buildVisualTargetMetadata({ title: "Pokémon Base Set Booster Box Factory Sealed", category: "pokemon", itemType: "unopened_product", fullItemDetails: { productName: "Booster Box", setName: "Base Set", productType: "Booster Box", language: "English", releaseYear: "1999", factorySealed: "Yes", authenticated: "Yes", authenticationCompany: "BBCE", fromASealedCase: "Yes" } });
     const productScore = pokemonVisualScore({ title: "Pokémon Base Set English Booster Box 1999 Factory Sealed BBCE FASC", itemDetails: JSON.stringify({ productName: "Booster Box", setName: "Base Set", productType: "Booster Box", language: "English", releaseYear: "1999", factorySealed: "Yes", authenticated: "Yes", authenticationCompany: "BBCE", fromASealedCase: "Yes" }) }, productTarget);
-    expect(productScore.score).toBe(100);
+    expect(productScore.score).toBe(90);
     expect(buildDeclaredIdentityReviews([{ title: "Pokémon Base Set English Booster Box Opened", itemDetails: JSON.stringify({ productName: "Booster Box", setName: "Base Set", productType: "Booster Box", language: "English", releaseYear: "1999", factorySealed: "No", authenticated: "Yes", authenticationCompany: "BBCE", fromASealedCase: "Yes" }) }], productTarget)[0]?.rationale).toContain("seal status differs");
   });
 
@@ -575,8 +580,13 @@ describe("visual source filter", () => {
   it("scores Movies / Individual Movie and Box Set independently", () => {
     const individualTarget = buildVisualTargetMetadata({ title: "The Matrix", category: "movies", itemType: "individual_movie", fullItemDetails: { title: "The Matrix", format: "Blu-ray", releaseYear: 1999, edition: "Standard", region: "Region 1", sealed: "No" } });
     const individualScore = moviesIndividualVisualScore({ title: "Matrix Blu-ray 1999 Standard Region 1 Opened", itemDetails: JSON.stringify({ format: "Blu-ray", releaseYear: 1999, edition: "Standard", region: "Region 1", sealed: "No" }) }, individualTarget);
-    expect(individualScore.score).toBe(100);
+    expect(individualScore.score).toBe(90);
     expect(individualScore.matched).toEqual(expect.arrayContaining(["movieTitle", "format", "releaseYear", "edition", "region", "sealed"]));
+
+    const gradedIndividualTarget = buildVisualTargetMetadata({ title: "The Matrix", category: "movies", itemType: "individual_movie", grade: "9.8", certificationCompany: "CGC", fullItemDetails: { title: "The Matrix", format: "Blu-ray", releaseYear: 1999, edition: "Standard", region: "Region 1", sealed: "No" } });
+    const gradedIndividualScore = moviesIndividualVisualScore({ title: "The Matrix Blu-ray 1999 Standard Region 1 Opened CGC 9.8" , itemDetails: JSON.stringify({ format: "Blu-ray", releaseYear: 1999, edition: "Standard", region: "Region 1", sealed: "No" }) }, gradedIndividualTarget);
+    expect(gradedIndividualScore.score).toBe(100);
+    expect(gradedIndividualScore.matched).toEqual(expect.arrayContaining(["gradingCompany", "grade"]));
 
     const boxTarget = buildVisualTargetMetadata({ title: "The Lord of the Rings Trilogy", category: "movies", itemType: "box_set", fullItemDetails: { boxSetName: "The Lord of the Rings Trilogy", format: "Blu-ray", numberOfMovies: 3, edition: "Standard", sealed: "Yes" } });
     const boxScore = moviesBoxSetVisualScore({ title: "Lord of the Rings Trilogy 3 Movie Blu-ray Box Set Standard Sealed", itemDetails: JSON.stringify({ format: "Blu-ray", numberOfMovies: 3, edition: "Standard", sealed: "Yes" }) }, boxTarget);
@@ -649,7 +659,7 @@ describe("visual source filter", () => {
     expect(result.reviewedCount).toBe(1);
     expect(result.listings).toHaveLength(1);
     expect(result.listings[0]).toMatchObject({
-      metadataMatchScore: 65,
+      metadataMatchScore: 60,
       metadataMatchRank: 1,
       visualRequirement: "required",
       visualReviewStatus: "match",
@@ -706,7 +716,7 @@ describe("visual source filter", () => {
     const written = moviesIndividualVisualScore({ title: "Rocky Five DVD" }, target);
     const roman = moviesIndividualVisualScore({ title: "Rocky V DVD" }, target);
 
-    expect(written.score).toBe(50);
+    expect(written.score).toBe(45);
     expect(roman.score).toBe(written.score);
     expect(roman.matched).toEqual(expect.arrayContaining(["movieTitle", "format"]));
   });
@@ -2766,7 +2776,7 @@ describe("visual source filter", () => {
     expect(wrong[0]?.rationale).toContain("Board Games game or puzzle name differs");
     expect(wrong[0]?.rationale).not.toContain("vehicle name");
     expect(vintageToyVisualScore({ title: "Manhattan Beach Monopoly Board Game Factory Sealed" }, target)).toMatchObject({
-      score: 30,
+      score: 25,
       matched: ["gamePuzzleName"],
     });
   });
@@ -2792,7 +2802,14 @@ describe("visual source filter", () => {
     });
     const candidate = { title: "Manhattan Beach Monopoly Board Game Factory Sealed", imageUrl: "https://example.com/board-game.jpg" };
     expect(buildDeclaredIdentityReviews([candidate], target)).toEqual([]);
-    expect(vintageToyVisualScore(candidate, target)).toMatchObject({ score: 45, matched: ["gamePuzzleName", "complete"] });
+    expect(vintageToyVisualScore(candidate, target)).toMatchObject({ score: 40, matched: ["gamePuzzleName", "complete"] });
+
+    const gradedToyTarget = buildVisualTargetMetadata({ title: "Man-At-Arms", category: "vintage_toys", itemType: "action_figure", grade: "75", certificationCompany: "AFA", fullItemDetails: { toyNameCharacter: "Man-At-Arms", brand: "Mattel", franchise: "Masters of the Universe", year: "1983", packagingType: "Carded", complete: "Yes", accessoriesIncluded: "Yes" } });
+    const ungradedToy = vintageToyVisualScore({ title: "Man-At-Arms Mattel Masters of the Universe 1983 Carded Complete Accessories", itemDetails: JSON.stringify({ toyNameCharacter: "Man-At-Arms", brand: "Mattel", franchise: "Masters of the Universe", year: "1983", packagingType: "Carded", complete: "Yes", accessoriesIncluded: "Yes" }) }, gradedToyTarget);
+    const gradedToy = vintageToyVisualScore({ title: "Man-At-Arms Mattel Masters of the Universe 1983 Carded Complete Accessories AFA 75", itemDetails: JSON.stringify({ toyNameCharacter: "Man-At-Arms", brand: "Mattel", franchise: "Masters of the Universe", year: "1983", packagingType: "Carded", complete: "Yes", accessoriesIncluded: "Yes" }) }, gradedToyTarget);
+    expect(ungradedToy.score).toBe(90);
+    expect(gradedToy.score).toBe(100);
+    expect(gradedToy.matched).toEqual(expect.arrayContaining(["gradingCompany", "grade"]));
   });
   it("builds side-by-side Board Games field comparisons without title-derived year or completeness", () => {
     const target = buildVisualTargetMetadata({
@@ -3504,10 +3521,21 @@ describe("visual source filter", () => {
       title: "Miles Davis Kind of Blue Columbia CL 1355 1959 First Pressing Vinyl Record",
       itemDetails: JSON.stringify({ artist: "Miles Davis", releaseTitle: "Kind of Blue", format: "vinyl_record", recordLabel: "Columbia", catalogNumber: "CL 1355", releaseYear: "1959", country: "United States", edition: "First Pressing", packagingIncluded: "yes" }),
     }, target);
-    expect(score.score).toBe(100);
+    expect(score.score).toBe(90);
     expect(score.matched).toEqual(expect.arrayContaining([
       "artist", "releaseTitle", "format", "recordLabel", "catalogNumber", "releaseYear", "country", "edition", "packagingIncluded",
     ]));
+
+    const gradedTarget = buildVisualTargetMetadata({ title: "Kind of Blue", category: "music", itemType: "vinyl_record", grade: "9.8", certificationCompany: "CGC", fullItemDetails: {
+      artist: "Miles Davis", releaseTitle: "Kind of Blue", format: "vinyl_record", recordLabel: "Columbia",
+      catalogNumber: "CL 1355", releaseYear: "1959", country: "United States", edition: "First Pressing", packagingIncluded: "yes",
+    } });
+    const gradedScore = musicVisualScore({
+      title: "Miles Davis Kind of Blue Columbia CL 1355 1959 First Pressing Vinyl Record CGC 9.8",
+      itemDetails: JSON.stringify({ artist: "Miles Davis", releaseTitle: "Kind of Blue", format: "vinyl_record", recordLabel: "Columbia", catalogNumber: "CL 1355", releaseYear: "1959", country: "United States", edition: "First Pressing", packagingIncluded: "yes" }),
+    }, gradedTarget);
+    expect(gradedScore.score).toBe(100);
+    expect(gradedScore.matched).toEqual(expect.arrayContaining(["gradingCompany", "grade"]));
   });
 
   it("scores Disney Pins / Individual Pin on the approved identity signals", () => {

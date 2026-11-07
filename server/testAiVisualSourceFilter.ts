@@ -4216,7 +4216,7 @@ export function videoGameVisualCap(score: number): number {
   return 0;
 }
 const MOVIES_INDIVIDUAL_SCORE_FIELDS = [
-  ['movieTitle', 30], ['format', 20], ['releaseYear', 15], ['edition', 15], ['region', 10], ['sealed', 10],
+  ['movieTitle', 25], ['format', 20], ['releaseYear', 15], ['edition', 15], ['region', 10], ['sealed', 5], ['gradingCompany', 5], ['grade', 5],
 ] as const;
 const MOVIES_BOX_SET_SCORE_FIELDS = [
   ['boxSetName', 30], ['format', 20], ['numberOfMovies', 15], ['edition', 15], ['sealed', 10], ['gradingDetails', 10],
@@ -4260,12 +4260,14 @@ export function moviesIndividualVisualScore(listing: VisualSourceCandidate, targ
   const target = extractTargetItemDetails(targetMetadata);
   const matched: string[] = []; const unknown: string[] = []; let score = 0;
   const add = (field: typeof MOVIES_INDIVIDUAL_SCORE_FIELDS[number][0], points: number, result: boolean | null) => { if (result === true) { score += points; matched.push(field); } else if (result === null) unknown.push(field); };
-  add('movieTitle', 30, movieScoreValueMatches(firstMeaningfulValue(target.title, target.movieTitle, extractTargetTitle(targetMetadata)), listing, ['title', 'movieTitle'], [], true));
+  add('movieTitle', 25, movieScoreValueMatches(firstMeaningfulValue(target.title, target.movieTitle, extractTargetTitle(targetMetadata)), listing, ['title', 'movieTitle'], [], true));
   add('format', 20, movieScoreFormatMatches(target.format, listing));
   add('releaseYear', 15, movieScoreValueMatches(firstMeaningfulValue(target.releaseYear, target.year), listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/]));
   add('edition', 15, movieScoreValueMatches(target.edition, listing, ['edition', 'releaseType'], [], true));
   add('region', 10, movieScoreValueMatches(target.region, listing, ['region', 'regionCode'], [/(?:Region\s*[0-9A-C]|NTSC|PAL)/i]));
-  add('sealed', 10, movieScoreBooleanMatches(firstMeaningfulValue(target.sealed, target.sealedStatus), listing));
+  add('sealed', 5, movieScoreBooleanMatches(firstMeaningfulValue(target.sealed, target.sealedStatus), listing));
+  add('gradingCompany', 5, coinGradingCompanyMatches(targetMetadata, normalizeVisualSourceCandidate(listing)));
+  add('grade', 5, coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing)));
   return { score, matched, unknown };
 }
 export function moviesBoxSetVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
@@ -4783,8 +4785,8 @@ export function disneyPinsSetVisualScore(listing: VisualSourceCandidate, targetM
 export function disneyPinsVisualCap(score: number): number { if(score>=90) return 8; if(score>=80) return 6; if(score>=70) return 4; if(score>=40) return 2; return 0; }
 
 const MUSIC_SCORE_FIELDS = [
-  ['artist', 25],
-  ['releaseTitle', 20],
+  ['artist', 20],
+  ['releaseTitle', 15],
   ['format', 15],
   ['recordLabel', 10],
   ['catalogNumber', 10],
@@ -4792,6 +4794,8 @@ const MUSIC_SCORE_FIELDS = [
   ['country', 5],
   ['edition', 5],
   ['packagingIncluded', 2],
+  ['gradingCompany', 5],
+  ['grade', 5],
 ] as const;
 
 function musicScoreText(value: unknown): string {
@@ -4840,8 +4844,8 @@ export function musicVisualScore(listing: VisualSourceCandidate, targetMetadata:
   const unknown: string[] = [];
   let score = 0;
   const add = (field: typeof MUSIC_SCORE_FIELDS[number][0], points: number, result: boolean | null) => { if (result === true) { score += points; matched.push(field); } else if (result === null) unknown.push(field); };
-  add('artist', 25, musicScoreValueMatches(musicScoreTargetValue(targetDetails, ['artist', 'performer', 'artistName']), listing, ['artist', 'performer', 'artistName']));
-  add('releaseTitle', 20, musicScoreValueMatches(musicScoreTargetValue(targetDetails, ['releaseTitle', 'album', 'albumTitle'], extractTargetTitle(targetMetadata)), listing, ['releaseTitle', 'album', 'albumTitle', 'title']));
+  add('artist', 20, musicScoreValueMatches(musicScoreTargetValue(targetDetails, ['artist', 'performer', 'artistName']), listing, ['artist', 'performer', 'artistName']));
+  add('releaseTitle', 15, musicScoreValueMatches(musicScoreTargetValue(targetDetails, ['releaseTitle', 'album', 'albumTitle'], extractTargetTitle(targetMetadata)), listing, ['releaseTitle', 'album', 'albumTitle', 'title']));
   add('format', 15, musicScoreFormatMatches(targetType, listing));
   add('recordLabel', 10, musicScoreValueMatches(targetDetails.recordLabel, listing, ['recordLabel', 'label']));
   add('catalogNumber', 10, musicScoreValueMatches(targetDetails.catalogNumber, listing, ['catalogNumber', 'catalogNo', 'catNo']));
@@ -4849,6 +4853,8 @@ export function musicVisualScore(listing: VisualSourceCandidate, targetMetadata:
   add('country', 5, musicScoreValueMatches(targetDetails.country ?? targetDetails.countryOfRelease, listing, ['country', 'countryOfRelease', 'pressingCountry']));
   add('edition', 5, musicScoreValueMatches(targetDetails.edition ?? targetDetails.variant ?? targetDetails.pressingDetails, listing, ['edition', 'variant', 'pressing', 'pressingDetails']));
   add('packagingIncluded', 2, musicScoreBooleanMatches(targetDetails.packagingIncluded, listing, ['packagingIncluded', 'originalPackaging'], /\b(?:original|complete|with)\s+(?:packaging|case|jewel case|sleeve)\b/i, /\b(?:no|without|missing)\s+(?:original\s+)?(?:packaging|case|jewel case|sleeve)\b/i));
+  add('gradingCompany', 5, coinGradingCompanyMatches(targetMetadata, normalizeVisualSourceCandidate(listing)));
+  add('grade', 5, coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing)));
   return { score, matched, unknown };
 }
 
@@ -5202,9 +5208,9 @@ export function sportsCardUnopenedVisualCap(score: number): number {
 }
 
 const POKEMON_SCORE_FIELDS = {
-  single_card: [['cardName', 25], ['setName', 20], ['cardNumber', 15], ['language', 10], ['finish', 10], ['cardType', 10], ['rarity', 5], ['editionEra', 5]],
-  set: [['setName', 35], ['language', 15], ['setType', 20], ['cardCount', 15], ['year', 10], ['packaging', 5]],
-  unopened_product: [['productName', 20], ['setName', 20], ['productType', 20], ['language', 10], ['year', 10], ['factorySealed', 10], ['authentication', 5], ['fromASealedCase', 5]],
+  single_card: [['cardName', 20], ['setName', 15], ['cardNumber', 15], ['language', 10], ['finish', 10], ['cardType', 10], ['rarity', 5], ['editionEra', 5], ['gradingCompany', 5], ['grade', 5]],
+  set: [['setName', 30], ['language', 15], ['setType', 20], ['cardCount', 15], ['year', 5], ['packaging', 5], ['gradingCompany', 5], ['grade', 5]],
+  unopened_product: [['productName', 15], ['setName', 15], ['productType', 20], ['language', 10], ['year', 10], ['factorySealed', 10], ['authentication', 5], ['fromASealedCase', 5], ['gradingCompany', 5], ['grade', 5]],
 } as const;
 function pokemonScoreValue(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[] = [], allowSubset = true): boolean | null {
   const target = pokemonComparableValue(targetValue);
@@ -5253,6 +5259,8 @@ export function pokemonVisualScore(listing: VisualSourceCandidate, targetMetadat
       case 'factorySealed': add(field, points, pokemonScoreBoolean(firstMeaningfulValue(target.factorySealed, target.sealStatus, target.sealedStatus), listing, ['factorySealed', 'sealStatus', 'sealedStatus'], /\b(?:factory\s+sealed|new\s+sealed|sealed|unopened)\b/i, /\b(?:opened|resealed|damaged\s+seal|unsealed)\b/i)); break;
       case 'authentication': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.authenticationCompany, target.authenticator), listing, ['authenticationCompany', 'authenticator'], [], false)); break;
       case 'fromASealedCase': add(field, points, pokemonScoreBoolean(firstMeaningfulValue(target.fromASealedCase, target.fromSealedCase), listing, ['fromASealedCase', 'fromSealedCase'], /\b(?:FASC|from\s+(?:a\s+)?sealed\s+case)\b/i, /\b(?:not\s+FASC|not\s+from\s+(?:a\s+)?sealed\s+case)\b/i)); break;
+      case 'gradingCompany': add(field, points, coinGradingCompanyMatches(targetMetadata, normalizeVisualSourceCandidate(listing))); break;
+      case 'grade': add(field, points, coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing))); break;
     }
   }
   return { score, matched, unknown };
@@ -5275,36 +5283,36 @@ function selectPokemonVisualCandidates<T extends VisualSourceCandidate>(candidat
 }
 const VINTAGE_TOY_SCORE_FIELDS = {
   "action figure/doll": [
-    ["toyNameCharacter", 30], ["brand", 15], ["franchise", 15], ["year", 10],
-    ["packagingType", 10], ["complete", 10], ["accessoriesIncluded", 10],
+    ["toyNameCharacter", 25], ["brand", 15], ["franchise", 15], ["year", 5],
+    ["packagingType", 10], ["complete", 10], ["accessoriesIncluded", 10], ["gradingCompany", 5], ["grade", 5],
   ],
   "board game/puzzle": [
-    ["gamePuzzleName", 30], ["publisherBrand", 15], ["year", 10], ["complete", 15],
-    ["numberOfPieces", 10], ["instructionsIncluded", 10], ["boxIncluded", 10],
+    ["gamePuzzleName", 25], ["publisherBrand", 15], ["year", 5], ["complete", 15],
+    ["numberOfPieces", 10], ["instructionsIncluded", 10], ["boxIncluded", 10], ["gradingCompany", 5], ["grade", 5],
   ],
   "electronic toy": [
-    ["toyName", 30], ["brand", 15], ["year", 10], ["tested", 15],
-    ["workingCondition", 15], ["batteryCompartmentCondition", 10], ["soundOrLights", 5],
+    ["toyName", 25], ["brand", 15], ["year", 5], ["tested", 15],
+    ["workingCondition", 15], ["batteryCompartmentCondition", 10], ["soundOrLights", 5], ["gradingCompany", 5], ["grade", 5],
   ],
   LEGO: [
-    ["setNumber", 30], ["theme", 20], ["complete", 15], ["packagingType", 10],
-    ["releaseYear", 10], ["pieceCount", 5], ["minifiguresIncluded", 5], ["retiredStatus", 5],
+    ["setNumber", 25], ["theme", 20], ["complete", 15], ["packagingType", 10],
+    ["releaseYear", 5], ["pieceCount", 5], ["minifiguresIncluded", 5], ["retiredStatus", 5], ["gradingCompany", 5], ["grade", 5],
   ],
   "model/kit": [
-    ["modelKitName", 30], ["brand", 15], ["scale", 15], ["builtOrUnbuilt", 15],
-    ["complete", 10], ["instructionsIncluded", 10], ["year", 5],
+    ["modelKitName", 25], ["brand", 10], ["scale", 15], ["builtOrUnbuilt", 15],
+    ["complete", 10], ["instructionsIncluded", 10], ["year", 5], ["gradingCompany", 5], ["grade", 5],
   ],
   playset: [
-    ["playsetName", 30], ["brand", 15], ["franchise", 15], ["year", 10],
-    ["complete", 15], ["missingPieces", 10], ["originalBoxIncluded", 5],
+    ["playsetName", 25], ["brand", 15], ["franchise", 15], ["year", 5],
+    ["complete", 15], ["missingPieces", 10], ["originalBoxIncluded", 5], ["gradingCompany", 5], ["grade", 5],
   ],
   "plush/stuffed toy": [
-    ["toyNameCharacter", 35], ["brand", 20], ["franchise", 10], ["year", 10],
-    ["tagsAttached", 15], ["cleanlinessOdorNotes", 10],
+    ["toyNameCharacter", 30], ["brand", 20], ["franchise", 10], ["year", 5],
+    ["tagsAttached", 15], ["cleanlinessOdorNotes", 10], ["gradingCompany", 5], ["grade", 5],
   ],
   vehicle: [
-    ["vehicleName", 30], ["brand", 15], ["franchise", 10], ["year", 10],
-    ["vehicleType", 15], ["packagingType", 10], ["workingFeatures", 10],
+    ["vehicleName", 25], ["brand", 15], ["franchise", 10], ["year", 5],
+    ["vehicleType", 15], ["packagingType", 10], ["workingFeatures", 10], ["gradingCompany", 5], ["grade", 5],
   ],
 } as const;
 
@@ -5404,6 +5412,10 @@ export function vintageToyVisualScore(listing: VisualSourceCandidate, targetMeta
     if (result === true) { score += points; matched.push(field); }
     else if (result === null) unknown.push(field);
   };
+  const addResult = (field: string, result: boolean | null) => {
+    if (result === true) { score += 5; matched.push(field); }
+    else if (result === null) unknown.push(field);
+  };
   for (const [field, points] of vintageToyScoreFields(type)) {
     switch (field) {
       case "toyNameCharacter": add(field, points, vintageToyScoreTargetValue(details, ["toyNameCharacter", "toyName", "character"], extractTargetTitle(targetMetadata)), ["toyNameCharacter", "toyName", "character", "name"], "text"); break;
@@ -5448,6 +5460,8 @@ export function vintageToyVisualScore(listing: VisualSourceCandidate, targetMeta
       case "missingPieces": add(field, points, vintageToyScoreTargetValue(details, ["missingPieces"]), ["missingPieces"], "state", /\b(?:no\s+missing\s+pieces?|complete)\b/i, /\b(?:missing\s+pieces?|incomplete)\b/i); break;
       case "workingFeatures": add(field, points, vintageToyScoreTargetValue(details, ["workingFeatures", "features"]), ["workingFeatures", "features"], "text"); break;
       case "cleanlinessOdorNotes": add(field, points, vintageToyScoreTargetValue(details, ["cleanlinessOdorNotes"]), ["cleanlinessOdorNotes", "cleanliness", "odor"], "text"); break;
+      case "gradingCompany": addResult(field, coinGradingCompanyMatches(targetMetadata, normalizeVisualSourceCandidate(listing))); break;
+      case "grade": addResult(field, coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing))); break;
     }
   }
   return { score, matched, unknown };
