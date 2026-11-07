@@ -196,6 +196,26 @@ describe('Test AI manufacturer criteria', () => {
     expect(definition.fallbackQueries).not.toContain('70 Plymouth AAR Cuda Hot Wheels');
   });
 
+  it('omits year from Vintage Toys Board Game/Puzzle marketplace queries', () => {
+    const definition = buildMarketplaceSearchDefinition({
+      title: '1985 HeroQuest Milton Bradley Board Game',
+      category: 'vintage_toys',
+      itemType: 'board_game___puzzle',
+      itemDetails: {
+        year: '1985',
+        gamePuzzleName: 'HeroQuest',
+        brand: 'Milton Bradley',
+      },
+    });
+
+    const allQueries = [definition.query, definition.baseQuery, ...definition.fallbackQueries];
+    expect(allQueries.length).toBeGreaterThan(0);
+    expect(allQueries.every((query) => !/\b1985\b/.test(query))).toBe(true);
+    expect(definition.query).toContain('HeroQuest');
+    expect(definition.query).toContain('Milton Bradley');
+    expect(definition.fieldsUsed).not.toContain('year');
+  });
+
   it.each([
     'sports_cards', 'comics', 'video_games', 'movies', 'autographs', 'pokemon',
     'vintage_toys', 'disney_pins', 'stamps', 'music', 'coins',

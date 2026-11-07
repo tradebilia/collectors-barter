@@ -50,6 +50,14 @@ function normalizeVintageToyYear(value: unknown): string {
   return /^\d{2}$/.test(year) ? `'${year}` : year;
 }
 
+function isVintageToyBoardGame(itemType: string): boolean {
+  return /board_game|puzzle/.test(itemType);
+}
+
+function removeStandaloneYears(value: string): string {
+  return value.replace(/\b(?:19|20)\d{2}\b/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 function unique(values: string[]): string[] {
   return [...new Set(values.map(text).filter(Boolean))];
 }
@@ -139,8 +147,9 @@ export function buildMarketplaceSearchDefinition(input: MarketplaceSearchDefinit
     baseTerms = [value('year'), value('editionEra'), value('cardName', 'pokemonName', 'name'), value('cardNumber', 'cardNo', 'number'), value('finish', 'finishVariant'), value('cardType', 'mechanic'), value('language')];
     fieldsUsed.push('year', 'edition/era', 'card name', 'card number', 'finish', 'card type/mechanic', 'language');
   } else if (category === 'vintage_toys') {
-    baseTerms = [normalizeVintageToyYear(value('year')), value('toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName') || input.title, value('brand', 'franchise'), value('line'), value('setNumber'), value('version', 'variant')];
-    fieldsUsed.push('year', 'toy identity', 'brand/franchise', 'line', 'set number', 'version/variant');
+    const boardGame = isVintageToyBoardGame(itemType);
+    baseTerms = [boardGame ? '' : normalizeVintageToyYear(value('year')), value('toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName') || input.title, value('brand', 'franchise'), value('line'), value('setNumber'), value('version', 'variant')];
+    fieldsUsed.push(...(boardGame ? [] : ['year']), 'toy identity', 'brand/franchise', 'line', 'set number', 'version/variant');
   } else if (category === 'disney_pins') {
     baseTerms = ['Disney Pins', value('character'), value('pinName', 'name'), value('edition', 'variant')];
     fieldsUsed.push('character', 'pin name', 'edition/variant');
@@ -158,8 +167,11 @@ export function buildMarketplaceSearchDefinition(input: MarketplaceSearchDefinit
     fieldsUsed.push('category-defined structured identity fields');
   }
 
-  const structuredBaseQuery = unique(baseTerms).join(' ').trim() || input.title.trim();
-  const baseQuery = ensureIdentityAnchor(structuredBaseQuery, input.title.trim());
+  const searchTitle = category === 'vintage_toys' && isVintageToyBoardGame(itemType)
+    ? removeStandaloneYears(input.title.trim())
+    : input.title.trim();
+  const structuredBaseQuery = unique(baseTerms).join(' ').trim() || searchTitle;
+  const baseQuery = ensureIdentityAnchor(structuredBaseQuery, searchTitle);
   const query = category === 'cert_direct'
     ? input.title.trim()
     : appendSearchContext(baseQuery, input, details);
@@ -178,7 +190,7 @@ export function buildMarketplaceSearchDefinition(input: MarketplaceSearchDefinit
       ]).join(' '),
     ]
     : [];
-  const standardFallbacks = category === 'autographs' ? [] : unique([query, input.title, baseQuery]);
+  const standardFallbacks = category === 'autographs' ? [] : unique([query, searchTitle, baseQuery]);
   // The primary query is returned separately as `query`. Keep this list to
   // distinct fallback forms only so adapters and the UI never label the
   // primary query as “Fallback 1”.
