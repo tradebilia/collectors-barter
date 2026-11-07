@@ -45,4 +45,74 @@ describe("shared metadata conflict comparison", () => {
       expect.objectContaining({ field: "country", targetValue: "United States", candidateValue: "Canada" }),
     ]));
   });
+
+  it("does not treat a marketplace title echoed into brand as explicit brand metadata", () => {
+    const vintageToyTarget = buildVisualTargetMetadata({
+      title: "1998 Donkey Kong Nintendo AFA 7.5",
+      category: "vintage_toys",
+      itemType: "plush_stuffed_toy",
+      fullItemDetails: { brand: "Other", customBrand: "Nintendo", toyName: "Donkey Kong" },
+    });
+    const candidateTitle = 'Nintendo Collectibles Talking Plush Character Donkey Kong 15" 1998 Graded AFA';
+    const conflicts = findMaterialMetadataConflicts(vintageToyTarget, {
+      title: candidateTitle,
+      brand: candidateTitle,
+    });
+
+    expect(conflicts).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: "brand", candidateValue: candidateTitle }),
+    ]));
+  });
+
+  it("still flags a genuinely different structured brand", () => {
+    const vintageToyTarget = buildVisualTargetMetadata({
+      title: "1998 Donkey Kong Nintendo AFA 7.5",
+      category: "vintage_toys",
+      itemType: "plush_stuffed_toy",
+      fullItemDetails: { brand: "Other", customBrand: "Nintendo", toyName: "Donkey Kong" },
+    });
+    const conflicts = findMaterialMetadataConflicts(vintageToyTarget, {
+      title: "Nintendo Collectibles Talking Plush Character Donkey Kong",
+      brand: "Hasbro",
+    });
+
+    expect(conflicts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: "brand", candidateValue: "Hasbro" }),
+    ]));
+  });
+
+  it("uses a candidate custom Brand when the provider stores Brand as Other", () => {
+    const vintageToyTarget = buildVisualTargetMetadata({
+      title: "Donkey Kong Nintendo plush",
+      category: "vintage_toys",
+      itemType: "plush_stuffed_toy",
+      fullItemDetails: { brand: "Nintendo", toyName: "Donkey Kong" },
+    });
+    const conflicts = findMaterialMetadataConflicts(vintageToyTarget, {
+      title: "Donkey Kong plush",
+      brand: "Other",
+      itemDetails: JSON.stringify({ brand: "Other", customBrand: "Nintendo", toyName: "Donkey Kong" }),
+    });
+
+    expect(conflicts).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: "brand" }),
+    ]));
+  });
+
+  it("applies the same candidate custom-field fallback to another category field", () => {
+    const sportsCardTarget = buildVisualTargetMetadata({
+      title: "1989 Example Player Pinnacle card",
+      category: "sports_cards",
+      itemType: "single_card",
+      fullItemDetails: { manufacturer: "Pinnacle", player: "Example Player", year: "1989", cardNumber: "1" },
+    });
+    const conflicts = findMaterialMetadataConflicts(sportsCardTarget, {
+      title: "1989 Example Player card",
+      itemDetails: JSON.stringify({ manufacturer: "Other", customManufacturer: "Pinnacle", player: "Example Player", year: "1989", cardNumber: "1" }),
+    });
+
+    expect(conflicts).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: "manufacturer" }),
+    ]));
+  });
 });

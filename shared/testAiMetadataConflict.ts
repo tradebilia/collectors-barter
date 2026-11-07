@@ -1,4 +1,5 @@
 import { titleContainsValue } from "./testAiTitleEvidence";
+import { normalizeTestAiOtherDetails } from "./testAiCriteria";
 
 export type MetadataConflict = {
   field: string;
@@ -110,7 +111,11 @@ function canonicalFields(metadata: string): MetadataRecord {
 
 function candidateFields(candidate: MetadataRecord): MetadataRecord {
   const details = parseDetails(candidate.itemDetails ?? candidate.fullItemDetails ?? candidate.details);
-  return { ...details, ...candidate };
+  // Normalize after merging so a raw adapter field cannot overwrite the
+  // resolved custom value from itemDetails (for example brand=Other with
+  // customBrand=Nintendo). The same generic rule covers every
+  // custom<FieldName> pair.
+  return normalizeTestAiOtherDetails({ ...details, ...candidate });
 }
 
 function valueMatchesEvidence(value: string, evidence: string): boolean {
@@ -142,6 +147,12 @@ function explicitStructuredGradeConflict(target: string, candidate: string): str
   const candidateGrade = String(candidate).match(/[0-9]+(?:\.[0-9]+)?/)?.[0];
   if (!targetGrade || !candidateGrade || Number(candidateGrade) === Number(targetGrade)) return null;
   return candidateGrade;
+}
+
+function isTitleEchoForIdentityField(field: string, candidateValue: string, candidateTitle: string): boolean {
+  const normalizedField = field.toLowerCase().replace(/[_-]+/g, '');
+  if (!['brand', 'manufacturer', 'maker'].includes(normalizedField)) return false;
+  return Boolean(candidateValue && candidateTitle && compact(candidateValue) === compact(candidateTitle));
 }
 
 function isGradingCompanyField(field: string): boolean {
@@ -215,7 +226,14 @@ export function findMaterialMetadataConflicts(
   for (const field of fields) {
     const targetValue = firstValue(target, field);
     if (!targetValue || /^(unknown|n ?a|none|raw|ungraded)$/i.test(targetValue)) continue;
-    const directCandidateValue = firstValue(candidateRecord, field);
+    const rawCandidateValue = firstValue(candidateRecord, field);
+    // Some marketplace adapters expose a convenience `brand`/`manufacturer`
+    // property that is actually a copy of the listing title when no structured
+    // aspect was supplied. That is title evidence, not explicit field evidence;
+    // treating it as a brand would create false hard conflicts.
+    const directCandidateValue = isTitleEchoForIdentityField(field, rawCandidateValue, candidateTitle)
+      ? ''
+      : rawCandidateValue;
     if (field === 'grade') {
       const structuredGrade = explicitStructuredGradeConflict(targetValue, directCandidateValue);
       const titleGrade = explicitGradeConflict(targetValue, candidateTitle);
