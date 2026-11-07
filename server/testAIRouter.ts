@@ -1830,8 +1830,13 @@ export const testAIRouter = router({
             }
           : null;
         // Legacy performance contract: const displaySummaries = visualActiveFilter?.listings ?? visualInputListings;
+        // Keep every retrieved candidate visible in the sandbox. Selecting
+        // either accepted listings or context listings caused valid records to
+        // disappear as soon as one other candidate reached the accepted list.
+        // Context records retain their disposition and therefore remain barred
+        // from valuation unless the normal evidence gate promotes them.
         let displaySummaries = visualActiveFilter
-          ? (visualActiveFilter.listings.length > 0 ? visualActiveFilter.listings : (visualActiveFilter.contextListings ?? []))
+          ? [...visualActiveFilter.listings, ...(visualActiveFilter.contextListings ?? [])]
           : visualInputListings;
         if (autographMarketContext) {
           // Defense in depth: a provider adapter must not be able to leave a

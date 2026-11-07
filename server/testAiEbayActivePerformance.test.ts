@@ -106,7 +106,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(section).toContain("const visualInputListings = preVisionAssessment.eligible.map");
     expect(section).toContain("filterVisualSourceCandidates({");
     expect(section).toContain("const metrics = computeMetrics(displaySummaries)");
-    expect(section).toContain("const displaySummaries = visualActiveFilter?.listings ?? visualInputListings");
+    expect(section).toContain("[...visualActiveFilter.listings, ...(visualActiveFilter.contextListings ?? [])]");
+    expect(section).toContain("Context records retain their disposition");
     expect(section).toContain("visualReviewTargetMetadata: targetMetadata");
     expect(section).toContain("visualReviewListings: displaySummaries.slice(0, VISUAL_REVIEW_MAX_CANDIDATES).map");
     expect(section).toContain("assessSoldCompsPreVisionCandidates({");
@@ -163,7 +164,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
   it("keeps selected ranks visible as context when visual analysis has no target image", () => {
     expect(visualSource).toContain("rankedSelectedContextListings");
     expect(visualSource).toContain("not_required_no_target_image");
-    expect(routerSource).toContain("visualActiveFilter.listings.length > 0 ? visualActiveFilter.listings : (visualActiveFilter.contextListings ?? [])");
+    expect(routerSource).toContain("[...visualActiveFilter.listings, ...(visualActiveFilter.contextListings ?? [])]");
     expect(pageSource).toContain("not visually analyzed because the target item image was unavailable");
   });
 
