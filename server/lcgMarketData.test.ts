@@ -20,6 +20,21 @@ describe('LCG Auctions adapter', () => {
     expect(result.context[0]?.valuationEligible).toBe(false);
   });
 
+  it('uses the structured Board Games name and omits year from the LCG request', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('<html><body></body></html>', { status: 200 }));
+    const result = await lookupLcg({
+      sourceId: 'lcg',
+      category: 'vintage_toys',
+      title: '1985 HeroQuest Milton Bradley Board Game',
+      itemType: 'board_game___puzzle',
+      itemDetails: JSON.stringify({ year: '1985', gamePuzzleName: 'HeroQuest', brand: 'Milton Bradley' }),
+    });
+    const requestUrl = decodeURIComponent(String(vi.mocked(fetch).mock.calls[0]?.[0]));
+    expect(requestUrl).toContain('SearchText=HeroQuest');
+    expect(requestUrl).not.toContain('1985');
+    expect(result.status).toBe('success');
+  });
+
   it('enriches a gallery lot from its detail page with completed sale facts', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
       if (String(url).includes('/Lots/Gallery')) {

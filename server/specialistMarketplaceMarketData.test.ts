@@ -136,6 +136,17 @@ describe('bounded specialist marketplace adapters', () => {
     expect(buildGoldinSearchQueries(input)).toEqual(['Hasbro Transformers G1 Optimus Prime']);
     expect(buildGoldinSearchQuery(input)).not.toMatch(/1985|AFA|9\.0|MISB|Mint/i);
   });
+  it('omits year from Goldin Board Games queries across all bounded variants', () => {
+    const input = {
+      sourceId: 'goldin' as const,
+      title: '1985 HeroQuest Milton Bradley Board Game',
+      category: 'vintage_toys',
+      itemType: 'board_game___puzzle',
+      itemDetails: JSON.stringify({ year: '1985', gamePuzzleName: 'HeroQuest', brand: 'Milton Bradley' }),
+    };
+    expect(buildGoldinSearchQuery(input)).toBe('Milton Bradley Hero Quest');
+    expect(buildGoldinSearchQueries(input).every((query) => !/\b1985\b/.test(query))).toBe(true);
+  });
 
   it('accepts PSA and WATA as equivalent only for video-game identity', () => {
     const psaTarget = { ...videoGame, title: '1990 Super Mario Bros. 3 Sealed Video Game PSA 9', grade: '9', certificationCompany: 'PSA' as const };

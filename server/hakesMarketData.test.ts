@@ -25,6 +25,17 @@ describe('Hake’s full public catalog adapter', () => {
     expect(buildHakesSearchQueryForTest(target)).not.toContain('CGC');
   });
 
+  it('omits year from the shared Board Games query used by Hake’s', () => {
+    const boardGame = {
+      title: '1985 HeroQuest Milton Bradley Board Game',
+      category: 'vintage_toys',
+      itemType: 'board_game___puzzle',
+      itemDetails: JSON.stringify({ year: '1985', gamePuzzleName: 'HeroQuest', brand: 'Milton Bradley' }),
+    };
+    expect(buildHakesSearchQueryForTest(boardGame)).toBe('HeroQuest Milton Bradley');
+    expect(buildHakesSearchQueryForTest(boardGame)).not.toContain('1985');
+  });
+
   it('maps every applicable pop-culture Tradebilia category and remains context-only', () => {
     const source = getSandboxSpecialistSource('hakes');
     expect(source?.searchContract).toBe('automatic_title_search');

@@ -38,7 +38,7 @@ function lcgSearchQuery(input: SpecialistMarketplaceLookupInput): string {
   if (input.category !== 'vintage_toys') return '';
   try {
     const details = typeof input.itemDetails === 'string' ? JSON.parse(input.itemDetails) as Record<string, unknown> : input.itemDetails as Record<string, unknown> | undefined;
-    const characterName = [details?.toyNameCharacter, details?.characterName, details?.toyName, details?.name]
+    const characterName = [details?.toyNameCharacter, details?.characterName, details?.toyName, details?.gamePuzzleName, details?.name]
       .map(value => text(value))
       .find(Boolean);
     return characterName ?? '';
