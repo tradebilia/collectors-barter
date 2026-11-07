@@ -2821,6 +2821,29 @@ describe("visual source filter", () => {
     ]));
   });
 
+  it("normalizes title-derived grade evidence and infers sealed completeness and graded status", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Call of Duty: World at War Xbox 360",
+      category: "video_games",
+      itemType: "game",
+      grade: "9.8",
+      certificationCompany: "PSA",
+      fullItemDetails: { gameTitle: "Call of Duty: World at War", platform: "Xbox 360", isGraded: "Yes", completeInBox: "Yes", sealed: "Yes" },
+    });
+    const rows = buildMetadataFieldComparisons(target, {
+      title: "Call of Duty World at War Xbox 360 Sealed PSA 9.8 A+ Graded",
+      fullItemDetails: { gameTitle: "Call of Duty: World at War", platform: "Xbox 360" },
+    });
+
+    expect(rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ targetField: "Grade", titleDerivedValue: "9.8", titleDerivedStatus: "match" }),
+      expect.objectContaining({ targetField: "Is Graded", titleDerivedValue: "Yes (inferred from title)", titleDerivedStatus: "match" }),
+      expect.objectContaining({ targetField: "Complete In Box", titleDerivedValue: "Yes (inferred from title)", titleDerivedStatus: "match" }),
+      expect.objectContaining({ targetField: "Sealed", titleDerivedValue: "Yes (inferred from title)", titleDerivedStatus: "match" }),
+    ]));
+    expect(rows.find((row) => row.targetField === "Grade")?.titleDerivedValue).not.toContain("PSA");
+  });
+
   it("holds a sports-card candidate with an explicit parallel conflict before vision", () => {
     const metadata = `title=Mike Trout; category=sports_cards; fullItemDetails=${JSON.stringify({ player: "Mike Trout", year: "2011", manufacturer: "Topps", parallel: "Chrome Refractor" })}`;
     const result = buildDeclaredIdentityReviews([

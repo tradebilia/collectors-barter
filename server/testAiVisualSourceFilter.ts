@@ -1916,6 +1916,10 @@ function comparisonCandidateFieldValue(listing: VisualSourceCandidate, details: 
 	const structured = resolveTestAiDetailValue(details, key) ?? labeledCandidateValue(details, [key]);
 	return comparisonValue(direct ?? structured);
 }
+function titleGradeEvidence(title: string): { grader: string; grade: string } | null {
+	const match = title.match(/\b(PSA|BGS|CGC|CBCS|AFA|SGC|ACE|Beckett|PCGS|NGC|WATA|VGA)\s*(?:graded\s*)?(\d{1,2}(?:\.\d+)?)\b/i);
+	return match ? { grader: match[1], grade: match[2] } : null;
+}
 function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string, targetValue: string): string {
 	const title = String(listing.title ?? listing.itemTitle ?? listing.listingTitle ?? listing.name ?? listing.productName ?? "").trim();
 	if (!title) return "Unknown";
@@ -1924,11 +1928,19 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 		return title.match(/\b(?:17|18|19|20)\d{2}\b/)?.[0] ?? "Unknown";
 	}
 	if (/^(?:grade|numericGrade)$/i.test(key)) {
-		return title.match(/\b(?:PSA|BGS|CGC|AFA|SGC|ACE|Beckett)\s*([0-9]{1,2}(?:\.\d)?)\b/i)?.[0] ?? "Unknown";
+		return titleGradeEvidence(title)?.grade ?? "Unknown";
 	}
-	if (/^(?:complete|completeness|isComplete)$/i.test(key)) {
+	if (/^(?:isGraded|graded|gradingStatus|gradingState)$/i.test(key)) {
+		return titleGradeEvidence(title) || /\b(?:graded|slabbed|encapsulated)\b/i.test(title) ? "Yes (inferred from title)" : "Unknown";
+	}
+	if (/^(?:complete|completeness|isComplete|completeInBox|completeBox|cib)$/i.test(key)) {
 		if (/\b(?:incomplete|missing|parts?\s+only|for\s+parts)\b/i.test(title)) return "No (inferred from title)";
-		if (/\b(?:complete|factory\s+sealed|sealed)\b/i.test(title)) return "Yes (inferred from title)";
+		if (/\b(?:complete|complete\s+in\s+box|factory\s+sealed|sealed|unopened)\b/i.test(title)) return "Yes (inferred from title)";
+		return "Unknown";
+	}
+	if (/^(?:sealed|factorySealed|sealedStatus|unopened|unopenedProduct)$/i.test(key)) {
+		if (/\b(?:unsealed|opened|open\s+box)\b/i.test(title)) return "No (inferred from title)";
+		if (/\b(?:factory\s+sealed|sealed|unopened)\b/i.test(title)) return "Yes (inferred from title)";
 		return "Unknown";
 	}
 	if (/^(?:packagingType|packaging|form|saleForm)$/i.test(key)) {
