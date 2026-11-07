@@ -4988,10 +4988,16 @@ export function sportsCardSingleVisualScore(listing: VisualSourceCandidate, targ
   add('cardNumber', 15, sportsCardExplicitNumber(cardNumber, candidate.title), Boolean(cardNumber));
 
   const targetGrader = String(firstMeaningfulValue(metadataValue(targetMetadata, 'certificationCompany'), targetDetails.gradingCompany, targetDetails.grader) ?? '').trim();
-  add('gradingCompany', 10, Boolean(targetGrader && sportsCardText(candidate.grader) === sportsCardText(targetGrader)), Boolean(targetGrader));
+  const titleGrade = titleGradeEvidence(candidateTextValue);
+  const structuredGrader = sportsCardText(candidate.grader);
+  const candidateGrader = structuredGrader && !/^(?:unknown|n a|na|none|not applicable)$/.test(structuredGrader)
+    ? structuredGrader
+    : sportsCardText(titleGrade?.grader);
+  add('gradingCompany', 10, Boolean(targetGrader && candidateGrader === sportsCardText(targetGrader)), Boolean(targetGrader));
 
   const targetGrade = normalizedGrade(String(firstMeaningfulValue(metadataValue(targetMetadata, 'grade'), targetDetails.grade) ?? ''));
-  const candidateGrade = normalizedGrade((candidate.grade || candidateTextValue.match(/\b(?:PSA|BGS|SGC|CGC|BCCG|CGA)\s*(\d+(?:\.\d+)?)\b/i)?.[1]) ?? '');
+  const structuredGrade = normalizedChoice(candidate.grade);
+  const candidateGrade = normalizedGrade(structuredGrade && !/^(?:unknown|n_a|na|none|not_applicable)$/i.test(structuredGrade) ? structuredGrade : titleGrade?.grade ?? '');
   add('grade', 10, Boolean(targetGrade && candidateGrade && Number(targetGrade) === Number(candidateGrade)), Boolean(targetGrade));
 
   const singleForm = !/\b(?:complete|factory|master|team)\s+set\b|\b(?:lot|bundle|collection|multipack|\d+\s+cards?)\b/i.test(candidateTextValue);
@@ -5329,9 +5335,10 @@ function vintageToyScoreStateMatch(targetValue: unknown, listing: VisualSourceCa
   const target = vintageToyState(targetValue);
   if (!target) return null;
   const candidate = vintageToyScoreCandidateText(listing, aliases);
-  // “Factory Sealed” in a marketplace title describes presentation, not proof
-  // that a board game is complete, has instructions, or includes its box.
-  const text = candidate.explicit;
+  // Structured candidate state remains authoritative. When it is absent,
+  // recognized title evidence is allowed to supply the same field-specific
+  // value used by the comparison table (for example, Sealed implies complete).
+  const text = candidate.explicit || candidate.text;
   if (!text) return null;
   const explicitState = vintageToyState(candidate.explicit);
   if (explicitState) return explicitState === target;

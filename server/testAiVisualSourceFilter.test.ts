@@ -2774,7 +2774,7 @@ describe("visual source filter", () => {
     ], target)).toEqual([]);
   });
 
-  it("does not infer Board Game completeness from a sealed marketplace title", () => {
+  it("uses sealed title evidence for Board Game completeness ranking without changing structured metadata", () => {
     const target = buildVisualTargetMetadata({
       title: "Monopoly: Manhattan Beach Edition",
       category: "vintage_toys",
@@ -2783,7 +2783,7 @@ describe("visual source filter", () => {
     });
     const candidate = { title: "Manhattan Beach Monopoly Board Game Factory Sealed", imageUrl: "https://example.com/board-game.jpg" };
     expect(buildDeclaredIdentityReviews([candidate], target)).toEqual([]);
-    expect(vintageToyVisualScore(candidate, target)).toMatchObject({ score: 30, matched: ["gamePuzzleName"] });
+    expect(vintageToyVisualScore(candidate, target)).toMatchObject({ score: 45, matched: ["gamePuzzleName", "complete"] });
   });
   it("builds side-by-side Board Games field comparisons without title-derived year or completeness", () => {
     const target = buildVisualTargetMetadata({
@@ -2861,6 +2861,25 @@ describe("visual source filter", () => {
 
     expect(score.score).toBeGreaterThanOrEqual(35);
     expect(score.matched).toEqual(expect.arrayContaining(["grade (title-derived)", "grading company (title-derived)"]));
+  });
+
+  it("uses recognized title-derived grade and grader evidence in Sports Cards ranking when structured values are unknown", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1986 Fleer Michael Jordan #57",
+      category: "sports_cards",
+      itemType: "single_card",
+      grade: "9.8",
+      certificationCompany: "PSA",
+      fullItemDetails: { player: "Michael Jordan", year: "1986", manufacturer: "Fleer", cardNumber: "57" },
+    });
+    const score = sportsCardSingleVisualScore({
+      title: "1986 Fleer Michael Jordan #57 PSA 9.8",
+      grade: "Unknown",
+      grader: "Unknown",
+    }, target);
+
+    expect(score.matched).toEqual(expect.arrayContaining(["gradingCompany", "grade"]));
+    expect(score.score).toBeGreaterThanOrEqual(70);
   });
 
   it("holds a sports-card candidate with an explicit parallel conflict before vision", () => {
