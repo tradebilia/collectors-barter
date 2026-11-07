@@ -10,7 +10,7 @@ import {
 import { classifyStampFormat, stampFormatsCompatible } from "./stampFormat";
 import { autographReplicaReasonFromText } from "../shared/testAiAutographEvidence";
 import { extractMarketplaceLotQuantity, isExplicitMultiItemListing } from "../shared/testAiMarketplaceCandidate";
-import { parseTestAiDetails } from "../shared/testAiCriteria";
+import { parseTestAiDetails, resolveTestAiDetailValue } from "../shared/testAiCriteria";
 
 export type VisualSourceCandidate = {
   title?: string | null;
@@ -2811,8 +2811,21 @@ function vintageToyValuesConflict(targetValue: unknown, candidateValue: unknown,
 
 function vintageToyCandidateValue(listing: VisualSourceCandidate, aliases: string[]): string {
   const details = candidateStructuredDetails(listing);
+  const title = canonicalCandidateTitle(listing);
   for (const alias of aliases) {
-    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias] ?? labeledCandidateValue(details, [alias]);
+    const directValue = listing[alias as keyof VisualSourceCandidate];
+    const structuredValue = resolveTestAiDetailValue(details, alias) || labeledCandidateValue(details, [alias]);
+    const value = directValue ?? structuredValue;
+    const identityAlias = /^(?:brand|manufacturer|maker)$/i.test(alias);
+    const compactDirect = candidateText(directValue).toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const compactTitle = candidateText(title).toLowerCase().replace(/[^a-z0-9]+/g, "");
+    // Some marketplace adapters copy the complete listing title into a
+    // convenience Brand/Manufacturer field when no structured aspect exists.
+    // That is title evidence, not explicit identity metadata.
+    if (identityAlias && directValue != null && compactDirect && compactDirect === compactTitle) {
+      if (structuredValue && candidateText(structuredValue).toLowerCase().replace(/[^a-z0-9]+/g, "") !== compactDirect) return candidateText(structuredValue);
+      continue;
+    }
     if (value != null && candidateText(value)) return candidateText(value);
   }
   return "";
@@ -2981,7 +2994,7 @@ function visualMetadataDifferenceSummary(targetMetadata: string, listing: Visual
   const vintageTargetType = vintageToyTargetItemType(targetMetadata);
   const isPlushTarget = vintageTargetType === "plush/stuffed toy";
   const vintageFields: Array<[string, unknown, string[]]> = [
-    ["brand", targetDetails.brand ?? metadataValue(targetMetadata, "brand"), ["brand", "manufacturer"]],
+    ["brand", resolveTestAiDetailValue(targetDetails, "brand") || resolveTestAiDetailValue(targetDetails, "manufacturer") || metadataValue(targetMetadata, "brand"), ["brand", "manufacturer"]],
     ["franchise", targetDetails.franchise, ["franchise", "series"]],
     [isPlushTarget ? "toy name or character" : "vehicle name", isPlushTarget ? (targetDetails.toyNameCharacter ?? targetDetails.toyName ?? targetDetails.character ?? extractTargetTitle(targetMetadata)) : (targetDetails.vehicleName ?? extractTargetTitle(targetMetadata)), isPlushTarget ? ["toyNameCharacter", "toyName", "character", "name", "title"] : ["vehicleName", "name", "title"]],
     ["year", targetDetails.year, ["year", "releaseYear"]],
@@ -2990,7 +3003,9 @@ function visualMetadataDifferenceSummary(targetMetadata: string, listing: Visual
   ];
   for (const [label, targetValue, aliases] of vintageFields) {
     if (!candidateText(targetValue)) continue;
-    const candidateValue = label === "vehicle type"
+    const candidateValue = label === "brand"
+      ? vintageToyCandidateValue(listing, aliases)
+      : label === "vehicle type"
       ? (vintageToyCandidateValue(listing, aliases) || vintageToyExplicitVehicleType(canonicalCandidateTitle(listing)))
       : vintageToyCandidateValue(listing, aliases) || canonicalCandidateTitle(listing);
     if (!candidateValue || !vintageToyValuesConflict(targetValue, candidateValue)) continue;

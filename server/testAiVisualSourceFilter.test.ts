@@ -3208,6 +3208,18 @@ describe("visual source filter", () => {
     );
     expect(result.listings[0]?.visualReviewRationale).toContain('franchise: target “Hot Wheels” vs candidate “Matchbox”');
   });
+  it("does not report a provider title echo as a Vintage Toys Brand difference", () => {
+    const targetMetadata = "category=vintage_toys;itemType=plush_stuffed_toy;title=1998 Donkey Kong Nintendo AFA 7.5;fullItemDetails={\"brand\":\"Other\",\"customBrand\":\"Nintendo\",\"toyName\":\"Donkey Kong\",\"year\":\"1998\"}";
+    const candidateTitle = 'Nintendo Collectibles Talking Plush Character Donkey Kong 15" 1998 Graded AFA';
+    const result = applyVisualSourceReviews(
+      [{ title: candidateTitle, brand: candidateTitle, imageUrl: "https://example.com/candidate.jpg" }],
+      [{ candidateIndex: 0, verdict: "mismatch", confidence: "high", rationale: "Different item." }],
+      1,
+      { targetMetadata },
+    );
+    expect(result.listings[0]?.visualReviewRationale).not.toContain("brand: target");
+    expect(result.listings[0]?.visualReviewRationale).not.toContain(candidateTitle);
+  });
   it("treats Hot Wheels and HotWheels as the same Vintage Toys franchise spelling", () => {
     const reviews = buildDeclaredIdentityReviews(
       [{ title: "2026 Hot Wheels 70 Plymouth AAR Cuda", franchise: "HotWheels" }],
