@@ -2689,6 +2689,25 @@ describe("visual source filter", () => {
     expect(wrongReviews[0]?.rationale).toContain("toy name or character:");
     expect(wrongReviews[0]?.rationale).not.toContain("vehicle name:");
   });
+  it("accepts MOTU as Masters of the Universe and MOC as carded for Man-At-Arms", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1983 Man-At-Arms Mattel AFA 75.0",
+      category: "vintage_toys",
+      itemType: "action_figure",
+      grade: "75.0",
+      certificationCompany: "AFA",
+      fullItemDetails: {
+        toyNameCharacter: "Masters of the Universe Man-At-Arms",
+        franchise: "Masters of the Universe",
+        brand: "Mattel",
+        year: "1983",
+        packagingType: "Carded",
+      },
+    });
+    expect(buildDeclaredIdentityReviews([
+      { title: "MOTU MAN AT ARMS Mint Sealed MOC Vintage 1983 AFA 75+ Masters of the Universe", imageUrl: "https://example.com/man-at-arms.jpg" },
+    ], target)).toEqual([]);
+  });
 
   it("uses a custom value when a target field is stored as Other", () => {
     const target = buildVisualTargetMetadata({

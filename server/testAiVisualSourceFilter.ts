@@ -1655,7 +1655,9 @@ function vintageToyPackagingFormEvidence(value: unknown): string {
 }
 function vintageToyPackagingForm(value: unknown): VintageToyPackagingForm {
   const normalized = normalizedChoice(vintageToyPackagingFormEvidence(value));
-  if (/carded|on_card|blister(?:_card|_pack)?/.test(normalized)) return "carded";
+  // MOC means Mint on Card and is the marketplace shorthand for a carded
+  // figure, not a separate loose form.
+  if (/carded|on_card|mint_on_card|moc|blister(?:_card|_pack)?/.test(normalized)) return "carded";
   if (/loose|unboxed|no_box/.test(normalized)) return "loose";
   return "unknown";
 }
@@ -2809,6 +2811,25 @@ function vintageToyValuesConflict(targetValue: unknown, candidateValue: unknown,
   return true;
 }
 
+function vintageToyIdentityComparable(value: unknown): string[] {
+  return normalizeComparableNumberWords(candidateText(value).toLowerCase())
+    .replace(/masters?\s+of\s+(?:the\s+)?universe|\bmotu\b/g, "masters universe")
+    .replace(/\b(?:afa|cgc|psa)\s*\+?\s*\d+(?:\.\d+)?\b/g, " ")
+    .replace(/\b(?:17|18|19|20)\d{2}\b/g, " ")
+    .replace(/\b(?:mint|sealed|moc|carded|on\s+card|blister(?:\s+card|\s+pack)?)\b/g, " ")
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(/\s+/)
+    .filter((token) => token && !/^(?:the|of|a|an|and|at)$/i.test(token));
+}
+
+function vintageToyIdentityValuesConflict(targetValue: unknown, candidateValue: unknown): boolean {
+  const target = new Set(vintageToyIdentityComparable(targetValue));
+  const candidate = new Set(vintageToyIdentityComparable(candidateValue));
+  if (!target.size || !candidate.size) return false;
+  return ![...target].every((token) => candidate.has(token)) && ![...candidate].every((token) => target.has(token));
+}
+
 function vintageToyCandidateValue(listing: VisualSourceCandidate, aliases: string[]): string {
   const details = candidateStructuredDetails(listing);
   const title = canonicalCandidateTitle(listing);
@@ -2980,8 +3001,11 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
       if (vintageToyValuesConflict(targetValue, candidateSetNumber, false)) return `Vintage Toys set number differs: target is ${targetValue}, but the candidate explicitly identifies a different set.`;
       continue;
     }
-    if (candidateValue && vintageToyValuesConflict(targetValue, candidateValue)) return `Vintage Toys ${label} differs: the candidate explicitly declares a different ${label}.`;
-    if (!candidateValue && vintageToyValuesConflict(targetValue, title)) return `Vintage Toys ${label} differs: the candidate title explicitly identifies a different ${label}.`;
+    const identityConflict = label === "toy name or character"
+      ? vintageToyIdentityValuesConflict(targetValue, candidateValue || title)
+      : vintageToyValuesConflict(targetValue, candidateValue || (label === "brand" ? "" : title));
+    if (candidateValue && identityConflict) return `Vintage Toys ${label} differs: the candidate explicitly declares a different ${label}.`;
+    if (!candidateValue && identityConflict) return `Vintage Toys ${label} differs: the candidate title explicitly identifies a different ${label}.`;
   }
   return null;
 }
@@ -3003,6 +3027,11 @@ function visualMetadataDifferenceSummary(targetMetadata: string, listing: Visual
   ];
   for (const [label, targetValue, aliases] of vintageFields) {
     if (!candidateText(targetValue)) continue;
+    if (label === "packaging type") {
+      const targetForm = vintageToyPackagingForm(targetValue);
+      const candidateForm = vintageToyPackagingForm(canonicalCandidateTitle(listing));
+      if (targetForm === "unknown" || candidateForm === "unknown" || targetForm === candidateForm) continue;
+    }
     const candidateValue = label === "brand"
       ? vintageToyCandidateValue(listing, aliases)
       : label === "vehicle type"
