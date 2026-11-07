@@ -183,6 +183,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(soldSection).toContain("visualContextAuditLedger.length");
     expect(pageSource).toContain("const retainedAuditRows = auditLedger.filter");
     expect(pageSource).toContain("All retrieved candidates and why they were not accepted");
+    expect(pageSource).toContain("<MetadataComparisonTable listing={row} />");
     expect(pageSource).toContain("No candidates reached the main valuation/review list");
   });
 
