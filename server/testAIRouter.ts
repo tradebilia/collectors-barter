@@ -34,7 +34,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { annotatePreVisualComparableScores, applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { autographReplicaReasonFromText } from '../shared/testAiAutographEvidence';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
@@ -585,9 +585,11 @@ export function assessSoldCompsPreVisionCandidates(args: {
     if (priceSafety.reason) reasons.push(priceSafety.reason);
     return { item: { ...item, soldCompsMetadata: metadata }, metadata, reasons, excluded: reasons.length > 0 };
   });
+  const scoredItems = annotatePreVisualComparableScores(assessments.map((assessment) => assessment.item), args.targetMetadata);
+  const scoredAssessments = assessments.map((assessment, index) => ({ ...assessment, item: scoredItems[index] }));
   return {
-    eligible: assessments.filter((assessment) => !assessment.excluded).map((assessment) => assessment.item),
-    excluded: assessments.filter((assessment) => assessment.excluded),
+    eligible: scoredAssessments.filter((assessment) => !assessment.excluded).map((assessment) => assessment.item),
+    excluded: scoredAssessments.filter((assessment) => assessment.excluded),
   };
 }
 
@@ -2780,6 +2782,9 @@ export const testAIRouter = router({
           currency: item.soldCurrency ?? null,
           endedAt: item.endedAt ?? null,
           soldCompsMetadata: metadata,
+          metadataMatchScore: item.metadataMatchScore,
+          metadataMatchRank: item.metadataMatchRank,
+          metadataMatchReasons: item.metadataMatchReasons,
           evidenceDisposition: 'rejected_objective_conflict' as const,
           evidenceReasons: reasons,
           visualReviewStatus: 'not_reviewed' as const,
@@ -2808,9 +2813,12 @@ export const testAIRouter = router({
           { rows: byCertification, reason: cert ? `explicit stated certification company conflicts with target ${cert}` : 'objective category field conflict' },
           { rows: filtered, reason: targetGrade !== null ? `explicit stated grade conflicts with target ${targetGrade}` : 'objective category field conflict' },
         ];
+        const rawScoredItems = annotatePreVisualComparableScores(rawItems, soldCompsTargetMetadata);
+        const rawScoreByKey = new Map(rawScoredItems.map((item: any) => [soldComparableKey(item), item]));
         const rawAuditLedger = rawItems.map((item) => {
           const key = soldComparableKey(item);
           const failedAt = stageRows.find((stage) => !stage.rows.some((candidate: any) => soldComparableKey(candidate) === key));
+          const scoredItem: any = rawScoreByKey.get(key) ?? item;
           return failedAt
             ? {
                 title: item.title,
@@ -2822,6 +2830,9 @@ export const testAIRouter = router({
                 price: Number(item.soldPrice ?? 0),
                 currency: item.soldCurrency ?? null,
                 endedAt: item.endedAt ?? null,
+                metadataMatchScore: scoredItem.metadataMatchScore,
+                metadataMatchRank: scoredItem.metadataMatchRank,
+                metadataMatchReasons: scoredItem.metadataMatchReasons,
                 evidenceDisposition: 'rejected_objective_conflict' as const,
                 evidenceReasons: [failedAt.reason],
                 visualReviewStatus: 'not_reviewed' as const,

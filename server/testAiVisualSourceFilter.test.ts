@@ -9,6 +9,7 @@ import {
   applyDeclaredIdentityFilter,
   buildVisualTargetMetadata,
   buildMetadataFieldComparisons,
+  annotatePreVisualComparableScores,
   buildDeclaredIdentityReviews,
   coinAdmissionReason,
   conservativeComicVisualReviews,
@@ -2801,6 +2802,7 @@ describe("visual source filter", () => {
       expect.objectContaining({ targetField: "Year", targetValue: "2000", candidateValue: "Unknown", status: "unknown" }),
       expect.objectContaining({ targetField: "Completeness", targetValue: "Yes", candidateValue: "Unknown", status: "unknown" }),
     ]));
+    expect(rows.filter((row) => row.targetField === "Year")).toHaveLength(1);
     expect(rows.map((row) => row.targetField)).not.toContain("Vehicle name");
   });
 
@@ -2843,6 +2845,24 @@ describe("visual source filter", () => {
       expect.objectContaining({ targetField: "Sealed", titleDerivedValue: "Yes (inferred from title)", titleDerivedStatus: "match" }),
     ]));
     expect(rows.find((row) => row.targetField === "Grade")?.titleDerivedValue).not.toContain("PSA");
+  });
+
+  it("keeps ranking score and rank on candidates retained outside visual review", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Call of Duty: World at War Xbox 360",
+      category: "video_games",
+      itemType: "game",
+      grade: "9.8",
+      certificationCompany: "PSA",
+    });
+    const scored = annotatePreVisualComparableScores([
+      { title: "Call of Duty World at War Xbox 360 Sealed PSA 9.8" },
+      { title: "Call of Duty World at War Xbox 360" },
+    ], target);
+    expect(scored[0]?.metadataMatchScore).toEqual(expect.any(Number));
+    expect(scored[0]?.metadataMatchRank).toBe(1);
+    expect(scored[1]?.metadataMatchScore).toEqual(expect.any(Number));
+    expect(scored[1]?.metadataMatchRank).toBe(2);
   });
 
   it("uses recognized title-derived grade and grader evidence in universal ranking when structured values are unknown", () => {

@@ -1983,16 +1983,21 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
     keys.add("completeness");
   }
   const rows: MetadataFieldComparison[] = [];
+  const emittedFieldLabels = new Set<string>();
   for (const key of keys) {
     if (excluded.has(key) || /^(?:id|url|saleId|sourceId|providerReference|price|currency|date)$/i.test(key)) continue;
-		const targetRaw = metadataValue(targetMetadata, key) || targetDetails[key];
-		const targetValue = comparisonValue(targetRaw);
-		const candidateValue = comparisonCandidateFieldValue(listing, candidateDetails, key);
-		const titleDerivedValue = comparisonTitleDerivedValue(listing, key, targetValue);
-		rows.push({
-			targetField: comparisonFieldLabel(key),
-			targetValue,
-			candidateField: comparisonFieldLabel(key),
+			const targetRaw = metadataValue(targetMetadata, key) || targetDetails[key];
+			const targetValue = comparisonValue(targetRaw);
+			const candidateValue = comparisonCandidateFieldValue(listing, candidateDetails, key);
+			const titleDerivedValue = comparisonTitleDerivedValue(listing, key, targetValue);
+			const fieldLabel = comparisonFieldLabel(key);
+			const normalizedFieldLabel = fieldLabel.trim().toLowerCase();
+			if (emittedFieldLabels.has(normalizedFieldLabel)) continue;
+			emittedFieldLabels.add(normalizedFieldLabel);
+			rows.push({
+				targetField: fieldLabel,
+				targetValue,
+				candidateField: fieldLabel,
 			candidateValue,
 			status: comparisonStatus(targetValue, candidateValue),
 			titleDerivedField: `${comparisonFieldLabel(key)} (from title)`,
@@ -5775,7 +5780,22 @@ function scorePreVisualComparableCandidate<T extends VisualSourceCandidate>(list
     metadataMatchScore: scoring.score,
     metadataMatchReasons: scoring.matched,
     ...(scoring.unknown ? { metadataUnknownFields: scoring.unknown } : {}),
-  } as T : listing;
+	} as T : listing;
+}
+
+/**
+ * Score every comparable candidate, including candidates that a deterministic
+ * pre-vision safeguard kept out of image review. This is presentation/audit
+ * metadata only; it does not make an excluded candidate eligible for valuation.
+ */
+export function annotatePreVisualComparableScores<T extends VisualSourceCandidate>(listings: T[], targetMetadata: string): T[] {
+  const scored = listings.map((listing, index) => ({ item: scorePreVisualComparableCandidate(listing, targetMetadata), index }));
+  const ranked = [...scored].sort((a, b) => Number(b.item.metadataMatchScore ?? -1) - Number(a.item.metadataMatchScore ?? -1) || a.index - b.index);
+  const rankByIndex = new Map(ranked.map((entry, rank) => [entry.index, rank + 1]));
+  return scored.map((entry) => ({
+    ...entry.item,
+    metadataMatchRank: entry.item.metadataMatchScore === undefined ? undefined : rankByIndex.get(entry.index),
+  } as T));
 }
 
 export async function filterVisualSourceCandidates<
