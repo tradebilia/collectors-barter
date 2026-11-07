@@ -55,6 +55,7 @@ import {
   musicVisualScore,
   musicVisualCap,
   vintageToyVisualScore,
+  universalMetadataScore,
   disneyPinsIndividualVisualScore,
   disneyPinsSetVisualScore,
   disneyPinsVisualCap,
@@ -2842,6 +2843,24 @@ describe("visual source filter", () => {
       expect.objectContaining({ targetField: "Sealed", titleDerivedValue: "Yes (inferred from title)", titleDerivedStatus: "match" }),
     ]));
     expect(rows.find((row) => row.targetField === "Grade")?.titleDerivedValue).not.toContain("PSA");
+  });
+
+  it("uses recognized title-derived grade and grader evidence in universal ranking when structured values are unknown", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Call of Duty: World at War Xbox 360",
+      category: "video_games",
+      itemType: "game",
+      grade: "9.8",
+      certificationCompany: "PSA",
+    });
+    const score = universalMetadataScore({
+      title: "Call of Duty World at War Xbox 360 Sealed PSA 9.8",
+      grade: "Unknown",
+      grader: "Unknown",
+    }, target);
+
+    expect(score.score).toBeGreaterThanOrEqual(35);
+    expect(score.matched).toEqual(expect.arrayContaining(["grade (title-derived)", "grading company (title-derived)"]));
   });
 
   it("holds a sports-card candidate with an explicit parallel conflict before vision", () => {

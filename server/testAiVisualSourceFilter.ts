@@ -3987,10 +3987,20 @@ export function universalMetadataScore(listing: VisualSourceCandidate, targetMet
   const matched = matchedTokens.length ? [`title overlap (${matchedTokens.length}/${targetTokens.length})`] : [];
   let score = targetTokens.length ? Math.round((matchedTokens.length / targetTokens.length) * 60) : 0;
   const targetGrade = normalizedGrade(metadataValue(targetMetadata, "grade"));
-  const candidateGrade = normalizedGrade(candidate.grade || candidateText.match(/\b(?:PSA|BGS|SGC|CGC|BCCG|CGA)\s*(\d+(?:\.\d+)?)\b/i)?.[1] || "");
-  if (targetGrade && candidateGrade && Number(targetGrade) === Number(candidateGrade)) { score += 25; matched.push("grade"); }
+  const titleGrade = titleGradeEvidence(candidateText);
+  const structuredGrade = normalizedChoice(candidate.grade);
+  const candidateGrade = normalizedGrade(structuredGrade && !/^(?:unknown|n_a|na|none|not_applicable)$/i.test(structuredGrade) ? structuredGrade : titleGrade?.grade || "");
+  if (targetGrade && candidateGrade && Number(targetGrade) === Number(candidateGrade)) {
+    score += 25;
+    matched.push(titleGrade && (!structuredGrade || /^(?:unknown|n_a|na|none|not_applicable)$/i.test(structuredGrade)) ? "grade (title-derived)" : "grade");
+  }
   const targetGrader = normalizedChoice(metadataValue(targetMetadata, "certificationCompany"));
-  if (targetGrader && candidate.grader && normalizedChoice(candidate.grader) === targetGrader) { score += 15; matched.push("grading company"); }
+  const structuredGrader = normalizedChoice(candidate.grader);
+  const candidateGrader = structuredGrader && !/^(?:unknown|n_a|na|none|not_applicable)$/i.test(structuredGrader) ? structuredGrader : normalizedChoice(titleGrade?.grader || "");
+  if (targetGrader && candidateGrader && candidateGrader === targetGrader) {
+    score += 15;
+    matched.push(titleGrade && (!structuredGrader || /^(?:unknown|n_a|na|none|not_applicable)$/i.test(structuredGrader)) ? "grading company (title-derived)" : "grading company");
+  }
   return { score: Math.min(100, score), matched };
 }
 function annotateUniversalScores<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string): Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }> {
