@@ -2737,6 +2737,35 @@ describe("visual source filter", () => {
     ], target)).toEqual([]);
   });
 
+  it("uses Board Games identity fields instead of listing-title year or vehicle rules", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Monopoly: Manhattan Beach Edition",
+      category: "vintage_toys",
+      itemType: "board_game___puzzle",
+      fullItemDetails: { gamePuzzleName: "Monopoly: Manhattan Beach", year: "2000", brand: "Hasbro" },
+    });
+    expect(buildDeclaredIdentityReviews([
+      { title: "Monopoly Manhattan Beach Board Game Factory Sealed Edition", imageUrl: "https://example.com/board-game.jpg" },
+    ], target)).toEqual([]);
+    const wrong = buildDeclaredIdentityReviews([
+      { title: "Risk Board Game Factory Sealed Edition", imageUrl: "https://example.com/wrong-board-game.jpg" },
+    ], target);
+    expect(wrong[0]?.rationale).toContain("game or puzzle name differs");
+    expect(wrong[0]?.rationale).not.toContain("vehicle name");
+  });
+
+  it("does not invent a Board Games year conflict when the candidate omits structured year", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Monopoly: Manhattan Beach Edition",
+      category: "vintage_toys",
+      itemType: "board_game___puzzle",
+      fullItemDetails: { gamePuzzleName: "Monopoly: Manhattan Beach", year: "2000" },
+    });
+    expect(buildDeclaredIdentityReviews([
+      { title: "Monopoly Manhattan Beach Board Game Factory Sealed Edition", imageUrl: "https://example.com/board-game.jpg" },
+    ], target)).toEqual([]);
+  });
+
   it("holds a sports-card candidate with an explicit parallel conflict before vision", () => {
     const metadata = `title=Mike Trout; category=sports_cards; fullItemDetails=${JSON.stringify({ player: "Mike Trout", year: "2011", manufacturer: "Topps", parallel: "Chrome Refractor" })}`;
     const result = buildDeclaredIdentityReviews([
