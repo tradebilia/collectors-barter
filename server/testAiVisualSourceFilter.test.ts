@@ -2803,6 +2803,24 @@ describe("visual source filter", () => {
     expect(rows.map((row) => row.targetField)).not.toContain("Vehicle name");
   });
 
+  it("shows a separate title-derived candidate value without treating it as structured metadata", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Monopoly: Manhattan Beach Edition",
+      category: "vintage_toys",
+      itemType: "board_game___puzzle",
+      fullItemDetails: { gamePuzzleName: "Monopoly: Manhattan Beach", year: "2000", complete: "Yes" },
+    });
+    const rows = buildMetadataFieldComparisons(target, {
+      title: "Monopoly Manhattan Beach Board Game Factory Sealed Edition 2000",
+      fullItemDetails: { gamePuzzleName: "Monopoly: Manhattan Beach" },
+    });
+    expect(rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ targetField: "Game or puzzle name", candidateValue: "Monopoly: Manhattan Beach", titleDerivedValue: expect.stringContaining("Monopoly: Manhattan Beach"), titleDerivedStatus: "match" }),
+      expect.objectContaining({ targetField: "Year", candidateValue: "Unknown", titleDerivedValue: "2000", titleDerivedStatus: "match", status: "unknown" }),
+      expect.objectContaining({ targetField: "Completeness", candidateValue: "Unknown", titleDerivedValue: "Yes (inferred from title)", titleDerivedStatus: "match", status: "unknown" }),
+    ]));
+  });
+
   it("holds a sports-card candidate with an explicit parallel conflict before vision", () => {
     const metadata = `title=Mike Trout; category=sports_cards; fullItemDetails=${JSON.stringify({ player: "Mike Trout", year: "2011", manufacturer: "Topps", parallel: "Chrome Refractor" })}`;
     const result = buildDeclaredIdentityReviews([

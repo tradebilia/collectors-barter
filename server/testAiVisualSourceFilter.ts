@@ -20,11 +20,14 @@ export type VisualSourceCandidate = {
   [key: string]: unknown;
 };
 export type MetadataFieldComparison = {
-  targetField: string;
-  targetValue: string;
-  candidateField: string;
-  candidateValue: string;
-  status: "match" | "different" | "unknown";
+	targetField: string;
+	targetValue: string;
+	candidateField: string;
+	candidateValue: string;
+	status: "match" | "different" | "unknown";
+	titleDerivedField: string;
+	titleDerivedValue: string;
+	titleDerivedStatus: "match" | "different" | "unknown";
 };
 export type VisualDifference = {
   field: string;
@@ -1909,9 +1912,41 @@ function comparisonComparable(value: string): string {
   return normalizeComparableNumberWords(value.toLowerCase()).replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
 }
 function comparisonCandidateFieldValue(listing: VisualSourceCandidate, details: Record<string, unknown>, key: string): string {
-  const direct = listing[key];
-  const structured = resolveTestAiDetailValue(details, key) ?? labeledCandidateValue(details, [key]);
-  return comparisonValue(direct ?? structured);
+	const direct = listing[key];
+	const structured = resolveTestAiDetailValue(details, key) ?? labeledCandidateValue(details, [key]);
+	return comparisonValue(direct ?? structured);
+}
+function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string, targetValue: string): string {
+	const title = String(listing.title ?? listing.itemTitle ?? listing.listingTitle ?? listing.name ?? listing.productName ?? "").trim();
+	if (!title) return "Unknown";
+	if (/^(?:title|listingTitle|itemTitle)$/i.test(key)) return comparisonValue(title);
+	if (/^(?:year|releaseYear)$/i.test(key)) {
+		return title.match(/\b(?:17|18|19|20)\d{2}\b/)?.[0] ?? "Unknown";
+	}
+	if (/^(?:grade|numericGrade)$/i.test(key)) {
+		return title.match(/\b(?:PSA|BGS|CGC|AFA|SGC|ACE|Beckett)\s*([0-9]{1,2}(?:\.\d)?)\b/i)?.[0] ?? "Unknown";
+	}
+	if (/^(?:complete|completeness|isComplete)$/i.test(key)) {
+		if (/\b(?:incomplete|missing|parts?\s+only|for\s+parts)\b/i.test(title)) return "No (inferred from title)";
+		if (/\b(?:complete|factory\s+sealed|sealed)\b/i.test(title)) return "Yes (inferred from title)";
+		return "Unknown";
+	}
+	if (/^(?:packagingType|packaging|form|saleForm)$/i.test(key)) {
+		if (/\b(?:factory\s+sealed|sealed|moc|mint\s+on\s+card|carded)\b/i.test(title)) return "Sealed/Carded (inferred from title)";
+		if (/\b(?:loose|no\s+box|boxless)\b/i.test(title)) return "Loose (inferred from title)";
+		return "Unknown";
+	}
+	const normalizedTarget = comparisonValue(targetValue);
+	return normalizedTarget !== "Unknown" && titleContainsValue(title, normalizedTarget)
+		? `${normalizedTarget} (detected in title)`
+		: "Unknown";
+}
+function comparisonStatus(targetValue: string, candidateValue: string): MetadataFieldComparison["status"] {
+	const targetComparable = comparisonComparable(targetValue);
+	const candidateComparable = comparisonComparable(candidateValue.replace(/\s*\(.*?\)$/, ""));
+	return targetValue === "Unknown" || candidateValue === "Unknown"
+		? "unknown"
+		: targetComparable === candidateComparable ? "match" : "different";
 }
 export function buildMetadataFieldComparisons(targetMetadata: string, listing: VisualSourceCandidate): MetadataFieldComparison[] {
   const targetDetails = {
@@ -1938,31 +1973,31 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
   const rows: MetadataFieldComparison[] = [];
   for (const key of keys) {
     if (excluded.has(key) || /^(?:id|url|saleId|sourceId|providerReference|price|currency|date)$/i.test(key)) continue;
-    const targetRaw = metadataValue(targetMetadata, key) || targetDetails[key];
-    const targetValue = comparisonValue(targetRaw);
-    const candidateValue = comparisonCandidateFieldValue(listing, candidateDetails, key);
-    const targetComparable = comparisonComparable(targetValue);
-    const candidateComparable = comparisonComparable(candidateValue);
-    const status: MetadataFieldComparison["status"] = targetValue === "Unknown" || candidateValue === "Unknown"
-      ? "unknown"
-      : targetComparable === candidateComparable
-        ? "match"
-        : "different";
-    rows.push({
-      targetField: comparisonFieldLabel(key),
-      targetValue,
-      candidateField: comparisonFieldLabel(key),
-      candidateValue,
-      status,
-    });
+		const targetRaw = metadataValue(targetMetadata, key) || targetDetails[key];
+		const targetValue = comparisonValue(targetRaw);
+		const candidateValue = comparisonCandidateFieldValue(listing, candidateDetails, key);
+		const titleDerivedValue = comparisonTitleDerivedValue(listing, key, targetValue);
+		rows.push({
+			targetField: comparisonFieldLabel(key),
+			targetValue,
+			candidateField: comparisonFieldLabel(key),
+			candidateValue,
+			status: comparisonStatus(targetValue, candidateValue),
+			titleDerivedField: `${comparisonFieldLabel(key)} (from title)`,
+			titleDerivedValue,
+			titleDerivedStatus: comparisonStatus(targetValue, titleDerivedValue),
+		});
   }
   return ([{
     targetField: "Target listing title",
     targetValue: comparisonValue(extractTargetTitle(targetMetadata)),
-    candidateField: "Candidate listing title",
-    candidateValue: comparisonValue(listing.title),
-    status: "unknown",
-  }, ...rows].slice(0, 40)) as MetadataFieldComparison[];
+		candidateField: "Candidate listing title",
+		candidateValue: comparisonValue(listing.title),
+		status: "unknown",
+		titleDerivedField: "Candidate title (source)",
+		titleDerivedValue: comparisonValue(listing.title),
+		titleDerivedStatus: "unknown",
+	}, ...rows].slice(0, 40)) as MetadataFieldComparison[];
 }
 
 type ExplicitState = "yes" | "no" | "unknown";
