@@ -184,6 +184,8 @@ export function findMaterialMetadataConflicts(
   const target = canonicalFields(targetMetadata);
   const candidateRecord = candidateFields(candidate);
   const category = normalizeCategory(String(target.category ?? ''));
+  const boardGameTarget = category === 'vintage_toys'
+    && normalizeCategory(String(target.itemType ?? '')) === 'board_game___puzzle';
   const targetCondition = firstValue(target, 'condition');
   const targetIsGraded = /^(?:yes|true|graded)$/i.test(String(target.isGraded ?? '').trim())
     || (Boolean(firstValue(target, 'grade')) && !/^(?:unknown|n ?a|none|raw|ungraded|0(?:\.0+)?)$/i.test(firstValue(target, 'grade')) && Boolean(firstValue(target, 'gradingCompany')));
@@ -265,6 +267,10 @@ export function findMaterialMetadataConflicts(
       continue;
     }
     if (field === 'year' || field === 'releaseYear' || field === 'issueYear') {
+      // Board Game years are optional structured metadata. A year appearing
+      // only in a marketplace title can describe an edition or listing and
+      // must not become a hard metadata conflict.
+      if (boardGameTarget && !directCandidateValue) continue;
       const targetYear = targetValue.match(/\b\d{4}\b/)?.[0];
       const candidateYears = [...candidateTitle.matchAll(/\b(?:18|19|20)\d{2}\b/g)].map(match => match[0]);
       if (targetYear && candidateYears.length && !candidateYears.includes(targetYear)) conflicts.push({ field, targetValue, candidateValue: candidateYears[0], reason: 'candidate title declares a different year' });

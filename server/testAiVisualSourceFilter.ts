@@ -2889,9 +2889,10 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
   if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "vintage_toys") return null;
   const targetType = vintageToyTargetItemType(targetMetadata);
   if (!targetType || targetType === "collection/lot") return null;
+  const categoryLabel = targetType === "board game/puzzle" ? "Vintage Toys / Board Games" : "Vintage Toys";
   const candidateType = vintageToyCandidateItemType(listing);
   if (candidateType && candidateType !== targetType) {
-    return `Vintage Toys item type differs: target is ${targetType}, but the candidate is explicitly ${candidateType}.`;
+    return `${categoryLabel} item type differs: target is ${targetType}, but the candidate is explicitly ${candidateType}.`;
   }
   const targetDetails = extractTargetItemDetails(targetMetadata);
   const checks: Array<[string, unknown, string[], "text" | "state" | "year"]> = [];
@@ -2966,14 +2967,14 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
     if (kind === "year") {
       const year = String(targetValue).match(/\b(?:17|18|19|20)\d{2}\b/)?.[0];
       if (year && candidateValue && /\b(?:17|18|19|20)\d{2}\b/.test(candidateValue) && !new RegExp(`\\b${year}\\b`).test(candidateValue)) {
-        return `Vintage Toys ${label} differs: target is ${year}, but the candidate explicitly declares a different year.`;
+        return `${categoryLabel} ${label} differs: target is ${year}, but the candidate explicitly declares a different year.`;
       }
       continue;
     }
     if (kind === "state") {
       const targetState = vintageToyState(targetValue);
-      const candidateState = vintageToyState(candidateValue || title);
-      if (targetState && candidateState && targetState !== candidateState && candidateValue || targetState && candidateState && targetState !== candidateState && /\b(?:complete|incomplete|sealed|opened|tested|untested|working|not\s+working|missing)\b/i.test(title)) return `Vintage Toys ${label} differs: target and candidate explicitly declare different states.`;
+      const candidateState = vintageToyState(targetType === "board game/puzzle" ? candidateValue : candidateValue || title);
+      if (targetState && candidateState && targetState !== candidateState) return `${categoryLabel} ${label} differs: target “${targetState}” vs candidate “${candidateState}”.`;
       continue;
     }
     if (label === "vehicle type") {
@@ -2985,7 +2986,7 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
         : vintageToyExplicitVehicleType(title);
       if (!candidateType) continue;
       const targetType = vintageToyCanonicalVehicleType(targetValue);
-      if (targetType && targetType !== candidateType) return `Vintage Toys ${label} differs: the candidate explicitly declares a different ${label}.`;
+      if (targetType && targetType !== candidateType) return `${categoryLabel} ${label} differs: the candidate explicitly declares a different ${label}.`;
       continue;
     }
     if (label === "packaging type") {
@@ -2996,14 +2997,14 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
       const targetForm = vintageToyPackagingForm(targetValue);
       const candidateForm = vintageToyPackagingForm(candidateValue || title);
       if (targetForm !== "unknown" && candidateForm !== "unknown" && targetForm !== candidateForm) {
-        return `Vintage Toys packaging form differs: the candidate explicitly declares a different packaging form.`;
+        return `${categoryLabel} packaging form differs: the candidate explicitly declares a different packaging form.`;
       }
       continue;
     }
     if (label === "set number" && !candidateValue) {
       const candidateSetNumber = title.match(/\b\d{4,6}\b/)?.[0];
       if (!candidateSetNumber) continue;
-      if (vintageToyValuesConflict(targetValue, candidateSetNumber, false)) return `Vintage Toys set number differs: target is ${targetValue}, but the candidate explicitly identifies a different set.`;
+      if (vintageToyValuesConflict(targetValue, candidateSetNumber, false)) return `${categoryLabel} set number differs: target is ${targetValue}, but the candidate explicitly identifies a different set.`;
       continue;
     }
     const isIdentityField = ["toy name or character", "game or puzzle name", "model or kit name", "playset name", "vehicle name"].includes(label);
@@ -3011,7 +3012,7 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
     const identityConflict = isIdentityField
       ? vintageToyIdentityValuesConflict(targetValue, comparisonValue)
       : vintageToyValuesConflict(targetValue, candidateValue || (label === "brand" ? "" : title));
-    if (comparisonValue && identityConflict) return `Vintage Toys ${label} differs: ${isIdentityField && !candidateValue ? "the candidate title explicitly identifies a different " : "the candidate explicitly declares a different "}${label}.`;
+    if (comparisonValue && identityConflict) return `${categoryLabel} ${label} differs: ${isIdentityField && !candidateValue ? "the candidate title explicitly identifies a different " : "the candidate explicitly declares a different "}${label}.`;
   }
   return null;
 }
@@ -3081,9 +3082,15 @@ function vintageToyCompletenessConflict(targetMetadata: string, listing: VisualS
   const targetDetails = extractTargetItemDetails(targetMetadata);
   const candidateDetails = candidateStructuredDetails(listing);
   const targetCompleteness = vintageToyCompleteness(targetDetails.completeness ?? targetDetails.isComplete ?? targetDetails.complete ?? extractTargetTitle(targetMetadata));
-  const candidateCompleteness = vintageToyCompleteness(candidateDetails.completeness ?? candidateDetails.isComplete ?? candidateDetails.complete ?? canonicalCandidateTitle(listing));
+  // “Factory Sealed” is packaging evidence, not proof that every game piece
+  // exists. Board Game completeness must come from structured metadata only;
+  // preserve the established title-state safeguard for other toy types.
+  const targetType = vintageToyTargetItemType(targetMetadata);
+  const candidateCompleteness = vintageToyCompleteness(candidateDetails.completeness ?? candidateDetails.isComplete ?? candidateDetails.complete
+    ?? (targetType === "board game/puzzle" ? undefined : canonicalCandidateTitle(listing)));
   if (!targetCompleteness || !candidateCompleteness || targetCompleteness === candidateCompleteness) return null;
-  return `Vintage-toy completeness differs: target is explicitly ${targetCompleteness}, but the candidate explicitly declares ${candidateCompleteness}.`;
+  const label = targetType === "board game/puzzle" ? "Board Game completeness" : "Vintage-toy completeness";
+  return `${label} differs: target is explicitly ${targetCompleteness}, but the candidate explicitly declares ${candidateCompleteness}.`;
 }
 
 function compoundNumber(value: unknown): { numerator: string; denominator: string } | null {
@@ -5142,12 +5149,25 @@ function vintageToyScoreTextMatch(targetValue: unknown, listing: VisualSourceCan
   if (!candidate.text) return null;
   return candidate.text.includes(target) ? true : null;
 }
-
+function vintageToyScoreIdentityMatch(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[]): boolean | null {
+  const targetTokens = vintageToyIdentityComparable(targetValue);
+  if (!targetTokens.length) return null;
+  const candidate = vintageToyScoreCandidateText(listing, aliases);
+  const candidateValue = candidate.explicit || candidate.text;
+  const candidateTokens = new Set(vintageToyIdentityComparable(candidateValue));
+  if (!candidateTokens.size) return null;
+  return targetTokens.every((token) => candidateTokens.has(token))
+    || [...candidateTokens].every((token) => targetTokens.includes(token))
+    ? true
+    : null;
+}
 function vintageToyScoreYearMatch(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[]): boolean | null {
   const target = String(targetValue ?? "").match(/\b(?:17|18|19|20)\d{2}\b/)?.[0];
   if (!target) return null;
   const candidate = vintageToyScoreCandidateText(listing, aliases);
-  const candidateYear = (candidate.explicit || candidate.text).match(/\b(?:17|18|19|20)\d{2}\b/)?.[0];
+  // A marketplace title can contain an edition or listing year. It is not
+  // structured candidate metadata and must not create a year match/conflict.
+  const candidateYear = candidate.explicit.match(/\b(?:17|18|19|20)\d{2}\b/)?.[0];
   return candidateYear ? candidateYear === target : null;
 }
 
@@ -5163,7 +5183,9 @@ function vintageToyScoreStateMatch(targetValue: unknown, listing: VisualSourceCa
   const target = vintageToyState(targetValue);
   if (!target) return null;
   const candidate = vintageToyScoreCandidateText(listing, aliases);
-  const text = candidate.explicit || candidate.text;
+  // “Factory Sealed” in a marketplace title describes presentation, not proof
+  // that a board game is complete, has instructions, or includes its box.
+  const text = candidate.explicit;
   if (!text) return null;
   const explicitState = vintageToyState(candidate.explicit);
   if (explicitState) return explicitState === target;
@@ -5172,7 +5194,8 @@ function vintageToyScoreStateMatch(targetValue: unknown, listing: VisualSourceCa
   return negative.test(text) ? true : positive.test(text) ? false : null;
 }
 
-function vintageToyScoreValue(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], kind: "text" | "year" | "number" | "state", positive?: RegExp, negative?: RegExp): boolean | null {
+function vintageToyScoreValue(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], kind: "text" | "identity" | "year" | "number" | "state", positive?: RegExp, negative?: RegExp): boolean | null {
+  if (kind === "identity") return vintageToyScoreIdentityMatch(targetValue, listing, aliases);
   if (kind === "year") return vintageToyScoreYearMatch(targetValue, listing, aliases);
   if (kind === "number") return vintageToyScoreNumberMatch(targetValue, listing, aliases);
   if (kind === "state") return vintageToyScoreStateMatch(targetValue, listing, aliases, positive ?? /\b(?:yes|complete|working|tested|sealed|original)\b/i, negative ?? /\b(?:no|incomplete|missing|not\s+working|untested|opened|loose)\b/i);
@@ -5193,7 +5216,7 @@ export function vintageToyVisualScore(listing: VisualSourceCandidate, targetMeta
   const matched: string[] = [];
   const unknown: string[] = [];
   let score = 0;
-  const add = (field: string, points: number, value: unknown, aliases: string[], kind: "text" | "year" | "number" | "state", positive?: RegExp, negative?: RegExp) => {
+  const add = (field: string, points: number, value: unknown, aliases: string[], kind: "text" | "identity" | "year" | "number" | "state", positive?: RegExp, negative?: RegExp) => {
     const result = vintageToyScoreValue(value, listing, aliases, kind, positive, negative);
     if (result === true) { score += points; matched.push(field); }
     else if (result === null) unknown.push(field);
@@ -5202,7 +5225,7 @@ export function vintageToyVisualScore(listing: VisualSourceCandidate, targetMeta
     switch (field) {
       case "toyNameCharacter": add(field, points, vintageToyScoreTargetValue(details, ["toyNameCharacter", "toyName", "character"], extractTargetTitle(targetMetadata)), ["toyNameCharacter", "toyName", "character", "name"], "text"); break;
       case "toyName": add(field, points, vintageToyScoreTargetValue(details, ["toyName"], extractTargetTitle(targetMetadata)), ["toyName", "name"], "text"); break;
-      case "gamePuzzleName": add(field, points, vintageToyScoreTargetValue(details, ["gamePuzzleName", "gameName", "puzzleName"], extractTargetTitle(targetMetadata)), ["gamePuzzleName", "gameName", "puzzleName", "name"], "text"); break;
+      case "gamePuzzleName": add(field, points, vintageToyScoreTargetValue(details, ["gamePuzzleName", "gameName", "puzzleName"], extractTargetTitle(targetMetadata)), ["gamePuzzleName", "gameName", "puzzleName", "name"], "identity"); break;
       case "modelKitName": add(field, points, vintageToyScoreTargetValue(details, ["modelKitName", "modelName", "kitName"], extractTargetTitle(targetMetadata)), ["modelKitName", "modelName", "kitName", "name"], "text"); break;
       case "playsetName": add(field, points, vintageToyScoreTargetValue(details, ["playsetName"], extractTargetTitle(targetMetadata)), ["playsetName", "name"], "text"); break;
       case "vehicleName": add(field, points, vintageToyScoreTargetValue(details, ["vehicleName"], extractTargetTitle(targetMetadata)), ["vehicleName", "name"], "text"); break;

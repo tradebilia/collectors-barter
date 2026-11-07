@@ -2751,7 +2751,12 @@ describe("visual source filter", () => {
       { title: "Risk Board Game Factory Sealed Edition", imageUrl: "https://example.com/wrong-board-game.jpg" },
     ], target);
     expect(wrong[0]?.rationale).toContain("game or puzzle name differs");
+    expect(wrong[0]?.rationale).toContain("Board Games game or puzzle name differs");
     expect(wrong[0]?.rationale).not.toContain("vehicle name");
+    expect(vintageToyVisualScore({ title: "Manhattan Beach Monopoly Board Game Factory Sealed" }, target)).toMatchObject({
+      score: 30,
+      matched: ["gamePuzzleName"],
+    });
   });
 
   it("does not invent a Board Games year conflict when the candidate omits structured year", () => {
@@ -2764,6 +2769,18 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([
       { title: "Monopoly Manhattan Beach Board Game Factory Sealed Edition", imageUrl: "https://example.com/board-game.jpg" },
     ], target)).toEqual([]);
+  });
+
+  it("does not infer Board Game completeness from a sealed marketplace title", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Monopoly: Manhattan Beach Edition",
+      category: "vintage_toys",
+      itemType: "board_game___puzzle",
+      fullItemDetails: { gamePuzzleName: "Monopoly: Manhattan Beach", complete: "Yes", year: "2000" },
+    });
+    const candidate = { title: "Manhattan Beach Monopoly Board Game Factory Sealed", imageUrl: "https://example.com/board-game.jpg" };
+    expect(buildDeclaredIdentityReviews([candidate], target)).toEqual([]);
+    expect(vintageToyVisualScore(candidate, target)).toMatchObject({ score: 30, matched: ["gamePuzzleName"] });
   });
 
   it("holds a sports-card candidate with an explicit parallel conflict before vision", () => {
