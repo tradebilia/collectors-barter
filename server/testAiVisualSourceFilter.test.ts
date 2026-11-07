@@ -8,6 +8,7 @@ import {
   applyVisualSourceReviews,
   applyDeclaredIdentityFilter,
   buildVisualTargetMetadata,
+  buildMetadataFieldComparisons,
   buildDeclaredIdentityReviews,
   coinAdmissionReason,
   conservativeComicVisualReviews,
@@ -2513,7 +2514,8 @@ describe("visual source filter", () => {
     ], listings, "title=Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA");
     expect(result[0]).toMatchObject({ candidateIndex: 1, verdict: "unreadable", confidence: "low" });
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
-    expect(source).toContain("const universalPreparation = prepareUniversalVisualCandidates(args.listings, targetMetadata);");
+    expect(source).toContain("const comparisonListings = args.listings.map((listing) => ({");
+    expect(source).toContain("const universalPreparation = prepareUniversalVisualCandidates(comparisonListings, targetMetadata);");
     expect(source).toContain("const declaredReviews = buildDeclaredIdentityReviews(preparedListings, targetMetadata, {");
     expect(source).toContain("const preVisualExcludedIndexes = new Set([");
     expect(source).toContain("candidateIndex,");
@@ -2781,6 +2783,24 @@ describe("visual source filter", () => {
     const candidate = { title: "Manhattan Beach Monopoly Board Game Factory Sealed", imageUrl: "https://example.com/board-game.jpg" };
     expect(buildDeclaredIdentityReviews([candidate], target)).toEqual([]);
     expect(vintageToyVisualScore(candidate, target)).toMatchObject({ score: 30, matched: ["gamePuzzleName"] });
+  });
+  it("builds side-by-side Board Games field comparisons without title-derived year or completeness", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Monopoly: Manhattan Beach Edition",
+      category: "vintage_toys",
+      itemType: "board_game___puzzle",
+      fullItemDetails: { gamePuzzleName: "Monopoly: Manhattan Beach", year: "2000", complete: "Yes", publisherBrand: "Hasbro" },
+    });
+    const rows = buildMetadataFieldComparisons(target, {
+      title: "Monopoly Manhattan Beach Board Game Factory Sealed Edition",
+      fullItemDetails: { gamePuzzleName: "Monopoly: Manhattan Beach" },
+    });
+    expect(rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ targetField: "Game or puzzle name", targetValue: "Monopoly: Manhattan Beach", candidateValue: "Monopoly: Manhattan Beach", status: "match" }),
+      expect.objectContaining({ targetField: "Year", targetValue: "2000", candidateValue: "Unknown", status: "unknown" }),
+      expect.objectContaining({ targetField: "Completeness", targetValue: "Yes", candidateValue: "Unknown", status: "unknown" }),
+    ]));
+    expect(rows.map((row) => row.targetField)).not.toContain("Vehicle name");
   });
 
   it("holds a sports-card candidate with an explicit parallel conflict before vision", () => {

@@ -16,7 +16,15 @@ export type VisualSourceCandidate = {
   title?: string | null;
   imageUrl?: string | null;
   imageUrls?: string[];
+  metadataFieldComparisons?: MetadataFieldComparison[];
   [key: string]: unknown;
+};
+export type MetadataFieldComparison = {
+  targetField: string;
+  targetValue: string;
+  candidateField: string;
+  candidateValue: string;
+  status: "match" | "different" | "unknown";
 };
 export type VisualDifference = {
   field: string;
@@ -1874,6 +1882,87 @@ function candidateStructuredDetails(listing: VisualSourceCandidate): Record<stri
     }
   }
   return details;
+}
+
+function comparisonFieldLabel(key: string): string {
+  const labels: Record<string, string> = {
+    gamePuzzleName: "Game or puzzle name",
+    publisherBrand: "Publisher or brand",
+    toyNameCharacter: "Toy name or character",
+    vehicleName: "Vehicle name",
+    packagingType: "Packaging type",
+    completeness: "Completeness",
+    complete: "Completeness",
+    isComplete: "Completeness",
+    releaseYear: "Year",
+    itemType: "Item type",
+    certificationCompany: "Certification company",
+  };
+  if (labels[key]) return labels[key];
+  return key.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").replace(/^./, (value) => value.toUpperCase());
+}
+function comparisonValue(value: unknown): string {
+  const text = candidateText(value);
+  return text && !/^(?:other|unknown|n\/a|na|none)$/i.test(text) ? text : "Unknown";
+}
+function comparisonComparable(value: string): string {
+  return normalizeComparableNumberWords(value.toLowerCase()).replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+}
+function comparisonCandidateFieldValue(listing: VisualSourceCandidate, details: Record<string, unknown>, key: string): string {
+  const direct = listing[key];
+  const structured = resolveTestAiDetailValue(details, key) ?? labeledCandidateValue(details, [key]);
+  return comparisonValue(direct ?? structured);
+}
+export function buildMetadataFieldComparisons(targetMetadata: string, listing: VisualSourceCandidate): MetadataFieldComparison[] {
+  const targetDetails = {
+    ...extractTargetItemDetails(targetMetadata),
+    ...parseTestAiDetails(metadataValue(targetMetadata, "fullItemDetails")),
+  };
+  const candidateDetails = candidateStructuredDetails(listing);
+  const category = normalizedChoice(metadataValue(targetMetadata, "category"));
+  const targetType = targetItemTypeValue(targetMetadata);
+  const excluded = new Set(["image", "imageUrl", "imageUrls", "photos", "thumbnail", "titleEvidence", "normalizedStructuredMetadata"]);
+  const keys = new Set<string>([
+    ...Object.keys(targetDetails),
+    ...Object.keys(candidateDetails),
+    "itemType",
+    "condition",
+    "grade",
+    "certificationCompany",
+    "year",
+  ]);
+  if (category === "vintage_toys" && targetType === "board game/puzzle") {
+    keys.add("gamePuzzleName");
+    keys.add("completeness");
+  }
+  const rows: MetadataFieldComparison[] = [];
+  for (const key of keys) {
+    if (excluded.has(key) || /^(?:id|url|saleId|sourceId|providerReference|price|currency|date)$/i.test(key)) continue;
+    const targetRaw = metadataValue(targetMetadata, key) || targetDetails[key];
+    const targetValue = comparisonValue(targetRaw);
+    const candidateValue = comparisonCandidateFieldValue(listing, candidateDetails, key);
+    const targetComparable = comparisonComparable(targetValue);
+    const candidateComparable = comparisonComparable(candidateValue);
+    const status: MetadataFieldComparison["status"] = targetValue === "Unknown" || candidateValue === "Unknown"
+      ? "unknown"
+      : targetComparable === candidateComparable
+        ? "match"
+        : "different";
+    rows.push({
+      targetField: comparisonFieldLabel(key),
+      targetValue,
+      candidateField: comparisonFieldLabel(key),
+      candidateValue,
+      status,
+    });
+  }
+  return ([{
+    targetField: "Target listing title",
+    targetValue: comparisonValue(extractTargetTitle(targetMetadata)),
+    candidateField: "Candidate listing title",
+    candidateValue: comparisonValue(listing.title),
+    status: "unknown",
+  }, ...rows].slice(0, 40)) as MetadataFieldComparison[];
 }
 
 type ExplicitState = "yes" | "no" | "unknown";
@@ -5639,7 +5728,11 @@ export async function filterVisualSourceCandidates<
 		  reviewDeadlineAt?: number;
 	}): Promise<VisualSourceFilterResult<T>> {
 		  const targetMetadata = canonicalVisualTargetMetadata(args.targetMetadata);
-	  const universalPreparation = prepareUniversalVisualCandidates(args.listings, targetMetadata);
+	  const comparisonListings = args.listings.map((listing) => ({
+	    ...listing,
+	    metadataFieldComparisons: buildMetadataFieldComparisons(targetMetadata, listing),
+	  } as T));
+	  const universalPreparation = prepareUniversalVisualCandidates(comparisonListings, targetMetadata);
 	  const preparedListings = universalPreparation.listings;
 	  const isOriginalArtTarget = /(?:^|;\s*)category=comics(?:;|$)/i.test(targetMetadata)
 	    && /(?:^|;\s*)itemType=original_art(?:;|$)/i.test(targetMetadata);
