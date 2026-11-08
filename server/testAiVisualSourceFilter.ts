@@ -12,6 +12,7 @@ import { autographReplicaReasonFromText } from "../shared/testAiAutographEvidenc
 import { extractMarketplaceLotQuantity, isExplicitMultiItemListing } from "../shared/testAiMarketplaceCandidate";
 import { parseTestAiDetails, resolveTestAiDetailValue } from "../shared/testAiCriteria";
 import { canonicalVideoGameGrader } from "../shared/videoGameGraderEquivalence";
+import { normalizeVideoGameMetadata } from "../shared/videoGameMetadata";
 
 export type VisualSourceCandidate = {
   title?: string | null;
@@ -1263,11 +1264,14 @@ function normalizedVisualCategory(value: unknown): string {
  * missing fields as unknown rather than fabricating identity evidence.
  */
 export function buildVisualTargetMetadata(input: VisualTargetMetadataInput): string {
-  const details = {
+  let details = {
     ...visualMetadataDetails(
     input.fullItemDetails ?? input.itemDetails ?? input.details ?? input.catalog,
     ),
   };
+  if (normalizedVisualCategory(input.category) === "video_games") {
+    details = normalizeVideoGameMetadata(details);
+  }
   const topLevelCondition = resolvedVisualFieldValue(input.condition, details, "condition");
   if (topLevelCondition !== undefined && firstMeaningfulValue(details.condition, details.mediaCondition) === undefined) {
     details.condition = topLevelCondition;
@@ -1378,12 +1382,24 @@ function isVideoGamePsaWataEquivalent(targetMetadata: string, candidateText: str
   return (targetGrader === "PSA" && candidateGraders.includes("WATA")) || (targetGrader === "WATA" && candidateGraders.includes("PSA"));
 }
 
-function hasVideoGameVisualIdentityConflict(rationale: string): boolean {
+function hasVideoGameVisualIdentityConflict(rationale: string, targetMetadata?: string): boolean {
+  const targetDetails = targetMetadata ? metadataDetails(targetMetadata) : {};
+  const targetIsSealed = /^(?:yes|true|1)$/i.test(String(targetDetails.sealed ?? targetDetails.factorySealed ?? "").trim());
+  const targetSelfConflict = /target[^.]{0,120}(?:structured|details)[^.]{0,120}(?:complete[- ]in[- ]box|cib)[^.]{0,120}\bsealed\b/i.test(rationale);
+  if (targetIsSealed && targetSelfConflict) {
+    rationale = rationale.replace(/target[^.]{0,120}(?:structured|details)[^.]{0,120}(?:complete[- ]in[- ]box|cib)[^.]{0,120}\bsealed\b[^.]*\.?/gi, "");
+  }
   return /\b(?:different game|different title|different artwork|different cover|different edition|different variant|does not match the (?:game|cover|artwork)|sealed\s+(?:versus|vs\.?|rather than)\s+(?:cib|complete in box|loose|raw)|(?:cib|complete in box|loose|raw)\s+(?:versus|vs\.?|rather than)\s+sealed|target[- ]form conflict|complete[- ]in[- ]box[^.]{0,100}\bsealed\b|\bsealed\b[^.]{0,100}complete[- ]in[- ]box|(?:appears?|is|looks?|visibly)\s+(?:raw|ungraded|loose))\b/i.test(rationale);
 }
-
-function hasVideoGameSoftLabelOnlyConflict(rationale: string): boolean {
-  if (hasVideoGameVisualIdentityConflict(rationale)) return false;
+function normalizeVideoGameReviewRationale(rationale: string, targetMetadata: string): string {
+  const targetDetails = metadataDetails(targetMetadata);
+  const targetIsSealed = /^(?:yes|true|1)$/i.test(String(targetDetails.sealed ?? targetDetails.factorySealed ?? "").trim());
+  return targetIsSealed
+    ? rationale.replace(/target[^.]{0,120}(?:structured|details)[^.]{0,120}(?:complete[- ]in[- ]box|cib)[^.]{0,120}\bsealed\b[^.]*\.?/gi, "")
+    : rationale;
+}
+function hasVideoGameSoftLabelOnlyConflict(rationale: string, targetMetadata?: string): boolean {
+  if (hasVideoGameVisualIdentityConflict(rationale, targetMetadata)) return false;
   const text = String(rationale ?? "");
   const labelConflict = /\b(?:grading|grade)\s+label(?:\s+(?:designation|suffix))?\b[^\n]{0,220}\b(?:differs?|different|difference|differences|mismatch|conflict)\b|\blabel\s+designation\b[^\n]{0,220}\b(?:differs?|different|difference|differences|mismatch|conflict)\b/i.test(text);
   if (!labelConflict) return false;
@@ -1447,9 +1463,10 @@ export function conservativeGradedVisualReviews(
     const titleDeclaresGraded = /\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*(?:graded\s*)?\d{1,3}(?:\.\d+)?\b|\b(?:graded|slabbed|encapsulated)\b/i.test(title);
     const imageClaimsRaw = /\b(?:raw|ungraded|loose|un[- ]slabbed|no slab|no holder|no certification|no grade|grade (?:is )?not visible)\b/i.test(review.rationale);
     const isVideoGameTarget = normalizedChoice(metadataValue(targetMetadata, "category")) === "video_games";
+    const adjudicationRationale = isVideoGameTarget ? normalizeVideoGameReviewRationale(review.rationale, targetMetadata) : review.rationale;
     const unresolvedLabelField = targetLabelFields.find((field) => !(isVideoGameTarget && field.label === "grade qualifier / label designation") && !labelFieldEvidence(title, review.rationale, field.value));
-    const explicitGradeConfirmation = /\b(?:grade|numeric|descriptive)\b.{0,90}\b(?:clearly?\s+)?(?:readable|visible|confirmed|matches|match)\b/i.test(review.rationale);
-    const explicitGradeConflict = /\b(?:not\s+(?:clearly\s+)?(?:readable|visible|verified)|unreadable|unclear|obscured|cannot|can't|unable|conflict(?:ing)?)\b/i.test(review.rationale);
+    const explicitGradeConfirmation = /\b(?:grade|numeric|descriptive)\b.{0,90}\b(?:clearly?\s+)?(?:readable|visible|confirmed|matches|match)\b/i.test(adjudicationRationale);
+    const explicitGradeConflict = /\b(?:not\s+(?:clearly\s+)?(?:readable|visible|verified)|unreadable|unclear|obscured|cannot|can't|unable|conflict(?:ing)?)\b/i.test(adjudicationRationale);
     const equivalentVideoGameGrader = isVideoGamePsaWataEquivalent(targetMetadata, `${title} ${review.rationale}`);
     const equivalentVideoGameReview = equivalentVideoGameGrader && Boolean(structuredEvidence &&
       structuredEvidence.slabVisible &&
@@ -1459,7 +1476,7 @@ export function conservativeGradedVisualReviews(
       structuredEvidence.gradeMatches &&
       !structuredEvidence.rawOrLooseVisible) &&
       /\b(?:same|match(?:es)?|identical|correspond(?:s|ing)|cover art|game identity)\b/i.test(review.rationale) &&
-      !hasVideoGameVisualIdentityConflict(review.rationale);
+      !hasVideoGameVisualIdentityConflict(review.rationale, targetMetadata);
     if ((review.verdict === "match" || review.verdict === "rough_match") && gradeEvidence && visualGradeEvidence && !unresolvedLabelField) return review;
     if (review.verdict === "mismatch" && titleDeclaresGraded && imageClaimsRaw) {
       return {
@@ -1469,7 +1486,7 @@ export function conservativeGradedVisualReviews(
         rationale: `${review.rationale} The candidate title declares a graded item, but the image interpretation conflicts with that evidence; retained for additional-image/manual review rather than finalized as a graded-versus-raw mismatch.`,
       };
     }
-    if (isVideoGameTarget && review.verdict === "mismatch" && hasVideoGameSoftLabelOnlyConflict(review.rationale)) {
+    if (isVideoGameTarget && review.verdict === "mismatch" && hasVideoGameSoftLabelOnlyConflict(review.rationale, targetMetadata)) {
       return {
         ...review,
         verdict: "match",
@@ -1478,10 +1495,10 @@ export function conservativeGradedVisualReviews(
       };
     }
     if (isVideoGameTarget && (review.verdict === "mismatch" || review.verdict === "unreadable")
-      && hasVideoGameSoftLabelOnlyConflict(review.rationale)
+      && hasVideoGameSoftLabelOnlyConflict(review.rationale, targetMetadata)
       && !hasVideoGameIdenticalLabelEvidence(review.rationale)
       && visualGradeEvidence
-      && !hasVideoGameVisualIdentityConflict(review.rationale)) {
+      && !hasVideoGameVisualIdentityConflict(review.rationale, targetMetadata)) {
       return {
         ...review,
         verdict: "match",
@@ -1490,12 +1507,23 @@ export function conservativeGradedVisualReviews(
       };
     }
     if (isVideoGameTarget && review.verdict === "unreadable" && hasVideoGameIdenticalLabelEvidence(review.rationale)
-      && visualGradeEvidence && !hasVideoGameVisualIdentityConflict(review.rationale)) {
+      && visualGradeEvidence && !hasVideoGameVisualIdentityConflict(review.rationale, targetMetadata)) {
       return {
         ...review,
         verdict: "match",
         confidence: review.confidence === "low" ? "medium" : review.confidence,
         rationale: `${review.rationale} The target and candidate label designations are identical, so the label wording is not a material difference. The graded game is eligible for valuation review.`,
+      };
+    }
+    if (isVideoGameTarget && review.verdict === "unreadable"
+      && visualGradeEvidence
+      && adjudicationRationale !== review.rationale
+      && !hasVideoGameVisualIdentityConflict(review.rationale, targetMetadata)) {
+      return {
+        ...review,
+        verdict: "match",
+        confidence: review.confidence === "low" ? "medium" : review.confidence,
+        rationale: `${review.rationale} Sealed=Yes logically implies Complete in Box=Yes for the target, so the model's target self-description is not a material form conflict. The readable matching graded game is eligible for valuation.`,
       };
     }
     if (review.verdict === "unreadable" && gradeEvidence && explicitGradeConfirmation && !explicitGradeConflict) {
@@ -1748,7 +1776,12 @@ function vintageToyVisualInstruction(metadata: string): string {
 }
 function videoGameFormInstruction(metadata: string): string {
   if (normalizedChoice(metadataValue(metadata, "category")) !== "video_games") return "";
-  return " For a video-game target, item form is a mandatory identity gate: sealed, CIB/complete-in-box, boxed-only, loose/raw, and parts-only are distinct comparable cohorts even when the title, cover, grader, and numeric grade match. A candidate label that visibly says CIB is not the same as a target label that visibly says Sealed. Inspect both labels and return a high-confidence mismatch for a confirmed sealed-versus-CIB or sealed-versus-raw difference. If the target's structured title/details say CIB or Complete in Box while its visible holder label says Sealed, do not guess which target form is authoritative: return unreadable/manual review because the target identity itself conflicts. Never call a candidate a visual match until the target form and candidate form are both explicit and equal.";
+  const details = metadataDetails(metadata);
+  const targetIsSealed = /^(?:yes|true|1)$/i.test(String(details.sealed ?? details.factorySealed ?? "").trim());
+  const sealedCompletenessRule = targetIsSealed
+    ? " When the target's structured Sealed field is Yes, Complete in Box is also Yes by definition; treat those two fields as consistent and treat the visible Sealed label as authoritative for the target form. Do not call this a target metadata conflict."
+    : "";
+  return ` For a video-game target, item form is a mandatory identity gate: sealed, CIB/complete-in-box, boxed-only, loose/raw, and parts-only are distinct comparable cohorts even when the title, cover, grader, and numeric grade match. A candidate label that visibly says CIB is not the same as a target label that visibly says Sealed. Inspect both labels and return a high-confidence mismatch for a confirmed sealed-versus-CIB or sealed-versus-raw difference.${sealedCompletenessRule} If the target's structured details say CIB or Complete in Box while its visible holder label says Sealed, and the target does not also have Sealed=Yes, do not guess which target form is authoritative: return unreadable/manual review because the target identity itself conflicts. Never call a candidate a visual match until the target form and candidate form are both explicit and equal.`;
 }
 
 function focusedVideoGameLabelInstruction(metadata: string): string {

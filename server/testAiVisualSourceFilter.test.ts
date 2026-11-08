@@ -2480,12 +2480,72 @@ describe("visual source filter", () => {
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
     expect(source).toContain("item form is a mandatory identity gate: sealed, CIB/complete-in-box, boxed-only, loose/raw, and parts-only are distinct comparable cohorts");
     expect(source).toContain("A candidate label that visibly says CIB is not the same as a target label that visibly says Sealed");
-    expect(source).toContain("target's structured title/details say CIB or Complete in Box while its visible holder label says Sealed");
+    expect(source).toContain("target's structured details say CIB or Complete in Box while its visible holder label says Sealed, and the target does not also have Sealed=Yes");
     expect(source).toContain("${videoGameFormInstruction(targetMetadata)}");
     expect(source).toContain("VIDEO-GAME LABEL CHECK: read the printed form designation on each visible grading label before deciding");
     expect(source).toContain("A clear PSA slab whose label says CIB is a graded CIB game—not a raw or loose cartridge");
     expect(source).toContain("${focusedVideoGameLabelInstruction(targetMetadata)}");
     expect(source).toContain("Descriptive sealed-label suffixes such as A+, A++, or A+++ are soft evidence");
+  });
+
+  it("treats Sealed=Yes as Complete in Box=Yes and does not call matching target metadata conflicting", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Grand Theft Auto III PS2 Sealed Graded PSA 9.4",
+      category: "video_games",
+      itemType: "game",
+      grade: "9.4",
+      certificationCompany: "PSA",
+      fullItemDetails: { gameTitle: "Grand Theft Auto III", platform: "PS2", sealed: "yes", completeInBox: "No" },
+    });
+    expect(target).toContain('"sealed":"Yes"');
+    expect(target).toContain('"completeInBox":"Yes"');
+    const rationale = "Both images show a PSA slab with a readable 9.4 grade and a sealed Grand Theft Auto III for PlayStation 2. The target's structured details say Complete in Box: Yes while the visible holder label says Sealed; the target form is therefore conflicting.";
+    const result = conservativeGradedVisualReviews([
+      {
+        candidateIndex: 0,
+        verdict: "unreadable",
+        confidence: "low",
+        rationale,
+        visualEvidence: {
+          slabVisible: true,
+          gradingLabelVisible: true,
+          graderVisible: true,
+          numericGradeVisible: true,
+          gradeMatches: true,
+          rawOrLooseVisible: false,
+        },
+      },
+    ], [{ title: "Grand Theft Auto III PS2 Sealed Graded PSA 9.4" }], target);
+    expect(result[0]).toMatchObject({ verdict: "match" });
+    expect(result[0]?.rationale).toContain("Sealed=Yes logically implies Complete in Box=Yes");
+  });
+
+  it("keeps a real target Sealed versus candidate CIB conflict blocked", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Grand Theft Auto III PS2 Sealed Graded PSA 9.4",
+      category: "video_games",
+      itemType: "game",
+      grade: "9.4",
+      certificationCompany: "PSA",
+      fullItemDetails: { gameTitle: "Grand Theft Auto III", platform: "PS2", sealed: "yes", completeInBox: "yes" },
+    });
+    const result = conservativeGradedVisualReviews([
+      {
+        candidateIndex: 0,
+        verdict: "unreadable",
+        confidence: "low",
+        rationale: "The target is visibly Sealed while the candidate label reads CIB Complete in Box; this is a sealed versus CIB form conflict.",
+        visualEvidence: {
+          slabVisible: true,
+          gradingLabelVisible: true,
+          graderVisible: true,
+          numericGradeVisible: true,
+          gradeMatches: true,
+          rawOrLooseVisible: false,
+        },
+      },
+    ], [{ title: "Grand Theft Auto III PS2 CIB Graded PSA 9.4" }], target);
+    expect(result[0]?.verdict).toBe("unreadable");
   });
 
   it("pins a one-candidate model response to the candidate that was sent, not its returned index", () => {

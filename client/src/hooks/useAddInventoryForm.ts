@@ -3,10 +3,11 @@
  * Manages form state, validation, and conditional field logic
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { FieldDefinition, CollectibleCategory, COMMON_FIELDS } from '@/lib/formFieldDefinitions';
 import { ALL_FIELD_DEFINITIONS } from '@/lib/fieldDefinitionsComplete';
 import { REMAINING_FIELD_DEFINITIONS } from '@/lib/fieldDefinitionsRemaining';
+import { normalizeVideoGameMetadata } from '../../../shared/videoGameMetadata';
 import { isAlphanumericCoinGrade } from '@shared/gradingCompanyConfig';
 
 const ALL_DEFINITIONS: Record<string, Record<string, FieldDefinition[]>> = {
@@ -49,6 +50,13 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
+
+  useEffect(() => {
+    if (formData.category !== 'video_games' || !/^(?:yes|true|1)$/i.test(String(formData.sealed ?? '').trim()) || formData.completeInBox === 'Yes') {
+      return;
+    }
+    setFormData((previous) => normalizeVideoGameMetadata(previous));
+  }, [formData.category, formData.sealed, formData.completeInBox]);
 
   // Get current fields based on selected category and item type
   const currentFields = useMemo(() => {
@@ -325,10 +333,13 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
 
   // Update field value
   const updateField = useCallback((fieldName: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [fieldName]: value,
-    }));
+    setFormData((prev) => {
+      const next = { ...prev, [fieldName]: value };
+      if (next.category === 'video_games' && fieldName === 'sealed') {
+        return normalizeVideoGameMetadata(next);
+      }
+      return next;
+    });
 
     // Clear error for this field
     setErrors((prev) => {
@@ -484,6 +495,11 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
         details[key] = String(value);
       }
     });
+
+    if (formData.category === 'video_games') {
+      const normalized = normalizeVideoGameMetadata(details);
+      Object.assign(details, Object.fromEntries(Object.entries(normalized).map(([key, value]) => [key, String(value)])));
+    }
 
     // Sort fields alphabetically for consistent ordering
     const sortedDetails: Record<string, string> = {};
