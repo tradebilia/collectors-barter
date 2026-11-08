@@ -5,6 +5,19 @@ const TITLE_STOP_WORDS = new Set([
 
 export type TitlePackagingState = "yes" | "no" | "unknown";
 
+/**
+ * Resolves explicit completeness evidence from marketplace title text.
+ * CIB is the standard abbreviation for Complete in Box; it never implies
+ * Sealed or Factory Sealed.
+ */
+export function titleCompletenessState(title: unknown): TitlePackagingState {
+  const normalized = normalizeMarketplaceTitle(title);
+  if (!normalized) return "unknown";
+  if (/\b(?:incomplete|missing|parts?\s+only|for\s+parts|no\s+(?:original\s+)?box|boxless|no\s+box)\b/.test(normalized)) return "no";
+  if (/\b(?:cib|complete\s+in\s+box|complete\s+with\s+(?:box|manuals?|instructions?)|complete|factory\s+sealed|sealed|unopened)\b/.test(normalized)) return "yes";
+  return "unknown";
+}
+
 export type MarketplaceProductRole =
   | "whole_item"
   | "replacement_part"
@@ -130,6 +143,6 @@ export function titlePackagingState(title: unknown): TitlePackagingState {
   const normalized = normalizeMarketplaceTitle(title);
   if (!normalized) return "unknown";
   if (/\b(?:no|without|missing)\s+(?:original\s+)?(?:box|packaging|package)\b|\bboxless\b|\bno\s+box\b/.test(normalized)) return "no";
-  if (/\b(?:original\s+box|with\s+box|boxed|open\s+box|complete\s+with\s+(?:box|manuals?|instructions?)|with\s+(?:manuals?|instructions?))\b/.test(normalized)) return "yes";
+  if (/\b(?:cib|original\s+box|with\s+box|boxed|open\s+box|complete\s+with\s+(?:box|manuals?|instructions?)|with\s+(?:manuals?|instructions?))\b/.test(normalized)) return "yes";
   return "unknown";
 }

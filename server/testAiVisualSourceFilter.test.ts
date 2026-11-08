@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 vi.mock("./_core/llm", () => ({ invokeLLM: vi.fn() }));
 import { invokeLLM } from "./_core/llm";
 import { findMaterialMetadataConflicts } from "../shared/testAiMetadataConflict";
+import { titleCompletenessState } from "../shared/testAiTitleEvidence";
 import {
   applyVisualSourceReviews,
   applyDeclaredIdentityFilter,
@@ -2992,6 +2993,32 @@ describe("visual source filter", () => {
     expect(gradedToy.score).toBe(100);
     expect(gradedToy.matched).toEqual(expect.arrayContaining(["gradingCompany", "grade"]));
   });
+
+  it("interprets CIB as Complete in Box across title evidence and applicable category scoring", () => {
+    expect(titleCompletenessState("Super Mario Bros. 3 NES CIB")).toBe("yes");
+    expect(titleCompletenessState("Super Mario Bros. 3 NES Complete-In-Box")).toBe("yes");
+    expect(titleCompletenessState("Super Mario Bros. 3 NES CIB Sealed")).toBe("yes");
+    expect(titleCompletenessState("Super Mario Bros. 3 NES CIB, no box")).toBe("no");
+
+    const videoGameTarget = buildVisualTargetMetadata({
+      title: "Super Mario Bros. 3 NES",
+      category: "video_games",
+      itemType: "game",
+      fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", completeInBox: "Yes", sealed: "No" },
+    });
+    const videoGameRows = buildMetadataFieldComparisons(videoGameTarget, { title: "Super Mario Bros. 3 NES CIB" });
+    expect(videoGameRows.find((row) => row.targetField === "Complete In Box")).toMatchObject({ titleDerivedValue: "Yes (inferred from title)", titleDerivedStatus: "match" });
+    expect(videoGameRows.find((row) => row.targetField === "Sealed")).toMatchObject({ titleDerivedValue: "Unknown", titleDerivedStatus: "unknown" });
+
+    const toyTarget = buildVisualTargetMetadata({
+      title: "Vintage Playset",
+      category: "vintage_toys",
+      itemType: "playset",
+      fullItemDetails: { toyNameCharacter: "Vintage Playset", complete: "Yes" },
+    });
+    expect(vintageToyVisualScore({ title: "Vintage Playset CIB" }, toyTarget).matched).toContain("complete");
+  });
+
   it("builds side-by-side Board Games field comparisons without title-derived year or completeness", () => {
     const target = buildVisualTargetMetadata({
       title: "Monopoly: Manhattan Beach Edition",

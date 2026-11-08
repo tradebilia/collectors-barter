@@ -5,6 +5,7 @@ import {
   buildMarketplaceTitleEvidence,
   classifyMarketplaceProductRole,
   titleContainsValue,
+  titleCompletenessState,
   titlePackagingState,
 } from "../shared/testAiTitleEvidence";
 import { classifyStampFormat, stampFormatsCompatible } from "./stampFormat";
@@ -2038,8 +2039,9 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 		return titleGradeEvidence(title) || /\b(?:graded|slabbed|encapsulated)\b/i.test(title) ? "Yes (inferred from title)" : "Unknown";
 	}
 	if (/^(?:complete|completeness|isComplete|completeInBox|completeBox|cib)$/i.test(key)) {
-		if (/\b(?:incomplete|missing|parts?\s+only|for\s+parts)\b/i.test(title)) return "No (inferred from title)";
-		if (/\b(?:complete|complete\s+in\s+box|factory\s+sealed|sealed|unopened)\b/i.test(title)) return "Yes (inferred from title)";
+		const completeness = titleCompletenessState(title);
+		if (completeness === "no") return "No (inferred from title)";
+		if (completeness === "yes") return "Yes (inferred from title)";
 		return "Unknown";
 	}
 	if (/^(?:sealed|factorySealed|sealedStatus|unopened|unopenedProduct)$/i.test(key)) {
@@ -5612,9 +5614,13 @@ function vintageToyScoreStateMatch(targetValue: unknown, listing: VisualSourceCa
   // value used by the comparison table (for example, Sealed implies complete).
   const text = candidate.explicit || candidate.text;
   if (!text) return null;
-  const explicitState = vintageToyState(candidate.explicit);
-  if (explicitState) return explicitState === target;
-  const targetYes = target === "yes";
+	const explicitState = vintageToyState(candidate.explicit);
+	if (explicitState) return explicitState === target;
+	if (aliases.some((alias) => /^(?:complete|completeness|isComplete)$/i.test(alias))) {
+		const titleCompleteness = titleCompletenessState(candidate.text);
+		if (titleCompleteness !== "unknown") return titleCompleteness === target;
+	}
+	const targetYes = target === "yes";
   if (targetYes) return positive.test(text) ? true : negative.test(text) ? false : null;
   return negative.test(text) ? true : positive.test(text) ? false : null;
 }
