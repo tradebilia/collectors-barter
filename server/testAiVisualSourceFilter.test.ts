@@ -9,6 +9,7 @@ import {
   applyDeclaredIdentityFilter,
   buildVisualTargetMetadata,
   buildMetadataFieldComparisons,
+  withMetadataFieldComparisons,
   annotatePreVisualComparableScores,
   buildDeclaredIdentityReviews,
   coinAdmissionReason,
@@ -3026,6 +3027,29 @@ describe("visual source filter", () => {
       expect.objectContaining({ targetField: "Game or puzzle name", candidateValue: "Monopoly: Manhattan Beach", titleDerivedValue: expect.stringContaining("Monopoly: Manhattan Beach"), titleDerivedStatus: "match" }),
       expect.objectContaining({ targetField: "Year", candidateValue: "Unknown", titleDerivedValue: "2000", titleDerivedStatus: "match", status: "unknown" }),
       expect.objectContaining({ targetField: "Completeness", candidateValue: "Unknown", titleDerivedValue: "Yes (inferred from title)", titleDerivedStatus: "match", status: "unknown" }),
+    ]));
+  });
+
+  it("rebuilds a missing final-projection breakdown from normalized title evidence", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Grand Theft Auto Vice City PS2",
+      category: "video_games",
+      itemType: "game",
+      grade: "9.8",
+      certificationCompany: "PSA",
+      fullItemDetails: { gameTitle: "Grand Theft Auto Vice City", platform: "PS2", isGraded: "Yes", completeInBox: "Yes", sealed: "Yes" },
+    });
+    const projected = withMetadataFieldComparisons(target, {
+      normalizedListingTitle: "Grand Theft Auto Vice City PS2 Sealed WATA 9.8 A++",
+      title: "",
+      metadataFieldComparisons: [],
+      fullItemDetails: { gameTitle: "Grand Theft Auto Vice City", platform: "PS2" },
+    });
+    expect(projected.metadataFieldComparisons.length).toBeGreaterThan(0);
+    expect(projected.metadataFieldComparisons).toEqual(expect.arrayContaining([
+      expect.objectContaining({ targetField: "Grade", titleDerivedValue: "9.8" }),
+      expect.objectContaining({ targetField: "Certification company", titleDerivedValue: "WATA" }),
+      expect.objectContaining({ targetField: "Sealed", titleDerivedValue: "Yes (inferred from title)" }),
     ]));
   });
 

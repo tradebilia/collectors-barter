@@ -34,7 +34,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { annotatePreVisualComparableScores, applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildMetadataFieldComparisons, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { annotatePreVisualComparableScores, applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildMetadataFieldComparisons, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, withMetadataFieldComparisons, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { autographReplicaReasonFromText } from '../shared/testAiAutographEvidence';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
@@ -585,7 +585,8 @@ export function assessSoldCompsPreVisionCandidates(args: {
     if (priceSafety.reason) reasons.push(priceSafety.reason);
     return { item: { ...item, soldCompsMetadata: metadata }, metadata, reasons, excluded: reasons.length > 0 };
   });
-  const scoredItems = annotatePreVisualComparableScores(assessments.map((assessment) => assessment.item), args.targetMetadata);
+	  const scoredItems = annotatePreVisualComparableScores(assessments.map((assessment) => assessment.item), args.targetMetadata)
+	    .map((item) => withMetadataFieldComparisons(args.targetMetadata, item));
   const scoredAssessments = assessments.map((assessment, index) => ({ ...assessment, item: scoredItems[index] }));
   return {
     eligible: scoredAssessments.filter((assessment) => !assessment.excluded).map((assessment) => assessment.item),
@@ -1757,7 +1758,7 @@ export const testAIRouter = router({
           listings: preVisionEligibleSummaries,
         });
         const preVisionExcludedListings = [
-          ...rawAutographReplicaListings.map(({ listing, reason }) => ({
+          ...rawAutographReplicaListings.map(({ listing, reason }) => withMetadataFieldComparisons(targetMetadata, {
             ...listing,
             visualReviewStatus: 'not_reviewed',
             visualReviewRationale: reason,

@@ -2005,7 +2005,18 @@ function titleGradeEvidence(title: string): { grader: string; grade: string } | 
 	return match ? { grader: match[1], grade: match[2] } : null;
 }
 function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string, targetValue: string): string {
-	const title = String(listing.title ?? listing.itemTitle ?? listing.listingTitle ?? listing.name ?? listing.productName ?? "").trim();
+ const details = candidateStructuredDetails(listing);
+ const title = firstCandidateText(
+  listing.normalizedListingTitle,
+  listing.title,
+  listing.itemTitle,
+  listing.listingTitle,
+  listing.name,
+  listing.productName,
+  details.title,
+  details.itemTitle,
+  details.listingTitle,
+ ) || "";
 	if (!title) return "Unknown";
 	if (/^(?:title|listingTitle|itemTitle)$/i.test(key)) return comparisonValue(title);
 	if (/^(?:year|releaseYear)$/i.test(key)) {
@@ -2100,8 +2111,8 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 				titleDerivedStatus: comparisonStatus(targetValue, titleDerivedValue, category, key),
 		});
   }
-  return ([{
-    targetField: "Target listing title",
+	return ([{
+		targetField: "Target listing title",
     targetValue: comparisonValue(extractTargetTitle(targetMetadata)),
 		candidateField: "Candidate listing title",
 		candidateValue: comparisonValue(listing.title),
@@ -2110,6 +2121,18 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 		titleDerivedValue: comparisonValue(listing.title),
 		titleDerivedStatus: "unknown",
 	}, ...rows].slice(0, 40)) as MetadataFieldComparison[];
+}
+
+/**
+ * Final projection safeguard: every candidate sent to Test AI must carry a
+ * comparison table. Existing non-empty rows are preserved; missing or empty
+ * rows are rebuilt from structured metadata plus normalized title evidence.
+ */
+export function withMetadataFieldComparisons<T extends Record<string, any>>(targetMetadata: string, listing: T): T & { metadataFieldComparisons: MetadataFieldComparison[] } {
+	const existing = Array.isArray(listing.metadataFieldComparisons) && listing.metadataFieldComparisons.length > 0
+		? listing.metadataFieldComparisons as MetadataFieldComparison[]
+		: buildMetadataFieldComparisons(targetMetadata, listing as VisualSourceCandidate);
+	return { ...listing, metadataFieldComparisons: existing } as T & { metadataFieldComparisons: MetadataFieldComparison[] };
 }
 
 type ExplicitState = "yes" | "no" | "unknown";
@@ -6647,7 +6670,7 @@ export async function filterVisualSourceCandidates<
     // A candidate with a usable target and candidate image must either receive a
     // visual verdict or remain explicit review-only. Do not let a later client
     // treat a missing model row as an implicit pass.
-    const requirementAnnotatedListings = preparedListings.map((listing, index) => {
+	    const requirementAnnotatedListings = preparedListings.map((listing, index) => {
       const displayListing = rankedItems.has(index)
         ? { ...listing, ...rankedItems.get(index) } as T
         : listing;
@@ -6714,7 +6737,7 @@ export async function filterVisualSourceCandidates<
         visualReviewRationale: "Candidate image was not reached by the bounded adaptive review window; manual image review is required.",
         evidenceDisposition: "not_visually_reviewed_window",
       } as T;
-    });
+	    }).map((listing) => withMetadataFieldComparisons(targetMetadata, listing));
     const applied = applyVisualSourceReviews(
       requirementAnnotatedListings,
       uniqueReviews,
@@ -6753,7 +6776,7 @@ export async function filterVisualSourceCandidates<
 	      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Adaptive visual review sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates in batches of ${VISUAL_REVIEW_BATCH_SIZE}, stopping after ${VISUAL_REVIEW_TARGET_MATCHES} accepted visual matches, the ${VISUAL_REVIEW_MAX_CANDIDATES}-image maximum, or the ${VISUAL_REVIEW_OVERALL_DEADLINE_MS / 1000}-second overall deadline; ${timedOutCount} candidate${timedOutCount === 1 ? "" : "s"} timed out; ${preVisualUniversalReasons.size} universal duplicate, quantity, state, grade, component, or image-readiness record${preVisualUniversalReasons.size === 1 ? " was" : "s were"} retained as context-only; ${preVisualLotReasons.size} multi-item listing${preVisualLotReasons.size === 1 ? " was" : "s were"} excluded before vision and retained as context-only; ${declaredConflictIndexes.size} other explicit identity conflict${declaredConflictIndexes.size === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.${completedWithTimeout ? " Remaining candidates are retained for manual review and cannot enter valuation implicitly." : ""}`,
     };
   } catch {
-    const unavailableContextListings = [
+	    const unavailableContextListings = [
       ...preVisualContextListings,
       ...preVisualScoreExcludedListings,
       ...preparedListings.flatMap((listing, index) => imageLessIndexes.has(index)
@@ -6766,9 +6789,9 @@ export async function filterVisualSourceCandidates<
             evidenceDisposition: "context_only",
           } as T]
         : []),
-    ];
+	    ].map((listing) => withMetadataFieldComparisons(targetMetadata, listing));
     return {
-      listings: preparedListings.map((listing, index) => reviewCandidates.some((candidate) => candidate.candidateIndex === index)
+	      listings: preparedListings.map((listing, index) => reviewCandidates.some((candidate) => candidate.candidateIndex === index)
         ? {
             ...listing,
             ...(rankedItems.get(index) ?? {}),
@@ -6777,7 +6800,7 @@ export async function filterVisualSourceCandidates<
             visualReviewRationale: "The visual provider was unavailable; manual image review is required.",
             evidenceDisposition: "warning_review",
           } as T
-        : { ...listing, ...(rankedItems.get(index) ?? {}) }).filter((_, index) => !preVisualExcludedIndexes.has(index) && !imageLessIndexes.has(index)),
+	        : { ...listing, ...(rankedItems.get(index) ?? {}) }).map((listing) => withMetadataFieldComparisons(targetMetadata, listing)).filter((_, index) => !preVisualExcludedIndexes.has(index) && !imageLessIndexes.has(index)),
       contextListings: unavailableContextListings,
       preVisualExcludedCount: unavailableContextListings.length,
       status: "provider_unavailable",
