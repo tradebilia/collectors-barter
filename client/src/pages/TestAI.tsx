@@ -909,6 +909,13 @@ function sortRankedCandidates<T extends Record<string, any>>(listings: T[]): T[]
     .map(({ listing }) => listing);
 }
 
+// Candidate analysis must never fall back to provider retrieval order. This
+// shared boundary is used for accepted, held-out, context-only, and audit
+// records; unranked records remain visible at the end in stable input order.
+function sortAnalysisCandidates<T extends Record<string, any>>(listings: T[]): T[] {
+  return sortRankedCandidates(listings);
+}
+
 function AnalyzerRecordPanel({ records, acceptedCount, sourceLabel }: { records: AnalyzerRecordDetail[]; acceptedCount: number; sourceLabel: string }) {
   const recordCount = records.length > 0 ? records.length : acceptedCount;
   return <details className="mt-2 rounded border border-emerald-700/30 bg-emerald-950/15 p-2" open={recordCount > 0}>
@@ -952,11 +959,12 @@ function ProcessCompleteNotice() {
 function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data?: any; isLoading?: boolean }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const [showVisualReview, setShowVisualReview] = useState(false);
-  const auditLedger = data?.audit?.ledger ?? [];
+  const auditLedger = sortAnalysisCandidates(data?.audit?.ledger ?? []);
   const retainedAuditRows = auditLedger.filter((row: any) => !(data?.listings ?? []).some((listing: any) => (listing.saleId ?? listing.itemUrl ?? listing.title) === (row.saleId ?? row.itemUrl ?? row.title)));
-  const visualReviewRows = (data?.listings ?? []).map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
+  const rankedListings = sortAnalysisCandidates(data?.listings ?? []);
+  const visualReviewRows = rankedListings.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
   const visualMismatchRows = visualReviewRows.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
-  const acceptedValuationListings = (data?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
+  const acceptedValuationListings = rankedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
   const statedTradeValue = Number(item.estimatedValue);
   const priceSafetyApplies = Number.isFinite(statedTradeValue) && statedTradeValue > HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD;
   const priceSafetyMinimum = priceSafetyApplies ? statedTradeValue * HIGH_VALUE_SOLD_COMP_MIN_RATIO : null;
@@ -1022,9 +1030,9 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
         </div>
       )}
       {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} retained candidates</p>}
-      {data?.listings && data.listings.length > 0 && (
+      {rankedListings.length > 0 && (
         <div className="space-y-1 max-h-48 overflow-y-auto">
-          {data.listings.map((l: any, i: number) => (
+          {rankedListings.map((l: any, i: number) => (
             <div key={i} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
               <div className="flex items-center gap-2 min-w-0">
                 {l.imageUrl && <img src={l.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />}
@@ -1050,13 +1058,14 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
 function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, marketplace }: { item: SelectedItem; side: 'left' | 'right'; data?: any; isLoading?: boolean; sourceLabel: string; marketplace: string }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const listings = data?.listings ?? [];
-  const preVisionExcludedListings = data?.preVisionExcludedListings ?? [];
+  const preVisionExcludedListings = sortAnalysisCandidates(data?.preVisionExcludedListings ?? []);
   const searchMetrics = data?.searchMetrics ?? data?.metrics;
   const retrievalCoverage = Array.isArray(searchMetrics?.retrievalCoverage) ? searchMetrics.retrievalCoverage : [];
   const executedQueries = Array.isArray(searchMetrics?.executedQueries) ? searchMetrics.executedQueries : [];
   const strictVisualReview = (item.category === 'disney_pins' || item.category === 'coins') && marketplace === 'Mercari';
-  const acceptedListings = listings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
-  const reviewedListings = listings.filter((listing: any) => hasCompletedVisualReview(listing));
+  const rankedListings = sortAnalysisCandidates(listings);
+  const acceptedListings = rankedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
+  const reviewedListings = rankedListings.filter((listing: any) => hasCompletedVisualReview(listing));
   const currentValueListings = acceptedListings.filter((listing: any) => {
     const endedAt = Date.parse(String(listing.endedAt ?? ''));
     return Number.isFinite(endedAt) && Date.now() >= endedAt && Date.now() - endedAt <= 365 * 86_400_000;
@@ -1098,7 +1107,7 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
       {data?.visualFilter?.note && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1 text-[10px] text-cyan-200"><p>{data.visualFilter.note}</p><p className="mt-0.5 text-cyan-100/80">{reviewedListings.length} candidate image{reviewedListings.length === 1 ? '' : 's'} reviewed · {acceptedListings.length} valuation-eligible</p></div>}
       <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={sourceLabel} />
       {acceptedListings.length > 0 && <div className="rounded border border-emerald-700/35 bg-emerald-950/20 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Accepted for analyzer valuation ({acceptedListings.length})</p><div className="mt-1 space-y-1">{acceptedListings.map((listing: any, index: number) => <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-center justify-between gap-2"><div className="min-w-0"><a href={listing.itemUrl || undefined} target="_blank" rel="noopener noreferrer" className="truncate text-[10px] text-blue-300 hover:underline">{listing.title}</a><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><VisualDifferenceList listing={listing} /></div><span className="shrink-0 text-[10px] font-semibold text-emerald-300">{formatWholeDollar(listing.price)}</span></div>)}</div></div>}
-      {listings.length > 0 && <div className="space-y-1 max-h-64 overflow-y-auto">{listings.map((listing: any, index: number) => (
+      {rankedListings.length > 0 && <div className="space-y-1 max-h-64 overflow-y-auto">{rankedListings.map((listing: any, index: number) => (
         <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
           <div className="flex items-center gap-2 min-w-0">
             {listing.imageUrl && <img src={listing.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />}
@@ -1496,7 +1505,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       {displayData?.query && <p className="text-gray-500 text-[10px]">{displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'} · {displayData.debug?.exactTierPageCount ?? 1} exact page{displayData.debug?.exactTierPageCount === 1 ? '' : 's'} checked</p>}
       {displayData?.debug && <p className="text-cyan-200/70 text-[9px]">Exact-tier results: {displayData.debug.exactTierFilteredCount ?? 0} retained after grade/identity filters ({displayData.debug.exactTierResultCount ?? 0} returned by eBay across {displayData.debug.exactTierPageCount ?? 1} page{displayData.debug.exactTierPageCount === 1 ? '' : 's'}). {displayData.debug.exactTierUsedFallbacks ? 'Additional fallback tiers were needed after exact-query pagination.' : 'No fallback tiers were needed.'}</p>}
       {/* Keep the historical displayData.preVisionFilter.excludedListings.map contract marker; filter completed verdicts out of this holdout section. */}
-      {displayData?.preVisionFilter?.excludedListings?.filter((listing: any) => !hasCompletedVisualReview(listing)).length > 0 && <details className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[9px] text-amber-200"><summary className="cursor-pointer font-semibold">{displayData.preVisionFilter.excludedCount} active candidate{displayData.preVisionFilter.excludedCount === 1 ? '' : 's'} excluded before image comparison</summary><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1 text-amber-100/80">{displayData.preVisionFilter.excludedListings.filter((listing: any) => !hasCompletedVisualReview(listing)).map((listing: any, index: number) => <div key={`${listing.itemUrl || listing.title}-${index}`} className="flex items-start gap-2 border-t border-amber-700/20 pt-1 first:border-t-0 first:pt-0">
+      {sortAnalysisCandidates(displayData?.preVisionFilter?.excludedListings ?? []).filter((listing: any) => !hasCompletedVisualReview(listing)).length > 0 && <details className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[9px] text-amber-200"><summary className="cursor-pointer font-semibold">{displayData.preVisionFilter.excludedCount} active candidate{displayData.preVisionFilter.excludedCount === 1 ? '' : 's'} excluded before image comparison</summary><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1 text-amber-100/80">{sortAnalysisCandidates(displayData.preVisionFilter.excludedListings ?? []).filter((listing: any) => !hasCompletedVisualReview(listing)).map((listing: any, index: number) => <div key={`${listing.itemUrl || listing.title}-${index}`} className="flex items-start gap-2 border-t border-amber-700/20 pt-1 first:border-t-0 first:pt-0">
         {listing.imageUrl ? <img src={listing.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" className="h-10 w-10 shrink-0 rounded border border-amber-700/30 bg-gray-950/50 object-contain p-0.5" onError={(event) => { event.currentTarget.style.display = 'none'; }} /> : <div className="h-10 w-10 shrink-0 rounded border border-dashed border-amber-700/20 bg-gray-950/30" aria-hidden="true" />}
         <div className="min-w-0 flex-1"><p className="break-words"><strong>{listing.title}</strong></p>{listing.metadataMatchScore !== undefined && listing.metadataMatchScore !== null ? <p className="mt-0.5 text-cyan-200">{listing.metadataMatchLabel ?? 'Ranking'}: <strong>{listing.metadataMatchScore}/100</strong>{listing.metadataMatchRank ? ` · rank #${listing.metadataMatchRank}` : ''}</p> : <p className="mt-0.5 text-amber-200/80">Ranking score not used — this item type is non-comparable (Collection/Lot).</p>}{listing.metadataMatchReasons?.length > 0 && <p className="mt-0.5 text-gray-400">Matched: {listing.metadataMatchReasons.join(', ')}</p>}{listing.visualReviewRationale && <p className="mt-0.5">{listing.visualReviewRationale}</p>}</div>
       </div>)}</div></details>}

@@ -74,6 +74,16 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(pageSource).toContain('records can affect valuation after the shared sold-evidence and identity gates.');
   });
 
+  it('orders every ranked candidate-analysis surface by rank before rendering', () => {
+    expect(pageSource).toContain('function sortAnalysisCandidates');
+    expect(pageSource).toContain('const auditLedger = sortAnalysisCandidates(data?.audit?.ledger ?? []);');
+    expect(pageSource).toContain('const rankedListings = sortAnalysisCandidates(data?.listings ?? []);');
+    expect(pageSource).toContain('sortAnalysisCandidates(data?.preVisionExcludedListings ?? [])');
+    expect(pageSource).toContain('sortAnalysisCandidates(displayData?.preVisionFilter?.excludedListings ?? [])');
+    expect(pageSource).toContain('{rankedListings.map((l: any, i: number) => (');
+    expect(pageSource).toContain('{rankedListings.map((listing: any, index: number) => (');
+  });
+
   it('promotes a confirmed Mercari Video Game visual match to analyzer eligibility', () => {
     const annotated = annotateSoldComparableCandidate({
       title: 'Metroid - NES CIB',

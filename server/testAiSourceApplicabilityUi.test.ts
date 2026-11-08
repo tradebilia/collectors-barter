@@ -251,7 +251,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('historical or undated data is retained for context');
     expect(source).toContain('identity mismatch prevents direct valuation');
     expect(source).toContain('Exclusion reason:');
-    expect(source).toContain("const acceptedValuationListings = (data?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);");
+    expect(source).toContain("const acceptedValuationListings = rankedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);");
     expect(source).toContain('Accepted for valuation candidates');
     expect(source).toContain('Completed sales that passed the Sold-Comps evidence gate. Final analyzer comparable-selection rules still apply.');
   });
@@ -388,7 +388,7 @@ describe('manual Test AI selector boundary', () => {
     expect(routerSource).toContain('preVisionExcludedListings: visualContextListings');
     expect(routerSource).toContain('searchMetrics: result.metrics');
     expect(routerSource).toContain('imageUrl: listing.imageUrl ?? listing.thumbnailUrl ?? listing.imageUrls?.[0] ?? listing.images?.[0] ?? null');
-    expect(source).toContain('const preVisionExcludedListings = data?.preVisionExcludedListings ?? [];');
+    expect(source).toContain('const preVisionExcludedListings = sortAnalysisCandidates(data?.preVisionExcludedListings ?? []);');
     expect(source).toContain('Excluded or held-out candidates');
     expect(source).toContain('No retrieved candidates were excluded or held out before visual review.');
     expect(source).toContain('listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0] || null');
