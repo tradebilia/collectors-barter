@@ -2425,7 +2425,19 @@ function candidateProductForm(targetMetadata: string, listing: VisualSourceCandi
   const structured = listing.itemType ?? listing.productType ?? listing.form ?? listing.saleForm ?? details.itemType ?? details.productType ?? details.form;
   const title = canonicalCandidateTitle(listing);
   if (category === "sports_cards") return sportsCardProductForm(structured) ?? sportsCardTitleProductForm(title);
-  if (category === "video_games") return videoGameProductForm(details.sealedStatus ?? details.packageStatus ?? details.packaging ?? structured) ?? videoGameTitleProductForm(title);
+  if (category === "video_games") {
+    // Sealed means the game was never opened, so it is complete in box by
+    // implication. However, an explicit CIB/Complete-in-Box declaration
+    // without Sealed is a different comparable form. Resolve both structured
+    // fields before falling back to the title so every gate uses the same
+    // two-track semantics.
+    const structuredSealed = details.sealed ?? details.factorySealed ?? details.sealedStatus;
+    const structuredCompleteInBox = details.completeInBox ?? details.complete ?? details.isComplete;
+    return videoGameProductForm(structuredSealed)
+      ?? videoGameProductForm(structuredCompleteInBox)
+      ?? videoGameProductForm(details.packageStatus ?? details.packaging ?? structured)
+      ?? videoGameTitleProductForm(title);
+  }
   if (category === "vintage_toys") return vintageToyProductForm(details.sealedStatus ?? details.packagingType ?? details.packageType ?? details.complete ?? details.isComplete ?? structured) ?? vintageToyTitleProductForm(title);
   return null;
 }

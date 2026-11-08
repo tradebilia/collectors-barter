@@ -2548,6 +2548,46 @@ describe("visual source filter", () => {
     expect(result[0]?.verdict).toBe("unreadable");
   });
 
+  it("treats title-derived Sealed and structured Sealed as the same complete form", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Grand Theft Auto III PS2",
+      category: "video_games",
+      itemType: "game",
+      fullItemDetails: { gameTitle: "Grand Theft Auto III", platform: "PS2", sealed: "Yes", completeInBox: "No" },
+    });
+    expect(buildDeclaredIdentityReviews([
+      { title: "Grand Theft Auto III PS2 Sealed PSA 9.4", fullItemDetails: { sealed: "Yes", completeInBox: "Yes" } },
+    ], target)).toEqual([]);
+  });
+
+  it("treats a CIB-only candidate as different from a Sealed target", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Grand Theft Auto III PS2",
+      category: "video_games",
+      itemType: "game",
+      fullItemDetails: { gameTitle: "Grand Theft Auto III", platform: "PS2", sealed: "Yes", completeInBox: "Yes" },
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "Grand Theft Auto III PS2 Complete in Box PSA 9.4" },
+    ], target);
+    expect(reviews[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
+    expect(reviews[0]?.rationale).toContain("Product form differs");
+  });
+
+  it("treats a Sealed candidate as different from a CIB-only target", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Grand Theft Auto III PS2",
+      category: "video_games",
+      itemType: "game",
+      fullItemDetails: { gameTitle: "Grand Theft Auto III", platform: "PS2", sealed: "No", completeInBox: "Yes" },
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "Grand Theft Auto III PS2 Sealed PSA 9.4" },
+    ], target);
+    expect(reviews[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
+    expect(reviews[0]?.rationale).toContain("Product form differs");
+  });
+
   it("pins a one-candidate model response to the candidate that was sent, not its returned index", () => {
     const reviews = normalizeSingleCandidateVisualReview(
       {
