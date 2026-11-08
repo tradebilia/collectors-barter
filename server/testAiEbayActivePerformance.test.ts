@@ -146,13 +146,14 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(ebayProcedure).toContain("metadataMatchScore: s.metadataMatchScore");
     expect(ebayProcedure).toContain("metadataMatchRank: s.metadataMatchRank");
     expect(ebayProcedure).toContain("metadataFieldComparisons: s.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, s)");
-    expect(pageSource).toContain("displayData.preVisionFilter.excludedListings.map");
+    expect(pageSource).toContain("const activeMasterListings = mergeMasterCandidates(");
+    expect(pageSource).toContain("<CandidateMasterList listings={activeMasterListings} sourceLabel=\"eBay Active Listings\" />");
     expect(pageSource).toContain("listing.metadataMatchScore !== undefined");
     expect(pageSource).toContain("listing.metadataMatchRank");
     expect(ebayProcedure).toContain("...entry.item,");
     expect(visualSource).toContain("scorePreVisualComparableCandidate");
-    expect(pageSource).toContain("Ranking score not used — this item type is non-comparable (Collection/Lot).");
-    expect(pageSource).toContain("object-contain p-0.5");
+    expect(pageSource).toContain("Every retrieved candidate appears once, in rank order.");
+    expect(pageSource).toContain("No image</span>");
   });
 
   it("renders visible marketplace candidates in ranking order", () => {
@@ -175,7 +176,9 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("function hasCompletedVisualReview(listing: any): boolean");
     expect(pageSource).toContain("hasCompletedVisualReview(listing)");
     expect(pageSource).toContain("actually reviewed");
-    expect(pageSource).toContain("held out before AI image analysis");
+    expect(pageSource).toContain("All candidates — ranked master list");
+    expect(pageSource).toContain("Hard exception — not sent to AI");
+    expect(pageSource).not.toContain("held out before AI image analysis");
     expect(pageSource).toContain("AI mismatch");
   });
 
@@ -184,9 +187,9 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(soldSection).toContain("const visualContextAuditLedger = (sharedVisualFilter.contextListings ?? []).map");
     expect(soldSection).toContain("ledger: [...canonicalListings, ...visualContextAuditLedger");
     expect(soldSection).toContain("visualContextAuditLedger.length");
-    expect(pageSource).toContain("const retainedAuditRows = auditLedger.filter");
-    expect(pageSource).toContain("All retrieved candidates and why they were not accepted");
-    expect(pageSource).toContain("<MetadataComparisonTable listing={row} />");
+    expect(pageSource).toContain("<CandidateMasterList listings={auditLedger} sourceLabel=\"eBay Sold History\" />");
+    expect(pageSource).toContain("Every retrieved candidate appears once, in rank order.");
+    expect(pageSource).toContain("<MetadataComparisonTable listing={listing} />");
     expect(pageSource).toContain("No candidates reached the main valuation/review list");
   });
 
@@ -245,7 +248,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("const displayData = mergeEbayVisualReviewDisplayData(data, effectiveVisualReviewData)");
     expect(pageSource).toContain("AI image checks could not start");
     expect(pageSource).toContain("AI image checks stopped after returning partial results");
-    expect(pageSource).toContain("active candidate{displayData.preVisionFilter.excludedCount === 1 ? '' : 's'} excluded before image comparison");
+    expect(pageSource).toContain("<CandidateMasterList listings={activeMasterListings} sourceLabel=\"eBay Active Listings\" />");
     expect(pageSource).toContain("data={ebayData} isLoading={ebayLoading}");
   });
 

@@ -960,7 +960,6 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const [showVisualReview, setShowVisualReview] = useState(false);
   const auditLedger = sortAnalysisCandidates(data?.audit?.ledger ?? []);
-  const retainedAuditRows = auditLedger.filter((row: any) => !(data?.listings ?? []).some((listing: any) => (listing.saleId ?? listing.itemUrl ?? listing.title) === (row.saleId ?? row.itemUrl ?? row.title)));
   const rankedListings = sortAnalysisCandidates(data?.listings ?? []);
   const visualReviewRows = rankedListings.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
   const visualMismatchRows = visualReviewRows.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
@@ -1049,8 +1048,8 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
           ))}
         </div>
       )}
-      {auditLedger.length > 0 && <details open={retainedAuditRows.length > 0} className="rounded border border-gray-700/30 bg-gray-950/35 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">All retrieved candidates and why they were not accepted ({auditLedger.length})</summary><div className="mt-2 max-h-80 space-y-1 overflow-y-auto">{auditLedger.map((row: any, index: number) => <div key={`${row.saleId || row.itemUrl || row.title}-${index}`} className="rounded bg-gray-900/60 p-1.5 text-[9px]"><p className="truncate font-semibold text-gray-200">{row.title || 'Untitled record'}</p><p className={row.evidenceDisposition === 'valuation_eligible' ? 'text-emerald-300' : row.evidenceDisposition === 'rejected_objective_conflict' ? 'text-red-300' : 'text-amber-300'}>{String(row.evidenceDisposition || 'warning_review').replace(/_/g, ' ')}</p><MetadataMatchLine listing={row} /><p className="mt-0.5 text-gray-500">{(row.evidenceReasons ?? []).join('; ') || 'No additional warning supplied.'}</p><MetadataComparisonTable listing={row} /><VisualDifferenceList listing={row} /></div>)}</div></details>}
-      {data && !data.listings.length && !data.error && <p className="text-gray-500 text-xs">No candidates reached the main valuation/review list. See “All retrieved candidates and why they were not accepted” above for every retained record and reason.</p>}
+      <CandidateMasterList listings={auditLedger} sourceLabel="eBay Sold History" />
+      {data && !data.listings.length && !data.error && <p className="text-gray-500 text-xs">No candidates reached the main valuation/review list. See the ranked master list above for every retained record and reason.</p>}
     </div>
   );
 }
@@ -1103,7 +1102,7 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
           <p className="text-orange-200"><strong>{preVisionExcludedListings.length}</strong><br />held out</p>
         </div>
       </div>}
-      <details open={preVisionExcludedListings.length > 0} className="rounded border border-amber-700/30 bg-amber-950/15 p-2"><summary className="cursor-pointer text-[10px] font-semibold uppercase tracking-wide text-amber-200">Excluded or held-out candidates ({preVisionExcludedListings.length})</summary>{preVisionExcludedListings.length > 0 ? <div className="mt-1 max-h-72 space-y-1 overflow-y-auto">{preVisionExcludedListings.map((listing: any, index: number) => { const imageUrl = listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0] || null; return <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-start gap-2 rounded bg-gray-950/35 px-1.5 py-1.5"><div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded border border-amber-700/30 bg-gray-950/50 p-1">{imageUrl ? <img src={imageUrl} alt="Marketplace candidate" loading="lazy" referrerPolicy="no-referrer" className="h-full w-full object-contain" /> : <span className="text-center text-[8px] text-gray-500">No Image</span>}</div><div className="min-w-0"><p className="break-words text-[10px] font-semibold text-gray-200">{listing.title || 'Untitled record'}</p><p className="text-[9px] text-amber-200/80">{(listing.evidenceReasons ?? [listing.visualReviewRationale]).filter(Boolean).join('; ') || 'Retained as context-only; not sent to visual review.'}</p><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><VisualDifferenceList listing={listing} /></div></div>; })}</div> : <p className="mt-1 text-[9px] text-emerald-200/80">No retrieved candidates were excluded or held out before visual review.</p>}</details>
+      <CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)} sourceLabel={`${marketplace} completed sales`} />
       {data?.visualFilter?.note && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1 text-[10px] text-cyan-200"><p>{data.visualFilter.note}</p><p className="mt-0.5 text-cyan-100/80">{reviewedListings.length} candidate image{reviewedListings.length === 1 ? '' : 's'} reviewed · {acceptedListings.length} valuation-eligible</p></div>}
       <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={sourceLabel} />
       {acceptedListings.length > 0 && <div className="rounded border border-emerald-700/35 bg-emerald-950/20 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Accepted for analyzer valuation ({acceptedListings.length})</p><div className="mt-1 space-y-1">{acceptedListings.map((listing: any, index: number) => <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-center justify-between gap-2"><div className="min-w-0"><a href={listing.itemUrl || undefined} target="_blank" rel="noopener noreferrer" className="truncate text-[10px] text-blue-300 hover:underline">{listing.title}</a><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><VisualDifferenceList listing={listing} /></div><span className="shrink-0 text-[10px] font-semibold text-emerald-300">{formatWholeDollar(listing.price)}</span></div>)}</div></div>}
@@ -1137,6 +1136,56 @@ function hasCompletedVisualReview(listing: any): boolean {
   // otherwise reviewed matches appear in the “held out before AI analysis”
   // bucket and are excluded from the valuation-facing presentation.
   return ['match', 'rough_match', 'mismatch', 'unreadable'].includes(status);
+}
+
+function candidateMasterKey(listing: any): string {
+  return String(listing?.saleId ?? listing?.id ?? listing?.itemId ?? listing?.itemUrl ?? listing?.url ?? listing?.title ?? 'candidate');
+}
+
+function mergeMasterCandidates(...groups: any[][]): any[] {
+  const merged = new Map<string, any>();
+  for (const group of groups) {
+    for (const listing of group ?? []) {
+      const key = candidateMasterKey(listing);
+      const existing = merged.get(key);
+      // Prefer the richer/reviewed projection when the same provider record is
+      // present in both the main list and a pre-vision/audit list.
+      if (!existing || hasCompletedVisualReview(listing) || (!existing.metadataFieldComparisons && listing.metadataFieldComparisons)) {
+        merged.set(key, existing ? { ...existing, ...listing } : listing);
+      }
+    }
+  }
+  return sortAnalysisCandidates(Array.from(merged.values()));
+}
+
+function isHardCandidateException(listing: any): boolean {
+  if (String(listing?.evidenceDisposition ?? '') === 'rejected_objective_conflict') return true;
+  const reason = [...(listing?.evidenceReasons ?? []), listing?.visualReviewRationale].filter(Boolean).join(' ');
+  return /objective conflict|hard conflict|wrong (?:platform|item|product|form|game)|explicitly (?:different|incompatible)|lot\/bundle|collection\/lot|replacement or spare component|not the target item/i.test(reason);
+}
+
+function candidateMasterStatus(listing: any): { label: string; className: string; reason: string } {
+  const visualStatus = String(listing?.visualReviewStatus ?? '').trim().toLowerCase();
+  const reason = (listing?.evidenceReasons ?? []).filter(Boolean).join('; ') || listing?.visualReviewRationale || '';
+  if (hasCompletedVisualReview(listing)) {
+    const label = visualStatus === 'match' || visualStatus === 'rough_match' ? 'AI result: visual match' : visualStatus === 'mismatch' ? 'AI result: visual mismatch' : 'AI result: unreadable / manual review';
+    return { label, className: visualStatus === 'mismatch' ? 'text-red-300' : visualStatus === 'unreadable' ? 'text-amber-300' : 'text-emerald-300', reason };
+  }
+  if (isHardCandidateException(listing)) return { label: 'Hard exception — not sent to AI', className: 'text-red-300', reason: reason || 'An objective identity conflict prevented image comparison.' };
+  if (listing?.visualRequirement === 'required' || listing?.visualRequirement === 'required_visual_review') return { label: 'Sent to AI — result pending', className: 'text-cyan-300', reason: reason || 'Passed the pre-image hard-exception checks.' };
+  return { label: 'Not sent to AI — operational reason', className: 'text-amber-300', reason: reason || 'No usable image, score/review capacity, or another operational safeguard prevented image comparison.' };
+}
+
+function CandidateMasterList({ listings, sourceLabel }: { listings: any[]; sourceLabel: string }) {
+  const candidates = mergeMasterCandidates(listings);
+  if (candidates.length === 0) return null;
+  return <section className="rounded border border-violet-700/35 bg-violet-950/15 p-2" aria-label={`${sourceLabel} ranked candidate master list`}>
+    <div className="flex items-start justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-wide text-violet-200">All candidates — ranked master list ({candidates.length})</p><p className="mt-0.5 text-[9px] text-violet-100/70">Every retrieved candidate appears once, in rank order. The status beside each item explains whether it reached AI image comparison.</p></div><span className="shrink-0 text-[8px] text-violet-200/70">{sourceLabel}</span></div>
+    <div className="mt-1 max-h-96 space-y-1 overflow-y-auto pr-1">{candidates.map((listing: any, index: number) => { const status = candidateMasterStatus(listing); const imageUrl = listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0] || null; return <div key={`${candidateMasterKey(listing)}-${index}`} className="rounded bg-gray-950/40 p-1.5">
+      <div className="flex items-start gap-2"><div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded border border-violet-700/30 bg-gray-950/60">{imageUrl ? <img src={imageUrl} alt="Marketplace candidate" loading="lazy" referrerPolicy="no-referrer" className="h-full w-full object-contain" /> : <span className="text-center text-[8px] text-gray-500">No image</span>}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><p className="break-words text-[9px] font-semibold text-gray-100">{listing.itemUrl || listing.url ? <a href={listing.itemUrl || listing.url} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:underline">{listing.title || 'Untitled candidate'}</a> : (listing.title || 'Untitled candidate')}</p><span className={`shrink-0 text-[8px] font-bold uppercase ${status.className}`}>{status.label}</span></div><p className="text-[8px] text-cyan-200">{listing.metadataMatchRank ? `Rank #${listing.metadataMatchRank}` : 'Unranked'} · {listing.metadataMatchScore !== undefined && listing.metadataMatchScore !== null ? `${listing.metadataMatchScore}/100` : 'Score unavailable'}</p><p className={`text-[8px] leading-snug ${status.className}`}>{status.reason}</p></div></div>
+      <MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><VisualDifferenceList listing={listing} />
+    </div>; })}</div>
+  </section>;
 }
 
 function VisualDifferenceList({ listing }: { listing: any }) {
@@ -1183,7 +1232,6 @@ function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: cont
   // reviewed. The requirement marker is provenance, but it must not erase a
   // real verdict when an adapter omits that optional field.
   const reviewed = candidates.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => hasCompletedVisualReview(listing));
-  const excludedBeforeReview = candidates.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => !hasCompletedVisualReview(listing) && listing.visualRequirement !== 'required' && (listing.visualReviewStatus || listing.visualReviewRationale));
   const mismatches = reviewed.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
   const matches = reviewed.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match');
   useEffect(() => {
@@ -1195,7 +1243,6 @@ function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: cont
   return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2 space-y-2">
     <div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">AI image review — {sourceLabel}</p><p className="text-[9px] text-cyan-200/80">{reviewed.length} actually reviewed · {matches.length} visual match{matches.length === 1 ? '' : 'es'} · {mismatches.length} AI mismatch{mismatches.length === 1 ? '' : 'es'} · {Math.max(0, reviewed.length - matches.length - mismatches.length)} unresolved</p></div><button type="button" onClick={() => setOpen(!open)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">{open ? 'Hide image checks' : 'View image checks'}</button></div>
     {data.visualFilter.note && <p className="text-[9px] text-cyan-200/80">{data.visualFilter.note}</p>}
-    {excludedBeforeReview.length > 0 && <details className="rounded border border-amber-700/30 bg-amber-950/20 p-1.5"><summary className="cursor-pointer text-[9px] font-semibold text-amber-200">{excludedBeforeReview.length} held out before AI image analysis</summary><div className="mt-1 max-h-48 space-y-1 overflow-y-auto">{excludedBeforeReview.map(({ listing, index }: { listing: any; index: number }) => <div key={`pre-review-${listing.id || listing.saleId || listing.url || listing.title}-${index}`} className="border-t border-amber-700/20 pt-1 first:border-t-0 first:pt-0"><p className="break-words text-[9px] font-semibold text-amber-100">{listing.title || 'Untitled marketplace candidate'}{listing.metadataMatchScore !== undefined ? ` · rank #${listing.metadataMatchRank ?? '—'} · ${listing.metadataMatchScore}/100` : ''}</p><p className="text-[8px] leading-snug text-amber-200/80">{listing.visualReviewRationale || listing.evidenceReasons?.[0] || 'Held out by a deterministic safeguard.'}</p><MetadataComparisonTable listing={listing} /><VisualDifferenceList listing={listing} /></div>)}</div></details>}
     {data.visualFilter.status === 'completed_with_timeout' && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1 text-[9px] text-amber-200">Image review reached its time limit before every candidate was checked. Reviewed matches remain visible; unchecked or timed-out candidates stay manual-review/context only and cannot enter the analyzer implicitly.</p>}
       {open && <div className="space-y-1.5">{reviewed.length === 0 ? <p className="text-[10px] text-gray-500">No decisive image result was returned. Candidates remain retained.</p> : <div className="max-h-72 space-y-1 overflow-y-auto pr-1">{reviewed.map(({ listing, index }: { listing: any; index: number }) => { const accepted = listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match'; const mismatch = listing.visualReviewStatus === 'mismatch'; const valuationEligible = listing.evidenceDisposition === 'valuation_eligible'; const currentValueEvidence = accepted && sourceLabel.toLowerCase().includes('active') && Number(listing.price) > 0; const rationale = listing.visualReviewRationale || 'No additional visual rationale supplied.'; const candidateImageUrl = listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0] || null; return <div key={`${listing.id || listing.saleId || listing.url || listing.title}-${index}`} className="flex items-start gap-2 rounded bg-gray-900/70 p-1.5"><div className="grid w-24 shrink-0 grid-cols-2 gap-1">{targetImageUrl ? <figure className="min-w-0"><img src={targetImageUrl} alt="Target item" className="h-10 w-full rounded border border-cyan-700/50 bg-gray-950 object-contain" /><figcaption className="mt-0.5 truncate text-center text-[7px] uppercase text-cyan-200">Target</figcaption></figure> : <div className="flex h-10 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">Target unavailable</div>}{candidateImageUrl ? <figure className="min-w-0"><img src={candidateImageUrl} alt="Marketplace candidate" className="h-10 w-full rounded border border-emerald-700/50 bg-gray-950 object-contain" /><figcaption className="mt-0.5 truncate text-center text-[7px] uppercase text-emerald-200">Candidate</figcaption></figure> : <div className="flex h-10 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">Candidate unavailable</div>}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><p className={`flex min-w-0 items-center gap-1 text-[9px] font-semibold ${mismatch ? 'text-red-300' : accepted ? 'text-emerald-300' : 'text-amber-300'}`}><span aria-label={mismatch ? 'Not accepted due to image mismatch' : accepted ? 'AI-reported visual similarity; not independently verified' : 'Needs image review'} className="text-sm leading-none">{mismatch ? '✕' : accepted ? '✓' : '?'}</span><span>{String(listing.visualReviewStatus).replace(/_/g, ' ')}</span></p><span className="shrink-0 text-[10px] font-semibold text-white">{formatVisualReviewPrice(listing)}</span></div><p className="break-words whitespace-normal text-[8px] leading-snug text-gray-400">{rationale}</p><details className="mt-1"><summary className="cursor-pointer text-[8px] text-cyan-200/80">View full explanation</summary><p className="mt-0.5 break-words whitespace-normal text-[8px] leading-snug text-gray-300">{rationale}</p></details><MetadataComparisonTable listing={listing} /><VisualDifferenceList listing={listing} /><p className="break-words text-[9px] text-gray-300">{listing.title || 'Untitled marketplace candidate'}</p>{listing.metadataMatchScore !== undefined && <p className="text-[8px] text-cyan-200">Metadata rank #{listing.metadataMatchRank} · {listing.metadataMatchScore}/100 · {(listing.metadataMatchReasons ?? []).join(', ') || 'No additional metadata match stated'}</p>}<AnalyzerUseLine eligible={valuationEligible} statusLabel={currentValueEvidence ? 'Current-value evidence: INCLUDED' : undefined} reason={currentValueEvidence ? 'The visual match is retained in current-value market evidence; it is not a completed-sale comparable.' : valuationEligible ? 'Accepted for valuation; current-value versus historical-trend classification is shown in the source outcome summary.' : mismatch ? 'The visual result did not establish an accepted comparable.' : accepted ? 'The visual match was retained for review but was not approved as valuation evidence.' : 'The visual result is unresolved.'} /></div></div>; })}</div>}</div>}
   </div>;
@@ -1440,6 +1487,11 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   const visualMatchCount = effectiveVisualReviewData?.visualMatchMetrics?.count ?? 0;
   const autographMarketContextOnly = Boolean(displayData?.marketContextOnly);
   const rankedDisplayListings = sortRankedCandidates(displayData?.listings ?? []);
+  const activeMasterListings = mergeMasterCandidates(
+    displayData?.listings ?? [],
+    displayData?.visualReviewListings ?? [],
+    displayData?.preVisionFilter?.excludedListings ?? [],
+  );
   const autographValuationListings = autographMarketContextOnly
     ? (displayData?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible')
     : [];
@@ -1516,11 +1568,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       {effectiveVisualReviewData?.visualFilter && !effectiveVisualReviewData?.marketContextOnly && <MarketplaceVisualReview data={effectiveVisualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
       {displayData?.query && <p className="text-gray-500 text-[10px]">{displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'} · {displayData.debug?.exactTierPageCount ?? 1} exact page{displayData.debug?.exactTierPageCount === 1 ? '' : 's'} checked</p>}
       {displayData?.debug && <p className="text-cyan-200/70 text-[9px]">Exact-tier results: {displayData.debug.exactTierFilteredCount ?? 0} retained after grade/identity filters ({displayData.debug.exactTierResultCount ?? 0} returned by eBay across {displayData.debug.exactTierPageCount ?? 1} page{displayData.debug.exactTierPageCount === 1 ? '' : 's'}). {displayData.debug.exactTierUsedFallbacks ? 'Additional fallback tiers were needed after exact-query pagination.' : 'No fallback tiers were needed.'}</p>}
-      {/* Keep the historical displayData.preVisionFilter.excludedListings.map contract marker; filter completed verdicts out of this holdout section. */}
-      {sortAnalysisCandidates(displayData?.preVisionFilter?.excludedListings ?? []).filter((listing: any) => !hasCompletedVisualReview(listing)).length > 0 && <details className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[9px] text-amber-200"><summary className="cursor-pointer font-semibold">{displayData.preVisionFilter.excludedCount} active candidate{displayData.preVisionFilter.excludedCount === 1 ? '' : 's'} excluded before image comparison</summary><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1 text-amber-100/80">{sortAnalysisCandidates(displayData.preVisionFilter.excludedListings ?? []).filter((listing: any) => !hasCompletedVisualReview(listing)).map((listing: any, index: number) => <div key={`${listing.itemUrl || listing.title}-${index}`} className="flex items-start gap-2 border-t border-amber-700/20 pt-1 first:border-t-0 first:pt-0">
-        {listing.imageUrl ? <img src={listing.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" className="h-10 w-10 shrink-0 rounded border border-amber-700/30 bg-gray-950/50 object-contain p-0.5" onError={(event) => { event.currentTarget.style.display = 'none'; }} /> : <div className="h-10 w-10 shrink-0 rounded border border-dashed border-amber-700/20 bg-gray-950/30" aria-hidden="true" />}
-        <div className="min-w-0 flex-1"><p className="break-words"><strong>{listing.title}</strong></p>{listing.metadataMatchScore !== undefined && listing.metadataMatchScore !== null ? <p className="mt-0.5 text-cyan-200">{listing.metadataMatchLabel ?? 'Ranking'}: <strong>{listing.metadataMatchScore}/100</strong>{listing.metadataMatchRank ? ` · rank #${listing.metadataMatchRank}` : ''}</p> : <p className="mt-0.5 text-amber-200/80">Ranking score not used — this item type is non-comparable (Collection/Lot).</p>}{listing.metadataMatchReasons?.length > 0 && <p className="mt-0.5 text-gray-400">Matched: {listing.metadataMatchReasons.join(', ')}</p>}{listing.visualReviewRationale && <p className="mt-0.5">{listing.visualReviewRationale}</p>}</div>
-      </div>)}</div></details>}
+      <CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" />
       {displayData?.debug && !displayData.debug.targetIsGraded && (displayData.debug.rawTargetExcludedGradedCount ?? 0) > 0 && <p className="text-cyan-200/70 text-[9px]">Raw/ungraded target rule: {displayData.debug.rawTargetExcludedGradedCount} listing{displayData.debug.rawTargetExcludedGradedCount === 1 ? '' : 's'} with an explicit grading/slab signal were excluded before display and image review.</p>}
       {displayData?.marketContextOnly && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[9px] text-amber-200">Signed Item candidates are ranked by market relevance only. No visual cap applies because these results are never sent to visual analysis.</p>}
       {autographMarketContextOnly ? <>

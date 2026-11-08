@@ -389,10 +389,11 @@ describe('manual Test AI selector boundary', () => {
     expect(routerSource).toContain('searchMetrics: result.metrics');
     expect(routerSource).toContain('imageUrl: listing.imageUrl ?? listing.thumbnailUrl ?? listing.imageUrls?.[0] ?? listing.images?.[0] ?? null');
     expect(source).toContain('const preVisionExcludedListings = sortAnalysisCandidates(data?.preVisionExcludedListings ?? []);');
-    expect(source).toContain('Excluded or held-out candidates');
-    expect(source).toContain('No retrieved candidates were excluded or held out before visual review.');
-    expect(source).toContain('listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0] || null');
-    expect(source).toContain('>No Image</span>');
+    expect(source).toContain('<CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)}');
+    expect(source).toContain('All candidates — ranked master list');
+    expect(source).toContain('Hard exception — not sent to AI');
+    expect(source).toContain('const imageUrl = listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0] || null;');
+    expect(source).toContain('No image</span>');
     expect(source).toContain('className="h-full w-full object-contain"');
   });
 
@@ -415,7 +416,8 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('function hasCompletedVisualReview(listing: any): boolean');
     expect(source).toContain("['match', 'rough_match', 'mismatch', 'unreadable'].includes(status)");
     expect(source).toContain('filter(({ listing }: { listing: any }) => hasCompletedVisualReview(listing))');
-    expect(source).toContain("!hasCompletedVisualReview(listing) && listing.visualRequirement !== 'required'");
+    expect(source).toContain("<CandidateMasterList listings={activeMasterListings} sourceLabel=\"eBay Active Listings\" />");
+    expect(source).not.toContain('held out before AI image analysis');
   });
   it('renders ranking score and rank through the shared candidate-row component', () => {
     expect(source).toContain('function MetadataMatchLine');

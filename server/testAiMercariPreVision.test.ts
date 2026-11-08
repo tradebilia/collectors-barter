@@ -79,7 +79,9 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(pageSource).toContain('const auditLedger = sortAnalysisCandidates(data?.audit?.ledger ?? []);');
     expect(pageSource).toContain('const rankedListings = sortAnalysisCandidates(data?.listings ?? []);');
     expect(pageSource).toContain('sortAnalysisCandidates(data?.preVisionExcludedListings ?? [])');
-    expect(pageSource).toContain('sortAnalysisCandidates(displayData?.preVisionFilter?.excludedListings ?? [])');
+    expect(pageSource).toContain('const activeMasterListings = mergeMasterCandidates(');
+    expect(pageSource).toContain('<CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" />');
+    expect(pageSource).toContain('<CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)}');
     expect(pageSource).toContain('{rankedListings.map((l: any, i: number) => (');
     expect(pageSource).toContain('{rankedListings.map((listing: any, index: number) => (');
   });
