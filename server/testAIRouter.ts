@@ -34,7 +34,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { annotatePreVisualComparableScores, applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { annotatePreVisualComparableScores, applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildMetadataFieldComparisons, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { autographReplicaReasonFromText } from '../shared/testAiAutographEvidence';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
@@ -1920,6 +1920,7 @@ export const testAIRouter = router({
             metadataMatchRank: s.metadataMatchRank,
             metadataMatchReasons: s.metadataMatchReasons,
             metadataMatchLabel: s.metadataMatchLabel ?? (autographMarketContext ? 'Market Relevance Score' : undefined),
+            metadataFieldComparisons: s.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, s),
             // Preserve the visual filter result in the transport object used by
             // MarketplaceVisualReview; dropping these made the button appear to
             // do nothing even when the server had flagged a listing.
@@ -1952,6 +1953,7 @@ export const testAIRouter = router({
             metadataMatchRank: s.metadataMatchRank,
             metadataMatchReasons: s.metadataMatchReasons,
             metadataMatchLabel: s.metadataMatchLabel ?? (autographMarketContext ? 'Market Relevance Score' : undefined),
+            metadataFieldComparisons: s.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, s),
             visualRequirement: s.visualRequirement ?? null,
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
@@ -1976,6 +1978,7 @@ export const testAIRouter = router({
               metadataMatchRank: s.metadataMatchRank,
               metadataMatchReasons: s.metadataMatchReasons,
               metadataMatchLabel: s.metadataMatchLabel,
+              metadataFieldComparisons: s.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, s),
               visualReviewStatus: s.visualReviewStatus,
               visualReviewRationale: s.visualReviewRationale,
               evidenceDisposition: s.evidenceDisposition,

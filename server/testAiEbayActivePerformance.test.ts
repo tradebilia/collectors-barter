@@ -97,6 +97,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(routerSource).toContain("metadataMatchScore: s.metadataMatchScore");
     expect(routerSource).toContain("metadataMatchRank: s.metadataMatchRank");
     expect(routerSource).toContain("metadataMatchReasons: s.metadataMatchReasons");
+    expect(routerSource).toContain("metadataFieldComparisons: s.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, s)");
+    expect(routerSource).toContain("buildMetadataFieldComparisons,");
   });
 
   it("does not hold ordinary active-listing metrics behind AI image review", () => {
@@ -143,6 +145,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(ebayProcedure).toContain("imageUrl: s.imageUrl ?? collectEbayImageUrls(s)[0] ?? null");
     expect(ebayProcedure).toContain("metadataMatchScore: s.metadataMatchScore");
     expect(ebayProcedure).toContain("metadataMatchRank: s.metadataMatchRank");
+    expect(ebayProcedure).toContain("metadataFieldComparisons: s.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, s)");
     expect(pageSource).toContain("displayData.preVisionFilter.excludedListings.map");
     expect(pageSource).toContain("listing.metadataMatchScore !== undefined");
     expect(pageSource).toContain("listing.metadataMatchRank");
