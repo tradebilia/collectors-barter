@@ -646,6 +646,65 @@ describe('Sold-Comps API key validation', () => {
     expect(candidate.visualReviewStatus).toBe('match');
   });
 
+  it('keeps a visually raw candidate out of valuation when the target is graded', () => {
+    const candidate = annotateSoldComparableCandidate(
+      {
+        title: 'The Legend of Zelda Gold Cartridge NES 1987',
+        soldPrice: '20',
+        evidenceDisposition: 'context_only',
+        visualReviewStatus: 'match',
+        visualReviewRationale: 'The candidate is exposed and loose with no visible grading holder or label, while the target is PSA graded.',
+        visualEvidence: {
+          slabVisible: false,
+          gradingLabelVisible: false,
+          graderVisible: false,
+          numericGradeVisible: false,
+          gradeMatches: false,
+          rawOrLooseVisible: true,
+        },
+      },
+      {
+        category: 'video_games',
+        targetItemType: 'single_item',
+        certificationCompany: 'PSA',
+        targetGrade: 7.5,
+        targetNumber: null,
+        targetPlayer: null,
+        visualReviewRequired: true,
+      },
+    );
+
+    expect(candidate.evidenceDisposition).not.toBe('valuation_eligible');
+    expect(candidate.evidenceReasons).toContain('candidate is visually raw/ungraded while the target is graded; this is a hard identity conflict');
+  });
+
+  it('does not clear missing title grade and grader warnings without verified visual grading evidence', () => {
+    const candidate = annotateSoldComparableCandidate(
+      {
+        title: 'The Legend of Zelda Gold Cartridge NES 1987',
+        soldPrice: '20',
+        evidenceDisposition: 'context_only',
+        visualReviewStatus: 'match',
+        visualReviewRationale: 'The item identity and artwork look similar, but the grading holder and numeric grade are not readable.',
+      },
+      {
+        category: 'video_games',
+        targetItemType: 'single_item',
+        certificationCompany: 'PSA',
+        targetGrade: 7.5,
+        targetNumber: null,
+        targetPlayer: null,
+        visualReviewRequired: true,
+      },
+    );
+
+    expect(candidate.evidenceDisposition).not.toBe('valuation_eligible');
+    expect(candidate.evidenceReasons).toEqual(expect.arrayContaining([
+      'grading or authentication company is not stated in the marketplace title',
+      'grade is not stated or cannot be normalized from the marketplace title',
+    ]));
+  });
+
   it('keeps a visual decision bound to its provider record after declared conflicts compact the visible list', () => {
     const recordBoundAudit = {
       imageCount: 1,

@@ -979,6 +979,31 @@ export function hasExplicitSoldCompLot(title: string): boolean {
     || /\b(?:multi[- ]?pack|multipack|bundle|collection)\b/i.test(normalized);
 }
 
+function targetRequiresGradedEvidence(context: { targetGrade: ExtractedGrade | null; certificationCompany: string }): boolean {
+  const certificationCompany = normalizeCertificationCompany(context.certificationCompany);
+  return Boolean(context.targetGrade)
+    || Boolean(certificationCompany && !/^(?:UNKNOWN|OTHER|N\/A|NA|NONE)$/i.test(certificationCompany));
+}
+
+function hasConfirmedGradedVisualEvidence(item: any): boolean {
+  const evidence = item?.visualAudit?.finalEvidence ?? item?.visualAudit?.initialEvidence ?? item?.visualEvidence;
+  return evidence?.slabVisible === true
+    && evidence?.gradingLabelVisible === true
+    && evidence?.graderVisible === true
+    && evidence?.numericGradeVisible === true
+    && evidence?.gradeMatches === true
+    && evidence?.rawOrLooseVisible !== true;
+}
+
+function hasVisualRawCandidateConflict(item: any): boolean {
+  const evidence = item?.visualAudit?.finalEvidence ?? item?.visualAudit?.initialEvidence ?? item?.visualEvidence;
+  if (evidence?.rawOrLooseVisible === true) return true;
+  const text = [item?.visualReviewRationale, item?.visualAudit?.retryReason]
+    .filter(Boolean)
+    .join(' ');
+  return /(?:candidate|item)\s+(?:appears?|is|looks?)\s+(?:raw|loose|ungraded|un-?slabbed)|no\s+(?:visible\s+)?(?:slab|holder|grading\s+label|grade)/i.test(text);
+}
+
 /**
  * Candidate metadata is intentionally lossless: absent provider/title identity
  * becomes warning/review, while the earlier deterministic filters record only
@@ -1014,6 +1039,13 @@ export function annotateSoldComparableCandidate(
   const carriedVisualStatus = item?.visualReviewStatus ?? context.visualReview?.verdict ?? 'not_reviewed';
   const carriedVisualRationale = item?.visualReviewRationale ?? context.visualReview?.rationale ?? null;
   const carriedVisualAudit = item?.visualAudit ?? context.visualReview?.visualAudit ?? null;
+  const reviewEvidenceItem = {
+    ...item,
+    visualReviewRationale: carriedVisualRationale,
+    visualAudit: carriedVisualAudit,
+    visualEvidence: item?.visualEvidence ?? context.visualReview?.visualEvidence,
+  };
+  const targetIsGraded = targetRequiresGradedEvidence(context);
 
   if (isExplicitMultiItemListing(item, context.targetMetadata ?? '') && !isMovieBoxSetTarget(context.category, context.targetItemType)) {
     reasons.push(lotQuantity
@@ -1027,6 +1059,9 @@ export function annotateSoldComparableCandidate(
 
   if (targetProvider && !observedProvider) reasons.push('grading or authentication company is not stated in the marketplace title');
   if (context.targetGrade && !observedGrade) reasons.push('grade is not stated or cannot be normalized from the marketplace title');
+  if (targetIsGraded && hasVisualRawCandidateConflict(reviewEvidenceItem)) {
+    reasons.push('candidate is visually raw/ungraded while the target is graded; this is a hard identity conflict');
+  }
   if (context.targetNumber && !extractIssueFromTitle(title)) reasons.push('catalog, card, or issue number is not stated in the marketplace title');
   const surname = playerSurname(context.targetPlayer);
   if (context.category === 'sports_cards' && surname && !new RegExp(`\\b${surname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(title)) {
@@ -1069,7 +1104,8 @@ export function annotateSoldComparableCandidate(
   // Once the shared visual review confirms the item, clear only title-reading
   // uncertainty. Lots, price/date/currency failures, duplicates, objective
   // conflicts, and source evidence reasons remain blocking safeguards.
-  const effectiveReasons = confirmedVisualIdentity
+  const canClearGradedTitleUncertainty = !targetIsGraded || hasConfirmedGradedVisualEvidence(reviewEvidenceItem);
+  const effectiveReasons = confirmedVisualIdentity && canClearGradedTitleUncertainty
     ? reasons.filter((reason) => !metadataUncertaintyReasons.has(reason))
     : reasons;
   // A shared visual filter may carry a provisional context-only label into

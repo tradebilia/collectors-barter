@@ -3040,6 +3040,25 @@ describe("visual source filter", () => {
     expect(rows.map((row) => row.targetField)).not.toContain("Vehicle name");
   });
 
+  it("treats equivalent numeric grade formatting as a metadata match", () => {
+    const target = buildVisualTargetMetadata({
+      title: "The Legend of Zelda Gold Cartridge NES",
+      category: "video_games",
+      itemType: "game",
+      grade: "7.50",
+      certificationCompany: "PSA",
+      fullItemDetails: { gameTitle: "The Legend of Zelda", platform: "NES", isGraded: "Yes" },
+    });
+    const rows = buildMetadataFieldComparisons(target, {
+      title: "The Legend of Zelda Gold Cartridge NES PSA 7.5",
+      fullItemDetails: { gameTitle: "The Legend of Zelda", platform: "NES", grade: "7.5", certificationCompany: "PSA" },
+    });
+
+    expect(rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ targetField: "Grade", targetValue: "7.50", candidateValue: "7.5", status: "match" }),
+    ]));
+  });
+
   it("shows a separate title-derived candidate value without treating it as structured metadata", () => {
     const target = buildVisualTargetMetadata({
       title: "Monopoly: Manhattan Beach Edition",

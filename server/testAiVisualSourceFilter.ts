@@ -2105,14 +2105,23 @@ function comparisonStatus(
   category = "",
   fieldKey = "",
 ): MetadataFieldComparison["status"] {
-	const targetComparable = comparisonComparable(targetValue);
-	const candidateComparable = comparisonComparable(candidateValue.replace(/\s*\(.*?\)$/, ""));
-	return targetValue === "Unknown" || candidateValue === "Unknown"
-		? "unknown"
-		: category === "video_games" && /^(?:certificationCompany|gradingCompany|grader)$/i.test(fieldKey)
-		  && videoGameGradersEquivalent(category, targetComparable, candidateComparable)
-		  ? "match"
-		  : targetComparable === candidateComparable ? "match" : "different";
+  const targetComparable = comparisonComparable(targetValue);
+  const candidateComparable = comparisonComparable(candidateValue.replace(/\s*\(.*?\)$/, ""));
+  return targetValue === "Unknown" || candidateValue === "Unknown"
+    ? "unknown"
+    : category === "video_games" && /^(?:certificationCompany|gradingCompany|grader)$/i.test(fieldKey)
+      && videoGameGradersEquivalent(category, targetComparable, candidateComparable)
+      ? "match"
+      : /(?:^|__|_)(?:grade|numericGrade|finalGrade)(?:$|__|_)/i.test(fieldKey)
+        && (() => {
+          const targetGrade = parsedComparableGrade(targetValue, { allowBareNumeric: true });
+          const candidateGrade = parsedComparableGrade(candidateValue, { allowBareNumeric: true });
+          return Boolean(targetGrade && candidateGrade
+            && targetGrade.numeric === candidateGrade.numeric
+            && (!targetGrade.designation || !candidateGrade.designation || targetGrade.designation === candidateGrade.designation));
+        })()
+        ? "match"
+      : targetComparable === candidateComparable ? "match" : "different";
 }
 export function buildMetadataFieldComparisons(targetMetadata: string, listing: VisualSourceCandidate): MetadataFieldComparison[] {
   const targetDetails = {
