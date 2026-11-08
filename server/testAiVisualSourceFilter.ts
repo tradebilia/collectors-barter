@@ -1385,7 +1385,7 @@ function hasVideoGameVisualIdentityConflict(rationale: string): boolean {
 function hasVideoGameSoftLabelOnlyConflict(rationale: string): boolean {
   if (hasVideoGameVisualIdentityConflict(rationale)) return false;
   const text = String(rationale ?? "");
-  const labelConflict = /\b(?:grading|grade)\s+label(?:\s+(?:designation|suffix))?\b[^.]{0,180}\b(?:differs?|different|mismatch|conflict)\b|\blabel\s+designation\b[^.]{0,180}\b(?:differs?|different|mismatch|conflict)\b/i.test(text);
+  const labelConflict = /\b(?:grading|grade)\s+label(?:\s+(?:designation|suffix))?\b[^\n]{0,220}\b(?:differs?|different|difference|differences|mismatch|conflict)\b|\blabel\s+designation\b[^\n]{0,220}\b(?:differs?|different|difference|differences|mismatch|conflict)\b/i.test(text);
   if (!labelConflict) return false;
   return !/\b(?:numeric\s+grade|grader|certification\s+company|game|title|artwork|cover|edition)\b[^.]{0,100}\b(?:differs?|different|mismatch|conflict)\b/i.test(text);
 }
@@ -1460,9 +1460,9 @@ export function conservativeGradedVisualReviews(
     if (isVideoGameTarget && review.verdict === "mismatch" && hasVideoGameSoftLabelOnlyConflict(review.rationale)) {
       return {
         ...review,
-        verdict: "unreadable",
-        confidence: "low",
-        rationale: `${review.rationale} The apparent difference is limited to a descriptive sealed-label suffix such as A+, A++, or A+++; suffix text is soft evidence when the numeric grade, grader/holder, game identity, and sealed/CIB/loose form are otherwise consistent. Retained for manual review rather than finalized as a mismatch.`,
+        verdict: "match",
+        confidence: review.confidence === "low" ? "medium" : review.confidence,
+        rationale: `${review.rationale} The only reported difference is a descriptive sealed-label suffix such as A+, A++, or A+++; suffix text is ignored as soft evidence because the numeric grade, grader/holder, game identity, and sealed/CIB/loose form are otherwise consistent. Treated as a visual match and eligible for valuation.`,
       };
     }
     if (review.verdict === "unreadable" && gradeEvidence && explicitGradeConfirmation && !explicitGradeConflict) {

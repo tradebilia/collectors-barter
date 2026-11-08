@@ -2587,19 +2587,19 @@ describe("visual source filter", () => {
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
   });
 
-  it("downgrades a video-game suffix-only mismatch to manual review instead of rejecting it", () => {
+  it("promotes a video-game suffix-only mismatch to a valuation-facing match", () => {
     const metadata = `title=Grand Theft Auto III PS2; category=video_games; grade=9.4; certificationCompany=PSA; fullItemDetails=${JSON.stringify({ sealed: "Yes", isGraded: "Yes" })}`;
     const result = conservativeGradedVisualReviews([
       {
         candidateIndex: 0,
         verdict: "mismatch",
         confidence: "high",
-        rationale: "The grading label designation appears different: target Sealed A++ versus candidate Sealed A+. The PSA holder, numeric grade, game identity, cover art, and sealed form otherwise match.",
+        rationale: "grading label: target PSA label reads 9.4 and Sealed A++ vs candidate PSA label reads 9.4 and Sealed A+ — material identity difference",
         visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false },
       },
     ], [{ title: "Grand Theft Auto III PS2 Sealed PSA 9.4 A+" }], metadata);
-    expect(result[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
-    expect(result[0].rationale).toContain("descriptive sealed-label suffix");
+    expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
+    expect(result[0].rationale).toContain("eligible for valuation");
   });
 
   it("keeps a confirmed sealed-versus-CIB video-game conflict as a mismatch", () => {
