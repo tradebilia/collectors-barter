@@ -733,27 +733,31 @@ describe("visual source filter", () => {
   });
 
   it("scores Video Games / Game, Console, and Accessory independently", () => {
-    const gameTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" } });
-    const gameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gameTarget);
-    expect(gameScore.score).toBe(90);
-    expect(gameScore.matched).toEqual(expect.arrayContaining(["gameTitle", "platform", "releaseYear", "region", "edition", "upcEan"]));
+    const gameTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", isGraded: "No", fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" } });
+    const gameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard", isGraded: "No", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gameTarget);
+    expect(gameScore.score).toBe(85);
+    expect(gameScore.matched).toEqual(expect.arrayContaining(["gameTitle", "platform", "releaseYear", "region", "edition", "isGraded", "upcEan"]));
     expect(gameScore.unknown).toContain("productForm");
 
-    const gradedGameTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", grade: "9.8", certificationCompany: "PSA", fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" } });
-    const gradedGameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard PSA 9.8", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gradedGameTarget);
-    expect(gradedGameScore.score).toBe(100);
+    const gradedGameTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", isGraded: "Yes", grade: "9.8", certificationCompany: "PSA", fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" } });
+    const gradedGameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard PSA 9.8", isGraded: "Yes", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gradedGameTarget);
+    expect(gradedGameScore.score).toBe(95);
     expect(gradedGameScore.matched).toEqual(expect.arrayContaining(["gradingCompany", "grade"]));
 
     const structuredGradedGameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES", gradingCompany: "PSA", grade: "9.8", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gradedGameTarget);
-    expect(structuredGradedGameScore.score).toBe(100);
+    expect(structuredGradedGameScore.score).toBe(95);
 
-    const consoleTarget = buildVisualTargetMetadata({ title: "Nintendo NES", category: "video_games", itemType: "console", fullItemDetails: { consoleName: "NES", modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" } });
-    const consoleScore = videoGameConsoleVisualScore({ title: "Nintendo NES NES-001 Working NTSC-U", itemDetails: JSON.stringify({ modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" }) }, consoleTarget);
+    const ungradedCandidateAgainstUngradedTarget = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard", isGraded: "No", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gameTarget);
+    const gradedCandidateAgainstUngradedTarget = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard PSA 9.8", isGraded: "Yes", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gameTarget);
+    expect(ungradedCandidateAgainstUngradedTarget.score).toBeGreaterThan(gradedCandidateAgainstUngradedTarget.score);
+
+    const consoleTarget = buildVisualTargetMetadata({ title: "Nintendo NES", category: "video_games", itemType: "console", isGraded: "No", fullItemDetails: { consoleName: "NES", modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" } });
+    const consoleScore = videoGameConsoleVisualScore({ title: "Nintendo NES NES-001 Working NTSC-U", isGraded: "No", itemDetails: JSON.stringify({ modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" }) }, consoleTarget);
     expect(consoleScore.score).toBe(100);
     expect(consoleScore.matched).toEqual(expect.arrayContaining(["consoleName", "modelNumber", "region", "workingCondition", "originalBoxIncluded", "cablesIncluded", "controllersIncluded"]));
 
-    const accessoryTarget = buildVisualTargetMetadata({ title: "NES Controller", category: "video_games", itemType: "accessory", fullItemDetails: { accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" } });
-    const accessoryScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller Working", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" }) }, accessoryTarget);
+    const accessoryTarget = buildVisualTargetMetadata({ title: "NES Controller", category: "video_games", itemType: "accessory", isGraded: "No", fullItemDetails: { accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" } });
+    const accessoryScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller Working", isGraded: "No", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" }) }, accessoryTarget);
     expect(accessoryScore.score).toBe(100);
     expect(accessoryScore.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "workingCondition", "originalPackaging"]));
     const cosmeticConditionScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller", condition: "Like New", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", originalPackaging: "Yes" }) }, accessoryTarget);
@@ -761,7 +765,7 @@ describe("visual source filter", () => {
     expect(cosmeticConditionScore.score).toBe(90);
     const powerGloveTarget = buildVisualTargetMetadata({ title: "NES Power Glove", category: "video_games", itemType: "accessory", fullItemDetails: { accessoryType: "Controller", accessoryName: "Power Glove", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" } });
     for (const [title, expectedScore, expectedFields] of [
-      ["VTG Nintendo NES Power Glove Controller Large Extremely RARE Sz L Original Box", 90, ["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "originalPackaging"]],
+      ["VTG Nintendo NES Power Glove Controller Large Extremely RARE Sz L Original Box", 85, ["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "originalPackaging"]],
       ["Nintendo NES Power Glove Large L New Open Box Complete w/ Manuals Mattel", 65, ["accessoryName", "compatiblePlatform", "manufacturer", "originalPackaging"]],
     ] as const) {
       const titleScore = videoGameAccessoryVisualScore({ title }, powerGloveTarget);
@@ -774,14 +778,14 @@ describe("visual source filter", () => {
       itemDetails: JSON.stringify({ accessoryName: "Controller", accessoryType: "Controller", platform: "NES", manufacturer: "Nintendo", originalPackaging: "Yes" }),
     };
     const providerGenericLabelScore = videoGameAccessoryVisualScore(providerGenericLabelCandidate, powerGloveTarget);
-    expect(providerGenericLabelScore.score).toBe(90);
+    expect(providerGenericLabelScore.score).toBe(85);
     expect(providerGenericLabelScore.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "originalPackaging"]));
     expect(buildDeclaredIdentityReviews([providerGenericLabelCandidate], powerGloveTarget)).toEqual([]);
     const aliasedTitleCandidate = {
       itemTitle: "PAX Power Glove NES Famicom Controller Tested Working Boxed Vintage Japan",
       itemDetails: JSON.stringify({ accessoryName: "PAX Power Glove Nintendo Famicom NES Controller", accessoryType: "Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Tested Working", originalPackaging: "Boxed" }),
     };
-    expect(videoGameAccessoryVisualScore(aliasedTitleCandidate, powerGloveTarget).score).toBe(100);
+    expect(videoGameAccessoryVisualScore(aliasedTitleCandidate, powerGloveTarget).score).toBe(95);
     expect(buildDeclaredIdentityReviews([aliasedTitleCandidate], powerGloveTarget)).toEqual([]);
   });
 
@@ -819,6 +823,7 @@ describe("visual source filter", () => {
       title: "NES Power Glove",
       category: "video_games",
       itemType: "accessory",
+      isGraded: "No",
       fullItemDetails: {
         accessoryType: "Controller",
         accessoryName: "Power Glove",
@@ -837,6 +842,7 @@ describe("visual source filter", () => {
         { name: "Brand", value: "Nintendo" },
         { name: "Condition", value: "Tested Working" },
         { name: "Packaging", value: "Original Box" },
+        { name: "Is Graded", value: "No" },
       ],
     };
     const score = videoGameAccessoryVisualScore(candidate, target);
