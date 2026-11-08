@@ -377,14 +377,20 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Accepted for valuation; current-value versus historical-trend classification is shown in the source outcome summary.');
     expect(source).toContain("{open ? 'Hide image checks' : 'View image checks'}");
     expect(source).toContain('View full explanation');
+    expect(source).toContain('const searchMetrics = data?.searchMetrics ?? data?.metrics;');
+    expect(source).toContain('Executed search ladder');
+    expect(source).toContain('Only the primary query ran because it returned provider records; no fallback search was needed.');
+    expect(source).toContain('count unavailable');
   });
 
   it('keeps Mercari pre-visual context records visible with image transport and a no-image fallback', () => {
     expect(routerSource).toContain('visualReviewListings: [...annotatedListings, ...visualContextListings]');
     expect(routerSource).toContain('preVisionExcludedListings: visualContextListings');
+    expect(routerSource).toContain('searchMetrics: result.metrics');
     expect(routerSource).toContain('imageUrl: listing.imageUrl ?? listing.thumbnailUrl ?? listing.imageUrls?.[0] ?? listing.images?.[0] ?? null');
     expect(source).toContain('const preVisionExcludedListings = data?.preVisionExcludedListings ?? [];');
-    expect(source).toContain('Retained before visual review');
+    expect(source).toContain('Excluded or held-out candidates');
+    expect(source).toContain('No retrieved candidates were excluded or held out before visual review.');
     expect(source).toContain('listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0] || null');
     expect(source).toContain('>No Image</span>');
     expect(source).toContain('className="h-full w-full object-contain"');

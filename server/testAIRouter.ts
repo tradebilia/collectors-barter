@@ -3255,6 +3255,7 @@ export const testAIRouter = router({
         : null;
       return {
         ...result,
+        searchMetrics: result.metrics,
         listings: annotatedListings,
         visualReviewListings: [...annotatedListings, ...visualContextListings],
         preVisionExcludedListings: visualContextListings,
