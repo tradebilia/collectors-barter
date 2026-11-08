@@ -11,7 +11,7 @@ import { classifyStampFormat, stampFormatsCompatible } from "./stampFormat";
 import { autographReplicaReasonFromText } from "../shared/testAiAutographEvidence";
 import { extractMarketplaceLotQuantity, isExplicitMultiItemListing } from "../shared/testAiMarketplaceCandidate";
 import { parseTestAiDetails, resolveTestAiDetailValue } from "../shared/testAiCriteria";
-import { canonicalVideoGameGrader } from "../shared/videoGameGraderEquivalence";
+import { canonicalVideoGameGrader, videoGameGradersEquivalent } from "../shared/videoGameGraderEquivalence";
 import { normalizeVideoGameMetadata } from "../shared/videoGameMetadata";
 
 export type VisualSourceCandidate = {
@@ -2014,6 +2014,9 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 	if (/^(?:grade|numericGrade)$/i.test(key)) {
 		return titleGradeEvidence(title)?.grade ?? "Unknown";
 	}
+	if (/^(?:certificationCompany|gradingCompany|grader)$/i.test(key)) {
+		return titleGradeEvidence(title)?.grader ?? "Unknown";
+	}
 	if (/^(?:isGraded|graded|gradingStatus|gradingState)$/i.test(key)) {
 		return titleGradeEvidence(title) || /\b(?:graded|slabbed|encapsulated)\b/i.test(title) ? "Yes (inferred from title)" : "Unknown";
 	}
@@ -2037,12 +2040,20 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 		? `${normalizedTarget} (detected in title)`
 		: "Unknown";
 }
-function comparisonStatus(targetValue: string, candidateValue: string): MetadataFieldComparison["status"] {
+function comparisonStatus(
+  targetValue: string,
+  candidateValue: string,
+  category = "",
+  fieldKey = "",
+): MetadataFieldComparison["status"] {
 	const targetComparable = comparisonComparable(targetValue);
 	const candidateComparable = comparisonComparable(candidateValue.replace(/\s*\(.*?\)$/, ""));
 	return targetValue === "Unknown" || candidateValue === "Unknown"
 		? "unknown"
-		: targetComparable === candidateComparable ? "match" : "different";
+		: category === "video_games" && /^(?:certificationCompany|gradingCompany|grader)$/i.test(fieldKey)
+		  && videoGameGradersEquivalent(category, targetComparable, candidateComparable)
+		  ? "match"
+		  : targetComparable === candidateComparable ? "match" : "different";
 }
 export function buildMetadataFieldComparisons(targetMetadata: string, listing: VisualSourceCandidate): MetadataFieldComparison[] {
   const targetDetails = {
@@ -2083,10 +2094,10 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 				targetValue,
 				candidateField: fieldLabel,
 			candidateValue,
-			status: comparisonStatus(targetValue, candidateValue),
-			titleDerivedField: `${comparisonFieldLabel(key)} (from title)`,
-			titleDerivedValue,
-			titleDerivedStatus: comparisonStatus(targetValue, titleDerivedValue),
+				status: comparisonStatus(targetValue, candidateValue, category, key),
+				titleDerivedField: `${comparisonFieldLabel(key)} (from title)`,
+				titleDerivedValue,
+				titleDerivedStatus: comparisonStatus(targetValue, titleDerivedValue, category, key),
 		});
   }
   return ([{

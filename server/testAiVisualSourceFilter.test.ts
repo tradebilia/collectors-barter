@@ -3046,6 +3046,32 @@ describe("visual source filter", () => {
     expect(rows.find((row) => row.targetField === "Grade")?.titleDerivedValue).not.toContain("PSA");
   });
 
+  it("treats PSA and WATA as equivalent Video Games grader evidence in the comparison table", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Grand Theft Auto Vice City PS2",
+      category: "video_games",
+      itemType: "game",
+      grade: "9.8",
+      certificationCompany: "PSA",
+      fullItemDetails: { gameTitle: "Grand Theft Auto Vice City", platform: "PS2", isGraded: "Yes" },
+    });
+    const structuredRows = buildMetadataFieldComparisons(target, {
+      title: "Grand Theft Auto Vice City PS2 WATA 9.8 A+",
+      fullItemDetails: { gameTitle: "Grand Theft Auto Vice City", platform: "PS2", certificationCompany: "WATA", grade: "9.8" },
+    });
+    const titleEvidenceRows = buildMetadataFieldComparisons(target, {
+      title: "Grand Theft Auto Vice City PS2 WATA 9.8 A+",
+      fullItemDetails: { gameTitle: "Grand Theft Auto Vice City", platform: "PS2", grade: "9.8" },
+    });
+
+    expect(structuredRows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ targetField: "Certification company", candidateValue: "WATA", status: "match" }),
+    ]));
+    expect(titleEvidenceRows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ targetField: "Certification company", titleDerivedValue: "WATA", titleDerivedStatus: "match" }),
+    ]));
+  });
+
   it("keeps ranking score and rank on candidates retained outside visual review", () => {
     const target = buildVisualTargetMetadata({
       title: "Call of Duty: World at War Xbox 360",
