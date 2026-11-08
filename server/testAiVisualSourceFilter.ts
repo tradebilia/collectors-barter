@@ -4448,7 +4448,7 @@ export function videoGameVisualCap(score: number): number {
   if (score >= 90) return 8;
   if (score >= 80) return 6;
   if (score >= 70) return 4;
-  if (score >= 60) return 2;
+  if (score >= 50) return 2;
   return 0;
 }
 const MOVIES_INDIVIDUAL_SCORE_FIELDS = [
@@ -5946,16 +5946,16 @@ function selectVideoGameVisualCandidates<T extends VisualSourceCandidate>(candid
     .map((candidate, index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
   const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
   const cap = videoGameVisualCap(highestScore);
-  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 60).slice(0, cap);
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 50).slice(0, cap);
   const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
   const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((entry) => ({
     ...entry.item,
     evidenceDisposition: 'pre_vision_score_excluded',
     visualReviewStatus: 'not_reviewed',
-    visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < 60
-      ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.`
+    visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < 50
+      ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 50.`
       : `${label} visual cap reached (${cap}); higher-scoring candidates were selected first.`,
-    evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < 60 ? 'metadata score below minimum (60)' : `visual-review cap reached (${cap})`],
+    evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < 50 ? 'metadata score below minimum (50)' : `visual-review cap reached (${cap})`],
   } as T));
   return { selected, excluded, cap, ranked };
 }

@@ -858,7 +858,8 @@ describe("visual source filter", () => {
     expect(videoGameVisualCap(85)).toBe(6);
     expect(videoGameVisualCap(75)).toBe(4);
     expect(videoGameVisualCap(65)).toBe(2);
-    expect(videoGameVisualCap(59)).toBe(0);
+    expect(videoGameVisualCap(50)).toBe(2);
+    expect(videoGameVisualCap(49)).toBe(0);
   });
 
   it("promotes eBay thumbnails without rewriting non-eBay image URLs", () => {
