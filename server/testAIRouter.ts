@@ -3077,8 +3077,12 @@ export const testAIRouter = router({
           visualReviewStatus: 'not_reviewed' as const,
           visualReviewRationale: reasons.join('; '),
           soldCompsMetadata: metadata,
+          metadataFieldComparisons: buildMetadataFieldComparisons(targetMetadata, item),
         }));
-        const universalExcluded = universalPreFilter.contextListings ?? [];
+        const universalExcluded = (universalPreFilter.contextListings ?? []).map((listing: any) => ({
+          ...listing,
+          metadataFieldComparisons: listing.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, listing),
+        }));
         if (!safeTargetImage || !universalPreFilter.listings.length) {
           const reason = !safeTargetImage
             ? 'Mercari Video Game visual review requires a target image; retained records remain context-only.'

@@ -396,6 +396,15 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('className="h-full w-full object-contain"');
   });
 
+  it('keeps the full metadata breakdown on Mercari candidates excluded before visual review', () => {
+    const mercariStart = routerSource.indexOf('getMercariSoldCompsData: protectedProcedure');
+    const mercariEnd = routerSource.indexOf('// SoldComps TCGplayer coverage', mercariStart);
+    const mercariSection = routerSource.slice(mercariStart, mercariEnd);
+    expect(mercariSection).toContain('metadataFieldComparisons: buildMetadataFieldComparisons(targetMetadata, item)');
+    expect(mercariSection).toContain('metadataFieldComparisons: listing.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, listing)');
+    expect(source).toContain('<MetadataComparisonTable listing={listing} />');
+  });
+
   it('distinguishes direct comparables from current-value evidence in visual-match wording', () => {
     expect(source).toContain("statusLabel={currentValueEvidence ? 'Current-value evidence: INCLUDED' : undefined}");
     expect(source).toContain('The visual match is retained in current-value market evidence; it is not a completed-sale comparable.');
