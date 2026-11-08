@@ -1,3 +1,10 @@
 
 ## Mercari Held-Out Metadata Breakdown — November 8, 2026
 Fixed the Mercari Sold-Comps presentation gap for candidates excluded before visual analysis. The route now attaches the shared `metadataFieldComparisons` rows to both provider-level exclusions and universal pre-vision context records, and the UI renders the full target-versus-structured-candidate-versus-title-derived comparison table plus detected differences inside the Excluded or held-out candidates panel. Ranking behavior was not changed: the displayed score remains the shared item-type score, while Unknown fields correctly contribute no points. Validation passed: focused Mercari/UI/visual regressions **299/299**, TypeScript, production build, `git diff --check`, and protected-scope audit. No database writes, migrations, seeds, destructive scripts, credentials, provider changes, deployment, publishing, or production-domain changes. All P0 safeguards remain in force.
+
+
+## 2026-11-08 — Universal metadata breakdown visibility
+
+Development-only fix: every candidate disposition shown in Test AI now renders the full target-versus-candidate metadata breakdown, including structured candidate values, title-derived evidence, and visual differences where available. This covers reviewed candidates, accepted-for-valuation candidates, retained/context candidates, pre-vision excluded or held-out candidates, Sold-Comps audit rows, and specialist-source records. The specialist marketplace router now attaches `metadataFieldComparisons` to successful sales/context records before the Goldin-specific visual path, so non-Goldin specialist records are not missing comparison data. No valuation gates were changed; this is a transparency and transport fix only.
+
+Validation passed: focused source/UI/Mercari/visual/Sold-Comps regressions 365/365; TypeScript; production build; `git diff --check`; protected-path audit. Changed files: `client/src/pages/TestAI.tsx`, `server/testAIRouter.ts`. P0 safeguards preserved: no database writes, migrations, seeds, destructive scripts, credentials, provider changes, deployment, publishing, or production-domain changes.

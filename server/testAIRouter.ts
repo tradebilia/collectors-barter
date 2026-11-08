@@ -2371,9 +2371,31 @@ export const testAIRouter = router({
       const collectionLotBlock = collectionLotGuard(input);
       if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupSpecialistMarketplace(input);
-      if (input.sourceId !== 'goldin' || result.status !== 'success') return result;
+      const targetMetadata = buildVisualTargetMetadata({
+        title: input.title,
+        category: input.category,
+        itemType: input.itemType,
+        grade: input.grade,
+        condition: input.condition,
+        certificationCompany: input.certificationCompany,
+        itemDetails: input.itemDetails,
+      });
+      const resultWithComparisons = result.status === 'success'
+        ? {
+          ...result,
+          sales: result.sales.map((record: any) => ({
+            ...record,
+            metadataFieldComparisons: record.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, record),
+          })),
+          context: result.context.map((record: any) => ({
+            ...record,
+            metadataFieldComparisons: record.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, record),
+          })),
+        }
+        : result;
+      if (input.sourceId !== 'goldin' || resultWithComparisons.status !== 'success') return resultWithComparisons;
 
-      const candidateRecords = [...result.sales, ...result.context].map((record) => ({
+      const candidateRecords = [...resultWithComparisons.sales, ...resultWithComparisons.context].map((record) => ({
         ...record,
         imageUrl: visualSourceCandidateImage(record),
       }));
@@ -2382,15 +2404,7 @@ export const testAIRouter = router({
         sourceLabel: 'Goldin specialist auction records',
         targetImageUrl: input.imageUrl,
         visualProvider: input.visualProvider,
-        targetMetadata: buildVisualTargetMetadata({
-          title: input.title,
-          category: input.category,
-          itemType: input.itemType,
-          grade: input.grade,
-          condition: input.condition,
-          certificationCompany: input.certificationCompany,
-          itemDetails: input.itemDetails,
-        }),
+        targetMetadata,
         listings: candidateRecords,
       });
       const visible = visualFilter.listings;
