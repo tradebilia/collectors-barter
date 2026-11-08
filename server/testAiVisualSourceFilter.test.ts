@@ -2485,6 +2485,7 @@ describe("visual source filter", () => {
     expect(source).toContain("VIDEO-GAME LABEL CHECK: read the printed form designation on each visible grading label before deciding");
     expect(source).toContain("A clear PSA slab whose label says CIB is a graded CIB game—not a raw or loose cartridge");
     expect(source).toContain("${focusedVideoGameLabelInstruction(targetMetadata)}");
+    expect(source).toContain("Descriptive sealed-label suffixes such as A+, A++, or A+++ are soft evidence");
   });
 
   it("pins a one-candidate model response to the candidate that was sent, not its returned index", () => {
@@ -2570,6 +2571,49 @@ describe("visual source filter", () => {
       { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The AFA 8.0 grade is clearly readable on the candidate label and matches the target; the figure and packaging also match.", visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false }, }
     ], [{ title: "MOTU 1982 Man-at-Arms AFA 8.0" }], "title=MOTU 1982 Man-at-Arms; category=vintage_toys; grade=8.0; certificationCompany=AFA");
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
+  });
+
+  it("treats a video-game sealed-label suffix as soft evidence when the protected identity fields match", () => {
+    const metadata = `title=Grand Theft Auto III PS2; category=video_games; grade=9.4; certificationCompany=PSA; fullItemDetails=${JSON.stringify({ gradeQualifier: "A++", sealed: "Yes", isGraded: "Yes" })}`;
+    const result = conservativeGradedVisualReviews([
+      {
+        candidateIndex: 0,
+        verdict: "match",
+        confidence: "high",
+        rationale: "The PSA 9.4 holder, numeric grade, sealed game form, game identity, and cover art match; the tiny descriptive label suffix is not reliably readable.",
+        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false },
+      },
+    ], [{ title: "Grand Theft Auto III PS2 Sealed PSA 9.4 A+" }], metadata);
+    expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
+  });
+
+  it("downgrades a video-game suffix-only mismatch to manual review instead of rejecting it", () => {
+    const metadata = `title=Grand Theft Auto III PS2; category=video_games; grade=9.4; certificationCompany=PSA; fullItemDetails=${JSON.stringify({ sealed: "Yes", isGraded: "Yes" })}`;
+    const result = conservativeGradedVisualReviews([
+      {
+        candidateIndex: 0,
+        verdict: "mismatch",
+        confidence: "high",
+        rationale: "The grading label designation appears different: target Sealed A++ versus candidate Sealed A+. The PSA holder, numeric grade, game identity, cover art, and sealed form otherwise match.",
+        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false },
+      },
+    ], [{ title: "Grand Theft Auto III PS2 Sealed PSA 9.4 A+" }], metadata);
+    expect(result[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
+    expect(result[0].rationale).toContain("descriptive sealed-label suffix");
+  });
+
+  it("keeps a confirmed sealed-versus-CIB video-game conflict as a mismatch", () => {
+    const metadata = `title=Grand Theft Auto III PS2; category=video_games; grade=9.4; certificationCompany=PSA; fullItemDetails=${JSON.stringify({ sealed: "Yes", isGraded: "Yes" })}`;
+    const result = conservativeGradedVisualReviews([
+      {
+        candidateIndex: 0,
+        verdict: "mismatch",
+        confidence: "high",
+        rationale: "The candidate is CIB while the target is Sealed; the game identity and PSA 9.4 holder otherwise match.",
+        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false },
+      },
+    ], [{ title: "Grand Theft Auto III PS2 CIB PSA 9.4" }], metadata);
+    expect(result[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
   });
 
   it("holds a graded-card match for manual review when the target qualifier is not explicitly verified", () => {

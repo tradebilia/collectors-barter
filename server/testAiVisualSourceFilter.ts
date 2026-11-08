@@ -1382,6 +1382,14 @@ function hasVideoGameVisualIdentityConflict(rationale: string): boolean {
   return /\b(?:different game|different title|different artwork|different cover|different edition|different variant|does not match the (?:game|cover|artwork)|sealed\s+(?:versus|vs\.?|rather than)\s+(?:cib|complete in box|loose|raw)|(?:cib|complete in box|loose|raw)\s+(?:versus|vs\.?|rather than)\s+sealed|(?:appears?|is|looks?|visibly)\s+(?:raw|ungraded|loose))\b/i.test(rationale);
 }
 
+function hasVideoGameSoftLabelOnlyConflict(rationale: string): boolean {
+  if (hasVideoGameVisualIdentityConflict(rationale)) return false;
+  const text = String(rationale ?? "");
+  const labelConflict = /\b(?:grading|grade)\s+label(?:\s+(?:designation|suffix))?\b[^.]{0,180}\b(?:differs?|different|mismatch|conflict)\b|\blabel\s+designation\b[^.]{0,180}\b(?:differs?|different|mismatch|conflict)\b/i.test(text);
+  if (!labelConflict) return false;
+  return !/\b(?:numeric\s+grade|grader|certification\s+company|game|title|artwork|cover|edition)\b[^.]{0,100}\b(?:differs?|different|mismatch|conflict)\b/i.test(text);
+}
+
 function explicitTargetLabelFields(metadata: string): Array<{ label: string; value: string }> {
   const details = metadataDetails(metadata);
   const entries: Array<[string, unknown]> = [
@@ -1426,7 +1434,8 @@ export function conservativeGradedVisualReviews(
     );
     const titleDeclaresGraded = /\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*(?:graded\s*)?\d{1,3}(?:\.\d+)?\b|\b(?:graded|slabbed|encapsulated)\b/i.test(title);
     const imageClaimsRaw = /\b(?:raw|ungraded|loose|un[- ]slabbed|no slab|no holder|no certification|no grade|grade (?:is )?not visible)\b/i.test(review.rationale);
-    const unresolvedLabelField = targetLabelFields.find((field) => !labelFieldEvidence(title, review.rationale, field.value));
+    const isVideoGameTarget = normalizedChoice(metadataValue(targetMetadata, "category")) === "video_games";
+    const unresolvedLabelField = targetLabelFields.find((field) => !(isVideoGameTarget && field.label === "grade qualifier / label designation") && !labelFieldEvidence(title, review.rationale, field.value));
     const explicitGradeConfirmation = /\b(?:grade|numeric|descriptive)\b.{0,90}\b(?:clearly?\s+)?(?:readable|visible|confirmed|matches|match)\b/i.test(review.rationale);
     const explicitGradeConflict = /\b(?:not\s+(?:clearly\s+)?(?:readable|visible|verified)|unreadable|unclear|obscured|cannot|can't|unable|conflict(?:ing)?)\b/i.test(review.rationale);
     const equivalentVideoGameGrader = isVideoGamePsaWataEquivalent(targetMetadata, `${title} ${review.rationale}`);
@@ -1446,6 +1455,14 @@ export function conservativeGradedVisualReviews(
         verdict: "unreadable",
         confidence: "low",
         rationale: `${review.rationale} The candidate title declares a graded item, but the image interpretation conflicts with that evidence; retained for additional-image/manual review rather than finalized as a graded-versus-raw mismatch.`,
+      };
+    }
+    if (isVideoGameTarget && review.verdict === "mismatch" && hasVideoGameSoftLabelOnlyConflict(review.rationale)) {
+      return {
+        ...review,
+        verdict: "unreadable",
+        confidence: "low",
+        rationale: `${review.rationale} The apparent difference is limited to a descriptive sealed-label suffix such as A+, A++, or A+++; suffix text is soft evidence when the numeric grade, grader/holder, game identity, and sealed/CIB/loose form are otherwise consistent. Retained for manual review rather than finalized as a mismatch.`,
       };
     }
     if (review.verdict === "unreadable" && gradeEvidence && explicitGradeConfirmation && !explicitGradeConflict) {
@@ -1703,7 +1720,7 @@ function videoGameFormInstruction(metadata: string): string {
 
 function focusedVideoGameLabelInstruction(metadata: string): string {
   if (normalizedChoice(metadataValue(metadata, "category")) !== "video_games") return "";
-  return " VIDEO-GAME LABEL CHECK: read the printed form designation on each visible grading label before deciding. Examples include Sealed, Sealed A, CIB, Complete in Box, Boxed, or Qualified. A clear PSA slab whose label says CIB is a graded CIB game—not a raw or loose cartridge. A clear PSA slab whose label says Sealed or Sealed A is a graded sealed game—not CIB. If both labels and 9.0 grade are visible but one says Sealed and the other says CIB, return mismatch because the forms differ; never call either image raw.";
+  return " VIDEO-GAME LABEL CHECK: read the printed form designation on each visible grading label before deciding. Examples include Sealed, Sealed A, Sealed A+, Sealed A++, CIB, Complete in Box, Boxed, or Qualified. A clear PSA slab whose label says CIB is a graded CIB game—not a raw or loose cartridge. A clear PSA slab whose label says Sealed or Sealed A is a graded sealed game—not CIB. If both labels and 9.0 grade are visible but one says Sealed and the other says CIB, return mismatch because the forms differ; never call either image raw. Descriptive sealed-label suffixes such as A+, A++, or A+++ are soft evidence, not an automatic mismatch: if the numeric grade, grader/holder, game identity, and sealed form match but the tiny suffix is unreadable or appears different, state the suffix difference and use unreadable/manual review rather than rejecting the candidate.";
 }
 
 function videoGameGraderEquivalenceInstruction(metadata: string): string {
