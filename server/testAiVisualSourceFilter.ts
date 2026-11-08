@@ -1389,6 +1389,18 @@ function hasVideoGameSoftLabelOnlyConflict(rationale: string): boolean {
   if (!labelConflict) return false;
   return !/\b(?:numeric\s+grade|grader|certification\s+company|game|title|artwork|cover|edition)\b[^.]{0,100}\b(?:differs?|different|mismatch|conflict)\b/i.test(text);
 }
+function hasVideoGameIdenticalLabelEvidence(rationale: string): boolean {
+  const text = String(rationale ?? "");
+  const match = text.match(/target[^\n]{0,140}?label\s+reads?\s*["“']([^"”'\n]+)["”']\s+(?:vs\.?|versus)\s+candidate[^\n]{0,140}?label\s+reads?\s*["“']([^"”'\n]+)["”']/i);
+  if (!match) return false;
+  const normalize = (value: string) => value
+    .replace(/^the\s+candidate\s+label\s+reads?\s+/i, "")
+    .replace(/["“”'’.,;:]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+  return normalize(match[1]) === normalize(match[2]);
+}
 
 function explicitTargetLabelFields(metadata: string): Array<{ label: string; value: string }> {
   const details = metadataDetails(metadata);
@@ -1463,6 +1475,15 @@ export function conservativeGradedVisualReviews(
         verdict: "match",
         confidence: review.confidence === "low" ? "medium" : review.confidence,
         rationale: `${review.rationale} The only reported difference is a descriptive sealed-label suffix such as A+, A++, or A+++; suffix text is ignored as soft evidence because the numeric grade, grader/holder, game identity, and sealed/CIB/loose form are otherwise consistent. Treated as a visual match and eligible for valuation.`,
+      };
+    }
+    if (isVideoGameTarget && review.verdict === "unreadable" && hasVideoGameIdenticalLabelEvidence(review.rationale)
+      && visualGradeEvidence && !hasVideoGameVisualIdentityConflict(review.rationale)) {
+      return {
+        ...review,
+        verdict: "match",
+        confidence: review.confidence === "low" ? "medium" : review.confidence,
+        rationale: `${review.rationale} The target and candidate label designations are identical, so the label wording is not a material difference. The graded game is eligible for valuation review.`,
       };
     }
     if (review.verdict === "unreadable" && gradeEvidence && explicitGradeConfirmation && !explicitGradeConflict) {
@@ -1720,7 +1741,7 @@ function videoGameFormInstruction(metadata: string): string {
 
 function focusedVideoGameLabelInstruction(metadata: string): string {
   if (normalizedChoice(metadataValue(metadata, "category")) !== "video_games") return "";
-  return " VIDEO-GAME LABEL CHECK: read the printed form designation on each visible grading label before deciding. Examples include Sealed, Sealed A, Sealed A+, Sealed A++, CIB, Complete in Box, Boxed, or Qualified. A clear PSA slab whose label says CIB is a graded CIB game—not a raw or loose cartridge. A clear PSA slab whose label says Sealed or Sealed A is a graded sealed game—not CIB. If both labels and 9.0 grade are visible but one says Sealed and the other says CIB, return mismatch because the forms differ; never call either image raw. Descriptive sealed-label suffixes such as A+, A++, or A+++ are soft evidence, not an automatic mismatch: if the numeric grade, grader/holder, game identity, and sealed form match but the tiny suffix is unreadable or appears different, state the suffix difference and use unreadable/manual review rather than rejecting the candidate.";
+  return " VIDEO-GAME LABEL CHECK: read the printed form designation on each visible grading label before deciding. Examples include Sealed, Sealed A, Sealed A+, Sealed A++, CIB, Complete in Box, Boxed, or Qualified. A clear PSA slab whose label says CIB is a graded CIB game—not a raw or loose cartridge. A clear PSA slab whose label says Sealed or Sealed A is a graded sealed game—not CIB. If both labels and 9.0 grade are visible but one says Sealed and the other says CIB, return mismatch because the forms differ; never call either image raw. IMPORTANT: if the target and candidate labels show the same designation, such as Sealed A++ on both labels, that is an exact label match, not a difference. Do not invent a label mismatch from explanatory wording such as ‘the candidate label reads’. Descriptive sealed-label suffixes such as A+, A++, or A+++ are soft evidence, not an automatic mismatch: if the numeric grade, grader/holder, game identity, and sealed form match, identical or different tiny suffix text must not by itself block a visual match.";
 }
 
 function videoGameGraderEquivalenceInstruction(metadata: string): string {

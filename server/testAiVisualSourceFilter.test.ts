@@ -2602,6 +2602,21 @@ describe("visual source filter", () => {
     expect(result[0].rationale).toContain("eligible for valuation");
   });
 
+  it("promotes the exact screenshot-shaped unreadable rationale when both sealed labels are identical", () => {
+    const metadata = `title=Grand Theft Auto III PS2; category=video_games; grade=9.4; certificationCompany=PSA; fullItemDetails=${JSON.stringify({ sealed: "Yes", isGraded: "Yes" })}`;
+    const result = conservativeGradedVisualReviews([
+      {
+        candidateIndex: 0,
+        verdict: "unreadable",
+        confidence: "low",
+        rationale: 'grading label designation: target label reads "Sealed A++" vs candidate The candidate label reads "Sealed A++" — material identity difference',
+        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false },
+      },
+    ], [{ title: "Grand Theft Auto III PS2 Sealed PSA 9.4 A++" }], metadata);
+    expect(result[0]).toMatchObject({ verdict: "match", confidence: "medium" });
+    expect(result[0].rationale).toContain("label designations are identical");
+  });
+
   it("keeps a confirmed sealed-versus-CIB video-game conflict as a mismatch", () => {
     const metadata = `title=Grand Theft Auto III PS2; category=video_games; grade=9.4; certificationCompany=PSA; fullItemDetails=${JSON.stringify({ sealed: "Yes", isGraded: "Yes" })}`;
     const result = conservativeGradedVisualReviews([
