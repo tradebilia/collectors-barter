@@ -1151,11 +1151,23 @@ function MetadataComparisonTable({ listing }: { listing: any }) {
   const comparisons = Array.isArray(listing?.metadataFieldComparisons) ? listing.metadataFieldComparisons : [];
   if (comparisons.length === 0) return null;
   const statusClass: Record<string, string> = { match: 'text-emerald-300', different: 'text-red-300', unknown: 'text-amber-200' };
+  const contributionFieldClass = (contribution: any, titleDerived = false) => {
+    if (!contribution?.matched) return 'text-gray-300';
+    if (titleDerived && contribution.titleDerived) return 'rounded bg-violet-900/60 px-1 text-violet-100 ring-1 ring-violet-400/60';
+    if (!titleDerived && contribution.structured) return 'rounded bg-cyan-900/60 px-1 text-cyan-100 ring-1 ring-cyan-400/60';
+    return 'rounded bg-sky-900/50 px-1 text-sky-100 ring-1 ring-sky-400/50';
+  };
+  const contributionLabel = (contribution: any) => contribution?.titleDerived && !contribution?.structured ? 'title-derived score field' : contribution?.matched ? 'ranking score field' : undefined;
   return <details className="mt-1 rounded border border-cyan-700/30 bg-cyan-950/20 p-1.5" open>
     <summary className="cursor-pointer text-[8px] font-bold uppercase tracking-wide text-cyan-200">Target vs candidate fields</summary>
+    <div className="mt-1 flex flex-wrap items-center gap-1 text-[8px] text-gray-400" aria-label="Ranking highlight legend">
+      <span className="rounded bg-cyan-900/60 px-1 text-cyan-100 ring-1 ring-cyan-400/60">Scored field</span>
+      <span className="rounded bg-violet-900/60 px-1 text-violet-100 ring-1 ring-violet-400/60">Title-derived scored field</span>
+      <span>Highlighted field names contributed to the ranking score.</span>
+    </div>
     <div className="mt-1 overflow-x-auto"><table className="w-full min-w-[520px] border-collapse text-[8px] leading-snug">
       <thead><tr className="border-b border-cyan-800/50 text-left text-cyan-200/80"><th className="p-1">Target field</th><th className="p-1">Target value</th><th className="p-1">Candidate field</th><th className="p-1">Candidate value</th><th className="p-1">Candidate title-derived value</th><th className="p-1">Result</th></tr></thead>
-      <tbody>{comparisons.map((comparison: any, comparisonIndex: number) => <tr key={`${comparison.targetField}-${comparisonIndex}`} className="border-b border-gray-800/60 align-top"><td className="p-1 font-semibold text-gray-300">{comparison.targetField || 'Unknown field'}</td><td className="max-w-[150px] break-words p-1 text-gray-200">{comparison.targetValue || 'Unknown'}</td><td className="p-1 font-semibold text-gray-300">{comparison.candidateField || 'Unknown field'}</td><td className="max-w-[150px] break-words p-1 text-gray-200">{comparison.candidateValue || 'Unknown'}</td><td className="max-w-[190px] break-words p-1 text-gray-200"><span>{comparison.titleDerivedValue || 'Unknown'}</span>{comparison.titleDerivedStatus && <span className={`ml-1 font-semibold uppercase ${statusClass[comparison.titleDerivedStatus] ?? statusClass.unknown}`}>({comparison.titleDerivedStatus})</span>}</td><td className={`p-1 font-semibold uppercase ${statusClass[comparison.status] ?? statusClass.unknown}`}>{comparison.status || 'unknown'}</td></tr>)}</tbody>
+      <tbody>{comparisons.map((comparison: any, comparisonIndex: number) => { const contribution = comparison.rankingContribution; const label = contributionLabel(contribution); return <tr key={`${comparison.targetField}-${comparisonIndex}`} className="border-b border-gray-800/60 align-top"><td className="p-1 font-semibold"><span className={contributionFieldClass(contribution)} title={label}>{comparison.targetField || 'Unknown field'}</span></td><td className="max-w-[150px] break-words p-1 text-gray-200">{comparison.targetValue || 'Unknown'}</td><td className="p-1 font-semibold"><span className={contributionFieldClass(contribution)} title={label}>{comparison.candidateField || 'Unknown field'}</span></td><td className="max-w-[150px] break-words p-1 text-gray-200">{comparison.candidateValue || 'Unknown'}</td><td className="max-w-[190px] break-words p-1 text-gray-200"><span className={contributionFieldClass(contribution, true)} title={contribution?.titleDerived ? 'Title-derived value contributed to the ranking score' : undefined}>{comparison.titleDerivedValue || 'Unknown'}</span>{comparison.titleDerivedStatus && <span className={`ml-1 font-semibold uppercase ${statusClass[comparison.titleDerivedStatus] ?? statusClass.unknown}`}>({comparison.titleDerivedStatus})</span>}</td><td className={`p-1 font-semibold uppercase ${statusClass[comparison.status] ?? statusClass.unknown}`}>{comparison.status || 'unknown'}</td></tr>; })}</tbody>
     </table></div>
   </details>;
 }

@@ -3030,6 +3030,40 @@ describe("visual source filter", () => {
     ]));
   });
 
+  it("marks structured fields that contributed to the ranking score", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Monopoly: Manhattan Beach Edition",
+      category: "vintage_toys",
+      itemType: "board_game___puzzle",
+      fullItemDetails: { gamePuzzleName: "Monopoly: Manhattan Beach", publisherBrand: "Hasbro" },
+    });
+    const rows = buildMetadataFieldComparisons(target, {
+      title: "Monopoly Manhattan Beach Board Game",
+      fullItemDetails: { gamePuzzleName: "Monopoly: Manhattan Beach", publisherBrand: "Hasbro" },
+      metadataMatchReasons: ["gamePuzzleName", "publisherBrand"],
+    });
+    expect(rows.find((row) => row.targetField === "Game or puzzle name")?.rankingContribution).toMatchObject({ matched: true, structured: true, titleDerived: false, reasons: ["gamePuzzleName"] });
+    expect(rows.find((row) => row.targetField === "Publisher or brand")?.rankingContribution).toMatchObject({ matched: true, structured: true });
+  });
+
+  it("marks title-derived fields that contributed to the ranking score", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Call of Duty World at War Xbox 360",
+      category: "video_games",
+      itemType: "game",
+      grade: "9.8",
+      certificationCompany: "PSA",
+      fullItemDetails: { gameTitle: "Call of Duty World at War", platform: "Xbox 360", isGraded: "Yes" },
+    });
+    const rows = buildMetadataFieldComparisons(target, {
+      title: "Call of Duty World at War Xbox 360 Sealed WATA 9.8",
+      fullItemDetails: { gameTitle: "Call of Duty World at War", platform: "Xbox 360" },
+      metadataMatchReasons: ["grade (title-derived)", "grading company (title-derived)"],
+    });
+    expect(rows.find((row) => row.targetField === "Grade")?.rankingContribution).toMatchObject({ matched: true, structured: false, titleDerived: true });
+    expect(rows.find((row) => row.targetField === "Certification company")?.rankingContribution).toMatchObject({ matched: true, structured: false, titleDerived: true });
+  });
+
   it("rebuilds a missing final-projection breakdown from normalized title evidence", () => {
     const target = buildVisualTargetMetadata({
       title: "Grand Theft Auto Vice City PS2",
@@ -4101,6 +4135,9 @@ describe("visual source filter", () => {
     expect(source).toContain("targetObservation");
     expect(pageSource).toContain("Why mismatch — all detected differences");
     expect(pageSource).toContain("VisualDifferenceList");
+    expect(source).toContain("rankingContribution?:");
+    expect(pageSource).toContain("Highlighted field names contributed to the ranking score.");
+    expect(pageSource).toContain("Title-derived scored field");
   });
   it("shows each reviewed candidate price beside its match or mismatch verdict", () => {
     const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");

@@ -30,6 +30,12 @@ export type MetadataFieldComparison = {
 	titleDerivedField: string;
 	titleDerivedValue: string;
 	titleDerivedStatus: "match" | "different" | "unknown";
+	rankingContribution?: {
+		matched: boolean;
+		structured: boolean;
+		titleDerived: boolean;
+		reasons: string[];
+	};
 };
 export type VisualDifference = {
   field: string;
@@ -2048,8 +2054,48 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 	}
 	const normalizedTarget = comparisonValue(targetValue);
 	return normalizedTarget !== "Unknown" && titleContainsValue(title, normalizedTarget)
-		? `${normalizedTarget} (detected in title)`
-		: "Unknown";
+			? `${normalizedTarget} (detected in title)`
+			: "Unknown";
+}
+function normalizedRankingReason(value: unknown): string {
+	return String(value ?? "")
+		.toLowerCase()
+		.replace(/\s*\(title-derived\)\s*$/, "")
+		.replace(/[^a-z0-9]+/g, " ")
+		.trim();
+}
+function compactRankingReason(value: unknown): string {
+	return normalizedRankingReason(value).replace(/\s+/g, "");
+}
+function rankingReasonMatchesField(reason: string, key: string, fieldLabel: string): boolean {
+	const normalizedReason = normalizedRankingReason(reason);
+	if (!normalizedReason) return false;
+	if (/^title overlap(?: |$)/.test(normalizedReason)) return /^(?:title|listingTitle|itemTitle)$/i.test(key);
+	const fieldLabelWithoutSuffix = fieldLabel.replace(/\s*\(from title\)$/i, "");
+	const aliases = /^(?:certification|grading) company$/i.test(fieldLabelWithoutSuffix)
+		? ["certification company", "grading company"]
+		: [];
+	const candidates = [key, fieldLabelWithoutSuffix, ...aliases]
+		.map(compactRankingReason)
+		.filter(Boolean);
+	const compactReason = compactRankingReason(reason);
+	return candidates.some((candidate) => compactReason === candidate || compactReason.includes(candidate) || candidate.includes(compactReason));
+}
+function rankingContributionForField(listing: VisualSourceCandidate, key: string, fieldLabel: string, candidateValue: string, titleDerivedValue: string): MetadataFieldComparison["rankingContribution"] {
+	const reasons = Array.isArray(listing.metadataMatchReasons) ? listing.metadataMatchReasons.map(String) : [];
+	const matchingReasons = reasons.filter((reason) => rankingReasonMatchesField(reason, key, fieldLabel));
+	const matched = matchingReasons.length > 0;
+	const titleDerivedReason = matchingReasons.some((reason) => /title-derived/i.test(reason));
+	const titleDerived = matched && (
+		titleDerivedReason
+		|| (titleDerivedValue !== "Unknown" && candidateValue === "Unknown")
+	);
+	return {
+		matched,
+		structured: matched && !titleDerivedReason && candidateValue !== "Unknown",
+		titleDerived,
+		reasons: matchingReasons,
+	};
 }
 function comparisonStatus(
   targetValue: string,
@@ -2105,11 +2151,12 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 				targetValue,
 				candidateField: fieldLabel,
 			candidateValue,
-				status: comparisonStatus(targetValue, candidateValue, category, key),
-				titleDerivedField: `${comparisonFieldLabel(key)} (from title)`,
-				titleDerivedValue,
-				titleDerivedStatus: comparisonStatus(targetValue, titleDerivedValue, category, key),
-		});
+					status: comparisonStatus(targetValue, candidateValue, category, key),
+					titleDerivedField: `${comparisonFieldLabel(key)} (from title)`,
+					titleDerivedValue,
+					titleDerivedStatus: comparisonStatus(targetValue, titleDerivedValue, category, key),
+					rankingContribution: rankingContributionForField(listing, key, fieldLabel, candidateValue, titleDerivedValue),
+			});
   }
 	return ([{
 		targetField: "Target listing title",
@@ -2117,10 +2164,11 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 		candidateField: "Candidate listing title",
 		candidateValue: comparisonValue(listing.title),
 		status: "unknown",
-		titleDerivedField: "Candidate title (source)",
-		titleDerivedValue: comparisonValue(listing.title),
-		titleDerivedStatus: "unknown",
-	}, ...rows].slice(0, 40)) as MetadataFieldComparison[];
+			titleDerivedField: "Candidate title (source)",
+			titleDerivedValue: comparisonValue(listing.title),
+			titleDerivedStatus: "unknown",
+			rankingContribution: rankingContributionForField(listing, "title", "Target listing title", comparisonValue(listing.title), comparisonValue(listing.title)),
+		}, ...rows].slice(0, 40)) as MetadataFieldComparison[];
 }
 
 /**
@@ -2130,9 +2178,19 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
  */
 export function withMetadataFieldComparisons<T extends Record<string, any>>(targetMetadata: string, listing: T): T & { metadataFieldComparisons: MetadataFieldComparison[] } {
 	const existing = Array.isArray(listing.metadataFieldComparisons) && listing.metadataFieldComparisons.length > 0
-		? listing.metadataFieldComparisons as MetadataFieldComparison[]
-		: buildMetadataFieldComparisons(targetMetadata, listing as VisualSourceCandidate);
-	return { ...listing, metadataFieldComparisons: existing } as T & { metadataFieldComparisons: MetadataFieldComparison[] };
+			? listing.metadataFieldComparisons as MetadataFieldComparison[]
+			: buildMetadataFieldComparisons(targetMetadata, listing as VisualSourceCandidate);
+	const enriched = existing.map((row) => ({
+		...row,
+		rankingContribution: row.rankingContribution ?? rankingContributionForField(
+			listing as VisualSourceCandidate,
+			row.targetField,
+			row.targetField,
+			row.candidateValue,
+			row.titleDerivedValue,
+		),
+	}));
+	return { ...listing, metadataFieldComparisons: enriched } as T & { metadataFieldComparisons: MetadataFieldComparison[] };
 }
 
 type ExplicitState = "yes" | "no" | "unknown";
