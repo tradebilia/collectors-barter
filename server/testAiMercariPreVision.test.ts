@@ -9,6 +9,7 @@ const sourceOutcomeSource = readFileSync(resolve(import.meta.dirname, '../client
 const rankingDisplaySource = readFileSync(resolve(import.meta.dirname, '../shared/testAiRankingDisplay.ts'), 'utf8');
 const candidateLedgerSource = readFileSync(resolve(import.meta.dirname, '../shared/testAiCandidateLedger.ts'), 'utf8');
 const masterListSource = readFileSync(resolve(import.meta.dirname, '../client/src/components/TestAiCandidateMasterList.tsx'), 'utf8');
+const sourceDisplaySource = readFileSync(resolve(import.meta.dirname, '../shared/testAiSourceDisplay.ts'), 'utf8');
 
 describe('Mercari Video Game pre-visual filtering', () => {
   it('keeps the title gate opt-in so eBay behavior is not changed by this Mercari scope', () => {
@@ -110,7 +111,13 @@ describe('Mercari Video Game pre-visual filtering', () => {
 }`);
     expect(pageSource).toContain('<CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" targetImageUrl={item.primaryPhotoUrl} />');
     expect(pageSource).toContain('<CandidateMasterList listings={auditLedger} sourceLabel="eBay Sold History" targetImageUrl={item.primaryPhotoUrl} />');
-    expect(pageSource).toContain('<CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />');
+    expect(pageSource).toMatch(/import \{[^}]*\bsourceRetainedDisplayGroups\b[^}]*\} from '@shared\/testAiSourceDisplay';/);
+    expect(pageSource).toContain('const retainedMaster = mergeCandidateDisplayGroups(sourceRetainedDisplayGroups(data));');
+    expect(sourceDisplaySource).toContain(`export function sourceRetainedDisplayGroups(data: any): any[][] {
+  return [data?.audit?.ledger, data?.listings, data?.preVisionExcludedListings,
+    data?.visualFilter?.contextListings, data?.context].map((group) => Array.isArray(group) ? group : []);
+}`);
+    expect(pageSource).toContain('<CandidateMasterList listings={retainedMaster} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />');
     expect(pageSource).toContain(`function mergeMasterCandidates(...groups: any[][]): any[] {
   return mergeCandidateDisplayGroups(groups);
 }`);

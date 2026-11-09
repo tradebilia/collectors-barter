@@ -173,12 +173,36 @@ describe('Stage 3 actual trusted identity and pricing handoff', () => {
 
   it('retains the existing legitimate signed nonvisual source-only path', () => {
     const legacy = { title: kobe.title, price: 1000, currency: 'USD', date: '2026-11-01', saleId: 'legacy-nonvisual',
-      sourceId: 'the_card_api', saleStatus: 'completed' as const, priceBasis: 'sold' as const, visualRequirement: 'not_required' as const };
+      sourceId: 'the_card_api', originMarketplace: 'ebay', url: 'https://www.ebay.com/itm/123456789012',
+      saleStatus: 'completed' as const, completedStatusBasis: 'The Card API provider-confirmed final sale',
+      priceBasis: 'sold' as const, buyerPremium: 'included' as const, visualRequirement: 'not_required' as const };
     const sealed = sealCanonicalObservation('the_card_api', legacy, { signingKey, acquiredAt: now });
-    const normalized = normalizeAnalysisMarketSale({ ...legacy, ...sealed }, now, { signingKey, target: kobe });
+    const wire = JSON.parse(JSON.stringify({ ...legacy, ...sealed }));
+    expect(verifyCanonicalObservation(wire, { signingKey, now }).verified).toBe(true);
+    const normalized = normalizeAnalysisMarketSale(wire, now, { signingKey, target: kobe });
+    expect(normalized.sale).toMatchObject({ sourceAdapter: 'the_card_api', originMarketplace: 'ebay', price: 1000, priceBasis: 'sold' });
     expect(normalized.valuationEligible).toBe(true);
     expect(getVerifiedIdentityApproval(normalized.sale, kobe)).toBeNull();
     expect(scoreComparable(kobe, normalized.sale).accepted).toBe(true);
+    // Signing a wrapper's completed/sold label does not supply missing origin
+    // economics or turn The Card API's Goldin hammer amount into retail value.
+    for (const originMarketplace of ['unknown_marketplace', 'goldin']) {
+      const held = { ...legacy, originMarketplace };
+      const proof = sealCanonicalObservation('the_card_api', held, { signingKey, acquiredAt: now });
+      const heldWire = JSON.parse(JSON.stringify({ ...held, ...proof }));
+      expect(verifyCanonicalObservation(heldWire, { signingKey, now }).verified).toBe(true);
+      const decision = normalizeAnalysisMarketSale(heldWire, now, { signingKey, target: kobe });
+      expect(decision.valuationEligible).toBe(false);
+      // Identity may agree while the amount remains financially unusable.
+      const heldProfile = buildMarketProfile(kobe, [decision.sale], null, now);
+      expect(heldProfile.authoritativeSaleCount).toBe(0);
+      expect(heldProfile.primaryValue).toBeNull();
+      expect(heldProfile.comparables).toHaveLength(1);
+      expect(heldProfile.comparables[0].accepted).toBe(false);
+      expect(heldProfile.comparables[0].valuationUse?.sourceAdmission.blockerCodes).toContain('AUCTION_AMOUNT_UNRESOLVED');
+      expect(heldProfile.comparables[0].valuationUse?.use.primaryMarketSales).toBe(false);
+      expect(getVerifiedIdentityApproval(decision.sale, kobe)).toBeNull();
+    }
   });
 
   it('does not let a browser status/approval/audit injection invent server authority', () => {
@@ -247,15 +271,29 @@ describe('Stage 3 reviewed consistency controls', () => {
     }
   });
 
-  it('keeps possible duplicates warning-retained under the unchanged policy while exact duplicates remain excluded', () => {
-    const first = sealedRow(kobe, { title: '1996 Kobe Bryant PSA 10', price: 1000, soldPrice: '1000', saleId: 'possible-a', url: 'https://www.ebay.com/itm/possible-a' });
-    const second = sealedRow(kobe, { title: '1996 Kobe Bryant PSA 10', price: 1100, soldPrice: '1100', saleId: 'possible-b', url: 'https://www.ebay.com/itm/possible-b' });
-    const normalized = normalizeAnalysisMarketSales(JSON.parse(JSON.stringify([first, second])), now, { signingKey, target: kobe });
+  it('keeps both possible duplicates warning-retained while a proven exact duplicate remains excluded', () => {
+    const first = sealedRow(kobe, { title: '1996 Kobe Bryant PSA 10', price: 1000, soldPrice: '1000',
+      id: 'possible-a', saleId: 'possible-a', url: 'https://www.ebay.com/itm/123456789012' });
+    const second = sealedRow(kobe, { title: '1996 Kobe Bryant PSA 10', price: 1100, soldPrice: '1100',
+      id: 'possible-b', saleId: 'possible-b', url: 'https://www.ebay.com/itm/123456789013' });
+    const normalized = normalizeAnalysisMarketSales(JSON.parse(JSON.stringify([first, second, first])), now, { signingKey, target: kobe });
     const profile = buildMarketProfile(kobe, normalized, null, now);
     expect(profile.authoritativeSaleCount).toBe(2);
-    expect(profile.comparables.filter((match) => match.duplicateStatus === 'possible_duplicate')).toHaveLength(1);
+    expect(profile.duplicateSaleCount).toBe(1);
+    expect(profile.comparables).toHaveLength(3);
+    const possible = profile.comparables.filter((match) => match.duplicateStatus === 'possible_duplicate');
+    expect(possible).toHaveLength(2);
+    expect(possible.map((match) => match.saleId).sort()).toEqual(['possible-a', 'possible-b']);
     expect(profile.comparables.filter((match) => match.accepted)).toHaveLength(2);
-    expect(profile.comparables.find((match) => match.duplicateStatus === 'possible_duplicate')?.identityAdmissionBasis).toBe('server_final_visual');
+    for (const match of possible) {
+      expect(match.identityAdmissionBasis).toBe('server_final_visual');
+      expect(match.identityApproval).toBeTruthy();
+      expect(match.valuationUse?.use.possibleDuplicateWarning).toBe(true);
+    }
+    const exact = profile.comparables.filter((match) => match.duplicateStatus === 'exact_duplicate');
+    expect(exact).toHaveLength(1);
+    expect(exact[0]).toMatchObject({ accepted: false, saleId: 'possible-a', valuationUse: { use: { code: 'EXACT_DUPLICATE', primaryMarketSales: false } } });
+    expect(exact[0].identityApproval).toBeFalsy();
   });
 
   it('preserves metadata/rank/audit diagnostics without using their browser values as authority or scoring points', () => {

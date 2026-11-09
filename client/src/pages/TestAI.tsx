@@ -1,3 +1,4 @@
+import { TestAiRetrievalLadder } from '../components/TestAiRetrievalLadder';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { skipToken } from '@tanstack/react-query';
 import { trpc } from "@/lib/trpc";
@@ -11,10 +12,10 @@ import { TestAiPricingSummary } from '@/components/TestAiPricingSummary';
 import { MetadataComparisonTable } from '@/components/TestAiMetadataComparisonTable';
 import { sortMetadataRankedCandidates, buildEbayVisualReviewListings } from '@shared/testAiRankingDisplay';
 import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';
-import { TestAiCandidateDisplayProvider, TestAiCandidateStatus, TestAiVisualReviewRow, TestAiExecutionSummary, TestAiFinalUseSummary, TestAiSourcePopulationSummary, TestAiFinalLedgerRow, TestAiProcessCompleteNotice as ProcessCompleteNotice, TestAiSourceMetricSummary, TestAiSourceCurrentWindowCount, selectTestAiVisualDisplayRows } from '@/components/TestAiCandidateStatus';
+import { TestAiSourceStatusBadges, TestAiSourceRelevanceSummary, TestAiCandidateDisplayProvider, TestAiCandidateStatus, TestAiVisualReviewRow, TestAiExecutionSummary, TestAiFinalUseSummary, TestAiSourcePopulationSummary, TestAiFinalLedgerRow, TestAiProcessCompleteNotice as ProcessCompleteNotice, TestAiSourceMetricSummary, TestAiSourceCurrentWindowCount, selectTestAiVisualDisplayRows } from '@/components/TestAiCandidateStatus';
 import { candidateDisplayKey, collectEbayCandidateDisplayOccurrences, mergeCandidateDisplayGroups, mergeVisualReviewDisplayBatches, mergeEbayCandidateDisplayData, stampCandidateDisplayIntake, type CandidateFinalDisplayOutcome } from '@shared/testAiCandidateLedger';
 import { testAiAnalysisLifecycleKey, isCurrentTestAiFinalRequest } from '@shared/testAiAnalysisLifecycle';
-import { sourceRecordBucketLabel, sourceMetricDisplay } from '@shared/testAiSourceDisplay';
+import { sourceRequestDisplayData, sourceRetainedDisplayGroups, sourceRetainedEmptyMessage, sourceEvidenceStatus, sourceEvidenceMessage, sourceVisualDisplayGroups, sourceReviewedGoldinSales, sourceRecordBucketLabel, sourceMetricDisplay } from '@shared/testAiSourceDisplay';
 import { hasActualVisualResponse, formatCandidateDisplayPrice } from '@shared/testAiCandidateStatus';
 import { toast } from 'sonner';
 import { buildComicsOriginalArtQueries, buildStructuredItemQuery, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
@@ -983,6 +984,7 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
       <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
+      {data && <TestAiRetrievalLadder data={data} sourceLabel="eBay Sold History" marketplace="eBay" />}
       <ProcessCompleteNotice data={data} /><TestAiSourcePopulationSummary packet={data?.sourcePopulation} />
       <p className="text-gray-500 text-[10px]">Data type: Completed eBay sale candidates · source-stage price metrics, not final selected pricing · Up to 90 days history</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
@@ -994,7 +996,7 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
       </div>}
       {showVisualReview && <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay sold history" open />}
       {data?.audit && <div className="rounded border border-violet-700/30 bg-violet-950/20 p-2 text-[10px] text-violet-100">
-        <p className="font-semibold">Retained source ingress after retrieval union — {data.audit.rawReceived ?? 'unmeasured'} occurrences across {data.audit.retrievalCoverage?.length ?? 'unmeasured'} query tiers (query-return observations may overlap)</p>
+        <TestAiSourceRelevanceSummary audit={data.audit} /><p className="font-semibold">Retained source ingress after retrieval union — {data.audit.rawReceived ?? 'unmeasured'} occurrences across {data.audit.retrievalCoverage?.length ?? 'unmeasured'} query tiers (query-return observations may overlap)</p>
         <p className="mt-0.5 text-violet-200/90">{data.audit.valuationEligible} valuation-eligible · {data.audit.warningReview} retained for review · {data.audit.objectiveConflicts} objective conflicts retained in the audit ledger · {data.audit.notVisuallyReviewed} legacy not-reviewed status rows (not dispatch counts)</p>
       </div>}
       <div className="rounded border border-amber-700/35 bg-amber-950/20 p-2 text-[10px] text-amber-100" aria-label="High-value Sold-Comps price safety gate">
@@ -1038,9 +1040,8 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const listings = data?.listings ?? [];
   const preVisionExcludedListings = sortAnalysisCandidates(data?.preVisionExcludedListings ?? []);
+  const retainedMaster = mergeCandidateDisplayGroups(sourceRetainedDisplayGroups(data));
   const searchMetrics = data?.searchMetrics ?? data?.metrics;
-  const retrievalCoverage = Array.isArray(searchMetrics?.retrievalCoverage) ? searchMetrics.retrievalCoverage : [];
-  const executedQueries = Array.isArray(searchMetrics?.executedQueries) ? searchMetrics.executedQueries : [];
   const strictVisualReview = (item.category === 'disney_pins' || item.category === 'coins') && marketplace === 'Mercari';
   const rankedListings = sortAnalysisCandidates(listings);
   const acceptedListings = rankedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
@@ -1057,7 +1058,7 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
       <p className="text-[10px] text-cyan-200">Searching and completing source checks. Final results will appear when this source is complete.</p>
     </div>;
   }
-  const contextListings = Math.max(0, listings.length - acceptedListings.length);
+  const contextListings = Math.max(0, retainedMaster.length - acceptedListings.length);
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
       <div className="flex items-center justify-between">
@@ -1065,16 +1066,16 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
       <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
-      {data && <div className="rounded border border-violet-700/30 bg-violet-950/15 px-2 py-1 text-[9px] text-violet-200" aria-label={`${sourceLabel} fallback search coverage`}><p className="font-semibold uppercase tracking-wide">Executed search ladder</p>{executedQueries.length > 1 ? <p className="mt-0.5">The primary query returned no usable provider records, so {executedQueries.length - 1} broader fallback search{executedQueries.length - 1 === 1 ? '' : 'es'} ran.</p> : executedQueries.length === 1 ? <p className="mt-0.5">Only the primary query ran because it returned provider records; no fallback search was needed.</p> : <p className="mt-0.5">No provider query execution was recorded.</p>}{(retrievalCoverage.length > 0 ? retrievalCoverage : executedQueries.map((query: string) => ({ query, received: null, status: 'unknown' }))).map((tier: any, index: number) => <p key={`${tier.query}-${index}`} className="break-words font-mono text-violet-200/80">{index === 0 ? 'Primary' : `Fallback ${index}`}: &quot;{tier.query}&quot; · {tier.received == null ? 'count unavailable' : `${tier.received} provider record${tier.received === 1 ? '' : 's'}`} · {tier.status}</p>)}</div>}
+      {data && <TestAiRetrievalLadder data={data} sourceLabel={sourceLabel} marketplace={marketplace} />}
       <ProcessCompleteNotice data={data} /><TestAiSourcePopulationSummary packet={data?.sourcePopulation} />
       <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">{strictVisualReview ? `Data type: Completed Mercari sales · ${item.category === 'coins' ? 'Coins' : 'Disney Pins'} use strict two-pass visual identity admission. Only exact visual matches can affect valuation.` : marketplace === 'Mercari' ? 'Data type: Completed Mercari sales · records can affect valuation after the shared sold-evidence and identity gates.' : `Data type: Completed ${marketplace} sales · context-only during provider-specific testing. These records do not affect valuation yet.`}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
-      {data && <p className="text-gray-400 text-[10px]">{listings.length} retained provider record{listings.length === 1 ? '' : 's'} returned.</p>}
+      {data && <p className="text-gray-400 text-[10px]">{retainedMaster.length} known retained candidate{retainedMaster.length === 1 ? '' : 's'} in the source master list (not raw provider response counts).</p>}
       {data && <div className="rounded border border-indigo-700/30 bg-indigo-950/15 p-2 text-[9px]" aria-label={`${sourceLabel} valuation destination summary`}>
         <p className="font-semibold uppercase tracking-wide text-indigo-200">Source-stage eligibility and context</p>
         <p className="mt-0.5 text-gray-400">These are source-stage classifications, not actual request receipts or final pricing-use counts. Current and historical buckets overlap source eligibility.</p>
         <div className="mt-1 grid gap-1 sm:grid-cols-3 lg:grid-cols-6">
-          <p className="text-sky-200"><strong>{listings.length}</strong><br />returned</p>
+          <p className="text-sky-200"><strong>{retainedMaster.length}</strong><br />known retained candidates</p>
           <p className="text-emerald-200"><strong>{acceptedListings.length}</strong><br />source eligible</p>
           <p className="text-cyan-200"><strong>{currentValueListings.length}</strong><br />current-window source eligible</p>
           <p className="text-violet-200"><strong>{historicalTrendListings.length}</strong><br />historical source eligible</p>
@@ -1082,7 +1083,7 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
           <p className="text-orange-200"><strong>{preVisionExcludedListings.length}</strong><br />held out</p>
         </div>
       </div>}
-      <CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />
+      <CandidateMasterList listings={retainedMaster} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />
       {data?.visualFilter?.note && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1 text-[10px] text-cyan-200"><p>{data.visualFilter.note}</p><p className="mt-0.5 text-cyan-100/80">{reviewedListings.length} candidate image{reviewedListings.length === 1 ? '' : 's'} reviewed · {acceptedListings.length} valuation-eligible</p></div>}
       <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={sourceLabel} />
       {acceptedListings.length > 0 && <div className="rounded border border-emerald-700/35 bg-emerald-950/20 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Source eligible for final review ({acceptedListings.length})</p><div className="mt-1 space-y-1">{acceptedListings.map((listing: any, index: number) => <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-center justify-between gap-2"><div className="min-w-0"><a href={listing.itemUrl || undefined} target="_blank" rel="noopener noreferrer" className="truncate text-[10px] text-blue-300 hover:underline">{listing.title}</a><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><TestAiCandidateStatus listing={listing} /><VisualDifferenceList listing={listing} /></div><span className="shrink-0 text-[10px] font-semibold text-emerald-300">{formatCandidateDisplayPrice(listing)}</span></div>)}</div></div>}
@@ -1095,7 +1096,7 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
           <p className="text-amber-300 font-semibold text-sm flex-shrink-0">{formatCandidateDisplayPrice(listing)}</p>
         </div>
       ))}</div>}
-      {data && !data.error && listings.length === 0 && <p className="text-gray-500 text-xs">No completed {marketplace} records found.</p>}
+      {data && !data.error && listings.length === 0 && <p className="text-gray-500 text-xs">{sourceRetainedEmptyMessage(data, retainedMaster.length, marketplace)}</p>}
     </div>
   );
 }
@@ -1133,7 +1134,7 @@ function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: cont
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = controlledOpen ?? uncontrolledOpen;
   const displayData = data?.candidateDisplayBatch ?? data;
-  const rows = selectTestAiVisualDisplayRows([displayData?.visualReviewListings ?? [], displayData?.listings ?? [], displayData?.sales ?? [], displayData?.visualFilter?.contextListings ?? [], displayData?.data?.items ?? []]);
+  const rows = selectTestAiVisualDisplayRows(sourceVisualDisplayGroups(displayData));
   useEffect(() => { if (controlledOpen === undefined && rows.length > 0) setUncontrolledOpen(true); }, [controlledOpen, rows.length]);
   if (!data?.visualFilter && !data?.visualExecutionCounts && !rows.length) return null;
   return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2 space-y-2">
@@ -2663,14 +2664,8 @@ function isPriceChartingCoinSearchReady(input: ReturnType<typeof buildPriceChart
   return /^(?:17|18|19|20)\d{2}$/.test(input.year) && Boolean(input.variety);
 }
 
-function evidenceStatus(data: any): 'success' | 'not_found' | 'error' | 'idle' {
-  if (!data) return 'idle';
-  if (data.status === 'success') return 'success';
-  if (data.status === 'partial') return 'success';
-  if (data.status === 'review_required') return 'not_found';
-  if (data.status === 'not_found') return 'not_found';
-  if (data.status === 'error' || data.error) return 'error';
-  return 'success';
+function evidenceStatus(data: any): 'success' | 'partial' | 'not_found' | 'error' | 'idle' {
+  return sourceEvidenceStatus(data);
 }
 
 function factValue(facts: any[], labels: string[]): string {
@@ -2959,7 +2954,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
           undatedSaleCount: listings.filter((listing: any) => !Number.isFinite(Date.parse(String(listing.endedAt ?? '')))).length,
         },
         visualAnalysisRequired: !autographMarketContext,
-        message: soldCompsData?.error ?? null,
+        message: sourceEvidenceMessage(soldCompsData),
       });
     }
     if (enabledSources.has('mercari_sold_comps')) {
@@ -2991,7 +2986,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
           historicalTrendPrices: historicalTrend.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0),
           undatedSaleCount: listings.filter((listing: any) => !Number.isFinite(Date.parse(String(listing.endedAt ?? '')))).length,
         },
-        message: mercariSoldCompsData?.error ?? null,
+        message: sourceEvidenceMessage(mercariSoldCompsData),
       });
     }
     if (enabledSources.has('one_thirty_point')) {
@@ -3410,13 +3405,7 @@ function SandboxSpecialistSection({ source, item, side, visualProvider, onEviden
   // stale provider sales list to re-enter the analyzer summary.
   const authoritativeSales = useMemo(() => {
     if (source.id !== 'goldin') return data?.sales ?? [];
-    const visualFilter = (data as any)?.visualFilter;
-    const reviewedListings = [
-      ...(Array.isArray(visualFilter?.listings) ? visualFilter.listings : []),
-      ...(Array.isArray(visualFilter?.contextListings) ? visualFilter.contextListings : []),
-    ];
-    if (!reviewedListings.length) return [];
-    return reviewedListings.filter((record: any) => record.completed === true && record.evidenceDisposition === 'valuation_eligible');
+    return sourceReviewedGoldinSales(data);
   }, [data, source.id]);
   const records = useMemo(() => {
     const providerSales = data?.sales ?? [];
@@ -3487,7 +3476,7 @@ function SandboxSpecialistSection({ source, item, side, visualProvider, onEviden
 }
 function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
-  const timeWindowLabel: Record<string, string> = { current_12_months: 'Current market · last 12 months', extended_12_to_36_months: 'Extended context · 12–36 months', historical_over_36_months: 'Historical trend · over 36 months', undated: 'Undated context' };
+  const timeWindowLabel: Record<string, string> = { current_12_months: 'Current market · last 12 months', extended_12_to_36_months: 'Provider historical bucket · 12–36 months (not a final pricing window)', historical_over_36_months: 'Older provider history · context only', undated: 'Undated context' };
   const timeWindowStyle: Record<string, string> = { current_12_months: 'text-emerald-300', extended_12_to_36_months: 'text-sky-300', historical_over_36_months: 'text-amber-300', undated: 'text-gray-400' };
   const records = [...(data?.sales ?? []), ...(data?.context ?? [])].slice(0, 20);
   const matches = records.filter((record: any) => record.identityMatched);
@@ -3531,7 +3520,7 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
           <p className={`text-[9px] mt-0.5 ${timeWindowStyle[record.timeWindow] ?? 'text-gray-400'}`}>{timeWindowLabel[record.timeWindow] ?? 'Time window unavailable'}</p>
           <p className={`text-[9px] mt-0.5 ${record.identityMatched ? 'text-emerald-300/80' : 'text-red-300/90'}`}>{record.identityMatched ? '✓ Identity matched — retained for admission review' : `✕ Mismatch — ${record.exclusionReason ?? 'identity not confirmed'}`}</p>
           <MetadataMatchLine listing={record} /><MetadataComparisonTable listing={record} /><TestAiCandidateStatus listing={record} /><VisualDifferenceList listing={record} />
-          <AnalyzerUseLine eligible={Boolean(record.identityMatched && record.completed && ['current_12_months', 'extended_12_to_36_months'].includes(record.timeWindow))} reason={record.identityMatched && record.completed && ['current_12_months', 'extended_12_to_36_months'].includes(record.timeWindow) ? 'dated identity-matched sale in the current or extended window; final comparable gates still apply.' : record.identityMatched ? 'historical, undated, or incomplete admission state keeps this record as context only.' : record.exclusionReason ?? 'identity mismatch prevents direct valuation.'} />
+          <AnalyzerUseLine eligible={Boolean(record.identityMatched && record.completed && ['current_12_months', 'extended_12_to_36_months'].includes(record.timeWindow))} reason={record.identityMatched && record.completed && ['current_12_months', 'extended_12_to_36_months'].includes(record.timeWindow) ? 'Source-stage identity match only; final pricing independently uses valid dated sales within 365 days or a conditional 366–730-day extension. Older observations remain context only.' : record.identityMatched ? 'historical, undated, or incomplete admission state keeps this record as context only.' : record.exclusionReason ?? 'identity mismatch prevents direct valuation.'} />
           {record.url && <a className="text-sky-400 text-[9px] underline" href={record.url} target="_blank" rel="noreferrer">Open ComicConnect record</a>}
         </div>)}
         {!records.length && <p className="text-gray-500 text-[10px]">No ComicConnect records matched this bounded query.</p>}
@@ -3866,8 +3855,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
       leftHasCollectAuction ? (leftCollectAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'collect_auction', sourceLabel: 'Collect Auctions', marketplace: 'Collect Auctions', priceBasis: 'realized' })) : [],
       leftHasSiriusSportsAuctions ? (leftSiriusSportsAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'sirius_sports_auctions', sourceLabel: 'Sirius Sports Auctions', marketplace: 'Sirius Sports Auctions', priceBasis: 'realized' })) : [],
       leftHasPcgsAuction ? (leftPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => normalizeComparableSale({ ...sale, title: sale.title ?? leftPcgsAuctionData?.data?.name ?? effectiveLeftItem.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.date, marketplace: sale.marketplace ?? sale.auctioneer ?? sale.service ?? 'PCGS Auction Prices Realized', originMarketplace: sale.originMarketplace ?? sale.auctioneer ?? sale.service ?? 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), saleStatus: sale.saleStatus ?? 'completed', completedStatusBasis: sale.completedStatusBasis ?? 'PCGS View All completed auction record', priceBasis: sale.priceBasis ?? 'realized', saleId: sale.saleId ?? `${sale.certNo || leftPcgsAuctionData?.data?.certNo || effectiveLeftItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.url ?? sale.auctionLotUrl }, { sourceId: 'pcgs_auction_results', sourceLabel: 'PCGS Auction Prices Realized', priceBasis: 'realized' })) : [],
-      leftHasComicConnect ? (leftComicConnectData?.sales ?? []).map((sale: any) => normalizeComparableSale({ ...sale, marketplace: 'ComicConnect Sold Archive', originMarketplace: 'ComicConnect', sourceId: 'comicconnect', sourceAdapter: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', saleStatus: sale.completed ? 'completed' : 'unknown', completedStatusBasis: sale.completed ? 'ComicConnect sold archive completed flag' : null, priceBasis: sale.completed ? 'sold' : 'unknown', evidenceDisposition: sale.valuationEligible ? 'valuation_eligible' : 'context_only', evidenceReasons: sale.exclusionReason ? [sale.exclusionReason] : null, buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : sale.buyerPremiumIncluded === false ? 'excluded' : 'unknown' }, { sourceId: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', marketplace: 'ComicConnect', priceBasis: 'sold' })) : [],
-      leftGoldinSales.map((sale: any) => normalizeComparableSale({ ...sale, marketplace: 'Goldin Auction Results', originMarketplace: 'Goldin', sourceId: 'goldin', sourceAdapter: 'goldin', sourceLabel: 'Goldin Auction Results', saleStatus: sale.completed ? 'completed' : 'unknown', completedStatusBasis: sale.completed ? 'Goldin Completed_Sold record' : null, priceBasis: sale.completed ? 'sold' : 'unknown', evidenceDisposition: sale.valuationEligible ? 'valuation_eligible' : 'context_only', evidenceReasons: sale.exclusionReason ? [sale.exclusionReason] : null, buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : 'unknown' }, { sourceId: 'goldin', sourceLabel: 'Goldin Auction Results', marketplace: 'Goldin', priceBasis: 'sold' })),
+      leftHasComicConnect ? (leftComicConnectData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', marketplace: 'ComicConnect', priceBasis: 'sold' })) : [],
+      leftGoldinSales.map((sale: any) => normalizeComparableSale(sale, { sourceId: 'goldin', sourceLabel: 'Goldin Auction Results', marketplace: 'Goldin', priceBasis: 'sold' })),
       buildSoldCompsAnalysisSales(leftSoldCompsData, leftHasSoldComps),
       leftHasMercari ? (leftMercariSoldCompsData?.listings ?? []).map((sale: any) => normalizeComparableSale({ ...sale, date: sale.endedAt, marketplace: 'Mercari', originMarketplace: 'Mercari', saleStatus: 'completed', completedStatusBasis: 'Mercari completed-sale endpoint', priceBasis: 'sold' }, { sourceId: 'mercari_sold_comps', sourceLabel: 'Mercari Sold-Comps', marketplace: 'Mercari', priceBasis: 'sold' })) : [],
     ]);
@@ -3880,8 +3869,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
       rightHasCollectAuction ? (rightCollectAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'collect_auction', sourceLabel: 'Collect Auctions', marketplace: 'Collect Auctions', priceBasis: 'realized' })) : [],
       rightHasSiriusSportsAuctions ? (rightSiriusSportsAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'sirius_sports_auctions', sourceLabel: 'Sirius Sports Auctions', marketplace: 'Sirius Sports Auctions', priceBasis: 'realized' })) : [],
       rightHasPcgsAuction ? (rightPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => normalizeComparableSale({ ...sale, title: sale.title ?? rightPcgsAuctionData?.data?.name ?? effectiveRightItem.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.date, marketplace: sale.marketplace ?? sale.auctioneer ?? sale.service ?? 'PCGS Auction Prices Realized', originMarketplace: sale.originMarketplace ?? sale.auctioneer ?? sale.service ?? 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), saleStatus: sale.saleStatus ?? 'completed', completedStatusBasis: sale.completedStatusBasis ?? 'PCGS View All completed auction record', priceBasis: sale.priceBasis ?? 'realized', saleId: sale.saleId ?? `${sale.certNo || rightPcgsAuctionData?.data?.certNo || effectiveRightItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.url ?? sale.auctionLotUrl }, { sourceId: 'pcgs_auction_results', sourceLabel: 'PCGS Auction Prices Realized', priceBasis: 'realized' })) : [],
-      rightHasComicConnect ? (rightComicConnectData?.sales ?? []).map((sale: any) => normalizeComparableSale({ ...sale, marketplace: 'ComicConnect Sold Archive', originMarketplace: 'ComicConnect', sourceId: 'comicconnect', sourceAdapter: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', saleStatus: sale.completed ? 'completed' : 'unknown', completedStatusBasis: sale.completed ? 'ComicConnect sold archive completed flag' : null, priceBasis: sale.completed ? 'sold' : 'unknown', evidenceDisposition: sale.valuationEligible ? 'valuation_eligible' : 'context_only', evidenceReasons: sale.exclusionReason ? [sale.exclusionReason] : null, buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : sale.buyerPremiumIncluded === false ? 'excluded' : 'unknown' }, { sourceId: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', marketplace: 'ComicConnect', priceBasis: 'sold' })) : [],
-      rightGoldinSales.map((sale: any) => normalizeComparableSale({ ...sale, marketplace: 'Goldin Auction Results', originMarketplace: 'Goldin', sourceId: 'goldin', sourceAdapter: 'goldin', sourceLabel: 'Goldin Auction Results', saleStatus: sale.completed ? 'completed' : 'unknown', completedStatusBasis: sale.completed ? 'Goldin Completed_Sold record' : null, priceBasis: sale.completed ? 'sold' : 'unknown', evidenceDisposition: sale.valuationEligible ? 'valuation_eligible' : 'context_only', evidenceReasons: sale.exclusionReason ? [sale.exclusionReason] : null, buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : 'unknown' }, { sourceId: 'goldin', sourceLabel: 'Goldin Auction Results', marketplace: 'Goldin', priceBasis: 'sold' })),
+      rightHasComicConnect ? (rightComicConnectData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', marketplace: 'ComicConnect', priceBasis: 'sold' })) : [],
+      rightGoldinSales.map((sale: any) => normalizeComparableSale(sale, { sourceId: 'goldin', sourceLabel: 'Goldin Auction Results', marketplace: 'Goldin', priceBasis: 'sold' })),
       buildSoldCompsAnalysisSales(rightSoldCompsData, rightHasSoldComps),
       rightHasMercari ? (rightMercariSoldCompsData?.listings ?? []).map((sale: any) => normalizeComparableSale({ ...sale, date: sale.endedAt, marketplace: 'Mercari', originMarketplace: 'Mercari', saleStatus: 'completed', completedStatusBasis: 'Mercari completed-sale endpoint', priceBasis: 'sold' }, { sourceId: 'mercari_sold_comps', sourceLabel: 'Mercari Sold-Comps', marketplace: 'Mercari', priceBasis: 'sold' })) : [],
     ]);
@@ -4098,7 +4087,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
                         <p className="text-gray-400 text-[9px]">Sales: {diagnostics.received} received · {diagnostics.deduplicated} unique · {diagnostics.eligibleCompleted} dated completed · {diagnostics.acceptedIdentity} identity accepted · {diagnostics.selectedForValuation} selected before outliers</p>
                         {diagnostics.omittedByCap > 0 && <p className="text-amber-200 text-[9px]">{diagnostics.omittedByCap} matched record{diagnostics.omittedByCap === 1 ? '' : 's'} retained in audit but omitted by the source-balanced cap.</p>}
                         <TestAiFinalUseSummary report={snapshot.finalUseReport} /><p className="text-gray-500 text-[9px]">Legacy attached visual-status observations (not dispatch or verified identity): {visual.match} match · {visual.roughMatch} rough · {visual.mismatch} mismatch · {visual.unreadable} unreadable · {visual.notReviewed} not reviewed</p>
-                        <div className="flex flex-wrap gap-1 pt-1">{snapshot.evidence.sourceStatuses.map((source: any) => <span key={source.id} title={source.message || undefined} className={`rounded px-1 py-0.5 text-[8px] ${source.status === 'success' ? 'bg-emerald-950/60 text-emerald-200' : source.status === 'error' ? 'bg-rose-950/60 text-rose-200' : 'bg-slate-800 text-slate-300'}`}>{source.label}: {source.status.replace('_', ' ')}</span>)}</div>
+                        <TestAiSourceStatusBadges sources={snapshot.evidence.sourceStatuses} />
                         {snapshot.evidence.reviewFlags.length > 0 && <p className="text-amber-200 text-[9px]">Review: {snapshot.evidence.reviewFlags[0]}</p>}
                       </div>;
                     })}
@@ -4870,8 +4859,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {leftItem && !leftIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.left} item={leftItem} searchItem={leftSearchItem} side="left" visualProvider={visualProvider} enabledSources={leftSourcesEnabled} ebayData={leftEbayQuery.data} ebayEvidenceData={leftEbayVisualReview ? { ...leftEbayQuery.data, ...leftEbayVisualReview } : leftEbayQuery.data} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isFetching} soldCompsData={leftSoldCompsQuery.data} soldCompsLoading={leftSoldCompsQuery.isFetching} mercariSoldCompsData={leftMercariSoldCompsQuery.data} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={leftTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isFetching} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isFetching} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isFetching} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isFetching} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isFetching} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isFetching} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isFetching} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isFetching} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isFetching} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isFetching} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isFetching} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />}
-            {rightItem && !rightIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.right} item={rightItem} searchItem={rightSearchItem} side="right" visualProvider={visualProvider} enabledSources={rightSourcesEnabled} ebayData={rightEbayQuery.data} ebayEvidenceData={rightEbayVisualReview ? { ...rightEbayQuery.data, ...rightEbayVisualReview } : rightEbayQuery.data} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isFetching} soldCompsData={rightSoldCompsQuery.data} soldCompsLoading={rightSoldCompsQuery.isFetching} mercariSoldCompsData={rightMercariSoldCompsQuery.data} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={rightTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isFetching} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isFetching} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isFetching} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isFetching} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isFetching} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isFetching} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isFetching} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isFetching} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isFetching} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isFetching} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isFetching} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
+            {leftItem && !leftIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.left} item={leftItem} searchItem={leftSearchItem} side="left" visualProvider={visualProvider} enabledSources={leftSourcesEnabled} ebayData={sourceRequestDisplayData(leftEbayQuery.data, Boolean(leftEbayQuery.error))} ebayEvidenceData={leftEbayVisualReview ? { ...sourceRequestDisplayData(leftEbayQuery.data, Boolean(leftEbayQuery.error)), ...leftEbayVisualReview } : sourceRequestDisplayData(leftEbayQuery.data, Boolean(leftEbayQuery.error))} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isFetching} soldCompsData={sourceRequestDisplayData(leftSoldCompsQuery.data, Boolean(leftSoldCompsQuery.error))} soldCompsLoading={leftSoldCompsQuery.isFetching} mercariSoldCompsData={sourceRequestDisplayData(leftMercariSoldCompsQuery.data, Boolean(leftMercariSoldCompsQuery.error))} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={leftTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isFetching} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isFetching} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isFetching} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isFetching} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isFetching} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isFetching} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isFetching} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isFetching} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isFetching} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isFetching} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isFetching} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />}
+            {rightItem && !rightIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.right} item={rightItem} searchItem={rightSearchItem} side="right" visualProvider={visualProvider} enabledSources={rightSourcesEnabled} ebayData={sourceRequestDisplayData(rightEbayQuery.data, Boolean(rightEbayQuery.error))} ebayEvidenceData={rightEbayVisualReview ? { ...sourceRequestDisplayData(rightEbayQuery.data, Boolean(rightEbayQuery.error)), ...rightEbayVisualReview } : sourceRequestDisplayData(rightEbayQuery.data, Boolean(rightEbayQuery.error))} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isFetching} soldCompsData={sourceRequestDisplayData(rightSoldCompsQuery.data, Boolean(rightSoldCompsQuery.error))} soldCompsLoading={rightSoldCompsQuery.isFetching} mercariSoldCompsData={sourceRequestDisplayData(rightMercariSoldCompsQuery.data, Boolean(rightMercariSoldCompsQuery.error))} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={rightTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isFetching} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isFetching} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isFetching} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isFetching} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isFetching} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isFetching} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isFetching} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isFetching} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isFetching} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isFetching} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isFetching} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
           </div>
         )}
 
@@ -4886,14 +4875,14 @@ export default function TestAI() {
             rightItem={rightItem}
             leftAnalysisItem={leftSearchItem}
             rightAnalysisItem={rightSearchItem}
-            leftEbayData={leftEbayQuery.data}
-            rightEbayData={rightEbayQuery.data}
+            leftEbayData={sourceRequestDisplayData(leftEbayQuery.data, Boolean(leftEbayQuery.error))}
+            rightEbayData={sourceRequestDisplayData(rightEbayQuery.data, Boolean(rightEbayQuery.error))}
              leftSources={leftSourcesEnabled}
              rightSources={rightSourcesEnabled}
-             leftSoldCompsData={leftSoldCompsQuery.data}
-             rightSoldCompsData={rightSoldCompsQuery.data}
-             leftMercariSoldCompsData={leftMercariSoldCompsQuery.data}
-             rightMercariSoldCompsData={rightMercariSoldCompsQuery.data}
+             leftSoldCompsData={sourceRequestDisplayData(leftSoldCompsQuery.data, Boolean(leftSoldCompsQuery.error))}
+             rightSoldCompsData={sourceRequestDisplayData(rightSoldCompsQuery.data, Boolean(rightSoldCompsQuery.error))}
+             leftMercariSoldCompsData={sourceRequestDisplayData(leftMercariSoldCompsQuery.data, Boolean(leftMercariSoldCompsQuery.error))}
+             rightMercariSoldCompsData={sourceRequestDisplayData(rightMercariSoldCompsQuery.data, Boolean(rightMercariSoldCompsQuery.error))}
              leftHipstampData={leftHipstampQuery.data}
              rightHipstampData={rightHipstampQuery.data}
              leftTheCardApiData={leftTheCardApiQuery.data}

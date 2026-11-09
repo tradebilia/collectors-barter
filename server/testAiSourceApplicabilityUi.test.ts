@@ -13,6 +13,7 @@ describe('manual Test AI selector boundary', () => {
   const statusComponentSource = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/components/TestAiCandidateStatus.tsx'), 'utf8');
   const metadataTableSource = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/components/TestAiMetadataComparisonTable.tsx'), 'utf8');
   const sourceDisplaySource = fs.readFileSync(path.resolve(import.meta.dirname, '../shared/testAiSourceDisplay.ts'), 'utf8');
+  const retrievalLadderSource = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/components/TestAiRetrievalLadder.tsx'), 'utf8');
 
   it('retains manual source state while highlighting sources applicable to the loaded item', () => {
     expect(source).toContain('const [leftSources, setLeftSources] = useState<Set<SourceId>>');
@@ -275,9 +276,22 @@ describe('manual Test AI selector boundary', () => {
     expect(routerSource).toContain("record.completed && record.evidenceDisposition === 'valuation_eligible'");
     expect(routerSource).toContain('Do not rebuild Goldin');
     expect(routerSource).not.toContain("sales: allReviewed.filter((record: any) => record.completed && record.identityMatched)");
-    expect(source).toContain('const authoritativeSales = useMemo');
-    expect(source).toContain('visualFilter?.contextListings');
-    expect(source).toContain('visualFilter?.listings');
+    expect(source).toMatch(/import \{[^}]*\bsourceReviewedGoldinSales\b[^}]*\} from '@shared\/testAiSourceDisplay';/);
+    expect(source).toContain(`  const authoritativeSales = useMemo(() => {
+    if (source.id !== 'goldin') return data?.sales ?? [];
+    return sourceReviewedGoldinSales(data);
+  }, [data, source.id]);`);
+    expect(sourceDisplaySource).toContain(`export function sourceReviewedGoldinSales(data: any): any[] {
+  const sales = Array.isArray(data?.sales) ? data.sales : [];
+  const context = Array.isArray(data?.context) ? data.context : [];
+  const mapped = [...sales, ...context];
+  const hasMapping = mapped.some((row) => row?.sourceEconomics?.policy === 'stage6-named-source-mapping-v1');
+  const reviewed = hasMapping ? mapped : [
+    ...(Array.isArray(data?.visualFilter?.listings) ? data.visualFilter.listings : []),
+    ...(Array.isArray(data?.visualFilter?.contextListings) ? data.visualFilter.contextListings : []),
+  ];
+  return reviewed.filter((record) => record.completed === true && record.evidenceDisposition === 'valuation_eligible');
+}`);
     expect(source).toContain('onSales?.(authoritativeSales)');
     expect(source).toContain('source.id === \'goldin\'\n      ? authoritativeSales.filter');
     expect(source).toContain("const goldinAutographMarket = source.id === 'goldin' && normalizedCategory === 'autographs'");
@@ -323,7 +337,8 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('<AnalyzerRecordPanel records={decision.analyzerRecords} acceptedCount={decision.accepted} sourceLabel={decision.label} sourceKind={decision.kind} />');
     expect(source).toContain('function AnalyzerRecordPanel({ records, acceptedCount, sourceLabel, sourceKind }: { records: AnalyzerRecordDetail[]; acceptedCount: number; sourceLabel: string; sourceKind?: string })');
     expect(source).toContain('sourceRecordBucketLabel(record.bucket, sourceKind)');
-    expect(source).toContain("import { sourceRecordBucketLabel, sourceMetricDisplay } from '@shared/testAiSourceDisplay';");
+    expect(source).toMatch(/import \{[^}]*\bsourceRecordBucketLabel\b[^}]*\} from '@shared\/testAiSourceDisplay';/);
+    expect(source).toMatch(/import \{[^}]*\bsourceMetricDisplay\b[^}]*\} from '@shared\/testAiSourceDisplay';/);
     expect(sourceDisplaySource).toContain(`export function sourceRecordBucketLabel(bucket: string, kind?: string): string {
   return bucket === 'current_value' ? (kind === 'market_current' ? 'Source-stage asking context' : 'Source-stage current window')
     : bucket === 'historical_trend' ? 'Historical source context' : bucket.replace(/_/g, ' ');
@@ -365,10 +380,9 @@ describe('manual Test AI selector boundary', () => {
 
   it('reports terminal source coverage only when marketplace results are ready, retaining partial results honestly', () => {
     expect(source).toMatch(/import \{[^}]*\bTestAiProcessCompleteNotice as ProcessCompleteNotice\b[^}]*\} from '@\/components\/TestAiCandidateStatus';/);
-    expect(statusComponentSource).toContain(`export function TestAiProcessCompleteNotice({ data }: { data?: any }) {
-  const retrieval = sourceRetrievalCoverage(data);`);
+    expect(statusComponentSource).toMatch(/export function TestAiProcessCompleteNotice\(\{ data \}: \{ data\?: any \}\) \{\s+if \(!data\) return <p\b[^>]*>No returned source response — request execution and result coverage are unknown\. This is not a zero-match result\.<\/p>;\s+const retrieval = sourceRetrievalCoverage\(data\);/);
     expect(statusComponentSource).toContain("import { sourceCurrentWindowLabel, sourceMetricDisplay, sourceRetrievalCoverage } from '../../../shared/testAiSourceDisplay';");
-    expect(sourceDisplaySource).toContain("const partialRetrieval = Boolean((failedQueryCount ?? 0) > 0 || audit.some((row: any) => row.status === 'error') || data?.status === 'error' || data?.error);");
+    expect(sourceDisplaySource).toContain("const partialRetrieval = Boolean(query?.hasIssues || (failedQueryCount ?? 0) > 0 || audit.some((row: any) => row.status === 'error' || (measuredCount(row.rejected) ?? 0) > 0 || (measuredCount(row.normalizationRejected) ?? 0) > 0 || (measuredCount(row.rejectionCounts?.normalization_failure) ?? 0) > 0) || data?.partialRetrieval || data?.partial || data?.status === 'error' || data?.error);");
     expect(sourceDisplaySource).toContain(`  const partial = partialRetrieval || data?.displayCoverage === 'partial'
     || ['provider_unavailable', 'completed_with_timeout'].includes(data?.visualFilter?.status);`);
     expect(statusComponentSource).toContain("aria-label=\"Source request end coverage\">{retrieval.partial ? 'Source request ended with partial/error coverage — known returned rows retained below.' : 'Source request ended — returned source results are displayed below.'}");
@@ -414,7 +428,17 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('<MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={sourceLabel} />');
     expect(source).toContain("{reviewedListings.length} candidate image{reviewedListings.length === 1 ? '' : 's'} reviewed · {acceptedListings.length} valuation-eligible");
     expect(source).toContain('const reviewedListings = rankedListings.filter((listing: any) => hasActualVisualResponse(listing));');
-    expect(source).toContain('const rows = selectTestAiVisualDisplayRows(');
+    expect(source).toMatch(/import \{[^}]*\bsourceVisualDisplayGroups\b[^}]*\} from '@shared\/testAiSourceDisplay';/);
+    expect(source).toContain('const displayData = data?.candidateDisplayBatch ?? data;');
+    expect(source).toContain('const rows = selectTestAiVisualDisplayRows(sourceVisualDisplayGroups(displayData));');
+    expect(sourceDisplaySource).toContain(`export function sourceVisualDisplayGroups(data: any): any[][] {
+  const array = (value: unknown): any[] => Array.isArray(value) ? value : [];
+  const legacy = [array(data?.visualReviewListings), array(data?.listings), array(data?.sales),
+    array(data?.visualFilter?.contextListings), array(data?.data?.items)];
+  const mapped = [array(data?.sales), array(data?.context)];
+  return mapped.some((group) => group.some((row) => row?.sourceEconomics?.policy === 'stage6-named-source-mapping-v1'))
+    ? [...mapped, ...legacy] : legacy;
+}`);
     expect(statusComponentSource).toContain('return mergeCandidateDisplayGroups(groups, scope).filter(hasActualVisualDispatch);');
     expect(source).toContain('Source-stage eligibility and context');
     expect(source).toContain('These are source-stage classifications, not actual request receipts or final pricing-use counts. Current and historical buckets overlap source eligibility.');
@@ -429,9 +453,18 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('<TestAiVisualReviewRow key={candidateDisplayKey(listing, {}, String(index))} listing={listing} targetImageUrl={targetImageUrl} />');
     expect(statusComponentSource).toContain('View full explanation');
     expect(source).toContain('const searchMetrics = data?.searchMetrics ?? data?.metrics;');
-    expect(source).toContain('Executed search ladder');
-    expect(source).toContain('Only the primary query ran because it returned provider records; no fallback search was needed.');
-    expect(source).toContain('count unavailable');
+    expect(source).toMatch(/import \{[^}]*\bTestAiRetrievalLadder\b[^}]*\} from '\.\.\/components\/TestAiRetrievalLadder';/);
+    expect(source).toContain('{data && <TestAiRetrievalLadder data={data} sourceLabel="eBay Sold History" marketplace="eBay" />}');
+    expect(source).toContain('{data && <TestAiRetrievalLadder data={data} sourceLabel={sourceLabel} marketplace={marketplace} />}');
+    expect(retrievalLadderSource).toMatch(/import \{[^}]*\bsourceRetrievalRows\b[^}]*\} from '\.\.\/\.\.\/\.\.\/shared\/testAiSourceDisplay';/);
+    expect(retrievalLadderSource).toContain('const attempts = sourceRetrievalRows(data);');
+    expect(retrievalLadderSource).toContain('const rows = attempts.length ? attempts : queries.map((query: string) => ({ query, received: null, status: \'unknown\' }));');
+    expect(retrievalLadderSource).toContain('Search attempts and outcomes');
+    expect(retrievalLadderSource).toContain('An unreadable or failed response is not a zero-match result.');
+    expect(retrievalLadderSource).toContain('Legacy query names are listed, but execution and outcomes are unconfirmed.');
+    expect(retrievalLadderSource).toContain('Mercari stops at the first minimally valid provider result, before metadata ranking, image review or pricing eligibility.');
+    expect(retrievalLadderSource).toContain("const count = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? String(value) : 'unmeasured';");
+    expect(retrievalLadderSource).toContain('returned count: {count(tier.received)}');
   });
 
   it('keeps Mercari pre-visual context records visible with image transport and a no-image fallback', () => {
@@ -450,7 +483,13 @@ describe('manual Test AI selector boundary', () => {
     expect(rankingDisplaySource).toContain(`      const rankA = validDisplayRank(a.listing.metadataMatchRank) ?? Number.POSITIVE_INFINITY;
       const rankB = validDisplayRank(b.listing.metadataMatchRank) ?? Number.POSITIVE_INFINITY;
       if (rankA !== rankB) return rankA - rankB;`);
-    expect(source).toContain('<CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />');
+    expect(source).toMatch(/import \{[^}]*\bsourceRetainedDisplayGroups\b[^}]*\} from '@shared\/testAiSourceDisplay';/);
+    expect(source).toContain('const retainedMaster = mergeCandidateDisplayGroups(sourceRetainedDisplayGroups(data));');
+    expect(sourceDisplaySource).toContain(`export function sourceRetainedDisplayGroups(data: any): any[][] {
+  return [data?.audit?.ledger, data?.listings, data?.preVisionExcludedListings,
+    data?.visualFilter?.contextListings, data?.context].map((group) => Array.isArray(group) ? group : []);
+}`);
+    expect(source).toContain('<CandidateMasterList listings={retainedMaster} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />');
     expect(source).toContain("import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';");
     expect(masterListSource).toContain('export function TestAiCandidateMasterList({ listings, sourceLabel, targetImageUrl, scope: suppliedScope }');
     expect(masterListSource).toContain('const candidates = reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);');

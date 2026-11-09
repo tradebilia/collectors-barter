@@ -6,6 +6,7 @@ import type { GuideValueAnchor } from '../shared/testAiEvidenceNormalization';
 import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
 import { getVerifiedIdentityApproval, transferVerifiedIdentityApproval } from './testAiCanonicalObservation';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
+import { signedTransactionLotConflict, transactionIdentity, type TransactionIdentity } from './testAiEconomicIntegrity';
 import type { VisualEvidence } from './testAiVisualSourceFilter';
 import { randomUUID } from 'node:crypto';
 import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAuditRef,
@@ -34,6 +35,8 @@ export interface ComparableTarget {
   itemDetails?: string;
   /** Binding-only primary-image reference, independent of final vision dispatch. */
   approvalTargetImageReference?: string;
+  /** Explicit entered/estimated reference only; not collectible identity proof. */
+  statedTradeValue?: number;
 }
 
 export interface MarketSale {
@@ -457,23 +460,6 @@ export function normalizeCanonicalSaleUrl(value: unknown): string | null {
   }
 }
 
-function canonicalMarketplaceItemKey(sale: MarketSale): string | null {
-  if (sale.canonicalTransactionId) return sale.canonicalTransactionId;
-  const url = normalizeCanonicalSaleUrl(sale.url);
-  if (url) return `url:${url}`;
-  const stableId = String(sale.saleId ?? '').trim();
-  if (stableId) return `item:${normalizeFingerprintText(stableId)}`;
-  return null;
-}
-
-function probableTransactionKey(sale: MarketSale): string | null {
-  const origin = normalizeFingerprintText(sale.originMarketplace || sale.marketplace);
-  const title = normalizeFingerprintText(sale.title);
-  const price = Number(sale.price);
-  const date = String(sale.date ?? '').slice(0, 10);
-  return origin && title && Number.isFinite(price) && price > 0 && date ? `probable:${origin}|${title}|${price.toFixed(2)}|${date}` : null;
-}
-
 function possibleTransactionKey(sale: MarketSale): string | null {
   const origin = normalizeFingerprintText(sale.originMarketplace || sale.marketplace);
   const title = normalizeFingerprintText(sale.title);
@@ -481,44 +467,77 @@ function possibleTransactionKey(sale: MarketSale): string | null {
   return origin && title && date ? `possible:${origin}|${title}|${date}` : null;
 }
 
-export function deduplicateMarketSales(sales: MarketSale[], captureIdentity?: (sale: MarketSale) => FinalIdentityAdmission): { unique: MarketSale[]; duplicates: Array<{ sale: MarketSale; duplicateOf: string; originalSale: MarketSale; originalIdentityAdmission?: FinalIdentityAdmission }>; possibleDuplicates: MarketSale[]; inputOrdinals: Map<MarketSale, number> } {
-  const seenExact = new Map<string, string>();
-  const seenProbable = new Map<string, string>();
-  const seenPossible = new Map<string, string>();
+function sameTransaction(left: TransactionIdentity, right: TransactionIdentity): boolean {
+  if (left.origin !== right.origin || !left.date || left.date !== right.date) return false;
+  // Distinct known IDs in the same provider namespace are separate even if a
+  // reusable listing URL, title, date and price happen to agree.
+  if (left.adapter === right.adapter && left.providerRecordId && right.providerRecordId
+    && left.providerRecordId !== right.providerRecordId) return false;
+  return Boolean(left.recordKey && left.recordKey === right.recordKey
+    || left.urlKey && left.urlKey === right.urlKey);
+}
+
+export function deduplicateMarketSales(sales: MarketSale[], captureIdentity?: (sale: MarketSale) => FinalIdentityAdmission,
+  usableForTarget?: (sale: MarketSale, identity: FinalIdentityAdmission | undefined) => boolean): { unique: MarketSale[]; duplicates: Array<{ sale: MarketSale; duplicateOf: string; originalSale: MarketSale; originalIdentityAdmission?: FinalIdentityAdmission }>; possibleDuplicates: MarketSale[]; inputOrdinals: Map<MarketSale, number> } {
+  const entries = sales.map((sale, ordinal) => ({ sale, ordinal, transaction: transactionIdentity(sale), identity: captureIdentity?.(sale) }));
+  type Entry = typeof entries[number];
+  const authorityPriority = (entry: Entry): number[] => {
+    const receipt = readServerNormalizationReport(entry.sale);
+    const verified = receipt?.sourceAdmission.verification === 'verified';
+    const financial = receipt ? receipt.sourceAdmission.normalizationEligible === true
+      : entry.sale.evidenceDisposition === 'valuation_eligible';
+    const usable = financial && (usableForTarget ? usableForTarget(entry.sale, entry.identity)
+      : !entry.identity || entry.identity.accepted);
+    return [Number(verified && usable), Number(verified && financial), Number(verified),
+      Number(usable), Number(entry.identity?.serverFinalApprovalVerified === true)];
+  };
+  const preferred = (left: Entry, right: Entry): Entry => {
+    const a = authorityPriority(left), b = authorityPriority(right);
+    for (let index = 0; index < a.length; index += 1) {
+      if (a[index] !== b[index]) return a[index]! > b[index]! ? left : right;
+    }
+    return left.ordinal <= right.ordinal ? left : right;
+  };
+  const groups: Array<{ members: Entry[]; winner: Entry }> = [];
+  for (const entry of entries) {
+    const group = groups.find((candidate) => candidate.members.some((member) => sameTransaction(member.transaction, entry.transaction))
+      && candidate.members.every((member) => member.transaction.adapter !== entry.transaction.adapter
+        || !member.transaction.providerRecordId || !entry.transaction.providerRecordId
+        || member.transaction.providerRecordId === entry.transaction.providerRecordId));
+    if (group) { group.members.push(entry); group.winner = preferred(group.winner, entry); }
+    else groups.push({ members: [entry], winner: entry });
+  }
   const unique: MarketSale[] = [];
   const duplicates: Array<{ sale: MarketSale; duplicateOf: string; originalSale: MarketSale; originalIdentityAdmission?: FinalIdentityAdmission }> = [];
   const possibleDuplicates: MarketSale[] = [];
   const inputOrdinals = new Map<MarketSale, number>();
-  for (const [inputOrdinal, sale] of sales.entries()) {
-    const exactKey = canonicalMarketplaceItemKey(sale);
-    const probableKey = probableTransactionKey(sale);
+  for (const group of groups) {
+    const { sale, transaction, ordinal } = group.winner;
     const possibleKey = possibleTransactionKey(sale);
-    const knownExact = exactKey ? seenExact.get(exactKey) : null;
-    const knownProbable = probableKey ? seenProbable.get(probableKey) : null;
-    if (knownExact || knownProbable) {
-      // Capture on the original verified object BEFORE duplicate diagnostics
-      // deliberately make its copy ineligible for approval transfer.
-      const originalIdentityAdmission = captureIdentity?.(sale);
-      const duplicateSale: MarketSale = { ...sale, duplicateStatus: knownExact ? 'exact_duplicate' : 'probable_duplicate' };
-      const receipt = readServerNormalizationReport(sale);
-      if (receipt) retainServerNormalizationReport(duplicateSale, receipt);
-      duplicates.push({ sale: duplicateSale, duplicateOf: knownExact ?? knownProbable!, originalSale: sale, originalIdentityAdmission });
-      inputOrdinals.set(duplicateSale, inputOrdinal);
-      continue;
-    }
-    const knownPossible = possibleKey ? seenPossible.get(possibleKey) : null;
-    const retained = knownPossible ? { ...sale, duplicateStatus: 'possible_duplicate' as const } : { ...sale, duplicateStatus: 'unique' as const };
-    // This server-owned copy changes only duplicate diagnostics. Browser copies
-    // never acquire approval authority merely by carrying the same properties.
+    const possible = entries.some((entry) => !group.members.includes(entry) && (
+      possibleKey && possibleTransactionKey(entry.sale) === possibleKey
+      || transaction.origin === entry.transaction.origin && (
+        transaction.adapter === entry.transaction.adapter && transaction.providerRecordId
+          && transaction.providerRecordId === entry.transaction.providerRecordId
+        || transaction.listingUrl && transaction.listingUrl === entry.transaction.listingUrl)));
+    const retained: MarketSale = { ...sale, duplicateStatus: possible ? 'possible_duplicate' : 'unique' };
     transferVerifiedIdentityApproval(sale, retained);
     const receipt = readServerNormalizationReport(sale);
     if (receipt) retainServerNormalizationReport(retained, receipt);
-    if (knownPossible) possibleDuplicates.push(retained);
-    if (exactKey) seenExact.set(exactKey, exactKey);
-    if (probableKey) seenProbable.set(probableKey, probableKey);
-    if (possibleKey && !seenPossible.has(possibleKey)) seenPossible.set(possibleKey, possibleKey);
+    if (possible) possibleDuplicates.push(retained);
     unique.push(retained);
-    inputOrdinals.set(retained, inputOrdinal);
+    inputOrdinals.set(retained, ordinal);
+    for (const member of group.members) {
+      if (member === group.winner) continue;
+      // Raw admission and the private receipt belong to the suppressed original;
+      // duplicate diagnostic copies intentionally receive no approval authority.
+      const duplicateSale: MarketSale = { ...member.sale, duplicateStatus: 'exact_duplicate' };
+      const duplicateReceipt = readServerNormalizationReport(member.sale);
+      if (duplicateReceipt) retainServerNormalizationReport(duplicateSale, duplicateReceipt);
+      duplicates.push({ sale: duplicateSale, duplicateOf: transaction.recordKey || transaction.urlKey!,
+        originalSale: member.sale, originalIdentityAdmission: member.identity });
+      inputOrdinals.set(duplicateSale, member.ordinal);
+    }
   }
   return { unique, duplicates, possibleDuplicates, inputOrdinals };
 }
@@ -731,7 +750,9 @@ export function selectBalancedComparableSales(
   cap = MAX_VALUATION_COMPARABLES,
 ) {
   const nowMs = now.getTime();
-  const deduplicated = deduplicateMarketSales(sales, (sale) => scoreComparable(target, sale).identityAdmission!);
+  const deduplicated = deduplicateMarketSales(sales, (sale) => scoreComparable(target, sale).identityAdmission!,
+    (sale, identity) => isCompletedSaleCandidate(sale, nowMs) && String(sale.currency ?? 'UNKNOWN').toUpperCase() === 'USD'
+      && identity?.accepted === true);
   const valuationCandidates = deduplicated.unique.filter((sale) => isCompletedSaleCandidate(sale, nowMs));
   const valuationMatches = valuationCandidates
     .filter((sale) => String(sale.currency ?? 'UNKNOWN').toUpperCase() === 'USD')
@@ -1897,14 +1918,14 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const restrictiveSourceDisposition = Boolean(sale.evidenceDisposition && sale.evidenceDisposition !== 'valuation_eligible');
   const approvalHardStateConflict = universalIdentityConflicts.some((reason) => /grade differs|grading company differs/.test(reason));
   const signedFormConflicts = identityApproval ? signedComparableFormConflicts(target, sale.saleForm) : [];
-  const approvalStructuredLotConflict = Number(sale.lotQuantity) > 1
-    || /\b(?:lot|bundle|collection|multi[-_ ]?item|components?[-_ ]?only)\b/i.test(String(sale.saleForm ?? ''));
+  const transactionLotConflict = signedTransactionLotConflict(target, sale);
   const approvedIdentity = Boolean(identityApproval) && !materialNumberConflict && !categoryHardConflict
     && !universalHardConflict && !materialVariantConflict && !materialGradeConflict && !materialCompanyConflict
-    && !approvalHardStateConflict && !signedFormConflicts.length && !approvalStructuredLotConflict && !visualMismatch
+    && !approvalHardStateConflict && !signedFormConflicts.length && !transactionLotConflict && !visualMismatch
     && !materialVariantReview && !restrictiveSourceDisposition;
   if (approvedIdentity) reasons.push('identity confirmed by server-final target/source/image-bound visual approval; title omissions do not reopen identity');
   if (signedFormConflicts.length) reasons.push(...signedFormConflicts.map((conflict) => `signed structured form conflict: ${conflict}`));
+  if (transactionLotConflict) reasons.push('explicit transaction lot/bundle cannot supply a single-product comparable price');
   if (requiredApprovalMissing || transportedApprovalUnverified) reasons.push('required or transported identity approval is not verified for this target/image; title-only admission is withheld');
   const finalCategoryIdentity = approvedIdentity ? {
     ...categoryIdentity,
@@ -1912,7 +1933,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     confirmedFields: [...categoryIdentity.confirmedFields, 'Server-final visual identity'],
     unconfirmedFields: [],
   } : categoryIdentity;
-  if (materialNumberConflict || categoryHardConflict || universalHardConflict) {
+  if (materialNumberConflict || categoryHardConflict || universalHardConflict || transactionLotConflict) {
     identityRelationship = 'conflict';
     valuationRelationship = 'not_usable';
   } else if (materialVariantConflict) {
@@ -1941,7 +1962,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     valuationRelationship = 'reference_only';
   }
   const adjacentState = materialGradeConflict || materialCompanyConflict;
-  const classification: ComparableClassification = !priceIsUsable || materialNumberConflict || categoryHardConflict || universalHardConflict
+  const classification: ComparableClassification = !priceIsUsable || materialNumberConflict || categoryHardConflict || universalHardConflict || transactionLotConflict
     ? 'rejected'
     : materialVariantConflict
       ? 'contextual'
@@ -1949,7 +1970,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
         ? 'contextual'
     : approvedIdentity
       ? 'exact'
-    : identityApproval && (approvalHardStateConflict || signedFormConflicts.length || approvalStructuredLotConflict || restrictiveSourceDisposition)
+    : identityApproval && (approvalHardStateConflict || signedFormConflicts.length || restrictiveSourceDisposition)
       ? 'rejected'
     : requiredApprovalMissing || transportedApprovalUnverified
       ? 'contextual'
@@ -1967,6 +1988,8 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const accepted = classification === 'exact' || classification === 'near';
   const exclusionReason = accepted
     ? undefined
+    : transactionLotConflict
+      ? 'explicit transaction lot/bundle is not a single-product comparable; no guessed unit price'
     : requiredApprovalMissing || transportedApprovalUnverified
       ? 'server-final identity approval is missing, unverified, or bound to a different target/image; review required'
     : materialGradeConflict
@@ -2017,7 +2040,8 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   if (visualMismatch) identityBlockerCodes.push('VISUAL_MISMATCH');
   if (materialVariantReview) identityBlockerCodes.push('VARIANT_REVIEW_REQUIRED');
   if (identityApproval && signedFormConflicts.length) identityBlockerCodes.push('SIGNED_FORM_CONFLICT');
-  if (identityApproval && approvalStructuredLotConflict) identityBlockerCodes.push('APPROVED_LOT_CONFLICT');
+  if (transactionLotConflict) identityBlockerCodes.push('TRANSACTION_LOT_CONFLICT');
+  if (identityApproval && transactionLotConflict) identityBlockerCodes.push('APPROVED_LOT_CONFLICT');
   if (identityApproval && approvalHardStateConflict) identityBlockerCodes.push('APPROVED_STATE_CONFLICT');
   if (restrictiveSourceDisposition) identityBlockerCodes.push('SOURCE_DISPOSITION_RESTRICTIVE');
   if (!approvedIdentity && identity.readiness !== 'ready') identityBlockerCodes.push('TARGET_IDENTITY_INCOMPLETE');

@@ -148,8 +148,9 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
   });
 
   it('keeps historical or non-completed records as context and suppresses duplicate sales', () => {
-    const recent = { ...sale('1996 Topps Kobe Bryant #138 PSA 10', 1200, '2026-09-15'), sourceId: '130point', saleStatus: 'completed' as const, saleId: 'abc' };
-    const duplicate = { ...recent, marketplace: 'duplicate mirror' };
+    const recent = { ...sale('1996 Topps Kobe Bryant #138 PSA 10', 1200, '2026-09-15'), sourceId: '130point', marketplace: 'eBay', originMarketplace: 'ebay', saleStatus: 'completed' as const, saleId: 'abc' };
+    // The mirror label is display attribution, not a different sale origin.
+    const duplicate = { ...recent, marketplace: 'duplicate mirror', originMarketplace: recent.originMarketplace };
     const historical = { ...sale('1996 Topps Kobe Bryant #138 PSA 10', 900, '2024-09-15'), sourceId: '130point', saleStatus: 'completed' as const, recency: 'historical' as const };
     const active = { ...sale('1996 Topps Kobe Bryant #138 PSA 10', 4000, '2026-09-15'), sourceId: 'active feed', saleStatus: 'active' as const };
     const profile = buildMarketProfile(target, [recent, duplicate, historical, active], null, new Date('2026-09-22T00:00:00Z'));
@@ -161,21 +162,32 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.weightedValue).toBe(1200);
   });
 
-  it('deduplicates the same marketplace item across source labels by canonical item ID', () => {
+  it('does not prove cross-adapter transactions identical from matching adapter-local IDs alone', () => {
     const ebay = { ...sale(target.title, 1200, '2026-09-15'), sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', saleId: 'ebay-123' };
     const mirror = { ...sale(target.title, 1200, '2026-09-15'), sourceId: 'one_thirty_point', sourceLabel: '130point', saleId: 'ebay-123' };
     const result = deduplicateMarketSales([ebay, mirror]);
-    expect(result.unique).toHaveLength(1);
-    expect(result.duplicates[0]?.duplicateOf).toBe('item:ebay 123');
+    expect(result.unique).toHaveLength(2);
+    expect(result.duplicates).toHaveLength(0);
   });
 
   it('deduplicates equivalent marketplace URLs after removing tracking parameters', () => {
-    const first = { ...sale(target.title, 1200, '2026-09-15'), sourceId: 'sold_comps', url: 'https://www.ebay.com/itm/123456789?utm_source=search&mkcid=1' };
-    const mirror = { ...sale(target.title, 1200, '2026-09-15'), sourceId: 'one_thirty_point', url: 'https://ebay.com/itm/123456789?mkcid=9&utm_campaign=mirror' };
+    // Both providers report the same retail origin and sale day; URL similarity
+    // alone must not collapse reusable listing references across dates/origins.
+    const first = { ...sale(target.title, 1200, '2026-09-15'), sourceId: 'sold_comps', originMarketplace: 'ebay', url: 'https://www.ebay.com/itm/123456789?utm_source=search&mkcid=1' };
+    const mirror = { ...sale(target.title, 1200, '2026-09-15'), sourceId: '130point', originMarketplace: 'ebay', url: 'https://ebay.com/itm/123456789?mkcid=9&utm_campaign=mirror' };
     const result = deduplicateMarketSales([first, mirror]);
     expect(normalizeCanonicalSaleUrl(first.url)).toBe('ebay.com/itm/123456789');
     expect(result.unique).toHaveLength(1);
     expect(result.duplicates).toHaveLength(1);
+    const reverse = deduplicateMarketSales([mirror, first]);
+    expect(reverse.unique).toHaveLength(1);
+    expect(reverse.duplicates).toHaveLength(1);
+    for (const ambiguous of [{ ...mirror, date: '2026-09-16' }, { ...mirror, date: undefined },
+      { ...mirror, originMarketplace: 'goldin' }]) {
+      const retained = deduplicateMarketSales([first, ambiguous]);
+      expect(retained.unique).toHaveLength(2);
+      expect(retained.duplicates).toHaveLength(0);
+    }
   });
 
   it('retains possible duplicates for review while suppressing only exact or probable transactions', () => {
@@ -184,7 +196,8 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     const result = deduplicateMarketSales([first, possible]);
     expect(result.unique).toHaveLength(2);
     expect(result.duplicates).toHaveLength(0);
-    expect(result.possibleDuplicates).toHaveLength(1);
+    expect(result.possibleDuplicates).toHaveLength(2);
+    expect(result.unique[0]?.duplicateStatus).toBe('possible_duplicate');
     expect(result.unique[1]?.duplicateStatus).toBe('possible_duplicate');
   });
 

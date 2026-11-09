@@ -22,7 +22,7 @@ import { lookupIgdbGameMetadata } from './igdbMetadata';
 import { getRawgProviderStatus, lookupRawgGameMetadata } from './rawgMetadata';
 import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext, selectHistoricalTrendRecords } from './historicalTrendContext';
-import { buildSourcePopulationReport } from './testAiSourcePopulation';
+import { buildSourcePopulationReport, buildEmittedSourcePopulationReport } from './testAiSourcePopulation';
 import { createNotDispatchedVisualExecution } from '../shared/testAiVisualExecution';
 import { AUTOGRAPH_SEARCH_DESIGNATION, buildComicsOriginalArtQueries, buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
@@ -31,7 +31,9 @@ import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormali
 import { deterministicTradeComparison, marketProfileForPrompt, scoreComparable, signedComparableFormConflicts, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
 import { normalizeAnalysisMarketSales } from './testAiMarketEvidence';
-import { attachCanonicalProvenance, createServerFinalIdentityApproval, sealCanonicalObservation } from './testAiCanonicalObservation';
+import { attachCanonicalProvenance as attachCanonicalSourceProvenance, createServerFinalIdentityApproval, sealCanonicalObservation } from './testAiCanonicalObservation';
+import { prepareSourceTransactionIdentity } from './testAiEconomicIntegrity';
+import { mapNamedSourceEconomics, mapNamedSourcePartitions } from './testAiSourceEconomics';
 import { numistaCoinGuideQuote, priceChartingCoinGuideQuote } from './testAiGuideEvidence';
 import { ANALYZER_NARRATIVE_RESPONSE_FORMAT, buildDeterministicNarrativeFallback, parseAnalyzerResponse, parseEvidenceBoundNarrative } from './testAiResponse';
 import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNewsFeeds';
@@ -57,6 +59,7 @@ import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
 import { setProviderOauthStateCookie } from './_core/providerOauthState';
 import { lookupMercariSoldComps, lookupTcgplayerSoldComps } from './soldCompsAdditionalMarketData';
+import { retrieveItemsAttempt, retrievalIssue, unavailableRetrievalAttempt, type RetrievalAttempt, type RetrievalIssue } from '../shared/testAiRetrievalAttempt';
 import { collectionLotGuard, collectionLotNotComparable, isCollectionLotItemType } from '../shared/testAiItemType';
 import { bindMetadataRankingPopulation, freezeMetadataRankingPopulation, overlayMetadataRankingPopulation, type MetadataRankingPopulation, type MetadataScorerRole } from '../shared/testAiRankingPopulation';
 
@@ -1328,7 +1331,7 @@ const testAiEvidenceSummarySchema = z.object({
   reviewFlags: z.array(z.object({ kind: z.enum(['material', 'context', 'coverage']), sourceId: z.string().max(80).optional(), sourceLabel: z.string().max(120).optional(), field: z.string().max(120).optional(), message: z.string().max(600) })).max(30),
   marketEvidence: z.array(z.string().max(600)).max(20),
   guideAnchors: z.array(z.object({ sourceId: z.string().max(80), sourceLabel: z.string().max(120), grade: z.string().max(40), selectedGrade: z.string().max(40).optional(), matchType: z.enum(['exact', 'mapped']).optional(), value: z.number().positive().max(10_000_000), recordedSales: z.number().int().nonnegative().nullable(), lastSaleDate: z.string().max(80).nullable(), totalRecordedSales: z.number().int().nonnegative().nullable(), currency: z.string().max(12).optional(), retrievedAt: z.string().max(80).optional(), expiresAt: z.string().max(80).optional(), sourceQuery: z.string().max(600).optional(), sourceRecordId: z.string().max(1_500).optional(), form: z.string().max(80).optional(), provenanceToken: z.string().max(16_000).nullable().optional() })).max(5),
-  sources: z.array(z.object({ id: z.string().max(80), label: z.string().max(120), kind: z.enum(['market_current', 'market_completed', 'market_historical', 'certification', 'reference']), role: z.enum(['valuation_candidate', 'valuation_guide', 'asking_price_context', 'historical_context', 'certification_context', 'reference_context']), status: z.enum(['success', 'not_found', 'error', 'idle']), message: z.string().max(600).nullable().optional() })).max(30),
+  sources: z.array(z.object({ id: z.string().max(80), label: z.string().max(120), kind: z.enum(['market_current', 'market_completed', 'market_historical', 'certification', 'reference']), role: z.enum(['valuation_candidate', 'valuation_guide', 'asking_price_context', 'historical_context', 'certification_context', 'reference_context']), status: z.enum(['success', 'partial', 'not_found', 'error', 'idle']), message: z.string().max(600).nullable().optional() })).max(30),
 });
 
 /** Lossless diagnostic transport; browser fields never establish approval or sale authority. */
@@ -1384,6 +1387,27 @@ const identityApprovalTargetInputSchema = z.object({
   itemDetails: z.string().max(12_000).optional(),
 });
 
+/** Generic source sealing, not an approval issuer. Check originals before canonical URL loss. */
+export function sealSandboxEvidence<T extends MarketSale>(
+  adapterId: Parameters<typeof attachCanonicalSourceProvenance>[0], sales: T[],
+  options?: Parameters<typeof attachCanonicalSourceProvenance>[2],
+) {
+  return sales.map((original) => {
+    const prepared = prepareSourceTransactionIdentity(original);
+    const sealed = attachCanonicalSourceProvenance(adapterId, [prepared], options)[0]!;
+    // Original URL/ID stay diagnostic only. The token carries sanitized identity
+    // and restrictive disposition, so browser display edits cannot reopen it.
+    return { ...sealed, saleId: original.saleId, url: original.url };
+  });
+}
+// Keep existing named route call sites unchanged; they now share this boundary.
+const attachCanonicalProvenance = sealSandboxEvidence;
+
+/** Ordinary issuer's nonvisual source boundary; no new identity authority. */
+export function sealSoldCompsEvidence<T extends MarketSale>(sales: T[], options?: Parameters<typeof attachCanonicalSourceProvenance>[2]) {
+  return sealSandboxEvidence('sold_comps', sales, options);
+}
+
 /** Ordinary eBay Sold-Comps only: mint from the actual post-Stage-1 row, not an index or browser status. */
 export function sealSoldCompsFinalVisualListings<T extends MarketSale>(sales: T[], context: {
   reviewedTarget: ComparableTarget;
@@ -1396,7 +1420,10 @@ export function sealSoldCompsFinalVisualListings<T extends MarketSale>(sales: T[
   signingKey?: string;
 }) {
   const acquiredAt = context.acquiredAt ?? new Date();
-  return sales.map((sale) => {
+  return sales.map((original) => {
+    // URL-to-saleId fallbacks are not independent IDs. Inspect actual URL/raw
+    // scalar identity before minting, then sign the exact prepared object.
+    const sale = prepareSourceTransactionIdentity(original);
     const row = sale as T & Pick<VisualSourceReview, 'visualEvidence' | 'visualAudit' | 'visualDifferences'>;
     const audit = row.visualAudit;
     const confidence = audit?.finalPass === 'high_resolution_retry' ? audit.retryConfidence : audit?.initialConfidence;
@@ -1436,7 +1463,7 @@ export function sealSoldCompsFinalVisualListings<T extends MarketSale>(sales: T[
     const sealed = sealCanonicalObservation('sold_comps', sealedSale, {
       acquiredAt, signingKey: context.signingKey, query: context.query, identityApproval: approval ?? undefined,
     });
-    return { ...sealedSale, ...sealed };
+    return { ...sealedSale, saleId: original.saleId, url: original.url, ...sealed };
   });
 }
 
@@ -2363,12 +2390,8 @@ export const testAIRouter = router({
       });
       return {
         ...result,
-        sales: attachCanonicalProvenance('the_card_api', visualFilter.listings.map((sale: any) => ({
-          ...sale,
-          saleStatus: sale.confirmed ? 'completed' : sale.saleStatus,
-          completedStatusBasis: sale.confirmed ? 'The Card API provider-confirmed final sale' : null,
-          priceBasis: 'sold',
-        })), { query: input.title }),
+        sales: attachCanonicalProvenance('the_card_api', mapNamedSourcePartitions('the_card_api', visualFilter).sales, { query: input.title }),
+        context: attachCanonicalProvenance('the_card_api', mapNamedSourcePartitions('the_card_api', visualFilter).context, { query: input.title }),
         visualFilter,
       };
     }),
@@ -2405,13 +2428,8 @@ export const testAIRouter = router({
       });
       return {
         ...result,
-        sales: attachCanonicalProvenance('cardsight_ai', visualFilter.listings.map((sale: any) => ({
-          ...sale,
-          saleId: sale.saleId ?? sale.url ?? null,
-          saleStatus: sale.completed ? 'completed' : sale.saleStatus,
-          completedStatusBasis: sale.completed ? 'Cardsight.ai completed auction record' : null,
-          priceBasis: 'sold',
-        })), { query: input.title }),
+        sales: attachCanonicalProvenance('cardsight_ai', mapNamedSourcePartitions('cardsight_ai', visualFilter).sales, { query: input.title }),
+        context: attachCanonicalProvenance('cardsight_ai', mapNamedSourcePartitions('cardsight_ai', visualFilter).context, { query: input.title }),
         visualFilter,
       };
     }),
@@ -2428,7 +2446,12 @@ export const testAIRouter = router({
       const collectionLotBlock = collectionLotGuard(input);
       if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupLelandsAuctions(input);
-      if (!result.sales.length) return result;
+      if (!result.sales.length) {
+        if (result.status !== 'success' || !result.context.length) return result;
+        return { ...result,
+          context: attachCanonicalProvenance('lelands', result.context.map((sale: any) => mapNamedSourceEconomics('lelands', sale, { partition: 'context' })), { query: input.title }),
+        };
+      }
       const visualFilter = await filterVisualSourceCandidates({
         visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
@@ -2438,14 +2461,9 @@ export const testAIRouter = router({
       });
       return {
         ...result,
-        sales: attachCanonicalProvenance('lelands', visualFilter.listings.map((sale: any) => ({
-          ...sale,
-          saleId: sale.lotId ?? sale.url ?? null,
-          saleStatus: sale.completed ? 'completed' : sale.saleStatus,
-          completedStatusBasis: sale.completed ? 'Lelands realized-auction archive' : null,
-          priceBasis: 'realized',
-          buyerPremium: sale.buyersPremiumIncluded === true ? 'included' : sale.buyersPremiumIncluded === false ? 'excluded' : 'unknown',
-        })), { query: input.title }),
+        sales: attachCanonicalProvenance('lelands', mapNamedSourcePartitions('lelands', visualFilter).sales, { query: input.title }),
+        context: attachCanonicalProvenance('lelands', [...result.context.map((sale: any) => mapNamedSourceEconomics('lelands', sale, { partition: 'context' })),
+          ...mapNamedSourcePartitions('lelands', visualFilter).context], { query: input.title }),
         visualFilter,
       };
     }),
@@ -2462,7 +2480,12 @@ export const testAIRouter = router({
       const collectionLotBlock = collectionLotGuard(input);
       if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupPristineAuctions(input);
-      if (!result.sales.length) return result;
+      if (!result.sales.length) {
+        if (result.status !== 'success' || !result.context.length) return result;
+        return { ...result,
+          context: attachCanonicalProvenance('pristine_auction', result.context.map((sale: any) => mapNamedSourceEconomics('pristine_auction', sale, { partition: 'context' })), { query: input.title }),
+        };
+      }
       const visualFilter = await filterVisualSourceCandidates({
         visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
@@ -2472,14 +2495,9 @@ export const testAIRouter = router({
       });
       return {
         ...result,
-        sales: attachCanonicalProvenance('pristine_auction', visualFilter.listings.map((sale: any) => ({
-          ...sale,
-          saleId: sale.lotId ?? sale.url ?? null,
-          saleStatus: sale.completed ? 'completed' : sale.saleStatus,
-          completedStatusBasis: sale.completed ? 'Pristine Auction realized-auction archive' : null,
-          priceBasis: 'realized',
-          buyerPremium: sale.totalPrice != null ? 'included' : 'unknown',
-        })), { query: input.title }),
+        sales: attachCanonicalProvenance('pristine_auction', mapNamedSourcePartitions('pristine_auction', visualFilter).sales, { query: input.title }),
+        context: attachCanonicalProvenance('pristine_auction', [...result.context.map((sale: any) => mapNamedSourceEconomics('pristine_auction', sale, { partition: 'context' })),
+          ...mapNamedSourcePartitions('pristine_auction', visualFilter).context], { query: input.title }),
         visualFilter,
       };
     }),
@@ -2564,8 +2582,8 @@ export const testAIRouter = router({
       const collectionLotBlock = collectionLotGuard(input);
       if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupComicConnectSold(input);
-      const sealedSales = attachCanonicalProvenance('comicconnect', result.sales as MarketSale[], { query: result.query });
-      const sealedContext = attachCanonicalProvenance('comicconnect', result.context as MarketSale[], { query: result.query });
+      const sealedSales = attachCanonicalProvenance('comicconnect', result.sales.map((sale) => mapNamedSourceEconomics('comicconnect', sale, { partition: 'sales' })), { query: result.query });
+      const sealedContext = attachCanonicalProvenance('comicconnect', result.context.map((sale) => mapNamedSourceEconomics('comicconnect', sale, { partition: 'context' })), { query: result.query });
       return { ...result, sales: sealedSales, context: sealedContext };
     }),
 
@@ -2607,6 +2625,14 @@ export const testAIRouter = router({
           })),
         }
         : result;
+      if (input.sourceId === 'weiss' && resultWithComparisons.status === 'success') {
+        // Preserve the existing no-image-dispatch handoff; this is relevance only.
+        const role = isAutographSignedItemTarget(targetMetadata) ? 'signed_item_relevance' as const : undefined;
+        return { ...resultWithComparisons,
+          sales: attachCanonicalProvenance('weiss', resultWithComparisons.sales.map((record) => mapNamedSourceEconomics('weiss', record, { partition: 'sales', role })), { query: result.query }),
+          context: attachCanonicalProvenance('weiss', resultWithComparisons.context.map((record) => mapNamedSourceEconomics('weiss', record, { partition: 'context', role })), { query: result.query }),
+        };
+      }
       if (input.sourceId !== 'goldin' || resultWithComparisons.status !== 'success') return resultWithComparisons;
 
       const candidateRecords = [...resultWithComparisons.sales, ...resultWithComparisons.context].map((record) => ({
@@ -2633,11 +2659,13 @@ export const testAIRouter = router({
       const valuationRecords = allReviewed.filter((record: any) =>
         record.completed && record.evidenceDisposition === 'valuation_eligible'
       );
+      const sealedReviewed = attachCanonicalProvenance('goldin', allReviewed.map((record) => mapNamedSourceEconomics('goldin', record,
+        { partition: valuationRecords.includes(record) ? 'sales' : 'context' })), { query: result.query });
       return {
         ...result,
-        sales: valuationRecords,
-        context: allReviewed.filter((record: any) => !valuationRecords.includes(record)),
-        visualReviewListings: allReviewed,
+        sales: sealedReviewed.filter((_, index) => valuationRecords.includes(allReviewed[index])),
+        context: sealedReviewed.filter((_, index) => !valuationRecords.includes(allReviewed[index])),
+        visualReviewListings: sealedReviewed,
         visualFilter,
       };
     }),
@@ -2663,7 +2691,14 @@ export const testAIRouter = router({
       const collectionLotBlock = collectionLotGuard(input);
       if (collectionLotBlock) return collectionLotBlock;
       const apiKey = getSoldCompsApiKey();
-      if (!apiKey) return { query: input.title, listings: [], metrics: null, error: 'Sold-Comps API key not configured' };
+      const unavailable = (query: string, outcome: 'config_unavailable' | 'input_unsupported', error: string) => {
+        const receipt = unavailableRetrievalAttempt({ query, stage: 'search', attempt: 1 }, outcome);
+        const retrievalCoverage = [receipt];
+        return { query, listings: [], metrics: null, error, retrievalCoverage, attemptIssues: [receipt], partial: false,
+          sourcePopulation: buildEmittedSourcePopulationReport('ebay_sold_comps', 0, [], retrievalCoverage),
+          audit: { retrievalCoverage, rawReceived: 0, ledger: [], valuationEligible: 0, notVisuallyReviewed: 0 } };
+      };
+      if (!apiKey) return unavailable(input.title, 'config_unavailable', 'Sold-Comps API key not configured');
 
       // Reuse same query-building logic as getEbayData
       const details = parseTestAiDetails(input.itemDetails);
@@ -2792,9 +2827,15 @@ export const testAIRouter = router({
       query = standardSearchDefinition.query || query || input.title;
 
       if (input.category === 'sports_cards' && !query.trim()) {
-        return { query: '', listings: [], metrics: null, error: 'No structured sports-card fields were supplied. No listing-title fallback query was sent.' };
+        return unavailable('', 'input_unsupported', 'No structured sports-card fields were supplied. No listing-title fallback query was sent.');
       }
 
+      // Both retained ingress and receipts must survive any later processing
+      // exception. A catch may restrict rows to context, never erase the union.
+      const rawItems: any[] = [];
+      const retrievalCoverage: RetrievalAttempt[] = [];
+      const attemptIssues: RetrievalIssue[] = [];
+      const normalizationHeld: any[] = [];
       try {
         // Use a small, bounded query set: one targeted query plus broader
         // identity queries. The provider can return only one result for an
@@ -2809,34 +2850,74 @@ export const testAIRouter = router({
             fallbackQueries: standardSearchDefinition.fallbackQueries,
             prioritizeFallbackQueries: input.category === 'autographs',
           });
-        const rawItems: any[] = [];
         const seenSoldKeys = new Set<string>();
-        const retrievalCoverage: Array<{ query: string; received: number; status: 'success' | 'error' }> = [];
         for (const fetchQuery of queryCandidates) {
           const url = `https://api.sold-comps.com/v1/scrape?keyword=${encodeURIComponent(fetchQuery)}&count=100&sortOrder=endedRecently&ebaySite=ebay.com`;
-          const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
-          if (!res.ok) {
-            const errText = await res.text();
-            if (rawItems.length === 0) {
-              return { query, listings: [], metrics: null, error: `Sold-Comps API error ${res.status}: ${errText}` };
-            }
-            retrievalCoverage.push({ query: fetchQuery, received: 0, status: 'error' });
-            console.warn(`[Sold-Comps] Fallback query failed (${res.status}): ${fetchQuery}`);
+          // Keep eBay's existing lack of a request timeout and all-tier union.
+          const result = await retrieveItemsAttempt(() => fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } }),
+            { query: fetchQuery, stage: 'search', attempt: retrievalCoverage.length + 1 },
+            { idFields: ['saleId', 'id', 'itemId'], titleFields: ['title'], priceFields: ['soldPrice', 'price'] });
+          retrievalCoverage.push(result.receipt);
+          if (result.receipt.status === 'error' && result.receipt.outcome !== 'row_rejection') {
+            const issue = retrievalIssue(result.receipt);
+            if (issue) attemptIssues.push(issue);
+            // Preserve the existing first HTTP-failure stop with no usable progress;
+            // later fetch/JSON/shape failures no longer reset the accumulated union.
+            if (rawItems.length + normalizationHeld.length === 0) return { query, listings: [], metrics: null,
+              error: result.receipt.message, retrievalCoverage, attemptIssues, partial: false,
+              audit: { retrievalCoverage, rawReceived: 0, ledger: [] } };
             continue;
           }
-          const data = await res.json() as any;
-          const received = Array.isArray(data.items) ? data.items.length : 0;
-          retrievalCoverage.push({ query: fetchQuery, received, status: 'success' });
-          for (const item of (data.items ?? [])) {
-            const key = String(item.saleId ?? item.id ?? item.url ?? `${item.title}|${item.soldPrice}|${item.endedAt}`).trim().toLowerCase();
-            if (!seenSoldKeys.has(key)) {
-              seenSoldKeys.add(key);
-              rawItems.push({ ...item, sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', retrievalQuery: fetchQuery });
+          result.receipt.normalized = 0;
+          result.receipt.normalizationRejected = 0;
+          for (const item of result.items) {
+            try {
+              // These are the same scalar aliases validated above, not a new
+              // provider format. Keep their original structured row separately.
+              const saleId = String(item.saleId ?? item.id ?? item.itemId);
+              const soldPrice = Number(item.soldPrice ?? item.price);
+              const imageUrls = collectEbayImageUrls(item);
+              const candidate = normalizeEbayMarketplaceCandidate({ ...item, saleId, soldPrice, imageUrls,
+                sourceId: 'ebay_sold_comps', saleStatus: 'completed', priceBasis: 'sold' });
+              const metadata = normalizeSoldCompsMetadata(item);
+              result.receipt.normalized += 1;
+              const key = saleId.trim().toLowerCase();
+              if (!seenSoldKeys.has(key)) {
+                seenSoldKeys.add(key);
+                rawItems.push({ ...item, saleId, soldPrice, imageUrl: imageUrls[0] ?? null, imageUrls,
+                  rawMetadata: { ...item }, providerMetadata: { ...item },
+                  normalizedListingTitle: candidate.title, normalizedListingTitleSource: candidate.titleSource,
+                  normalizedListingTitleCandidates: candidate.titleCandidates,
+                  titleEvidence: candidate.titleEvidence, titleEvidenceSources: candidate.titleEvidenceSources,
+                  normalizedStructuredMetadata: metadata, soldCompsMetadata: metadata,
+                  sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', retrievalQuery: fetchQuery });
+              }
+            } catch {
+              // Actual metadata conversions can fail on a single JSON row.
+              // Preserve it as a diagnostic, but never send it to admission.
+              result.receipt.normalizationRejected += 1;
+              result.receipt.rejectionCounts.normalization_failure = (result.receipt.rejectionCounts.normalization_failure ?? 0) + 1;
+              normalizationHeld.push({ ...item, rawMetadata: { ...item }, sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps',
+                retrievalQuery: fetchQuery, evidenceDisposition: 'context_only', valuationEligible: false,
+                retrievalDiagnostic: true, evidenceReasons: ['Sold-Comps provider row failed normalization'],
+                visualReviewStatus: 'not_reviewed', visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold') });
             }
           }
+          if (result.receipt.normalizationRejected > 0) {
+            result.receipt.message = 'Sold-Comps provider rows failed normalization';
+            if (result.receipt.normalized === 0) { result.receipt.status = 'error'; result.receipt.outcome = 'row_rejection'; }
+          }
+          const issue = retrievalIssue(result.receipt);
+          if (issue) attemptIssues.push(issue);
           // All bounded query tiers run. A non-empty first page is coverage,
           // not proof that later query forms contain no valid comparison.
         }
+        const partial = rawItems.length > 0 && attemptIssues.length > 0;
+        if (rawItems.length === 0 && attemptIssues.length > 0) return { query, listings: [], metrics: null,
+          error: attemptIssues.at(-1)?.message ?? null, retrievalCoverage, attemptIssues, partial: false,
+          retrievalDiagnostics: normalizationHeld,
+          sourcePopulation: buildEmittedSourcePopulationReport('ebay_sold_comps', 0, [], retrievalCoverage),
+          audit: { retrievalCoverage, rawReceived: 0, ledger: normalizationHeld } };
 
         console.log(`[Sold-Comps] Fetch Queries: ${queryCandidates.join(' | ')}, Filter: ${cert || 'any provider'} ${targetGrade ?? ''}, Total Results: ${rawItems.length}`);
 
@@ -2846,16 +2927,7 @@ export const testAIRouter = router({
           isGraded: targetGrade !== null || Boolean(cert && grade) ? 'Yes' : undefined,
           itemDetails: input.itemDetails,
         });
-        const rankingPopulation = sourceMetadataRankingPopulation(rawItems.map((item: any) => {
-          const candidate = normalizeEbayMarketplaceCandidate({ ...item, imageUrls: collectEbayImageUrls(item),
-            sourceId: 'ebay_sold_comps', saleStatus: 'completed', priceBasis: 'sold' });
-          return { ...item,
-            normalizedListingTitle: candidate.title, normalizedListingTitleSource: candidate.titleSource,
-            normalizedListingTitleCandidates: candidate.titleCandidates,
-            titleEvidence: candidate.titleEvidence, titleEvidenceSources: candidate.titleEvidenceSources,
-            normalizedStructuredMetadata: normalizeSoldCompsMetadata(item),
-            soldCompsMetadata: normalizeSoldCompsMetadata(item), imageUrls: collectEbayImageUrls(item) };
-        }), 'ebay_sold_comps', soldCompsTargetMetadata,
+        const rankingPopulation = sourceMetadataRankingPopulation(rawItems, 'ebay_sold_comps', soldCompsTargetMetadata,
         isAutographSignedItemTarget(soldCompsTargetMetadata) ? 'signed_item_relevance'
           : isComicsOriginalArt(input.itemType) ? 'original_art_relevance' : 'exact_comparable');
         rawItems.splice(0, rawItems.length, ...rankingPopulation.listings);
@@ -2893,6 +2965,7 @@ export const testAIRouter = router({
           const marketListings = rankedAutographItems.map((item: any, index: number) => {
             const eligibility = autographValuationEligibility(item, autographTargetMetadata);
             return {
+              ...item,
               title: item.title,
               price: Number(item.soldPrice ?? item.price?.value ?? item.price ?? 0),
               currency: item.soldCurrency ?? item.currency ?? null,
@@ -2925,9 +2998,9 @@ export const testAIRouter = router({
             };
           });
           const gatedMarketListings = applyAutographPriceTailGate(marketListings);
-          const metrics = computeMetrics(gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').map((item: any) => ({
+          const metrics = computeMetrics(gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible' && item.currency === 'USD').map((item: any) => ({
             ...item,
-            price: { value: item.price, currency: item.currency ?? 'USD' },
+            price: { value: item.price, currency: item.currency },
           })));
           const heldMarketListings = rawItems.flatMap((item: any) => {
             const reason = autographMarketExclusionReason(autographTargetMetadata, item);
@@ -2941,19 +3014,28 @@ export const testAIRouter = router({
               visualReviewRationale: reason, evidenceReasons: [reason],
             })] : [];
           });
+          const sealedMarketListings = attachCanonicalProvenance('sold_comps', gatedMarketListings.map((item: any) =>
+            mapNamedSourceEconomics('sold_comps', item, { role: 'signed_item_relevance', partition: 'sales' })), { query });
+          const sealedHeldListings = attachCanonicalProvenance('sold_comps', heldMarketListings.map((item: any) =>
+            mapNamedSourceEconomics('sold_comps', item, { role: 'signed_item_relevance', partition: 'context' })), { query });
           return {
             query,
             marketContextOnly: true,
-            listings: gatedMarketListings,
-            contextListings: heldMarketListings,
-            sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...gatedMarketListings, ...heldMarketListings], retrievalCoverage),
+            retrievalCoverage,
+            attemptIssues,
+            partial,
+            listings: sealedMarketListings,
+            contextListings: sealedHeldListings,
+            sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...sealedMarketListings, ...sealedHeldListings], retrievalCoverage),
             visualReviewListings: [],
             visualFilter: undefined,
             metrics,
             audit: {
               rawReceived: rawItems.length,
               retrievalCoverage,
-              ledger: [...gatedMarketListings, ...heldMarketListings],              valuationEligible: gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').length,
+              ledger: [...sealedMarketListings, ...sealedHeldListings],
+              valuationEligible: 0,
+              sourceRelevanceEligible: gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').length,
               warningReview: gatedMarketListings.filter((item: any) => item.evidenceDisposition !== 'valuation_eligible').length,
               objectiveConflicts: 0,
               notVisuallyReviewed: gatedMarketListings.length,
@@ -2978,6 +3060,7 @@ export const testAIRouter = router({
             }, originalArtTargetMetadata),
           })).sort((a: any, b: any) => Number(b.score ?? 0) - Number(a.score ?? 0));
           const marketListings = rankedOriginalArtItems.map((item: any, index: number) => ({
+            ...item,
             title: item.title,
             price: Number(item.soldPrice ?? item.price?.value ?? item.price ?? 0),
             currency: item.soldCurrency ?? item.currency ?? null,
@@ -3008,21 +3091,27 @@ export const testAIRouter = router({
             label: 'Original Art',
             includeContextOnly: true,
           });
-          const metrics = computeMetrics(gatedMarketListings.filter((item: any) => !item.priceTailExcludedFromMetrics).map((item: any) => ({
+          const metrics = computeMetrics(gatedMarketListings.filter((item: any) => !item.priceTailExcludedFromMetrics && item.currency === 'USD').map((item: any) => ({
             ...item,
-            price: { value: item.price, currency: item.currency ?? 'USD' },
+            price: { value: item.price, currency: item.currency },
           })));
+          const sealedMarketListings = attachCanonicalProvenance('sold_comps', gatedMarketListings.map((item: any) =>
+            mapNamedSourceEconomics('sold_comps', item, { role: 'original_art_relevance', partition: 'context' })), { query });
           return {
             query,
             marketContextOnly: true,
-            listings: gatedMarketListings,
-            sourcePopulation: buildSourcePopulationReport(rankingPopulation, gatedMarketListings, retrievalCoverage),
+            retrievalCoverage,
+            attemptIssues,
+            partial,
+            listings: sealedMarketListings,
+            sourcePopulation: buildSourcePopulationReport(rankingPopulation, sealedMarketListings, retrievalCoverage),
             visualReviewListings: [],
             visualFilter: undefined,
             metrics,
             audit: {
               rawReceived: rawItems.length,
               retrievalCoverage,
+              ledger: sealedMarketListings,
               valuationEligible: 0,
               warningReview: gatedMarketListings.length,
               objectiveConflicts: 0,
@@ -3041,6 +3130,7 @@ export const testAIRouter = router({
           statedTradeValue: input.statedTradeValue,
         });
         const preVisionAuditLedger = preVisionAssessment.excluded.map(({ item, metadata, reasons }) => ({
+          ...item,
           title: item.title,
           itemUrl: item.url,
           saleId: item.saleId ?? item.id ?? null,
@@ -3097,6 +3187,7 @@ export const testAIRouter = router({
           const scoredItem: any = item;
           return failedAt
             ? {
+                ...item,
                 title: item.title,
                 itemUrl: item.url,
                 saleId: item.saleId ?? item.id ?? null,
@@ -3188,10 +3279,13 @@ export const testAIRouter = router({
         }));
         const canonicalListings = sealSoldCompsFinalVisualListings(annotatedListings.map((item: any) => ({
           ...item,
-          price: Number(item.soldPrice),
-          currency: item.soldCurrency ?? null,
+          price: Number(item.soldPrice ?? item.price),
+          currency: item.soldCurrency ?? item.currency ?? null,
           date: item.endedAt ?? null,
-          saleId: item.saleId ?? item.id ?? item.url ?? null,
+          // Preserve the original scalar type for the existing financial
+          // identity check; display normalization must not launder invalid IDs.
+          saleId: item.rawMetadata?.saleId ?? item.rawMetadata?.id ?? item.rawMetadata?.itemId
+            ?? item.saleId ?? item.id ?? item.itemId ?? item.url ?? null,
           url: item.url ?? null,
           sourceId: 'sold_comps',
           saleStatus: 'completed' as const,
@@ -3214,11 +3308,11 @@ export const testAIRouter = router({
         // material identifiers are sufficiently aligned. Review/context rows
         // remain returned below and can never silently inflate value.
         const soldListings = valuationEligibleListings.map((i: any) => ({
-            price: { value: i.soldPrice || '0', currency: i.soldCurrency || 'UNKNOWN' },
+            price: { value: i.soldPrice ?? i.price ?? '0', currency: i.soldCurrency ?? i.currency ?? 'UNKNOWN' },
           title: i.title,
           condition: i.condition,
           itemWebUrl: i.url,
-          image: { imageUrl: i.thumbnailUrl },
+          image: { imageUrl: i.imageUrls?.[0] ?? i.imageUrl ?? i.thumbnailUrl ?? null },
           endedAt: i.endedAt,
           shippingPrice: i.shippingPrice,
         }));
@@ -3233,10 +3327,13 @@ export const testAIRouter = router({
             condition: i.condition,
             seller: i.sellerUsername,
             itemUrl: i.url,
-            imageUrl: i.thumbnailUrl,
+            imageUrl: i.imageUrls?.[0] ?? i.imageUrl ?? i.thumbnailUrl ?? null,
+            imageUrls: i.imageUrls ?? [],
+            rawMetadata: i.rawMetadata,
+            providerMetadata: i.providerMetadata,
             endedAt: i.endedAt,
             shippingPrice: i.shippingPrice,
-            saleId: i.saleId ?? i.id ?? null,
+            saleId: i.saleId != null ? String(i.saleId) : i.id ?? i.itemId ?? null,
             sourceId: i.sourceId ?? 'sold_comps',
             sourceLabel: i.sourceLabel ?? 'eBay Sold-Comps',
             date: i.date,
@@ -3279,6 +3376,10 @@ export const testAIRouter = router({
           })),
           metrics,
           visualFilter: visualSoldFilter,
+          retrievalCoverage,
+          attemptIssues,
+          partial,
+          retrievalDiagnostics: normalizationHeld,
           sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...canonicalListings, ...visualContextAuditLedger, ...rawAuditLedger, ...preVisionAuditLedger, ...scoreExcludedListings], retrievalCoverage),
           priceSafety: {
             applies: Number(input.statedTradeValue) > HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD,
@@ -3294,12 +3395,26 @@ export const testAIRouter = router({
             warningReview: canonicalListings.filter((item: any) => item.evidenceDisposition === 'warning_review').length,
             valuationEligible: valuationEligibleListings.length,
             notVisuallyReviewed: canonicalListings.filter((item: any) => item.visualReviewStatus === 'not_reviewed').length + visualContextAuditLedger.length + preVisionAuditLedger.length + scoreExcludedListings.length,
-            ledger: [...canonicalListings, ...visualContextAuditLedger, ...rawAuditLedger, ...preVisionAuditLedger, ...scoreExcludedListings],
+            ledger: [...canonicalListings, ...visualContextAuditLedger, ...rawAuditLedger, ...preVisionAuditLedger, ...scoreExcludedListings, ...normalizationHeld],
           },
           error: null,
         };
-      } catch (err: any) {
-        return { query, listings: [], metrics: null, error: err.message };
+      } catch {
+        // Never return a processing exception's arbitrary provider prose, and
+        // never claim uncompleted review or sealing made a comparable usable.
+        const processingIssue = 'Sold-Comps result processing did not complete; retained provider rows are context-only';
+        const contextListings = rawItems.map((item) => ({ ...item,
+          price: Number(item.soldPrice ?? item.price), currency: item.soldCurrency ?? item.currency ?? null,
+          itemUrl: item.url ?? null, evidenceDisposition: 'context_only', valuationEligible: false,
+          identityApproval: undefined, provenanceToken: undefined, provenance: undefined,
+          evidenceReasons: [processingIssue], visualReviewStatus: 'not_reviewed',
+          visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold') }));
+        const ledger = [...contextListings, ...normalizationHeld];
+        return { query, listings: [], contextListings, retrievalDiagnostics: normalizationHeld, metrics: null,
+          error: rawItems.length > 0 ? null : processingIssue, processingIssue,
+          retrievalCoverage, attemptIssues, partial: rawItems.length > 0,
+          sourcePopulation: buildEmittedSourcePopulationReport('ebay_sold_comps', rawItems.length, contextListings, retrievalCoverage),
+          audit: { retrievalCoverage, rawReceived: rawItems.length, ledger, valuationEligible: 0, notVisuallyReviewed: ledger.length } };
       }
     }),
 
@@ -3322,8 +3437,13 @@ export const testAIRouter = router({
       const collectionLotBlock = collectionLotGuard(input);
       if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupMercariSoldComps(input);
+      const retrievalCoverage = result.retrievalCoverage;
       const normalizedCategory = input.category.trim().toLowerCase().replace(/[\s-]+/g, '_');
-      if (result.error || !result.listings.length) return result;
+      if (result.error || !result.listings.length) return {
+        ...result,
+        sourcePopulation: buildEmittedSourcePopulationReport('mercari_sold_comps', result.listings.length, result.listings, retrievalCoverage),
+        audit: { rawReceived: result.listings.length, retrievalCoverage, ledger: result.listings },
+      };
       if (normalizedCategory === 'video_games') {
         const details = parseTestAiDetails(input.itemDetails);
         const targetGameTitle = resolveTestAiDetailValue(details, 'gameTitle') || resolveTestAiDetailValue(details, 'videoGameTitle') || input.title;
@@ -3412,13 +3532,14 @@ export const testAIRouter = router({
             ...result,
             listings: universalPreFilter.contextListings ?? [],
             preVisionExcludedListings: [...excluded, ...universalExcluded],
-            sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...(universalPreFilter.contextListings ?? []), ...excluded, ...universalExcluded]),
+            sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...(universalPreFilter.contextListings ?? []), ...excluded, ...universalExcluded], retrievalCoverage),
             visualFilter: {
               ...universalPreFilter,
               note: `${reason} ${universalPreFilter.note}`,
             },
             audit: {
               rawReceived: result.listings.length,
+              retrievalCoverage,
               preVisionExcluded: excluded.length + universalExcluded.length,
               ledger: [...(universalPreFilter.contextListings ?? []), ...excluded, ...universalExcluded],
             },
@@ -3474,13 +3595,14 @@ export const testAIRouter = router({
           ...result,
           listings: annotatedListings,
           preVisionExcludedListings: [...excluded, ...visualContextListings],
-          sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...annotatedListings, ...excluded, ...visualContextListings]),
+          sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...annotatedListings, ...excluded, ...visualContextListings], retrievalCoverage),
           visualFilter: {
             ...visualFilter,
             note: `Mercari Video Game candidates use the shared universal and item-type ranking pipeline. ${visualFilter.note}`,
           },
           audit: {
             rawReceived: result.listings.length,
+            retrievalCoverage,
             preVisionExcluded: excluded.length,
             ledger: [...annotatedListings, ...excluded, ...visualContextListings],
           },
@@ -3589,6 +3711,7 @@ export const testAIRouter = router({
         listings: annotatedListings,
         visualReviewListings: [...annotatedListings, ...visualContextListings],
         preVisionExcludedListings: visualContextListings,
+        sourcePopulation: buildEmittedSourcePopulationReport('mercari_sold_comps', result.listings.length, [...annotatedListings, ...visualContextListings], retrievalCoverage),
         metrics,
         visualFilter: {
           ...visualFilter,
@@ -3596,6 +3719,7 @@ export const testAIRouter = router({
         },
         audit: {
           rawReceived: result.listings.length,
+          retrievalCoverage,
           valuationEligible: valuationEligible.length,
           preVisionExcluded: visualContextListings.length,
           warningReview: annotatedListings.filter((listing: any) => listing.evidenceDisposition !== 'valuation_eligible').length + visualContextListings.length,
@@ -4447,8 +4571,10 @@ export const testAIRouter = router({
       ]);
       const leftVisualAugmentation = applyHighConfidenceVisualFields(leftItem, leftFieldCompletion);
       const rightVisualAugmentation = applyHighConfidenceVisualFields(rightItem, rightFieldCompletion);
-      const analysisLeftItem = leftVisualAugmentation.item;
-      const analysisRightItem = rightVisualAugmentation.item;
+      // Owner reference is an economic sanity hint, not signed collectible identity
+      // or a substitute for observed sale/guide pricing. A/B remain independent.
+      const analysisLeftItem = { ...leftVisualAugmentation.item, statedTradeValue: leftItem.estimatedValue };
+      const analysisRightItem = { ...rightVisualAugmentation.item, statedTradeValue: rightItem.estimatedValue };
       const leftVisualComparableQuery = useVisualFieldCompletion
         ? buildVisualComparableQuery(leftItem, leftVisualAugmentation.appliedFields)
         : null;

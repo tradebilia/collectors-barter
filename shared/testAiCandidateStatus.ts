@@ -78,11 +78,18 @@ export const finalPricingUseLabels: Record<string, string> = {
   CONTEXT_ONLY: 'Context only', FINAL_HARD_EXCLUDED: 'Final hard exclusion', UNSUPPORTED_CURRENCY: 'Unsupported currency — context only',
   NOT_SUBMITTED_NOT_ASSESSED: 'Not submitted / not assessed',
 };
+export const economicPricingReasonLabels: Record<string, string> = {
+  TRANSACTION_IDENTITY_MISSING: 'Observed transaction ID or listing URL is unavailable',
+  TRANSACTION_LOT_CONFLICT: 'Transaction price covers a lot/bundle, not the single target product',
+  AUCTION_AMOUNT_UNRESOLVED: 'Auction amount has no compatible confirmed buyer-premium convention',
+  HIGH_VALUE_PRICE_TOO_LOW: 'Sale price is below the approved high-value owner-reference safety range',
+  HIGH_VALUE_PRICE_TOO_HIGH: 'Sale price is above the approved high-value owner-reference safety range',
+};
 export function candidatePricingFact(row: CandidateDisplayRow): CandidateDisplayFact {
   const use = row.valuationUse?.use;
   if (use?.code) return { label: finalPricingUseLabels[use.code] ?? `Final use: ${use.code}`, code: use.code,
     className: use.code === 'CURRENT_SALES_PRIMARY' ? green : use.code === 'FINAL_HARD_EXCLUDED' ? red : amber,
-    reason: (use.reasonCodes ?? []).join(' · ') || undefined };
+    reason: (use.reasonCodes ?? []).map((code: string) => economicPricingReasonLabels[code] ?? code).join(' · ') || undefined };
   const link = row.candidatePricingLink;
   if (link === 'not_submitted') return { label: finalPricingUseLabels.NOT_SUBMITTED_NOT_ASSESSED, code: 'NOT_SUBMITTED_NOT_ASSESSED', className: neutral };
   if (link === 'unresolved' || link === 'submitted_unresolved') return { label: link === 'submitted_unresolved' ? 'Submitted — unresolved final audit link' : 'Unresolved final audit link', code: 'UNRESOLVED_AUDIT_LINK', className: amber };

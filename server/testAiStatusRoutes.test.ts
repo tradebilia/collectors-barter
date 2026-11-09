@@ -169,8 +169,9 @@ describe('Stage 5 actual final intake and publication', () => {
     const source = await acquire();
     expect(source.error).toBeNull();
     expect(source.listings).toHaveLength(7);
-    expect(source.sourcePopulation).toMatchObject({ retainedIngressCount: 7, queryReturnedObservationCount: 7,
-      unit: 'retained_source_ingress_occurrence', queryCoverage: { measured: true } });
+    expect(source.sourcePopulation).toMatchObject({ retainedIngressCount: 7, queryReturnedObservationCount: null,
+      knownQueryReturnedObservationCount: 7,
+      unit: 'retained_source_ingress_occurrence', queryCoverage: { measured: true, rawCountsComplete: false } });
     expect(source.sourcePopulation.queryCoverage.failedQueryCount).toBeGreaterThan(0);
     expect(source.sourcePopulation.execution.inputOccurrenceCount).toBe(7);
     expect(source.sourcePopulation.execution.dispatchedCandidateCount).toBe(7);

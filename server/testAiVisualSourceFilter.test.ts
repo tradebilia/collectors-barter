@@ -4293,8 +4293,7 @@ describe("visual source filter", () => {
     expect(pageSource).toContain("Partial/error source response — known completed observations are retained.");
     expect(pageSource).toContain("No actual dispatch receipts are available. Legacy verdicts are not proof of image execution.");
     expect(pageSource).toMatch(/import \{[^}]*\bTestAiProcessCompleteNotice as ProcessCompleteNotice\b[^}]*\} from '@\/components\/TestAiCandidateStatus';/);
-    expect(componentSource).toContain(`export function TestAiProcessCompleteNotice({ data }: { data?: any }) {
-  const retrieval = sourceRetrievalCoverage(data);`);
+    expect(componentSource).toMatch(/export function TestAiProcessCompleteNotice\(\{ data \}: \{ data\?: any \}\) \{\s+if \(!data\) return <p\b[^>]*>No returned source response — request execution and result coverage are unknown\. This is not a zero-match result\.<\/p>;\s+const retrieval = sourceRetrievalCoverage\(data\);/);
     expect(componentSource).toContain("import { sourceCurrentWindowLabel, sourceMetricDisplay, sourceRetrievalCoverage } from '../../../shared/testAiSourceDisplay';");
     expect(componentSource).toContain("Selected but undispatched rows are not background jobs.");
     expect(componentSource).toContain("aria-label=\"Source request end coverage\">{retrieval.partial ? 'Source request ended with partial/error coverage — known returned rows retained below.' : 'Source request ended — returned source results are displayed below.'}");

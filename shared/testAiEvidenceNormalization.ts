@@ -9,7 +9,7 @@ import {
 import { extractCandidateStructuredMetadata, meaningfulMetadataText, readMetadataValue } from './testAiMetadataValues';
 import { compareComparableGrades } from './testAiGradeComparison';
 
-export type EvidenceSourceStatus = 'success' | 'not_found' | 'error' | 'idle';
+export type EvidenceSourceStatus = 'success' | 'partial' | 'not_found' | 'error' | 'idle';
 
 export type EvidenceSourceKind = 'market_current' | 'market_completed' | 'market_historical' | 'certification' | 'reference';
 
@@ -465,7 +465,7 @@ function getListingValues(input: EvidenceListingInput): Record<string, string> {
 }
 
 function compactMarketSummary(source: EvidenceSourceObservation): string | null {
-  if (source.status !== 'success' || !source.market) return null;
+  if (!['success', 'partial'].includes(source.status) || !source.market) return null;
   const market = source.market;
   const parts: string[] = [];
   if (market.currentListingCount) parts.push(`${market.currentListingCount} current asking listing${market.currentListingCount === 1 ? '' : 's'}`);
@@ -702,6 +702,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
         message: `${source.label} returned an exact certified-grade coin guide. It is the preferred fallback candidate only after server provenance verification, never an individual dated completed sale or a completed-sale count.`,
       });
     }
+    if (source.status === 'partial') reviewFlags.push({ kind: 'coverage', sourceId: source.id, sourceLabel: source.label, message: `${source.label} has partial/error retrieval; known observations are retained${source.message ? `: ${source.message}` : '.'}` });
     if (source.status === 'error') {
       reviewFlags.push({ kind: 'coverage', sourceId: source.id, sourceLabel: source.label, message: `${source.label} could not be checked${source.message ? `: ${source.message}` : '.'}` });
       continue;
@@ -710,7 +711,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
       reviewFlags.push({ kind: 'coverage', sourceId: source.id, sourceLabel: source.label, message: `${source.label} returned no record for the selected lookup.` });
       continue;
     }
-    if (source.status !== 'success' || !source.fields) continue;
+    if (!['success', 'partial'].includes(source.status) || !source.fields) continue;
 
     const alignedFields: string[] = [];
     for (const key of materialFields) {
@@ -738,9 +739,9 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
   const marketEvidencePriceSummaries = sources.map(compactSubmittedPriceSummary).filter((entry): entry is string => Boolean(entry));
   const selectedSourceSummaries = sources.map(compactSelectedSourceSummary);
   const evidenceSufficiency = buildP0EvidenceSufficiency({
-    completedSaleCount: sources.reduce((count, source) => count + (source.status === 'success' ? Number(source.market?.completedSaleCount ?? 0) : 0), 0),
-    askingListingCount: sources.reduce((count, source) => count + (source.status === 'success' ? Number(source.market?.currentListingCount ?? 0) : 0), 0),
-    historicalRecordCount: sources.reduce((count, source) => count + (source.status === 'success' ? Number(source.market?.recentSaleCount ?? 0) + Number(source.market?.historicalSaleCount ?? 0) + Number(source.market?.undatedSaleCount ?? 0) : 0), 0),
+    completedSaleCount: sources.reduce((count, source) => count + (['success', 'partial'].includes(source.status) ? Number(source.market?.completedSaleCount ?? 0) : 0), 0),
+    askingListingCount: sources.reduce((count, source) => count + (['success', 'partial'].includes(source.status) ? Number(source.market?.currentListingCount ?? 0) : 0), 0),
+    historicalRecordCount: sources.reduce((count, source) => count + (['success', 'partial'].includes(source.status) ? Number(source.market?.recentSaleCount ?? 0) + Number(source.market?.historicalSaleCount ?? 0) + Number(source.market?.undatedSaleCount ?? 0) : 0), 0),
     unavailableSourceCount: sources.filter((source) => source.status === 'error' || source.status === 'not_found').length,
   });
   return {

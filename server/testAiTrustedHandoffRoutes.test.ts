@@ -3,6 +3,7 @@ import type { ComparableTarget, MarketSale, MarketProfile } from './testAiCompar
 import type { IdentityApprovalV1, CanonicalObservationProvenance } from './testAiCanonicalObservation';
 import type { MetadataFieldComparison, VisualEvidence, VisualSourceReview } from './testAiVisualSourceFilter';
 import type { SoldCompsTransportListing } from '../shared/testAiSoldCompsTransport';
+import type { RetrievalAttempt, RetrievalRejectionCode } from '../shared/testAiRetrievalAttempt';
 
 // Run ONLY in the reviewed external Stage 3 harness. Its BLOCKED_MODULES are
 // throwing virtual dependencies, not actual provider/DB/news implementations.
@@ -30,7 +31,8 @@ vi.mock('./testAiVisualSourceFilter', async () => {
   return { ...actual, filterVisualSourceCandidates: boundaries.visual };
 });
 
-import { testAIRouter } from './testAIRouter';
+import { testAIRouter, buildSoldCompsQueryCandidates } from './testAIRouter';
+import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
 import { applyVisualSourceReviews, conservativeGradedVisualReviews, filterVisualSourceCandidates } from './testAiVisualSourceFilter';
 import { getVerifiedIdentityApproval, sealCanonicalObservation, verifyCanonicalObservation } from './testAiCanonicalObservation';
 import { scoreComparable } from './testAiComparableEngine';
@@ -72,8 +74,9 @@ type RouteRow = Omit<MarketSale, 'identityApproval' | 'provenance'> & SoldCompsT
 type SourceResult = {
   query: string; listings: RouteRow[]; error: string | null;
   metrics: { count: number; median: number } | null;
+  retrievalCoverage: RetrievalAttempt[]; attemptIssues: RetrievalAttempt[]; partial: boolean;
   audit?: { rawReceived: number; valuationEligible: number; ledger: RouteRow[];
-    retrievalCoverage: Array<{ query: string; received: number; status: string }> };
+    retrievalCoverage: RetrievalAttempt[] };
 };
 const reviewedById = new Map<string, VisualSourceReview>();
 let providerRows: ProviderRow[] = [];
@@ -447,7 +450,6 @@ describe('Stage 3 ACTUAL getSoldCompsData -> shared A/B transport -> ACTUAL anal
 
   it.each([
     ['CAD currency', { soldCurrency: 'CAD' }], ['unknown currency', { soldCurrency: null, currency: null }],
-    ['zero price', { soldPrice: '0' }], ['nonfinite price', { soldPrice: 'Infinity' }],
     ['missing date', { endedAt: null }], ['invalid date', { endedAt: 'not-a-date' }],
     ['future date', { endedAt: '2027-01-01T00:00:00.000Z' }],
   ])('keeps %s out of source metrics and actual final valuation', async (_label, patch) => {
@@ -460,6 +462,54 @@ describe('Stage 3 ACTUAL getSoldCompsData -> shared A/B transport -> ACTUAL anal
     const result = await analyze(buildSoldCompsAnalysisSales(source, true));
     expectHeld(result.leftMarketProfile);
     expectHeld(result.rightMarketProfile);
+  });
+
+  it.each([
+    ['zero price', { soldPrice: '0' }, 'invalid_price'],
+    ['nonfinite price', { soldPrice: 'Infinity' }, 'invalid_price'],
+    ['missing usable transaction', { saleId: '', id: '', url: null }, 'invalid_id'],
+  ] as Array<[string, Record<string, unknown>, RetrievalRejectionCode]>)
+  ('rejects %s at provider-minimal validation before images and supplies no actual final price', async (_label, patch, rejectionCode) => {
+    providerRows = rows(KOBE.title, 1, patch);
+    const definition = buildMarketplaceSearchDefinition(KOBE);
+    const expectedQueries = buildSoldCompsQueryCandidates(definition.query, {
+      preserveGrade: true, fallbackQueries: definition.fallbackQueries, prioritizeFallbackQueries: false,
+    });
+    // Do not use acquire(): its null-error assertion remains required for
+    // minimally valid rows, including those later held by identity/economics.
+    const source = await caller().getSoldCompsData(sourceInput()) as unknown as SourceResult;
+    expect(source.error).toBe('Sold-Comps provider rows failed minimal validation');
+    expect(source.partial).toBe(false);
+    expect(source.listings).toEqual([]);
+    expect(source.metrics).toBeNull();
+    expect(source.audit).toMatchObject({ rawReceived: 0, ledger: [] });
+    expect(source.retrievalCoverage).toEqual(source.audit!.retrievalCoverage);
+    expect(source.retrievalCoverage.map((receipt) => receipt.query)).toEqual(expectedQueries);
+    expect(source.retrievalCoverage.length).toBeGreaterThan(0);
+    expect(source.attemptIssues).toEqual(source.retrievalCoverage);
+    for (const [index, receipt] of source.retrievalCoverage.entries()) {
+      expect(receipt).toMatchObject({ stage: 'search', attempt: index + 1, executed: true,
+        status: 'error', outcome: 'row_rejection', httpStatus: 200,
+        received: 1, accepted: 0, rejected: 1, normalized: 0, normalizationRejected: 0,
+        rejectionCounts: { [rejectionCode]: 1 }, message: source.error });
+      expect(receipt.rejectionCounts).toEqual({ [rejectionCode]: 1 });
+    }
+    expect(boundaries.fetch.mock.calls.map(([input]) => new URL(String(input)).searchParams.get('keyword'))).toEqual(expectedQueries);
+    expect(boundaries.visual).not.toHaveBeenCalled();
+    expect(boundaries.narrative).not.toHaveBeenCalled();
+    const itemA = buildSoldCompsAnalysisSales(source, true);
+    const itemB = buildSoldCompsAnalysisSales(source, true);
+    expect(itemA).toEqual([]);
+    expect(itemB).toEqual([]);
+    const result = await analyze(itemA, itemB);
+    for (const profile of [result.leftMarketProfile, result.rightMarketProfile]) {
+      expectHeld(profile);
+      expect(profile.comparables).toEqual([]);
+      expect(profile.weightedValue).toBeNull();
+      expect(profile.saleMedianValue).toBeNull();
+    }
+    expect(result.tradeTerms.suggestedCashRange).toBeNull();
+    expect(boundaries.visual).not.toHaveBeenCalled();
   });
 
   it('keeps valid legacy 2.9.0 required-visual tokens source-only through actual analyzeTrade', async () => {
@@ -484,7 +534,6 @@ describe('Stage 3 ACTUAL getSoldCompsData -> shared A/B transport -> ACTUAL anal
     ['explicit wrong grade', { title: '1996 Topps Kobe Bryant #138 PSA 9' }],
     ['structured multi-item quantity', { lotQuantity: 3 }],
     ['structured lot form', { saleForm: 'lot' }],
-    ['missing usable transaction', { saleId: '', id: '', url: null }],
   ])('preserves source exclusion/review and final held economics for %s', async (_label, patch) => {
     providerRows = rows(KOBE.title, 1, patch);
     const source = await acquire();

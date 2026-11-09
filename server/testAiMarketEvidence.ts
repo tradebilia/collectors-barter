@@ -1,4 +1,7 @@
 import type { ComparableTarget, MarketSale } from './testAiComparableEngine';
+import { isCompletedSaleCandidate, scoreComparable } from './testAiComparableEngine';
+import { evaluateAdapterEconomicPolicy, hasMeaningfulTransactionIdentity, signedTransactionLotConflict, transactionIdentity } from './testAiEconomicIntegrity';
+import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 import { getVerifiedIdentityApproval, transferVerifiedIdentityApproval, verifyCanonicalObservation } from './testAiCanonicalObservation';
 import { randomUUID } from 'node:crypto';
 import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAuditRef,
@@ -129,20 +132,19 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   const buyerPremium = trustedInput.buyerPremium === 'included' || trustedInput.buyerPremium === 'excluded'
     ? trustedInput.buyerPremium
     : 'unknown';
-  // PCGS reports an auction realized amount but does not expose the buyer-
-  // premium convention in this endpoint. The owner-approved policy permits a
-  // signed, exact-grade PCGS row only in the current 365-day window, while
-  // retaining the price-as-reported caveat in its evidence reasons.
-  const pcgsRecentReportedPrice = isPcgsAuctionResult
-    && resolvedPriceBasis === 'realized'
-    && dateInfo.recency === 'recent';
   const visualReviewStatus = normalizedVisualStatus(trustedInput.visualReviewStatus);
   const visualRequirement = trustedInput.visualRequirement === 'required' ? 'required' : 'not_required';
   const identityApproval = verification.verified && options?.target
     ? getVerifiedIdentityApproval(trustedInput, options.target, options.target.approvalTargetImageReference)
     : null;
-  const approvedLotConflict = Boolean(identityApproval && (Number(trustedInput.lotQuantity) > 1
-    || /\b(?:lot|bundle|collection|multi[-_ ]?item|components?[-_ ]?only)\b/i.test(String(trustedInput.saleForm ?? ''))));
+  const transactionLotConflict = verification.verified && signedTransactionLotConflict(options?.target, trustedInput);
+  const transactionIdentityPresent = verification.verified && hasMeaningfulTransactionIdentity(trustedInput);
+  const economics = evaluateAdapterEconomicPolicy({ ...trustedInput, sourceAdapter: sourceId, priceBasis: resolvedPriceBasis,
+    buyerPremium, recency: dateInfo.recency });
+  const statedTradeValue = options?.target?.statedTradeValue;
+  const priceSafety = evaluateSoldCompPriceSafety(typeof statedTradeValue === 'number' && Number.isFinite(statedTradeValue)
+    && statedTradeValue >= 0 ? statedTradeValue : undefined, price);
+  const highValuePriceConflict = priceSafety.applies && priceSafety.status !== 'accepted';
   const inputReasons = Array.isArray(trustedInput.evidenceReasons) ? trustedInput.evidenceReasons.map((reason) => safeText(reason, 300)).filter((reason): reason is string => Boolean(reason)) : [];
   const restrictiveInputDisposition = RESTRICTIVE_DISPOSITIONS.has(trustedInput.evidenceDisposition as NonNullable<MarketSale['evidenceDisposition']>)
     ? trustedInput.evidenceDisposition
@@ -156,14 +158,15 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   else if (currency !== 'USD') reasons.push(`unsupported currency ${currency}; retained as context only`);
   if (saleStatus !== 'completed') reasons.push(saleStatus === 'active' ? 'active asking listing is not a completed sale' : 'completed-sale status is not verifiable for this source');
   if (resolvedPriceBasis === 'unknown') reasons.push('price basis is not verifiable as sold, closed, or realized');
-  if (resolvedPriceBasis === 'realized' && buyerPremium !== 'included' && !pcgsRecentReportedPrice) reasons.push('auction buyer premium is not confirmed included in the realized price; retained as context only');
-  if (pcgsRecentReportedPrice && buyerPremium !== 'included') reasons.push('PCGS reports this recent auction amount as realized; buyer-premium treatment is not disclosed and the amount is used as reported');
+  if (economics.reason) reasons.push(economics.reason);
+  if (!transactionIdentityPresent) reasons.push('meaningful observed provider record ID or valid listing/transaction URL is missing; retained as context only');
+  if (highValuePriceConflict && priceSafety.reason) reasons.push(priceSafety.reason);
   if (dateInfo.recency === 'undated') reasons.push('sale date is missing, invalid, or future-dated');
   if (dateInfo.recency === 'historical') reasons.push('sale date is older than one year');
   if (dateInfo.recency === 'extended') reasons.push('sale date is older than one year and is admitted only under the labeled illiquid-market extension policy');
   if (visualReviewStatus === 'mismatch') reasons.push(`visual comparison requires review${trustedInput.visualReviewRationale ? `: ${safeText(trustedInput.visualReviewRationale, 300)}` : ''}`);
   if (visualRequirement === 'required' && (visualReviewStatus !== 'match' || !identityApproval)) reasons.push('a required visual identity review has no valid server-final target/source/image-bound approval; retained for review');
-  if (approvedLotConflict) reasons.push('signed quantity or sale form conflicts with single-item visual approval');
+  if (transactionLotConflict) reasons.push('signed transaction quantity or explicit lot/bundle sale form is not a single retail product; no guessed unit price is used');
   if (restrictiveInputDisposition) reasons.push(`source disposition retained: ${restrictiveInputDisposition}`);
 
   const valuationEligible = verification.verified
@@ -173,10 +176,12 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     && currency === 'USD'
     && saleStatus === 'completed'
     && resolvedPriceBasis !== 'unknown'
-    && (resolvedPriceBasis !== 'realized' || buyerPremium === 'included' || pcgsRecentReportedPrice)
+    && economics.eligible
+    && transactionIdentityPresent
+    && !highValuePriceConflict
     && (dateInfo.recency === 'recent' || dateInfo.recency === 'extended')
     && visualReviewStatus !== 'mismatch'
-    && !approvedLotConflict
+    && !transactionLotConflict
     && (visualRequirement !== 'required' || (visualReviewStatus === 'match' && Boolean(identityApproval)));
   // Mirror the actual terms above, not free-form provider/visual rationale.
   // Missing title is deliberately not a term of the existing eligibility gate.
@@ -188,15 +193,20 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   else if (currency !== 'USD') blockerCodes.push('UNSUPPORTED_CURRENCY');
   if (saleStatus !== 'completed') blockerCodes.push('NOT_COMPLETED');
   if (resolvedPriceBasis === 'unknown') blockerCodes.push('UNKNOWN_PRICE_BASIS');
-  if (resolvedPriceBasis === 'realized' && buyerPremium !== 'included' && !pcgsRecentReportedPrice) blockerCodes.push('PREMIUM_NOT_INCLUDED');
+  if (economics.blocker) blockerCodes.push(economics.blocker);
+  if (!transactionIdentityPresent) blockerCodes.push('TRANSACTION_IDENTITY_MISSING');
+  if (priceSafety.applies && priceSafety.status === 'too_low') blockerCodes.push('HIGH_VALUE_PRICE_TOO_LOW');
+  if (priceSafety.applies && priceSafety.status === 'too_high') blockerCodes.push('HIGH_VALUE_PRICE_TOO_HIGH');
   if (dateInfo.recency === 'undated') blockerCodes.push('INVALID_DATE');
   if (dateInfo.recency === 'historical') blockerCodes.push('HISTORICAL_DATE');
   if (visualReviewStatus === 'mismatch') blockerCodes.push('VISUAL_MISMATCH');
-  if (approvedLotConflict) blockerCodes.push('APPROVED_LOT_CONFLICT');
+  if (transactionLotConflict) blockerCodes.push('TRANSACTION_LOT_CONFLICT');
+  if (transactionLotConflict && identityApproval) blockerCodes.push('APPROVED_LOT_CONFLICT');
   if (visualRequirement === 'required' && (visualReviewStatus !== 'match' || !identityApproval)) blockerCodes.push('REQUIRED_APPROVAL_MISSING');
   const warningCodes: string[] = [];
   if (!safeText(trustedInput.title, 600)) warningCodes.push('MISSING_TITLE');
-  if (pcgsRecentReportedPrice && buyerPremium !== 'included') warningCodes.push('PCGS_PREMIUM_AS_REPORTED');
+  if (economics.warning) warningCodes.push(economics.warning);
+  if (verification.verified && !transactionIdentity(trustedInput).providerRecordId && transactionIdentity(trustedInput).listingUrl) warningCodes.push('LISTING_REFERENCE_EVENT_AMBIGUITY');
   if (dateInfo.recency === 'extended') warningCodes.push('ILLIQUID_EXTENSION_DIAGNOSTIC');
   const sourceCorrelation = boundedFinalSourceCorrelation(input);
   const analysisIntake = {
@@ -285,9 +295,11 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
 export function normalizeAnalysisMarketSales(inputs: MarketSale[] | null | undefined, now = new Date(), options?: Omit<MarketNormalizationOptions, 'allowIlliquidExtension' | 'intakeOrdinal'>): MarketSale[] {
   const analysisRunId = options?.analysisRunId ?? randomUUID();
   const strict = (inputs ?? []).map((input, intakeOrdinal) => normalizeAnalysisMarketSale(input, now, { ...options, analysisRunId, intakeOrdinal }).sale);
-  // The extension is intentionally a second, explicit pass. Any available
-  // current-window valuation record prevents older evidence from entering.
-  if (strict.some((sale) => sale.evidenceDisposition === 'valuation_eligible')) return strict;
+  // Reuse actual final admission: a recent wrong-target observation must not
+  // suppress a permitted older exact comparable. Without a target, preserve
+  // the existing conservative financial-only behavior for legacy callers.
+  if (strict.some((sale) => isCompletedSaleCandidate(sale, now.getTime())
+    && (!options?.target || scoreComparable(options.target, sale).accepted))) return strict;
   const category = sourceKey(options?.category);
   if (!ILLIQUID_MARKET_EXTENSION_CATEGORIES.has(category)) return strict;
   return (inputs ?? []).map((input, intakeOrdinal) => normalizeAnalysisMarketSale(input, now, {

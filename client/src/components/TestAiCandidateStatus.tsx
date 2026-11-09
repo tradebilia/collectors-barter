@@ -17,6 +17,8 @@ export function TestAiCandidateStatus({ listing, scope: suppliedScope, reconcile
   return <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[8px] leading-snug" aria-label="Candidate execution identity and pricing facts">
     {facts.map(([label, fact]) => <p key={label} className={fact.className} data-status-code={fact.code}><strong>{label}:</strong> {fact.label}{fact.reason ? <span className="text-gray-400"> · {fact.reason}</span> : null}</p>)}
     {isHardCandidateDisplayException(row) && <p className="w-full text-red-300"><strong>Hard exclusion:</strong> {(row.evidenceReasons ?? []).join('; ') || candidateExecutionFact(row).reason || 'Producer-coded objective conflict'}</p>}
+    {row.sourceRelevance?.role && row.sourceRelevance.role !== 'source_observation' && <p className="w-full text-gray-400"><strong>Source relevance diagnostic:</strong> {String(row.sourceRelevance.role).replace(/_/g, ' ')} · {row.sourceRelevance.disposition ?? 'not reported'} · not exact image identity or final pricing use.</p>}
+    {row.sourceEconomics?.convention && <p className="w-full text-amber-200"><strong>Source amount convention:</strong> {String(row.sourceEconomics.convention).replace(/_/g, ' ')} · reported source context, not new pricing authority{Array.isArray(row.sourceEconomics.caveats) && row.sourceEconomics.caveats.length ? ` · ${row.sourceEconomics.caveats.join('; ')}` : ''}</p>}
   </div>;
 }
 export function TestAiVisualDifferenceList({ listing }: { listing: CandidateDisplayRow }) {
@@ -68,6 +70,7 @@ export function TestAiSourcePopulationSummary({ packet }: { packet?: any }) {
 }
 
 export function TestAiProcessCompleteNotice({ data }: { data?: any }) {
+  if (!data) return <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1 text-[10px] font-semibold text-amber-200" aria-label="Source request end coverage">No returned source response — request execution and result coverage are unknown. This is not a zero-match result.</p>;
   const retrieval = sourceRetrievalCoverage(data);
   return <p className={`rounded border px-2 py-1 text-[10px] font-semibold ${retrieval.partial ? 'border-amber-700/40 bg-amber-950/25 text-amber-200' : 'border-emerald-700/40 bg-emerald-950/25 text-emerald-200'}`} aria-label="Source request end coverage">{retrieval.partial ? 'Source request ended with partial/error coverage — known returned rows retained below.' : 'Source request ended — returned source results are displayed below.'} Retrieval: {retrieval.label} · executed queries: {retrieval.executedQueryCount ?? 'unmeasured'} · failed queries: {retrieval.failedQueryCount ?? 'unmeasured'}{retrieval.note ? ` · ${retrieval.note}` : ''} Selected but undispatched rows are not background jobs.</p>;
 }
@@ -85,4 +88,13 @@ export function TestAiSourceMetricSummary({ metrics, members, sourceLabel, role 
       ['Average', display.avg], ['Median', display.median], ['Range', display.range], ['Legacy confidence', String(metrics.confidence ?? 'unreported').toUpperCase()],
     ].map(([label, value]) => <div key={label} className="rounded bg-gray-900/40 p-1.5 text-center"><p className="mb-0.5 text-[9px] uppercase text-gray-500">{label}</p><p className={`font-semibold ${label === 'Legacy confidence' ? metrics.confidence === 'high' ? 'text-green-400' : metrics.confidence === 'medium' ? 'text-yellow-400' : 'text-red-400' : 'text-white'}`}>{value}</p></div>)}</div>
   </div>;
+}
+
+export function TestAiSourceRelevanceSummary({ audit }: { audit?: any }) {
+  if (typeof audit?.sourceRelevanceEligible !== 'number' || !Number.isFinite(audit.sourceRelevanceEligible)) return null;
+  return <p className="text-[9px] text-amber-200" aria-label="Special source relevance only">{audit.sourceRelevanceEligible} source-relevance-qualified records retained as context. This is not an exact item identity confirmation or final valuation-use count.</p>;
+}
+
+export function TestAiSourceStatusBadges({ sources }: { sources: ReadonlyArray<{ id: string; label: string; status: string; message?: string | null }> }) {
+  return <div className="flex flex-wrap gap-1 pt-1">{sources.map((source) => <span key={source.id} title={source.message || undefined} className={`rounded px-1 py-0.5 text-[8px] ${source.status === 'success' ? 'bg-emerald-950/60 text-emerald-200' : source.status === 'error' ? 'bg-rose-950/60 text-rose-200' : source.status === 'partial' ? 'bg-amber-950/60 text-amber-200' : 'bg-slate-800 text-slate-300'}`}>{source.label}: {source.status.replace('_', ' ')}</span>)}</div>;
 }

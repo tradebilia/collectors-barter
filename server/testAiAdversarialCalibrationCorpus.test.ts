@@ -63,7 +63,9 @@ describe('Analyzer 2.7 adversarial calibration corpus', () => {
     const possible = observation({ saleId: 'different', price: 1_050 });
     const dedup = deduplicateMarketSales([first, exact, possible]);
     expect(dedup.duplicates).toHaveLength(1);
-    expect(dedup.possibleDuplicates).toHaveLength(1);
+    expect(dedup.unique).toHaveLength(2);
+    expect(dedup.possibleDuplicates).toHaveLength(2);
+    expect(dedup.possibleDuplicates.every((sale) => sale.duplicateStatus === 'possible_duplicate')).toBe(true);
 
     const original = selectBalancedComparableSales(target, [
       { ...first, saleId: 'a', originMarketplace: 'ebay', price: 100 },

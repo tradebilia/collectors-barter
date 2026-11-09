@@ -28,6 +28,8 @@ function raw(index: number, overrides: Partial<MarketSale> = {}): MarketSale {
     marketplace: index % 2 ? 'Heritage' : 'eBay', originMarketplace: index % 2 ? 'Heritage' : 'eBay',
     sourceId: 'sold_comps', saleId: `sale-${index}`, url: `https://www.ebay.com/itm/${index}`,
     saleStatus: 'completed', priceBasis: 'sold', evidenceDisposition: 'valuation_eligible', visualRequirement: 'not_required',
+    // These are known clean synthetic final amounts; contrary controls override this.
+    buyerPremium: index % 2 ? 'included' : 'unknown',
     displayCorrelation: correlation(index), ...overrides };
 }
 function signed(index: number, overrides: Partial<MarketSale> = {}, approved = false): MarketSale {
@@ -113,7 +115,7 @@ describe('Stage 5 actual final-use reporting — real synthetic pipeline', () =>
     expect(buildCashAwareTradeTerms(profile, right.profile).termsStatus).toBe('not_provided');
   });
 
-  it('keeps approved raw identity visible after exact/probable duplicate suppression without reviving authority', () => {
+  it('keeps approved identity after proven duplicate suppression and retains distinct known sale identities', () => {
     const original = signed(20, { title: 'Kobe Bryant PSA 10' }, true);
     const second = { ...original, displayCorrelation: correlation(21) };
     const sales = normalized([original, second]);
@@ -129,8 +131,10 @@ describe('Stage 5 actual final-use reporting — real synthetic pipeline', () =>
     assertMembers(profile);
     const probable = buildMarketProfile(target, normalized([signed(22, { marketplace: 'eBay', originMarketplace: 'eBay', price: 1000 }),
       signed(23, { marketplace: 'eBay', originMarketplace: 'eBay', price: 1000 })]), null, now);
-    expect(probable.comparables.some((row) => row.valuationUse?.use.code === 'PROBABLE_DUPLICATE')).toBe(true);
-    expect(probable.authoritativeSaleCount).toBe(1);
+    expect(probable.comparables.some((row) => row.valuationUse?.use.code === 'PROBABLE_DUPLICATE')).toBe(false);
+    expect(probable.authoritativeSaleCount).toBe(2);
+    expect(probable.comparables.some((row) => row.valuationUse?.use.possibleDuplicateWarning)).toBe(true);
+    assertMembers(probable);
     const possible = buildMarketProfile(target, normalized([signed(24, { marketplace: 'eBay', originMarketplace: 'eBay', price: 1000 }),
       signed(25, { marketplace: 'eBay', originMarketplace: 'eBay', price: 1001 })]), null, now);
     expect(possible.authoritativeSaleCount).toBe(2);
