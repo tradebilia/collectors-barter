@@ -3,8 +3,10 @@ import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysi
 import { buildMarketProfile, selectBalancedComparableSales, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { normalizeTestAiEvidence } from '../shared/testAiEvidenceNormalization';
 import { parseEvidenceBoundNarrative } from './testAiResponse';
+import { issueGuideAnchor } from './testAiGuideEvidence';
 
 const now = new Date('2026-09-27T12:00:00.000Z');
+const guideOptions = { signingKey: 'synthetic-stage2-snapshot-key', now };
 const griffey: ComparableTarget = {
   title: 'Ken Griffey Jr 1989 Upper Deck #1',
   category: 'sports_cards',
@@ -42,7 +44,7 @@ describe('Analyzer 2.10 unified analysis snapshot', () => {
       evidenceSummary: evidence,
       now,
     });
-    expect(snapshot.version).toBe('2.10.0');
+    expect(snapshot.version).toBe('2.11.0');
     expect(snapshot.profile.authoritativeSaleCount).toBe(2);
     expect(snapshot.evidence.sourceStatuses.map((source) => source.id)).toEqual(['sold_comps', 'psa']);
     expect(snapshot.evidence.visualReview).toMatchObject({ match: 1, roughMatch: 1, mismatch: 1, unreadable: 0, notReviewed: 0 });
@@ -99,7 +101,7 @@ describe('Analyzer 2.10 unified analysis snapshot', () => {
     expect(profile.valuationWarnings.join(' ')).toContain('Material identity evidence conflict');
   });
 
-  it('passes a Numista guide anchor through the server-side snapshot valuation handoff', () => {
+  it('rejects a Numista Coin guide label supplied for a sports-card snapshot', () => {
     const evidence = normalizeTestAiEvidence(griffey, []);
     evidence.guideAnchors = [{
       sourceId: 'numista', sourceLabel: 'Numista Coin Catalog', grade: 'UNC', selectedGrade: 'MS65', matchType: 'mapped',
@@ -112,37 +114,49 @@ describe('Analyzer 2.10 unified analysis snapshot', () => {
       now,
     });
 
-    expect(snapshot.profile.guideAnchorValue).toBe(2_000);
-    expect(snapshot.profile.guideAnchorWeightPct).toBe(25);
-    expect(snapshot.profile.primaryValue).toBe(575);
+    expect(snapshot.profile.guideAnchorValue).toBeNull();
+    expect(snapshot.profile.guideAnchorWeightPct).toBe(0);
+    expect(snapshot.profile.primaryValue).toBeNull();
     expect(snapshot.profile.guideProvisional).toBe(false);
+    expect(snapshot.profile.saleMedianValue).toBe(100);
   });
 
-  it('prefers the exact-grade PriceCharting sale-derived guide over a catalogue anchor without adding guide weights', () => {
+  it('prefers the authenticated exact-grade PriceCharting fallback over a catalogue guide without mixing limited sales', () => {
     const coinTarget = {
       title: '1903 Morgan Dollar',
       category: 'coins',
       grade: 'MS65',
       certificationCompany: 'PCGS',
-      itemDetails: JSON.stringify({ country: 'United States', denomination: '$1', year: '1903', variety: 'Morgan' }),
+      itemDetails: JSON.stringify({ country: 'United States', denomination: '$1', year: '1903', variety: 'Morgan Dollar' }),
     };
     const evidence = normalizeTestAiEvidence(coinTarget, []);
-    evidence.guideAnchors = [
+    const anchors = [
       { sourceId: 'numista', sourceLabel: 'Numista Coin Catalog', grade: 'UNC', selectedGrade: 'MS65', matchType: 'mapped', value: 2_000, recordedSales: 0, lastSaleDate: null, totalRecordedSales: 0 },
       { sourceId: 'pricecharting', sourceLabel: 'PriceCharting', grade: 'MS65', selectedGrade: 'MS65', matchType: 'exact', value: 1_200, recordedSales: null, lastSaleDate: null, totalRecordedSales: null },
-    ];
+    ] as const;
+    evidence.guideAnchors = anchors.map((anchor) => {
+      const issued = issueGuideAnchor(anchor, coinTarget, {
+        sourceId: anchor.sourceId, sourceQuery: 'Synthetic 1903 Morgan Dollar', sourceRecordId: `synthetic-${anchor.sourceId}`, currency: 'USD',
+        providerIdentity: { title: coinTarget.title, country: 'United States', denomination: '1 Dollar', year: '1903', mintMark: '', variety: 'Morgan Dollar', form: 'single_coin' },
+      }, guideOptions);
+      expect(issued.warnings).toEqual([]);
+      expect(issued.guideAnchor).not.toBeNull();
+      return JSON.parse(JSON.stringify(issued.guideAnchor));
+    });
     const snapshot = buildAnalysisSnapshot({
       target: coinTarget,
       sales: [sale({ saleId: 'pricecharting-priority', title: '1903 $1 Morgan Dollar PCGS MS65', price: 100 })],
       evidenceSummary: evidence,
       now,
-    });
+    }, guideOptions);
 
     expect(snapshot.profile.guideAnchorValue).toBe(1_200);
     expect(snapshot.profile.guideAnchorSourceId).toBe('pricecharting');
-    expect(snapshot.profile.guideAnchorSourceLabel).toBe('PriceCharting');
-    expect(snapshot.profile.guideAnchorWeightPct).toBe(25);
-    expect(snapshot.profile.primaryValue).toBe(375);
+    expect(snapshot.profile.guideAnchorSourceLabel).toBe('PriceCharting Coin Guide');
+    expect(snapshot.profile.guideAnchorWeightPct).toBe(100);
+    expect(snapshot.profile.primaryValue).toBe(1_200);
+    expect(snapshot.profile.valuationBasis).toBe('guide_fallback');
+    expect(snapshot.profile.guideProvisional).toBe(true);
     expect(snapshot.profile.authoritativeSaleCount).toBe(1);
   });
 
@@ -163,10 +177,11 @@ describe('Analyzer 2.10 unified analysis snapshot', () => {
 
     expect(snapshot.profile.guideAnchorValue).toBeNull();
     expect(snapshot.profile.guideAnchorSourceId).toBeNull();
-    expect(snapshot.profile.primaryValue).toBe(100);
+    expect(snapshot.profile.primaryValue).toBeNull();
+    expect(snapshot.profile.saleMedianValue).toBe(100);
   });
 
-  it('withholds cash guidance until each side meets the three-sale preliminary range floor', () => {
+  it('withholds cash guidance until each side meets the definitive category evidence floor', () => {
     const left = buildMarketProfile(griffey, [sale({ saleId: 'l1', price: 90 }), sale({ saleId: 'l2', price: 110 })], null, now);
     const right = buildMarketProfile(griffey, [sale({ saleId: 'r1', price: 170 }), sale({ saleId: 'r2', price: 190 })], null, now);
     const terms = buildCashAwareTradeTerms(left, right, { amount: 80, paidBy: 'item_a' });

@@ -233,7 +233,7 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.reviewFlags).toHaveLength(0);
   });
 
-  it('retains a documented Numista grade-band mapping as a weighted analyzer guide anchor', () => {
+  it('retains a documented Numista grade-band mapping as a separately verified fallback candidate', () => {
     const summary = normalizeTestAiEvidence({
       title: '1903 Morgan Dollar PCGS MS65',
       category: 'coins',
@@ -253,7 +253,7 @@ describe('normalizeTestAiEvidence', () => {
 
     expect(summary.guideAnchors).toEqual([expect.objectContaining({ sourceId: 'numista', value: 430, matchType: 'mapped' })]);
     expect(summary.reviewFlags).toEqual(expect.arrayContaining([expect.objectContaining({
-      kind: 'context', sourceId: 'numista', message: expect.stringContaining('enters the analyzer as a secondary guide anchor at 25%'),
+      kind: 'context', sourceId: 'numista', message: expect.stringContaining('must be verified before guide fallback'),
     })]));
     expect(formatTestAiEvidenceForAnalysis(summary, 'ITEM A')).toContain('Numista Coin Catalog');
   });
@@ -278,11 +278,11 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.sourceDecisions).toEqual(expect.arrayContaining([expect.objectContaining({
       id: 'pricecharting',
       treatment: 'valuation_guide',
-      analyzerWeightPct: 25,
+      analyzerWeightPct: 0,
       accepted: 0,
     })]));
     expect(summary.reviewFlags).toEqual(expect.arrayContaining([expect.objectContaining({
-      kind: 'context', sourceId: 'pricecharting', message: expect.stringContaining('preferred secondary analyzer anchor at 25%'),
+      kind: 'context', sourceId: 'pricecharting', message: expect.stringContaining('preferred fallback candidate only after server provenance verification'),
     })]));
   });
 

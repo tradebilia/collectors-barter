@@ -71,6 +71,8 @@ export type NumistaLookup = {
     guideSelectedGrade?: string | null;
     guideMatchType?: NumistaGuideMatchType | null;
     guideIssueId?: number | null;
+    guideIssueYear?: number | null;
+    guideIssueMintMark?: string | null;
     guidePrices?: Array<{ grade: string; value: number; currency: string }>;
   };
 };
@@ -459,7 +461,7 @@ async function loadGuidePrices(
   detail: NumistaTypeDetail,
   headers: Record<string, string>,
   fetchImpl: FetchLike,
-): Promise<{ issueId: number | null; prices: Array<{ grade: string; value: number; currency: string }>; error?: string }> {
+): Promise<{ issueId: number | null; issueYear?: number | null; issueMintMark?: string | null; prices: Array<{ grade: string; value: number; currency: string }>; error?: string }> {
   if (!criteria.year) return { issueId: null, prices: [] };
   const issues = await fetchJson(`${NUMISTA_API_BASE}/types/${encodeURIComponent(String(typeId))}/issues`, headers, fetchImpl);
   if (!issues.ok) return { issueId: null, prices: [], error: formatProviderError('Numista', issues.status, issues.data) };
@@ -481,7 +483,11 @@ async function loadGuidePrices(
   const prices = rawPrices
     .map((row: NumistaPrice) => ({ grade: text(row.grade).toUpperCase(), value: parsePositivePrice(row.price), currency }))
     .filter((row): row is { grade: string; value: number; currency: string } => Boolean(row.grade && row.value));
-  return { issueId: Number(issue.id), prices };
+  return { issueId: Number(issue.id), prices,
+    issueYear: Number.isFinite(Number(issue.gregorian_year ?? issue.year)) ? Number(issue.gregorian_year ?? issue.year) : null,
+    // Missing is unknown, not proof of an unmarked/Philadelphia issue.
+    issueMintMark: typeof issue.mint_letter === 'string' ? normalizeNumistaMintMark(issue.mint_letter) : null,
+  };
 }
 
 /**
@@ -554,8 +560,8 @@ export async function lookupNumistaCoin(
         query: queryDescription,
         matchNote: guideMatch
           ? guideMatch.matchType === 'exact'
-            ? `Structured-field Numista catalogue match. Exact Numista grade ${guideMatch.price.grade} has a ${guideMatch.price.currency} ${guideMatch.price.value.toLocaleString()} catalogue estimate; it enters the analyzer as a 25% secondary guide anchor and is not a completed sale.`
-            : `Structured-field Numista catalogue match. Selected grade ${guideMatch.selectedGrade} maps to Numista's ${guideMatch.price.grade} grade band, which has a ${guideMatch.price.currency} ${guideMatch.price.value.toLocaleString()} catalogue estimate; it enters the analyzer as a 25% secondary guide anchor and is not a completed sale.`
+            ? `Structured-field Numista catalogue match. Exact Numista grade ${guideMatch.price.grade} has a ${guideMatch.price.currency} ${guideMatch.price.value.toLocaleString()} catalogue estimate; verified applicable guide fallback may be used only when recent sale evidence is insufficient. It is not a completed sale.`
+            : `Structured-field Numista catalogue match. Selected grade ${guideMatch.selectedGrade} maps to Numista's ${guideMatch.price.grade} grade band, which has a ${guideMatch.price.currency} ${guideMatch.price.value.toLocaleString()} catalogue estimate; verified applicable guide fallback may be used only when recent sale evidence is insufficient. It is not a completed sale.`
           : guide.error
             ? `Structured-field Numista catalogue match. Catalogue guide prices could not be read: ${guide.error}`
             : 'Structured-field Numista catalogue match. No direct or approved mapped grade-band value was returned; catalogue records do not enter Tradebilia valuation as completed sales.',
@@ -567,6 +573,8 @@ export async function lookupNumistaCoin(
         guideSelectedGrade: guideMatch?.selectedGrade ?? null,
         guideMatchType: guideMatch?.matchType ?? null,
         guideIssueId: guide.issueId,
+        guideIssueYear: guide.issueYear ?? null,
+        guideIssueMintMark: guide.issueMintMark ?? null,
         guidePrices: guide.prices,
       },
     };

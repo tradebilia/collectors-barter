@@ -7,13 +7,15 @@ import { useAuth } from '@/_core/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
+import { TestAiPricingSummary } from '@/components/TestAiPricingSummary';
 import { toast } from 'sonner';
 import { buildComicsOriginalArtQueries, buildStructuredItemQuery, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, TEST_AI_SOURCE_APPLICABILITY, type TestAiSourceId } from '@shared/testAiSourceApplicability';
-import { normalizeTestAiEvidence, selectPreferredGuideAnchor, type AnalyzerRecordDetail, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
+import { guideAnchorFields, normalizeTestAiEvidence, selectPreferredGuideAnchor, type AnalyzerRecordDetail, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { bucketPcgsAuctionRows } from '@shared/testAiPcgsAuctionBuckets';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
 import { selectExactPriceChartingCoinGuide } from '@shared/priceChartingCoinGuide';
+import { buildCoinGuideLookupInput, guideTargetInput } from '@shared/testAiGuideTarget';
 import { PERMISSION_PENDING_MARKET_SOURCES } from '@shared/permissionPendingMarketSources';
 import { SANDBOX_SPECIALIST_SOURCES, type SandboxSpecialistSource } from '@shared/sandboxSpecialistSources';
 import { isSandboxSiteBlockedSource } from '@shared/sandboxBlockedSources';
@@ -2179,9 +2181,10 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 PriceCharting (via Parse.bot)</p>
         {(isLoading || effectiveMoversData === undefined) && <Spinner className="w-3 h-3" />}
       </div>
-      <p className="text-gray-500 text-[10px]">Read-only {lookupMode}. {isCoin ? 'An exact certified-grade, sale-derived coin guide may serve as one capped 25% secondary analyzer anchor; it never becomes an individual completed-sale record or sale count.' : 'Price-guide and mover data remain context-only and cannot create completed-sale evidence.'}</p>
+      <p className="text-gray-500 text-[10px]">Read-only {lookupMode}. {isCoin ? 'An authenticated applicable exact-grade coin guide may supply a fallback estimate only when current comparable-sale evidence is insufficient. Sufficient sales are used alone; guides never become sale records, range midpoints, or sale counts.' : 'Price-guide and mover data remain context-only and cannot create completed-sale evidence.'}</p>
       {isCoin && hasCoinQueryInput && <p className="text-[9px] text-gray-500">Coin search used: {[coinQueryInput.year, coinQueryInput.mintMark, coinQueryInput.variety].filter(Boolean).join(' ')}</p>}
-      {isCoin && data?.status === 'success' && <p className={`text-[9px] ${coinGuide ? 'text-emerald-300' : 'text-gray-500'}`}>{coinGuide ? `Exact ${coinGuide.grade} PriceCharting guide: ${formatWholeDollar(coinGuide.value)} — eligible as the preferred 25% sale-derived analyzer guide anchor.` : 'No exact certified-grade PriceCharting value matched the listing grade; PriceCharting remains context only for this item.'}</p>}
+      {isCoin && data?.guideWarnings?.length > 0 && <p className="text-[9px] text-amber-300">Guide fallback not verified: {data.guideWarnings.join(' ')}</p>}
+      {isCoin && data?.status === 'success' && <p className={`text-[9px] ${coinGuide ? 'text-emerald-300' : 'text-gray-500'}`}>{coinGuide ? `Exact ${coinGuide.grade} PriceCharting reference: ${formatWholeDollar(coinGuide.value)} — fallback eligibility requires target-bound server verification; the final summary states whether sales alone or a verified guide was used.` : 'No exact certified-grade PriceCharting value matched the listing grade; PriceCharting remains context only for this item.'}</p>}
       {isCoin && !hasCoinQueryInput && <p className="text-[9px] text-amber-300">Add a four-digit year and variety before running the PriceCharting coin search. Mint mark is optional and must be one letter.</p>}
       {isCoin && data?.status === 'error' && <div className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400"><p>{data.message}</p><button type="button" onClick={() => void coinQuery.refetch()} disabled={coinQuery.isFetching} className="mt-2 rounded border border-red-500/40 px-2 py-1 text-[9px] text-red-200 hover:bg-red-900/40 disabled:opacity-50">{coinQuery.isFetching ? 'Retrying…' : 'Retry PriceCharting coin lookup'}</button></div>}
       {!isCoin && data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
@@ -2773,6 +2776,8 @@ function NumistaSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
     itemDetails: item.itemDetails ?? undefined,
     grade: item.grade ?? undefined,
     condition: item.condition ?? undefined,
+    itemType: item.itemType ?? undefined,
+    certificationCompany: resolveTestAiGradingCompany(parseTestAiDetails(item.itemDetails), item.certificationCompany ?? item.gradingCompany) || undefined,
     imageUrl: item.primaryPhotoUrl ?? undefined,
   }, { enabled: supported && !!item.title, retry: false });
   const guideIsMapped = data?.data?.guideMatchType === 'mapped';
@@ -2781,7 +2786,8 @@ function NumistaSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
   return <div className="space-y-3 rounded-lg border border-gray-700/20 bg-gray-800/30 p-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 Numista Coin Catalog</p>{isLoading && <Spinner className="h-3 w-3" />}</div>
     <MarketplaceQueryBanner item={item} query={data?.data?.query ?? null} isLoading={isLoading} />
-    <p className="text-[10px] text-gray-500">Structured Numista metadata plus a direct or approved mapped grade-band catalogue estimate in USD only. A validated estimate enters the analyzer as a secondary guide anchor at a maximum 25% weight; it is never a completed sale and never counts toward completed-sale totals.</p>
+    {Boolean(data?.guideWarnings?.length) && <p className="text-[9px] text-amber-300">Guide fallback not verified: {data?.guideWarnings?.join(' ')}</p>}
+    <p className="text-[10px] text-gray-500">Structured Numista metadata plus a direct or documented mapped grade-band catalogue estimate in USD only. A server-verified applicable estimate may be used alone as a guide fallback when current market evidence is insufficient; sufficient comparable sales are used alone, with no blend or added sale counts.</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
     {data?.visualFallback && data.visualFallback.status !== 'not_needed' && <div className={`rounded border p-2 text-[10px] ${data.visualFallback.status === 'confirmed_by_numista' ? 'border-violet-700/40 bg-violet-950/25 text-violet-100' : data.visualFallback.status === 'manual_review_required' || data.visualFallback.status === 'candidate_not_confirmed' ? 'border-amber-700/40 bg-amber-950/25 text-amber-100' : 'border-slate-700/50 bg-slate-950/30 text-slate-200'}`}>
@@ -2798,7 +2804,7 @@ function NumistaSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
         <a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a>
         <p className="text-[10px] text-amber-200/90">{data.data.matchNote}</p>
         {data.data.guideValue && <div className="rounded border border-sky-700/40 bg-sky-950/25 p-2 text-[10px]">
-          <p className="font-semibold uppercase text-sky-300">Catalogue estimate · analyzer guide · max 25%</p>
+          <p className="font-semibold uppercase text-sky-300">Catalogue reference · verified-guide fallback candidate</p>
           <p className="mt-1 text-gray-200">{guideIsMapped ? <>Selected {data.data.guideSelectedGrade} → Numista {data.data.guideGrade}</> : <>Direct Numista grade {data.data.guideGrade}</>} · {data.data.guideCurrency} {Number(data.data.guideValue).toLocaleString()}</p>
           <p className="mt-1 text-gray-500">{data.data.guideSource ?? 'Numista catalogue estimate'}. {guideIsMapped ? 'This is a documented coarse-grade association, not an exact certified-grade value. ' : ''}It is not a sale and does not count toward completed-sale totals. If no accepted market baseline exists, Tradebilia labels the result provisional and not market-supported.</p>
         </div>}
@@ -2839,16 +2845,8 @@ function testAiDetails(item: SelectedItem): Record<string, any> {
   }
 }
 
-function buildPriceChartingCoinInput(item: SelectedItem) {
-  const details = testAiDetails(item);
-  const year = String(details.year ?? details.issueYear ?? details.mintYear ?? '').trim();
-  const variety = String(details.variety ?? details.varietyName ?? details.coinType ?? details.series ?? '').replace(/\s+/g, ' ').trim();
-  const rawMintMark = String(details.mintMark ?? details.mint ?? details.mintmark ?? '').trim();
-  return {
-    year,
-    variety,
-    mintMark: /^[A-Za-z]$/.test(rawMintMark) ? rawMintMark.toUpperCase() : undefined,
-  };
+function buildPriceChartingCoinInput(item: SelectedItem, valuationTarget: SelectedItem = item) {
+  return buildCoinGuideLookupInput(item, valuationTarget);
 }
 
 function isPriceChartingCoinSearchReady(input: ReturnType<typeof buildPriceChartingCoinInput>): boolean {
@@ -2941,7 +2939,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       platform: details.platform || details.console || details.system || undefined,
     };
   }, [details, item.title]);
-  const priceChartingCoinQueryInput = useMemo(() => buildPriceChartingCoinInput(item), [item]);
+  const priceChartingCoinQueryInput = useMemo(() => buildPriceChartingCoinInput(item, marketItem), [item, marketItem]);
   const hasPriceChartingCoinQueryInput = isPriceChartingCoinSearchReady(priceChartingCoinQueryInput);
   const priceChartingVideoGameUpc = useMemo(() => getPriceChartingVideoGameUpc(item), [item]);
   const priceChartingVideoGameSearchInput = useMemo(() => ({
@@ -3003,7 +3001,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     itemDetails: item.itemDetails ?? undefined,
   }, { enabled: enabledSources.has('discogs') && discogsSearchCriteria.isMusic && discogsSearchCriteria.releaseTitle.length >= 2 });
   const smithsonianQuery = trpc.testAI.getSmithsonianStampReference.useQuery({ query: item.title }, { enabled: enabledSources.has('smithsonian') && item.category === 'stamps' && !!item.title });
-  const numistaQuery = trpc.testAI.getNumistaCoinData.useQuery({ category: item.category, title: item.title, itemDetails: item.itemDetails ?? undefined, grade: item.grade ?? undefined, condition: item.condition ?? undefined, imageUrl: item.primaryPhotoUrl ?? undefined }, { enabled: enabledSources.has('numista') && item.category === 'coins' && !!item.title, retry: false });
+  const numistaQuery = trpc.testAI.getNumistaCoinData.useQuery({ ...guideTargetInput(marketItem), imageUrl: item.primaryPhotoUrl ?? undefined }, { enabled: enabledSources.has('numista') && item.category === 'coins' && !!item.title, retry: false });
   const wikidataQueryResult = trpc.testAI.getWikidataMetadata.useQuery({ query: wikidataQuery, category: wikidataCategory }, { enabled: enabledSources.has('wikidata') && (item.category === 'movies' || item.category === 'autographs') && !!wikidataQuery });
   const psaQuery = trpc.testAI.getPSAData.useQuery({ certNumber }, { enabled: enabledSources.has('psa') && !!certNumber });
   const bgsQuery = trpc.testAI.getBeckettData.useQuery({ certNumber }, { enabled: enabledSources.has('bgs') && !!certNumber });
@@ -3270,6 +3268,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
           guideGrade: priceChartingCoinGuide?.grade,
           guideSelectedGrade: priceChartingCoinGuide?.selectedGrade,
           guideMatchType: priceChartingCoinGuide?.matchType,
+          ...guideAnchorFields(item.category === 'coins' ? priceChartingCoinQuery.data?.guideAnchor : null),
         },
         message: item.category === 'video_games' && !priceChartingVideoGameUpc
           ? priceChartingVideoGameCandidateQuery.data?.data?.selectionMessage ?? priceChartingVideoGameCandidateQuery.data?.message ?? null
@@ -3302,7 +3301,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('rawg')) add({ id: 'rawg', label: 'RAWG', kind: 'reference', status: evidenceStatus(rawgQuery.data), fields: factualFields(rawgQuery.data, 'rawg'), message: rawgQuery.data?.message ?? null });
     if (enabledSources.has('igdb')) add({ id: 'igdb', label: 'IGDB', kind: 'reference', status: evidenceStatus(igdbQuery.data), fields: factualFields(igdbQuery.data, 'igdb'), message: igdbQuery.data?.message ?? null });
     if (enabledSources.has('smithsonian')) add({ id: 'smithsonian', label: 'Smithsonian', kind: 'reference', status: evidenceStatus(smithsonianQuery.data), fields: factualFields(smithsonianQuery.data, 'smithsonian'), message: smithsonianQuery.data?.message ?? null });
-    if (enabledSources.has('numista')) add({ id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: numistaQuery.data?.data?.guideValue ? 'valuation_guide' : 'reference_context', status: evidenceStatus(numistaQuery.data), fields: { ...factualFields(numistaQuery.data, 'numista'), guideValue: numistaQuery.data?.data?.guideValue, guideGrade: numistaQuery.data?.data?.guideGrade, guideSelectedGrade: numistaQuery.data?.data?.guideSelectedGrade, guideMatchType: numistaQuery.data?.data?.guideMatchType, guideRecordedSales: 0, guideTotalRecordedSales: 0 }, message: numistaQuery.data?.message ?? null });
+    if (enabledSources.has('numista')) add({ id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: numistaQuery.data?.data?.guideValue ? 'valuation_guide' : 'reference_context', status: evidenceStatus(numistaQuery.data), fields: { ...factualFields(numistaQuery.data, 'numista'), guideValue: numistaQuery.data?.data?.guideValue, guideGrade: numistaQuery.data?.data?.guideGrade, guideSelectedGrade: numistaQuery.data?.data?.guideSelectedGrade, guideMatchType: numistaQuery.data?.data?.guideMatchType, guideRecordedSales: 0, guideTotalRecordedSales: 0, ...guideAnchorFields(numistaQuery.data?.guideAnchor) }, message: numistaQuery.data?.message ?? null });
     if (enabledSources.has('wikidata')) add({ id: 'wikidata', label: 'Wikidata', kind: 'reference', status: evidenceStatus(wikidataQueryResult.data), fields: factualFields(wikidataQueryResult.data, 'wikidata'), message: wikidataQueryResult.data?.message ?? null });
     if (enabledSources.has('cgc')) add({ id: 'cgc', label: 'Parse.bot CGC Comics', kind: 'certification', status: evidenceStatus(cgcQuery.data), fields: { title: cgcQuery.data?.data?.title, issueNumber: cgcQuery.data?.data?.issueNumber, year: cgcQuery.data?.data?.year, publisher: cgcQuery.data?.data?.publisher, certificationCompany: 'CGC', grade: cgcQuery.data?.data?.grade, labelCategory: cgcQuery.data?.data?.labelCategory }, message: cgcQuery.data?.message ?? null });
     if (enabledSources.has('psa')) add({ id: 'psa', label: 'Parse.bot PSA', kind: 'certification', status: evidenceStatus(psaQuery.data), fields: { title: psaQuery.data?.data?.cardTitle, player: psaQuery.data?.data?.subject, year: psaQuery.data?.data?.year, manufacturer: psaQuery.data?.data?.brand, cardNumber: psaQuery.data?.data?.cardNumber, certificationCompany: 'PSA', grade: psaQuery.data?.data?.grade }, message: psaQuery.data?.message ?? null });
@@ -3398,7 +3397,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     </div>
     {summary.guideAnchors.length > 0 && <div className="rounded border border-sky-700/30 bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Guide-value anchors retained</p>{summary.guideAnchors.map((anchor) => {
       const selected = anchor === preferredGuideAnchor;
-      return <p key={`${anchor.sourceId}-${anchor.grade}`} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-sky-200">{anchor.sourceLabel}:</span> grade {anchor.grade || 'unknown'} · ${anchor.value.toLocaleString()} · {anchor.recordedSales ?? 'recorded-sale count unavailable'} recorded sales{anchor.lastSaleDate ? ` · last sale ${anchor.lastSaleDate}` : ''}. {selected ? 'Selected as the single 25% analyzer guide anchor.' : 'Retained as reference only because a higher-priority guide anchor was selected.'}</p>;
+      return <p key={`${anchor.sourceId}-${anchor.grade}`} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-sky-200">{anchor.sourceLabel}:</span> grade {anchor.grade || 'unknown'} · ${anchor.value.toLocaleString()} · {anchor.recordedSales ?? 'recorded-sale count unavailable'} provider-recorded sales{anchor.lastSaleDate ? ` · provider last sale ${anchor.lastSaleDate}` : ''}. {selected ? 'Preferred guide reference; the server must verify target-bound provenance and insufficient current sales before using a fallback.' : 'Retained as reference information; not a completed-sale vote.'}</p>;
     })}</div>}
     {summary.reviewFlags.length > 0 && <div className="space-y-1 rounded bg-amber-950/25 p-2"><p className="text-[9px] font-semibold uppercase text-amber-300">Review before comparing</p>{summary.reviewFlags.map((flag, index) => <p key={`${flag.sourceId ?? 'flag'}-${index}`} className="text-[10px] text-amber-100/90">• {flag.message}</p>)}</div>}
     <p className="text-[9px] text-gray-600">{summary.sources.map((source) => `${source.label}: ${source.role.replace(/_/g, ' ')} · ${statusLabel(source.status)}`).join(' · ') || 'No selected source has a summary contract.'}</p>
@@ -3889,34 +3888,7 @@ function FieldCompletionPanel({ leftItem, rightItem }: { leftItem: SelectedItem 
 }
 
 function SimpleValuationSummary({ items }: { items: Array<{ label: string; item: SelectedItem; profile: any; evidenceSummary?: NormalizedEvidenceSummary | null }> }) {
-  const money = (value: number | null | undefined) => value == null ? 'Not verified' : `$${Number(value).toLocaleString()}`;
-  return <section aria-label="Final valuation summary" className="rounded-xl border-2 border-emerald-500/60 bg-emerald-950/20 p-4 space-y-3">
-    <div>
-      <p className="text-emerald-200 text-sm font-bold uppercase tracking-wide">Final valuation summary</p>
-      <p className="mt-1 text-gray-300 text-xs">This is the final destination of the pricing evidence. Only accepted identity-matched records can establish the value.</p>
-    </div>
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {items.map(({ label, item, profile, evidenceSummary }) => {
-        const range = profile.marketRange?.supported ? `${money(profile.marketRange.low)}–${money(profile.marketRange.high)}` : 'Not verified';
-        const currentValueCount = (evidenceSummary?.sourceDecisions ?? []).reduce((sum, decision) => sum + Number(decision.currentValue ?? 0), 0);
-        const completedCount = Number(profile.directComparableCount ?? 0);
-        const destination = completedCount > 0
-          ? `${completedCount} completed sale${completedCount === 1 ? '' : 's'} sent to valuation`
-          : currentValueCount > 0
-            ? `${currentValueCount} current-value market record${currentValueCount === 1 ? '' : 's'} sent as supporting evidence`
-            : 'No qualifying pricing evidence sent to valuation';
-        return <div key={label} className="rounded-lg border border-emerald-700/50 bg-gray-950/50 p-3 space-y-2">
-          <p className="text-white text-sm font-semibold">{label} · {item.title}</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div><p className="text-[9px] uppercase tracking-wide text-gray-500">Estimated market range</p><p className="text-xl font-bold text-emerald-200">{range}</p></div>
-            <div><p className="text-[9px] uppercase tracking-wide text-gray-500">Confidence</p><p className="text-xl font-bold capitalize text-white">{profile.evidenceQuality ?? 'low'}</p></div>
-          </div>
-          <p className="text-[10px] text-emerald-100"><span className="font-semibold">Where pricing goes:</span> {destination}.</p>
-          <p className="text-[9px] text-gray-400">Primary value: {money(profile.primaryValue)} · {completedCount > 0 ? 'Completed sales control the valuation.' : currentValueCount > 0 ? 'Active market evidence supports the view but is not a completed sale.' : 'More qualifying market evidence is needed.'}</p>
-        </div>;
-      })}
-    </div>
-  </section>;
+  return <TestAiPricingSummary items={items} />;
 }
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
 function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysisItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftMercariSoldCompsData, rightMercariSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftCollectAuctionData, rightCollectAuctionData, leftSiriusSportsAuctionData, rightSiriusSportsAuctionData, leftPcgsAuctionData, rightPcgsAuctionData, leftComicConnectData, rightComicConnectData, leftGoldinSales, rightGoldinSales, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
@@ -4226,7 +4198,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
                   <div key={label} className="rounded bg-gray-950/50 p-2 space-y-1">
                     <p className={`text-${color}-300 text-xs font-semibold`}>{label}</p>
                     <p className="text-gray-300 text-[10px]">Evidence: <span className="text-white">{profile.evidenceState.replace(/_/g, ' ')}</span></p>
-                    <p className="text-gray-300 text-[10px]">Analyzer value: <span className="text-white">{profile.primaryValue !== null ? `$${profile.primaryValue.toLocaleString()}` : 'Not verified'}</span> · Guide input: {profile.guideAnchorValue !== null ? `$${profile.guideAnchorValue.toLocaleString()} at ${profile.guideAnchorWeightPct}%${profile.guideProvisional ? ' (provisional; not market-supported)' : ' (75% market + 25% guide blend)'}` : 'none'} · Weighted diagnostic: {profile.weightedValue !== null ? `$${profile.weightedValue.toLocaleString()}` : 'unavailable'} · Observed accepted sale range: {profile.marketRange.supported ? `$${profile.marketRange.low?.toLocaleString()}–$${profile.marketRange.high?.toLocaleString()}` : 'unsupported'}</p>
+                    <p className="text-gray-300 text-[10px]">Estimated value: <span className="text-white">{profile.primaryValue !== null ? `$${profile.primaryValue.toLocaleString()}` : 'Not verified'}</span> · Valuation basis: {profile.valuationBasis === 'market_sales' ? 'recent comparable sales alone' : profile.valuationBasis === 'guide_fallback' ? 'Guide fallback — limited market evidence' : 'insufficient evidence'} · Guide {profile.guideProvisional ? 'fallback' : 'reference'}: {profile.guideAnchorValue !== null ? `${profile.guideAnchorSourceLabel} ${profile.guideAnchorGrade || ''} · $${profile.guideAnchorValue.toLocaleString()}${profile.guideProvisional ? ' (provisional; not market-supported)' : ' (no contribution to sale-based value)'}` : 'none verified'} · Weighted diagnostic: {profile.weightedValue !== null ? `$${profile.weightedValue.toLocaleString()}` : 'unavailable'} · Observed current-sale range: {profile.marketRange.supported ? `$${profile.marketRange.low?.toLocaleString()}–$${profile.marketRange.high?.toLocaleString()}${profile.valuationBasis !== 'market_sales' ? ' (preliminary evidence only)' : ''}` : 'unsupported'}</p>
+                    <p className="text-gray-400 text-[10px]">{profile.valuationBasisReason}</p>
                     <p className="text-gray-400 text-[10px]">Confidence: {profile.evidenceQuality} evidence · {profile.itemIdentificationConfidence} identity · {profile.marketStability} stability · {profile.liquidity} liquidity</p>
                     {profile.confidenceReasons?.length > 0 && <p className="text-slate-500 text-[9px] leading-snug"><span className="font-semibold text-slate-300">Confidence basis:</span> {profile.confidenceReasons.join(' ')}</p>}
                     <p className="text-slate-500 text-[9px] leading-snug"><span className="font-semibold text-slate-300">Evidence coverage:</span> {profile.sourceReliabilityReasons.join(' ')}</p>

@@ -85,45 +85,48 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.salesVelocity.thirtyDay).toBe(1);
   });
 
-  it('uses an exact-grade guide anchor as capped secondary evidence without changing sale counts', () => {
+  it('does not admit an unverified guide or blend it into limited sale evidence', () => {
     const profile = buildMarketProfile(target, [
       sale('1996 Topps Kobe Bryant #138 PSA 10', 1000, '2026-09-15'),
       sale('1996 Topps Kobe Bryant #138 PSA 10', 1100, '2026-08-20'),
       sale('1996 Topps Kobe Bryant #138 PSA 10', 1200, '2026-08-01'),
-    ], null, new Date('2026-09-22T00:00:00Z'), null, { value: 2000, grade: '10', recordedSales: 140 });
-    expect(profile.guideAnchorValue).toBe(2000);
-    expect(profile.guideAnchorWeightPct).toBe(25);
-    expect(profile.guideAdjustedValue).toBe(1325);
-    expect(profile.primaryValue).toBe(1325);
+    ], null, new Date('2026-09-22T00:00:00Z'), null, {
+      sourceId: 'invented-guide', sourceLabel: 'Unverified guide', value: 2000, grade: '10', recordedSales: 140, lastSaleDate: null, totalRecordedSales: 140,
+    });
+    expect(profile.guideAnchorValue).toBeNull();
+    expect(profile.guideAnchorWeightPct).toBe(0);
+    expect(profile.guideAdjustedValue).toBeNull();
+    expect(profile.primaryValue).toBeNull();
     expect(profile.guideProvisional).toBe(false);
     expect(profile.authoritativeSaleCount).toBe(3);
-    expect(profile.valuationWarnings.join(' ')).toMatch(/guide anchor of \$2,000 contributed 25% to the analyzer blend/i);
+    expect(profile.saleMedianValue).toBe(1100);
+    expect(profile.valuationWarnings.join(' ')).toContain('no valid target-bound server verification');
   });
 
-  it('admits a mapped-grade Numista estimate at 25% without changing sale counts', () => {
+  it('does not promote a browser-carried Numista coin label for a sports-card target', () => {
     const profile = buildMarketProfile(target, [
       sale('1996 Topps Kobe Bryant #138 PSA 10', 1000, '2026-09-15'),
     ], null, new Date('2026-09-22T00:00:00Z'), null, {
-      sourceId: 'numista', sourceLabel: 'Numista Coin Catalog', value: 2000, grade: 'UNC', matchType: 'mapped', recordedSales: 0,
+      sourceId: 'numista', sourceLabel: 'Numista Coin Catalog', value: 2000, grade: 'UNC', matchType: 'mapped', recordedSales: 0, lastSaleDate: null, totalRecordedSales: 0,
     });
-    expect(profile.guideAnchorValue).toBe(2000);
-    expect(profile.guideAnchorWeightPct).toBe(25);
-    expect(profile.guideAdjustedValue).toBe(1250);
-    expect(profile.primaryValue).toBe(1250);
+    expect(profile.guideAnchorValue).toBeNull();
+    expect(profile.guideAnchorWeightPct).toBe(0);
+    expect(profile.guideAdjustedValue).toBeNull();
+    expect(profile.primaryValue).toBeNull();
     expect(profile.guideProvisional).toBe(false);
     expect(profile.authoritativeSaleCount).toBe(1);
-    expect(profile.valuationWarnings.join(' ')).toContain('Numista Coin Catalog');
+    expect(profile.saleMedianValue).toBe(1000);
   });
 
-  it('uses Numista as a clearly provisional value when no accepted sale baseline exists', () => {
+  it('does not invent a guide-only value without trusted applicable guide evidence', () => {
     const profile = buildMarketProfile(target, [], null, new Date('2026-09-22'), null, {
-      sourceId: 'numista', sourceLabel: 'Numista Coin Catalog', value: 2000, grade: 'UNC', matchType: 'mapped', recordedSales: 0,
+      sourceId: 'numista', sourceLabel: 'Numista Coin Catalog', value: 2000, grade: 'UNC', matchType: 'mapped', recordedSales: 0, lastSaleDate: null, totalRecordedSales: 0,
     });
-    expect(profile.guideAdjustedValue).toBe(2000);
-    expect(profile.guideAnchorWeightPct).toBe(25);
-    expect(profile.guideProvisional).toBe(true);
+    expect(profile.guideAdjustedValue).toBeNull();
+    expect(profile.guideAnchorWeightPct).toBe(0);
+    expect(profile.guideProvisional).toBe(false);
     expect(profile.marketRange.supported).toBe(false);
-    expect(profile.valuationWarnings.join(' ')).toContain('provisional analyzer value');
+    expect(profile.valuationBasis).toBe('insufficient_evidence');
   });
 
   it('does not manufacture a verified value from active-only aggregate context', () => {
@@ -323,12 +326,14 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     const right = buildMarketProfile(target, [sale(target.title, 1600, '2026-09-15'), sale(target.title, 1700, '2026-09-10')], null, new Date('2026-09-22T00:00:00Z'));
     const comparison = deterministicTradeComparison(left, right);
     expect(comparison.verdict).toBe('Insufficient Evidence');
-    expect(comparison.difference).toBeGreaterThan(0);
+    expect(comparison.difference).toBe(0);
+    expect(left.saleMedianValue).not.toBeNull();
+    expect(right.saleMedianValue).not.toBeNull();
     expect(comparison.rangeRelationship).toBe('unsupported');
     expect(comparison.rangeGap).toBeNull();
   });
 
-  it('withholds a winner when defensible completed-sale ranges overlap despite different midpoints', () => {
+  it('withholds a winner and invented primary estimates for under-floor overlapping samples', () => {
     const left = buildMarketProfile(target, [
       sale(target.title, 100, '2026-09-15'),
       sale(target.title, 220, '2026-09-10'),
@@ -338,11 +343,11 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
       sale(target.title, 300, '2026-09-10'),
     ], null, new Date('2026-09-22T00:00:00Z'));
     const comparison = deterministicTradeComparison(left, right);
-    expect(comparison.difference).toBeGreaterThan(0);
+    expect(comparison.difference).toBe(0);
     expect(comparison.verdict).toBe('Insufficient Evidence');
     expect(comparison.rangeRelationship).toBe('unsupported');
     expect(comparison.overlapBand).toBeNull();
-    expect(comparison.decisionBasis).toContain('lack a defensible');
+    expect(comparison.decisionBasis).toContain('lack sufficient current');
   });
 
   it('does not issue a definitive verdict from owner estimates alone', () => {

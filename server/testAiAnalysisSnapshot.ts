@@ -1,7 +1,9 @@
-import { selectPreferredGuideAnchor, type GuideValueAnchor, type NormalizedEvidenceSummary } from '../shared/testAiEvidenceNormalization';
+import { selectPreferredGuideAnchor, type NormalizedEvidenceSummary } from '../shared/testAiEvidenceNormalization';
+import { verifyGuideAnchors } from './testAiGuideEvidence';
 import {
   buildMarketProfile,
   deterministicTradeComparison,
+  hasDefensibleCurrentSaleValue,
   type ComparableIdentityGate,
   type ComparableTarget,
   type MarketProfile,
@@ -9,7 +11,7 @@ import {
   type ConfidenceLevel,
 } from './testAiComparableEngine';
 
-export const ANALYZER_SNAPSHOT_VERSION = '2.10.0';
+export const ANALYZER_SNAPSHOT_VERSION = '2.11.0';
 
 export type AnalysisCashAdjustment = {
   amount: number;
@@ -79,25 +81,6 @@ function sourceReviewCounts(sales: MarketSale[]) {
   return counts;
 }
 
-function normalizedCoinGuideGrade(value: unknown): string {
-  return String(value ?? '').toUpperCase().replace(/[^A-Z0-9]+/g, '');
-}
-
-/**
- * Evidence summaries originate in the browser, so the server repeats the
- * category, exact-grade, and amount gates before a PriceCharting guide can
- * affect a deterministic analyzer profile.
- */
-function isServerEligibleGuideAnchor(anchor: GuideValueAnchor, target: ComparableTarget): boolean {
-  if (!Number.isFinite(anchor.value) || anchor.value <= 0) return false;
-  if (anchor.sourceId !== 'pricecharting') return true;
-
-  return target.category.trim().toLowerCase().replace(/[\s-]+/g, '_') === 'coins'
-    && anchor.matchType === 'exact'
-    && Boolean(target.grade)
-    && normalizedCoinGuideGrade(anchor.selectedGrade) === normalizedCoinGuideGrade(target.grade);
-}
-
 /**
  * The snapshot is the server-side handoff used by the profile, prompt, and
  * result UI. It intentionally contains no raw provider credentials, no asking
@@ -108,36 +91,29 @@ export function buildAnalysisSnapshot(input: {
   sales?: MarketSale[];
   aggregateMetrics?: { median?: number; min?: number; max?: number; count?: number; confidence?: ConfidenceLevel } | null;
   identityGate?: ComparableIdentityGate | null;
-    evidenceSummary?: NormalizedEvidenceSummary | null;
+  evidenceSummary?: NormalizedEvidenceSummary | null;
   now?: Date;
-}): AnalysisSnapshot {
+}, guideVerificationOptions?: { signingKey?: string }): AnalysisSnapshot {
   const sales = input.sales ?? [];
-  // The server chooses one guide only. Exact-grade PriceCharting coin guides
-  // take precedence over catalogue anchors; this prevents additive guide
-  // weighting when more than one reference source returns a value.
-  const valuationGuideAnchor = selectPreferredGuideAnchor(
-    (input.evidenceSummary?.guideAnchors ?? []).filter((anchor) => isServerEligibleGuideAnchor(anchor, input.target)),
-  );
+  const now = input.now ?? new Date();
+  // Source labels and applicability claims are not acquisition provenance.
+  // Verify first, then retain one branded guide without copying away its trust.
+  const verifiedGuides = verifyGuideAnchors(input.evidenceSummary?.guideAnchors ?? [], input.target,
+    { ...guideVerificationOptions, now });
+  const valuationGuideAnchor = selectPreferredGuideAnchor(verifiedGuides.trustedAnchors);
   const profile = buildMarketProfile(
     input.target,
     sales,
     input.aggregateMetrics,
-    input.now ?? new Date(),
+    now,
     input.identityGate,
-    valuationGuideAnchor ? {
-      sourceId: valuationGuideAnchor.sourceId,
-      sourceLabel: valuationGuideAnchor.sourceLabel,
-      value: valuationGuideAnchor.value,
-      grade: valuationGuideAnchor.grade,
-      matchType: valuationGuideAnchor.matchType,
-      recordedSales: valuationGuideAnchor.recordedSales,
-      lastSaleDate: valuationGuideAnchor.lastSaleDate,
-    } : null,
+    valuationGuideAnchor,
   );
+  profile.valuationWarnings.push(...verifiedGuides.warnings);
   const summary = input.evidenceSummary;
   return {
     version: ANALYZER_SNAPSHOT_VERSION,
-    generatedAt: (input.now ?? new Date()).toISOString(),
+    generatedAt: now.toISOString(),
     item: { title: input.target.title, category: input.target.category },
     profile,
     evidence: {
@@ -150,7 +126,7 @@ export function buildAnalysisSnapshot(input: {
         status: source.status,
         message: source.message ?? null,
       })),
-      reviewFlags: (summary?.reviewFlags ?? []).map((flag) => flag.message),
+      reviewFlags: [...(summary?.reviewFlags ?? []).map((flag) => flag.message), ...verifiedGuides.warnings],
       visualReview: sourceReviewCounts(sales),
     },
   };
@@ -161,7 +137,7 @@ function rounded(value: number): number {
 }
 
 function profileStrength(left: MarketProfile, right: MarketProfile): CashAwareTradeTerms['evidenceStrength'] {
-  if (!left.marketRange.supported || !right.marketRange.supported) return 'unavailable';
+  if (!hasDefensibleCurrentSaleValue(left) || !hasDefensibleCurrentSaleValue(right)) return 'unavailable';
   if (left.evidenceQuality === 'high' && right.evidenceQuality === 'high') return 'strong';
   if (left.evidenceQuality === 'low' || right.evidenceQuality === 'low') return 'weak';
   return 'moderate';
@@ -185,9 +161,8 @@ export function buildCashAwareTradeTerms(
     ...left.valuationWarnings,
     ...right.valuationWarnings,
   ];
-  if (!left.marketRange.supported || !right.marketRange.supported
-    || left.marketRange.low === null || left.marketRange.mid === null || left.marketRange.high === null
-    || right.marketRange.low === null || right.marketRange.mid === null || right.marketRange.high === null) {
+  if (!hasDefensibleCurrentSaleValue(left) || !hasDefensibleCurrentSaleValue(right)
+    || left.valuationBasis !== 'market_sales' || right.valuationBasis !== 'market_sales') {
     return {
       evidenceStrength: strength,
       baseVerdict: comparison.verdict,
@@ -197,7 +172,7 @@ export function buildCashAwareTradeTerms(
       adjustedMidpointDifference: null,
       adjustedRangeOverlap: null,
       suggestedCashRange: null,
-      summary: 'Trade terms are not assessed because one or both sides lack a defensible completed-sale range.',
+      summary: 'Cash guidance is withheld because one or both sides lack a defensible completed-sale range meeting the existing definitive category evidence requirements. Guide fallback and preliminary sale evidence do not authorize cash suggestions.',
       warnings,
     };
   }

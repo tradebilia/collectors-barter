@@ -1,6 +1,8 @@
 import { buildTestAiP0Identity } from '../shared/testAiP0Evidence';
 import { classifyStampFormat, stampFormatsCompatible } from './stampFormat';
 import { extractIdentityState, identityStateConflicts } from './testAiIdentityState';
+import { isVerifiedGuideAnchor } from './testAiGuideEvidence';
+import type { GuideValueAnchor } from '../shared/testAiEvidenceNormalization';
 
 export type EvidenceState =
   | 'no_market_evidence'
@@ -190,12 +192,20 @@ export interface MarketProfile {
   marketRange: { low: number | null; mid: number | null; high: number | null; supported: boolean };
   /** Middle 50% of the accepted sale population; supplementary to the observed range. */
   typicalBand: { low: number | null; high: number | null; supported: boolean };
-  /** Robust primary center: median of the accepted, post-policy sale population. */
+  /** Selected value: sufficient current sales alone, otherwise verified guide fallback. */
   primaryValue: number | null;
-  /** Direct-grade or documented grade-band guide estimate blended as a capped secondary anchor; never a sale count. */
+  valuationBasis: 'market_sales' | 'guide_fallback' | 'insufficient_evidence';
+  valuationBasisReason: string;
+  /** Median of post-policy accepted sales within the existing 365-day window. */
+  saleMedianValue: number | null;
+  currentWindowSaleCount: number;
+  currentWindowIndependentMarketplaceCount: number;
+  /** Verified applicable guide, used only as fallback; never a sale or range midpoint. */
   guideAnchorValue: number | null;
   guideAnchorSourceId: string | null;
   guideAnchorSourceLabel: string | null;
+  guideAnchorGrade: string | null;
+  guideAnchorMatchType: 'exact' | 'mapped' | null;
   guideAnchorWeightPct: number;
   guideAdjustedValue: number | null;
   guideProvisional: boolean;
@@ -1914,13 +1924,34 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   };
 }
 
+type SaleEvidenceSupport = Pick<MarketProfile,
+  'marketRange' | 'categoryEvidenceThresholds' | 'currentWindowSaleCount' |
+  'currentWindowIndependentMarketplaceCount' | 'evidenceQuality' | 'spreadPct'
+>;
+
+/** One support predicate shared by pricing-basis selection, comparison, and cash. */
+export function hasDefensibleCurrentSaleValue(profile: SaleEvidenceSupport): profile is SaleEvidenceSupport & {
+  marketRange: { low: number; mid: number; high: number; supported: true };
+} {
+  const { low, mid, high, supported } = profile.marketRange;
+  const floor = profile.categoryEvidenceThresholds;
+  return Boolean(supported && low !== null && mid !== null && high !== null
+    && [low, mid, high].every((value) => Number.isFinite(value) && value > 0)
+    && low <= mid && mid <= high
+    && profile.currentWindowSaleCount >= floor.minimumSelectedSales
+    && profile.evidenceQuality !== 'low'
+    && profile.spreadPct !== null && profile.spreadPct <= floor.maximumSpreadPct
+    && (profile.currentWindowIndependentMarketplaceCount >= floor.minimumIndependentMarketplaces
+      || profile.currentWindowSaleCount >= floor.minimumSelectedSales + 2));
+}
+
 export function buildMarketProfile(
   target: ComparableTarget,
   sales: MarketSale[] = [],
   aggregateMetrics?: { median?: number; min?: number; max?: number; count?: number; confidence?: ConfidenceLevel } | null,
   now = new Date(),
   identityGate?: ComparableIdentityGate | null,
-  guideAnchor?: { sourceId?: string | null; sourceLabel?: string | null; value: number; grade?: string | null; matchType?: 'exact' | 'mapped' | null; recordedSales?: number | null; lastSaleDate?: string | null } | null,
+  guideAnchor?: GuideValueAnchor | null,
 ): MarketProfile {
   const nowMs = now.getTime();
   const selection = selectBalancedComparableSales(target, sales, now, MAX_VALUATION_COMPARABLES);
@@ -2016,6 +2047,23 @@ export function buildMarketProfile(
   const median = acceptedPrices.length ? acceptedPrices.length % 2 ? acceptedPrices[Math.floor(acceptedPrices.length / 2)] : (acceptedPrices[acceptedPrices.length / 2 - 1] + acceptedPrices[acceptedPrices.length / 2]) / 2 : null;
   const acceptedQ1 = acceptedPrices.length ? percentile(acceptedPrices, 0.25) : null;
   const acceptedQ3 = acceptedPrices.length ? percentile(acceptedPrices, 0.75) : null;
+  // Historical extension remains visible, but cannot establish current support
+  // or suppress a guide fallback. Do not use the separate 90-day velocity count.
+  const currentSales = acceptedWithAge.filter(({ ageDays }) => ageDays !== null && ageDays >= 0 && ageDays <= 365);
+  const currentPrices = currentSales.map(({ match }) => match.price).sort((a, b) => a - b);
+  const currentWindowSaleCount = currentSales.length;
+  const currentMedian = currentPrices.length ? currentPrices.length % 2
+    ? currentPrices[Math.floor(currentPrices.length / 2)]
+    : (currentPrices[currentPrices.length / 2 - 1] + currentPrices[currentPrices.length / 2]) / 2 : null;
+  const saleMedianValue = currentMedian !== null ? Math.round(currentMedian) : null;
+  const currentMinimum = currentPrices.length ? Math.round(currentPrices[0]) : null;
+  const currentMaximum = currentPrices.length ? Math.round(currentPrices[currentPrices.length - 1]) : null;
+  const currentQ1 = currentPrices.length ? percentile(currentPrices, 0.25) : null;
+  const currentQ3 = currentPrices.length ? percentile(currentPrices, 0.75) : null;
+  const currentSelectedSales = selected.filter(({ match }) => currentSales.some((entry) => entry.match === match)).map(({ sale }) => sale);
+  const currentEvidenceCoverage = assessMarketEvidenceCoverage(sales, currentSelectedSales, deduplicated.duplicates.length, nowMs);
+  const currentWindowIndependentMarketplaceCount = new Set(currentSelectedSales.map(marketplaceKey)
+    .filter((key) => !['unknown marketplace', 'unknown_marketplace', 'unattributed'].includes(key))).size;
   const recentSales = acceptedWithAge.filter(({ ageDays }) => ageDays !== null && ageDays <= 90);
   const ages = acceptedWithAge.map(({ ageDays }) => ageDays).filter((age): age is number => age !== null);
   const outlierExcludedCount = outlierMatches.size;
@@ -2024,20 +2072,12 @@ export function buildMarketProfile(
     return sum + match.weight;
   }, 0);
   const weightedValue = weightedDenominator > 0 ? Math.round(filtered.reduce((sum, { match }) => sum + match.price * match.weight, 0) / weightedDenominator) : null;
-  const primaryValue = median !== null ? Math.round(median) : null;
-  const valuationGuideAnchor = guideAnchor ?? null;
+  const valuationGuideAnchor = isVerifiedGuideAnchor(guideAnchor, target, now) ? guideAnchor : null;
   const guideAnchorValue = valuationGuideAnchor && Number.isFinite(valuationGuideAnchor.value) && valuationGuideAnchor.value > 0 ? Math.round(valuationGuideAnchor.value) : null;
   const guideMatchDescription = valuationGuideAnchor?.matchType === 'mapped' ? 'mapped-grade-band' : 'exact-grade';
-  const guideAnchorWeightPct = guideAnchorValue === null ? 0 : 25;
-  const guideProvisional = guideAnchorValue !== null && primaryValue === null;
-  const guideAdjustedValue = guideAnchorValue !== null
-    ? primaryValue !== null
-      ? Math.round(primaryValue * 0.75 + guideAnchorValue * 0.25)
-      : guideAnchorValue
-    : primaryValue;
   const minimum = filtered.length ? Math.round(Math.min(...filtered.map(({ match }) => match.price))) : null;
   const maximum = filtered.length ? Math.round(Math.max(...filtered.map(({ match }) => match.price))) : null;
-  const spreadPct = primaryValue && minimum !== null && maximum !== null ? Math.round(((maximum - minimum) / primaryValue) * 100) : null;
+  const spreadPct = saleMedianValue && currentMinimum !== null && currentMaximum !== null ? Math.round(((currentMaximum - currentMinimum) / saleMedianValue) * 100) : null;
   const recentCount = recentSales.length;
   const salesVelocity = {
     sevenDay: acceptedWithAge.filter(({ ageDays }) => ageDays !== null && ageDays <= 7).length,
@@ -2053,14 +2093,15 @@ export function buildMarketProfile(
   const contextualComparableCount = comparableMatches.filter((match) => match.classification === 'contextual').length;
   const identityReadiness = buildTestAiP0Identity(target).readiness;
   const itemIdentificationConfidence: ConfidenceLevel = exactMatchCount >= 3 ? 'high' : exactMatchCount >= 1 || accepted.length >= 3 ? 'medium' : 'low';
-  const calculatedEvidenceQuality: ConfidenceLevel = accepted.length >= categoryEvidenceThresholds.minimumSelectedSales + 1 && exactMatchCount >= 2 && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct)
+  const currentExactMatchCount = currentSales.filter(({ match }) => match.classification === 'exact').length;
+  const calculatedEvidenceQuality: ConfidenceLevel = currentWindowSaleCount >= categoryEvidenceThresholds.minimumSelectedSales + 1 && currentExactMatchCount >= 2 && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct)
     ? 'high'
-    : accepted.length >= Math.max(3, categoryEvidenceThresholds.minimumSelectedSales - 1) && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct + 25)
+    : currentWindowSaleCount >= Math.max(3, categoryEvidenceThresholds.minimumSelectedSales - 1) && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct + 25)
       ? 'medium'
       : 'low';
-  const evidenceQuality: ConfidenceLevel = evidenceCoverage.sourceReliability === 'low' || evidenceCoverage.sourceReliability === 'unavailable'
+  const evidenceQuality: ConfidenceLevel = currentEvidenceCoverage.sourceReliability === 'low' || currentEvidenceCoverage.sourceReliability === 'unavailable'
     ? 'low'
-    : evidenceCoverage.sourceReliability === 'medium' && calculatedEvidenceQuality === 'high'
+    : currentEvidenceCoverage.sourceReliability === 'medium' && calculatedEvidenceQuality === 'high'
       ? 'medium'
       : calculatedEvidenceQuality;
   const marketStability: ConfidenceLevel = spreadPct === null ? 'low' : spreadPct <= 35 ? 'high' : spreadPct <= 75 ? 'medium' : 'low';
@@ -2071,16 +2112,41 @@ export function buildMarketProfile(
   if (!target.title.trim()) missingInformation.push('item title');
   if (!target.category.trim()) missingInformation.push('category');
   if (identityReadiness !== 'ready') missingInformation.push(`critical identifiers (${buildTestAiP0Identity(target).missingCriticalFields.join(', ')})`);
+  const materialReviewRequired = Boolean(identityGate?.materialReviewRequired || identityGate?.sourceAlignmentStatus === 'conflicted');
+  const preliminarySupported = Boolean(!materialReviewRequired && saleMedianValue !== null && currentWindowSaleCount >= 3
+    && currentMinimum !== null && currentMaximum !== null
+    && [currentMinimum, saleMedianValue, currentMaximum].every((value) => Number.isFinite(value) && value > 0)
+    && currentMinimum <= saleMedianValue && saleMedianValue <= currentMaximum
+    && spreadPct !== null && spreadPct <= categoryEvidenceThresholds.maximumSpreadPct + 25);
+  const marketRange: MarketProfile['marketRange'] = preliminarySupported
+    ? { low: currentMinimum!, mid: saleMedianValue!, high: currentMaximum!, supported: true }
+    : { low: null, mid: null, high: null, supported: false };
+  const sufficientCurrentSales = hasDefensibleCurrentSaleValue({ marketRange, categoryEvidenceThresholds,
+    currentWindowSaleCount, currentWindowIndependentMarketplaceCount, evidenceQuality, spreadPct });
+  const valuationBasis: MarketProfile['valuationBasis'] = sufficientCurrentSales ? 'market_sales'
+    : !materialReviewRequired && guideAnchorValue !== null ? 'guide_fallback' : 'insufficient_evidence';
+  const primaryValue = valuationBasis === 'market_sales' ? saleMedianValue
+    : valuationBasis === 'guide_fallback' ? guideAnchorValue : null;
+  const guideProvisional = valuationBasis === 'guide_fallback';
+  // Compatibility fields now express an exclusive fallback, never a blend.
+  const guideAnchorWeightPct = guideProvisional ? 100 : 0;
+  const guideAdjustedValue = primaryValue;
+  const valuationBasisReason = materialReviewRequired ? 'An unresolved material identity conflict blocks pricing, including guide fallback.'
+    : sufficientCurrentSales ? `${currentWindowSaleCount} accepted current-window sales meet the existing category quality, spread, and independence requirements; the value uses sales alone.`
+    : guideProvisional ? `Guide fallback — limited market evidence: ${currentWindowSaleCount} accepted current-window sales do not meet the existing category evidence requirements; the verified applicable ${valuationGuideAnchor?.sourceLabel ?? 'guide'} value is used alone.`
+    : `Insufficient evidence: ${currentWindowSaleCount} accepted current-window sales do not meet the existing category evidence requirements and no verified applicable guide is available.`;
   const valuationWarnings: string[] = [];
   if (aggregateMetrics && accepted.length === 0 && (aggregateMetrics.count ?? 0) > 0) valuationWarnings.push('Aggregate market data exists, but no individual comparable titles were available for identity matching.');
-  if (guideAnchorValue !== null && guideProvisional) valuationWarnings.push(`The ${guideMatchDescription} ${valuationGuideAnchor?.sourceLabel ?? 'guide'} estimate of $${guideAnchorValue.toLocaleString()} is the provisional analyzer value because no accepted completed-sale baseline exists; it is not market-supported.`);
-  else if (guideAnchorValue !== null && guideAnchorWeightPct > 0) valuationWarnings.push(`The ${guideMatchDescription} ${valuationGuideAnchor?.sourceLabel ?? 'guide'} anchor of $${guideAnchorValue.toLocaleString()} contributed ${guideAnchorWeightPct}% to the analyzer blend (75% accepted market value + 25% guide); it was not treated as a dated sale.`);
+  valuationWarnings.push(valuationBasisReason);
+  if (guideAnchor && !valuationGuideAnchor) valuationWarnings.push('The supplied guide has no valid target-bound server verification; it remains reference only and cannot determine the value.');
+  if (guideAnchorValue !== null && guideProvisional) valuationWarnings.push(`The ${guideMatchDescription} ${valuationGuideAnchor?.sourceLabel ?? 'guide'} estimate of $${guideAnchorValue.toLocaleString()} is a provisional guide fallback value, not a market-supported completed-sale valuation or automatic cash basis.`);
+  else if (guideAnchorValue !== null) valuationWarnings.push(`The verified ${valuationGuideAnchor?.sourceLabel ?? 'guide'} value is reference only because sufficient current comparable sales are used alone; guide contribution is 0%.`);
   if (spreadPct !== null && spreadPct > categoryEvidenceThresholds.maximumSpreadPct) valuationWarnings.push(`Authoritative comparable prices exceed the ${categoryEvidenceThresholds.maximumSpreadPct}% ${categoryEvidenceThresholds.category} spread threshold.`);
   if (accepted.length < categoryEvidenceThresholds.minimumSelectedSales) valuationWarnings.push(`Fewer than ${categoryEvidenceThresholds.minimumSelectedSales} accepted completed sales are available for ${categoryEvidenceThresholds.category}; treat the range as preliminary review evidence.`);
   if (selectedAcceptedWithAge.length > 0 && selectedAcceptedWithAge.length < 5) valuationWarnings.push('IQR outlier filtering was not applied because fewer than five selected completed sales are available.');
   if (flaggedSmallSampleOutliers.size > 0) valuationWarnings.push(`${flaggedSmallSampleOutliers.size} suspicious price tail${flaggedSmallSampleOutliers.size === 1 ? '' : 's'} was flagged for review but retained because the selected sample has fewer than ten completed sales.`);
   if (outlierExcludedCount > 0) valuationWarnings.push(`${outlierExcludedCount} identity-matched completed sale${outlierExcludedCount === 1 ? '' : 's'} was excluded from the deterministic value by the IQR outlier rule and remains visible in the audit ledger.`);
-  if (primaryValue !== null && weightedValue !== null && Math.abs(weightedValue - primaryValue) / primaryValue > 0.15) valuationWarnings.push('The recency-weighted mean materially differs from the median primary value; review sale timing and price dispersion.');
+  if (saleMedianValue !== null && weightedValue !== null && Math.abs(weightedValue - saleMedianValue) / saleMedianValue > 0.15) valuationWarnings.push('The recency-weighted mean materially differs from the current-sale median diagnostic; review sale timing and price dispersion.');
   if (oldestSaleAgeDays !== null && oldestSaleAgeDays > 365) valuationWarnings.push('The oldest included authoritative sale is more than one year old.');
   if (contextualComparableCount > 0) valuationWarnings.push('Historical, undated, non-completed, or insufficiently identified records were retained as context but excluded from valuation.');
   if (gradeAdjacentComparableCount > 0) valuationWarnings.push(`${gradeAdjacentComparableCount} grade/certification-adjacent record${gradeAdjacentComparableCount === 1 ? '' : 's'} was retained as secondary evidence but excluded from direct valuation.`);
@@ -2098,7 +2164,6 @@ export function buildMarketProfile(
     : accepted.length < 3 ? 'sparse_market_evidence'
     : spreadPct !== null && spreadPct > 100 ? 'conflicting_market_evidence'
     : 'strong_recent_market_evidence';
-  const materialReviewRequired = Boolean(identityGate?.materialReviewRequired || identityGate?.sourceAlignmentStatus === 'conflicted');
   if (materialReviewRequired) {
     valuationWarnings.push('Material identity evidence conflict requires review; completed-sale records are withheld from deterministic valuation.');
     if (identityGate?.materialFlags?.length) valuationWarnings.push(...identityGate.materialFlags.map((flag) => `Identity review: ${flag}`));
@@ -2109,9 +2174,9 @@ export function buildMarketProfile(
   // A preliminary range can be displayed from three accepted sales; the
   // category-specific floor is enforced later by deterministicTradeComparison
   // before a definitive trade verdict is allowed.
-  const supported = Boolean(!materialReviewRequired && primaryValue !== null && accepted.length >= 3 && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct + 25));
+  const supported = marketRange.supported;
   const confidenceReasons = [
-    `${accepted.length} clean completed sale${accepted.length === 1 ? '' : 's'} selected after identity, source, visual, and outlier checks${accepted.length < 5 ? '; five are required for a definitive trade verdict' : ''}.`,
+    `${accepted.length} clean completed sale${accepted.length === 1 ? '' : 's'} selected after identity, source, visual, and outlier checks; ${currentWindowSaleCount} are within the current 365-day window and ${categoryEvidenceThresholds.minimumSelectedSales} are required for the category's definitive evidence floor.`,
     `${independentMarketplaceCount} independent marketplace${independentMarketplaceCount === 1 ? '' : 's'}${unknownMarketplaceCount ? `; ${unknownMarketplaceCount} selected record${unknownMarketplaceCount === 1 ? '' : 's'} has an unknown marketplace` : ''}; ${evidenceIndependenceAdequate ? 'independence floor met' : 'independence floor not met for a definitive trade verdict'}.`,
     recentCount ? `${recentCount} selected sale${recentCount === 1 ? '' : 's'} occurred within the last 90 days.` : 'No selected sale occurred within the last 90 days.',
     spreadPct === null ? 'No stable price spread can be calculated from the selected evidence.' : `Selected-value spread is ${spreadPct}% (${marketStability} stability).`,
@@ -2120,17 +2185,24 @@ export function buildMarketProfile(
     outlierExcludedCount ? `${outlierExcludedCount} price outlier${outlierExcludedCount === 1 ? '' : 's'} was withheld from the deterministic value.` : flaggedSmallSampleOutliers.size ? `${flaggedSmallSampleOutliers.size} suspicious price tail${flaggedSmallSampleOutliers.size === 1 ? '' : 's'} remains in the small-sample review set.` : 'No selected price was withheld by the IQR outlier rule.',
   ];
   return {
-    marketRange: supported ? { low: minimum!, mid: guideAdjustedValue!, high: maximum!, supported: true } : { low: null, mid: null, high: null, supported: false },
-    typicalBand: supported && acceptedQ1 !== null && acceptedQ3 !== null ? { low: Math.round(acceptedQ1), high: Math.round(acceptedQ3), supported: true } : { low: null, high: null, supported: false },
-    primaryValue: guideAdjustedValue,
+    marketRange,
+    typicalBand: supported && currentQ1 !== null && currentQ3 !== null ? { low: Math.round(currentQ1), high: Math.round(currentQ3), supported: true } : { low: null, high: null, supported: false },
+    primaryValue,
+    valuationBasis,
+    valuationBasisReason,
+    saleMedianValue,
+    currentWindowSaleCount,
+    currentWindowIndependentMarketplaceCount,
     guideAnchorValue,
     guideAnchorSourceId: valuationGuideAnchor?.sourceId ?? null,
     guideAnchorSourceLabel: valuationGuideAnchor?.sourceLabel ?? null,
+    guideAnchorGrade: valuationGuideAnchor?.grade ?? null,
+    guideAnchorMatchType: valuationGuideAnchor?.matchType ?? null,
     guideAnchorWeightPct,
     guideAdjustedValue,
     guideProvisional,
     weightedValue,
-    median: primaryValue ?? aggregateMetrics?.median ?? null,
+    median: median !== null ? Math.round(median) : null,
     minimum,
     maximum,
     interquartileRange: iqr !== null ? Math.round(iqr) : null,
@@ -2171,8 +2243,8 @@ export function buildMarketProfile(
     adapterReliabilityHistory,
     confidenceReasons,
     identityReadiness,
-    valuationMethod: supported ? `median primary value from exact or near identity-matched completed sales${guideAnchorWeightPct > 0 ? ` blended with a ${guideAnchorWeightPct}% exact-grade guide anchor` : ''}; recency-weighted mean retained as a diagnostic, with duplicate suppression, ${independentMarketplaceCount} independent marketplace${independentMarketplaceCount === 1 ? '' : 's'}, and ${canApplyIqr ? 'IQR outlier filtering' : flaggedSmallSampleOutliers.size ? 'small-sample outlier flagging without automatic exclusion' : 'no automatic outlier filtering because fewer than ten selected sales are available'}` : materialReviewRequired ? 'no verified valuation; material identity evidence conflict requires review' : aggregateMetrics?.median ? 'no verified valuation; aggregate market median shown as unverified context because completed identity-matched sales are insufficient' : 'no verified valuation; insufficient completed-sale evidence',
-    majorAssumptions: ['Only USD observations with positive prices were considered.', 'Only completed, dated records within one year and classified exact or near may influence valuation, except a labeled 366–730-day illiquid-market extension when no current verified sale exists.', 'Active asking prices, historical or undated records outside that explicit extension, certification, population, reference data, and RSS remain context only; an exact-grade guide anchor may contribute only through the capped secondary weighting contract.', 'Exact and documented-probable duplicates are excluded; possible duplicates remain visible for review; grade, condition, variant, and release mismatches reject the result.'],
+    valuationMethod: valuationBasis === 'market_sales' ? `sale-only median from sufficient current exact or near identity-matched completed sales; recency-weighted mean retained as a diagnostic, with existing duplicate/outlier/source policies` : guideProvisional ? `verified ${guideMatchDescription} ${valuationGuideAnchor?.sourceLabel ?? 'guide'} fallback alone because current market evidence is insufficient; no blended sale value, fabricated sale range, or automatic guide-based cash` : materialReviewRequired ? 'no verified valuation; material identity evidence conflict requires review' : 'no verified valuation; insufficient current completed-sale evidence and no verified applicable guide fallback',
+    majorAssumptions: ['Only USD observations with positive prices were considered.', 'Only sufficient completed, dated records within one year and classified exact or near determine the market valuation; a labeled 366–730-day illiquid-market extension remains diagnostic evidence and cannot alone establish current support.', 'Active asking prices, historical or undated context, certification, population, and RSS are not completed sales. A verified applicable guide may determine only an explicitly provisional fallback when current market evidence is insufficient; guides never enter observed-sale ranges or counts.', 'Exact and documented-probable duplicates are excluded; possible duplicates remain visible for review; existing hard identity and source/financial safeguards remain in force.'],
     missingInformation,
     valuationWarnings,
     comparables: comparableMatches,
@@ -2186,13 +2258,13 @@ export function deterministicTradeComparison(
   leftFallback = 0,
   rightFallback = 0,
 ): DeterministicTradeComparison {
-  const leftValue = left.primaryValue ?? left.weightedValue ?? left.median ?? leftFallback;
-  const rightValue = right.primaryValue ?? right.weightedValue ?? right.median ?? rightFallback;
+  // Unknown values use the legacy numeric sentinel, never a browser aggregate,
+  // weighted diagnostic, stated value, or fallback argument as pricing evidence.
+  const leftValue = left.primaryValue ?? 0;
+  const rightValue = right.primaryValue ?? 0;
   const difference = rightValue - leftValue;
-  const leftThresholds = left.categoryEvidenceThresholds;
-  const rightThresholds = right.categoryEvidenceThresholds;
-  const hasDefensibleLeftValue = left.marketRange.supported && left.marketRange.low !== null && left.marketRange.mid !== null && left.marketRange.high !== null && left.authoritativeSaleCount >= leftThresholds.minimumSelectedSales && left.evidenceQuality !== 'low' && (left.spreadPct === null || left.spreadPct <= leftThresholds.maximumSpreadPct) && (left.independentMarketplaceCount >= leftThresholds.minimumIndependentMarketplaces || left.authoritativeSaleCount >= leftThresholds.minimumSelectedSales + 2);
-  const hasDefensibleRightValue = right.marketRange.supported && right.marketRange.low !== null && right.marketRange.mid !== null && right.marketRange.high !== null && right.authoritativeSaleCount >= rightThresholds.minimumSelectedSales && right.evidenceQuality !== 'low' && (right.spreadPct === null || right.spreadPct <= rightThresholds.maximumSpreadPct) && (right.independentMarketplaceCount >= rightThresholds.minimumIndependentMarketplaces || right.authoritativeSaleCount >= rightThresholds.minimumSelectedSales + 2);
+  const hasDefensibleLeftValue = left.valuationBasis === 'market_sales' && hasDefensibleCurrentSaleValue(left);
+  const hasDefensibleRightValue = right.valuationBasis === 'market_sales' && hasDefensibleCurrentSaleValue(right);
   const hasSufficientEvidence = hasDefensibleLeftValue && hasDefensibleRightValue;
   if (!hasSufficientEvidence) {
     return {
@@ -2208,7 +2280,7 @@ export function deterministicTradeComparison(
       midpointDifference: null,
       typicalBandOverlap: null,
       rangeGap: null,
-      decisionBasis: 'One or both sides lack a defensible completed-sale range, so the analyzer cannot make a range-based trade conclusion.',
+      decisionBasis: `One or both sides lack sufficient current completed-sale evidence for a definitive range-based trade conclusion. Item A uses ${left.valuationBasis}; Item B uses ${right.valuationBasis}. Any guide fallback is a provisional estimate, not market support.`,
     };
   }
   // The defensive clause above proves these values are present; bind them once

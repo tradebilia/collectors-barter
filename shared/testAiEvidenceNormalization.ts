@@ -138,17 +138,37 @@ export type GuideValueAnchor = {
   recordedSales: number | null;
   lastSaleDate: string | null;
   totalRecordedSales: number | null;
+  /** Transport only: trust is established exclusively by the server verifier. */
+  currency?: string;
+  retrievedAt?: string;
+  expiresAt?: string;
+  sourceQuery?: string;
+  sourceRecordId?: string;
+  form?: string;
+  provenanceToken?: string | null;
 };
 
+/** Lossless browser transport, not a trust decision or valuation admission. */
+export function guideAnchorFields(anchor: GuideValueAnchor | null | undefined): Record<string, unknown> {
+  if (!anchor) return {};
+  return {
+    guideValue: anchor.value, guideGrade: anchor.grade, guideSelectedGrade: anchor.selectedGrade,
+    guideMatchType: anchor.matchType, guideSourceLabel: anchor.sourceLabel,
+    guideCurrency: anchor.currency, guideRetrievedAt: anchor.retrievedAt, guideExpiresAt: anchor.expiresAt,
+    guideSourceQuery: anchor.sourceQuery, guideSourceRecordId: anchor.sourceRecordId, guideForm: anchor.form,
+    guideProvenanceToken: anchor.provenanceToken, guideRecordedSales: anchor.recordedSales,
+    guideLastSaleDate: anchor.lastSaleDate, guideTotalRecordedSales: anchor.totalRecordedSales,
+  };
+}
+
 /**
- * The analyzer accepts exactly one capped guide input. When an exact-grade
- * PriceCharting coin guide is present, it wins over catalogue anchors because
- * it is sale-derived. Catalogue anchors remain visible as reference context.
+ * Select one allowed guide reference. The server must first verify authority
+ * and applicability before using this preference for a fallback. Exact-grade
+ * PriceCharting precedes Numista; arbitrary/context-only sources never win.
  */
 export function selectPreferredGuideAnchor(anchors: GuideValueAnchor[]): GuideValueAnchor | null {
   return anchors.find((anchor) => anchor.sourceId === 'pricecharting')
     ?? anchors.find((anchor) => anchor.sourceId === 'numista')
-    ?? anchors[0]
     ?? null;
 }
 
@@ -278,8 +298,28 @@ function equivalent(left: string, right: string): boolean {
   return normalized(left) === normalized(right);
 }
 
+/** Harmless numeric formatting is equivalent; plus signs and qualifiers are not. */
+export function normalizeGuideGrade(value: unknown): string {
+  return String(value ?? '').trim().toUpperCase()
+    .replace(/(\d+(?:\.\d+)?)/g, (number) => String(Number(number)))
+    .replace(/[\s_/-]+/g, '');
+}
+
+/** The existing Numista provider's documented associations, without dropping qualifiers. */
+export function mapNumistaGuideGradeBand(value: unknown): string | null {
+  const grade = normalizeGuideGrade(value);
+  const bands: Readonly<Record<string, string>> = {
+    VERYGOOD: 'VG', AG3: 'G', G4: 'G', G6: 'G', VG8: 'VG', VG10: 'VG',
+    F12: 'F', F15: 'F', VF20: 'VF', VF25: 'VF', VF30: 'VF', VF35: 'VF',
+    XF40: 'XF', XF45: 'XF', AU50: 'AU', AU53: 'AU', AU55: 'AU', AU58: 'AU',
+    NEARMINT: 'UNC', MS60: 'UNC', MS61: 'UNC', MS62: 'UNC', MS63: 'UNC',
+    MS64: 'UNC', MS65: 'UNC', MS66: 'UNC', MS67: 'UNC',
+  };
+  return bands[grade] ?? null;
+}
+
 function equivalentCoinGuideGrade(left: string, right: string): boolean {
-  return left.toUpperCase().replace(/[^A-Z0-9]+/g, '') === right.toUpperCase().replace(/[^A-Z0-9]+/g, '');
+  return normalizeGuideGrade(left) === normalizeGuideGrade(right);
 }
 
 function normalizeCoinDenomination(value: string): string {
@@ -515,8 +555,8 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
             : 'context_only';
   const treatmentReason = treatment === 'valuation_guide'
     ? source.id === 'pricecharting'
-      ? 'Exact certified-grade, sale-derived PriceCharting coin guide enters the analyzer as the preferred secondary guide anchor at 25%; it is not an individual dated completed sale.'
-      : 'USD catalogue estimate enters the analyzer as a secondary guide anchor at 25%; it is not a completed sale.'
+      ? 'PriceCharting coin guide is a fallback candidate only after server provenance and exact-grade applicability verification; sufficient recent completed sales use sale-only value.'
+      : 'Numista USD catalogue guide is a fallback candidate only after server provenance and documented grade applicability verification; it is not a completed sale.'
     : treatment === 'valuation_candidate'
       ? 'Completed, identity-compatible sale candidates are sent to the analyzer; final comparable gates determine inclusion and sale-level weight.'
     : treatment === 'current_value'
@@ -543,7 +583,7 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
     acceptedPrices: (market?.analyzerSubmittedPrices ?? []).filter((price) => Number.isFinite(price) && price > 0),
     analyzerRecords: market?.analyzerRecords ?? [],
     treatment,
-    analyzerWeightPct: treatment === 'valuation_guide' ? 25 : null,
+    analyzerWeightPct: treatment === 'valuation_guide' ? 0 : null,
     treatmentReason,
     visualAnalysisRequired: source.visualAnalysisRequired !== false,
     message: source.message,
@@ -587,6 +627,39 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
 
   for (const source of sources) {
     const guideValue = Number(source.fields?.guideValue);
+    // Copy a server-issued transport object intact in meaning, not in trust.
+    // Numeric-only legacy observations remain reference context; neither a
+    // provider label nor a browser `trusted` flag establishes fallback authority.
+    const transported = source.fields?.guideAnchor;
+    const transportedAnchor = transported && typeof transported === 'object' && !Array.isArray(transported)
+      ? transported as GuideValueAnchor
+      : typeof source.fields?.guideProvenanceToken === 'string'
+        ? {
+          sourceId: source.id, sourceLabel: text(source.fields.guideSourceLabel) || source.label,
+          grade: text(source.fields.guideGrade), selectedGrade: text(source.fields.guideSelectedGrade),
+          matchType: text(source.fields.guideMatchType) === 'mapped' ? 'mapped' as const : 'exact' as const,
+          value: guideValue,
+          recordedSales: source.fields.guideRecordedSales == null ? null : Number(source.fields.guideRecordedSales),
+          lastSaleDate: source.fields.guideLastSaleDate == null ? null : text(source.fields.guideLastSaleDate),
+          totalRecordedSales: source.fields.guideTotalRecordedSales == null ? null : Number(source.fields.guideTotalRecordedSales),
+          currency: text(source.fields.guideCurrency), retrievedAt: text(source.fields.guideRetrievedAt),
+          expiresAt: text(source.fields.guideExpiresAt), sourceQuery: text(source.fields.guideSourceQuery),
+          sourceRecordId: text(source.fields.guideSourceRecordId), form: text(source.fields.guideForm),
+          provenanceToken: source.fields.guideProvenanceToken,
+        } satisfies GuideValueAnchor : null;
+    if (source.status === 'success' && (source.id === 'pricecharting' || source.id === 'numista')
+      && transportedAnchor?.sourceId === source.id && typeof transportedAnchor.provenanceToken === 'string') {
+      guideAnchors.push({
+        sourceId: transportedAnchor.sourceId, sourceLabel: transportedAnchor.sourceLabel,
+        grade: transportedAnchor.grade, selectedGrade: transportedAnchor.selectedGrade,
+        matchType: transportedAnchor.matchType, value: transportedAnchor.value,
+        recordedSales: transportedAnchor.recordedSales, lastSaleDate: transportedAnchor.lastSaleDate,
+        totalRecordedSales: transportedAnchor.totalRecordedSales, currency: transportedAnchor.currency,
+        retrievedAt: transportedAnchor.retrievedAt, expiresAt: transportedAnchor.expiresAt,
+        sourceQuery: transportedAnchor.sourceQuery, sourceRecordId: transportedAnchor.sourceRecordId,
+        form: transportedAnchor.form, provenanceToken: transportedAnchor.provenanceToken,
+      });
+    }
     if (source.status === 'success' && source.id === 'comic_book_realm' && Number.isFinite(guideValue) && guideValue > 0) {
       guideAnchors.push({
         sourceId: source.id,
@@ -600,7 +673,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
         totalRecordedSales: Number.isFinite(Number(source.fields?.guideTotalRecordedSales)) ? Number(source.fields?.guideTotalRecordedSales) : null,
       });
     }
-    if (source.status === 'success' && source.id === 'numista' && Number.isFinite(guideValue) && guideValue > 0) {
+    if (!transportedAnchor?.provenanceToken && source.status === 'success' && source.id === 'numista' && Number.isFinite(guideValue) && guideValue > 0) {
       guideAnchors.push({
         sourceId: source.id,
         sourceLabel: source.label,
@@ -616,7 +689,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
         kind: 'context',
         sourceId: source.id,
         sourceLabel: source.label,
-        message: `${source.label} returned a USD catalogue estimate. It enters the analyzer as a secondary guide anchor at 25%; it is not a completed sale and remains separately classified from sale evidence.`,
+        message: `${source.label} returned a catalogue estimate. Server provenance and USD grade applicability must be verified before guide fallback; it is not a completed sale and never blends with sufficient recent sales.`,
       });
     }
     const selectedGuideGrade = text(source.fields?.guideSelectedGrade);
@@ -628,7 +701,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
       && equivalentCoinGuideGrade(selectedGuideGrade, listingValues.grade)
       && Number.isFinite(guideValue)
       && guideValue > 0;
-    if (exactPriceChartingGuide) {
+    if (exactPriceChartingGuide && !transportedAnchor?.provenanceToken) {
       guideAnchors.push({
         sourceId: source.id,
         sourceLabel: source.label,
@@ -644,7 +717,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
         kind: 'context',
         sourceId: source.id,
         sourceLabel: source.label,
-        message: `${source.label} returned an exact certified-grade, sale-derived coin guide. It is the preferred secondary analyzer anchor at 25%, never an individual dated completed sale or a completed-sale count.`,
+        message: `${source.label} returned an exact certified-grade coin guide. It is the preferred fallback candidate only after server provenance verification, never an individual dated completed sale or a completed-sale count.`,
       });
     }
     if (source.status === 'error') {
@@ -725,5 +798,5 @@ Review flags: ${flags}
 ${readiness}
 ${sufficiency}
 Guide-value anchors: ${guides}
-Rule: Dated completed sales remain primary evidence. A validated direct-grade or documented mapped-grade-band guide anchor may influence the deterministic value only through the server-capped secondary weighting contract; it is never treated as a dated sale. Do not resolve a discrepancy silently, do not use factual reference metadata as value except for this validated guide-anchor contract, and do not use historical or undated records as current-value averages.`;
+Rule: Sufficient valid recent completed sales determine sale-only value without a guide blend. With insufficient recent sales, only a server-authenticated applicable Coin guide may supply an explicitly labeled guide fallback; without it, no primary value is invented. A guide never counts as a completed sale or establishes market support. Do not resolve a discrepancy silently, do not use factual reference metadata as value except for this verified guide-fallback contract, and do not use historical or undated records as current-value averages.`;
 }

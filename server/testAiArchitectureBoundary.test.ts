@@ -20,7 +20,9 @@ describe('Analyzer 2.9 architecture boundaries', () => {
   });
 
   it('uses post-policy accepted sales for deterministic value rather than aggregate provider statistics', () => {
-    expect(engine).toContain('const primaryValue = median');
+    expect(engine).toContain('const saleMedianValue = currentMedian');
+    expect(engine).toContain("valuationBasis === 'market_sales' ? saleMedianValue");
+    expect(engine).toContain('isVerifiedGuideAnchor(guideAnchor, target, now)');
     expect(engine).toContain('const acceptedPrices = accepted.map');
     expect(engine).toContain('marketplaceConcentration');
   });
