@@ -1,5 +1,5 @@
-import type { MarketSale } from './testAiComparableEngine';
-import { verifyCanonicalObservation } from './testAiCanonicalObservation';
+import type { ComparableTarget, MarketSale } from './testAiComparableEngine';
+import { getVerifiedIdentityApproval, transferVerifiedIdentityApproval, verifyCanonicalObservation } from './testAiCanonicalObservation';
 
 /**
  * The Test AI client may transport marketplace observations, but it never gets
@@ -90,7 +90,7 @@ export type MarketEvidenceDecision = {
  * A known trusted completed-sale adapter may supply its fixed semantics, but an
  * arbitrary client record cannot self-attest its status, price basis, or date.
  */
-export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(), options?: { signingKey?: string; category?: string | null; allowIlliquidExtension?: boolean }): MarketEvidenceDecision {
+export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(), options?: { signingKey?: string; category?: string | null; target?: ComparableTarget; allowIlliquidExtension?: boolean }): MarketEvidenceDecision {
   const nowMs = now.getTime();
   // A browser may carry an observation back from a source panel for display,
   // but it may not establish completed-sale facts. Rebuild the trusted facts
@@ -130,6 +130,11 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     && dateInfo.recency === 'recent';
   const visualReviewStatus = normalizedVisualStatus(trustedInput.visualReviewStatus);
   const visualRequirement = trustedInput.visualRequirement === 'required' ? 'required' : 'not_required';
+  const identityApproval = verification.verified && options?.target
+    ? getVerifiedIdentityApproval(trustedInput, options.target, options.target.approvalTargetImageReference)
+    : null;
+  const approvedLotConflict = Boolean(identityApproval && (Number(trustedInput.lotQuantity) > 1
+    || /\b(?:lot|bundle|collection|multi[-_ ]?item|components?[-_ ]?only)\b/i.test(String(trustedInput.saleForm ?? ''))));
   const inputReasons = Array.isArray(trustedInput.evidenceReasons) ? trustedInput.evidenceReasons.map((reason) => safeText(reason, 300)).filter((reason): reason is string => Boolean(reason)) : [];
   const restrictiveInputDisposition = RESTRICTIVE_DISPOSITIONS.has(trustedInput.evidenceDisposition as NonNullable<MarketSale['evidenceDisposition']>)
     ? trustedInput.evidenceDisposition
@@ -149,7 +154,8 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   if (dateInfo.recency === 'historical') reasons.push('sale date is older than one year');
   if (dateInfo.recency === 'extended') reasons.push('sale date is older than one year and is admitted only under the labeled illiquid-market extension policy');
   if (visualReviewStatus === 'mismatch') reasons.push(`visual comparison requires review${trustedInput.visualReviewRationale ? `: ${safeText(trustedInput.visualReviewRationale, 300)}` : ''}`);
-  if (visualRequirement === 'required' && visualReviewStatus !== 'match' && visualReviewStatus !== 'rough_match') reasons.push('a required visual identity review is not confirmed');
+  if (visualRequirement === 'required' && (visualReviewStatus !== 'match' || !identityApproval)) reasons.push('a required visual identity review has no valid server-final target/source/image-bound approval; retained for review');
+  if (approvedLotConflict) reasons.push('signed quantity or sale form conflicts with single-item visual approval');
   if (restrictiveInputDisposition) reasons.push(`source disposition retained: ${restrictiveInputDisposition}`);
 
   const valuationEligible = verification.verified
@@ -162,7 +168,8 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     && (resolvedPriceBasis !== 'realized' || buyerPremium === 'included' || pcgsRecentReportedPrice)
     && (dateInfo.recency === 'recent' || dateInfo.recency === 'extended')
     && visualReviewStatus !== 'mismatch'
-    && (visualRequirement !== 'required' || visualReviewStatus === 'match' || visualReviewStatus === 'rough_match');
+    && !approvedLotConflict
+    && (visualRequirement !== 'required' || (visualReviewStatus === 'match' && Boolean(identityApproval)));
   const evidenceDisposition: NonNullable<MarketSale['evidenceDisposition']> = valuationEligible
     ? 'valuation_eligible'
     : restrictiveInputDisposition === 'rejected_objective_conflict'
@@ -205,12 +212,24 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     provenance: verification.verified ? trustedInput.provenance ?? null : null,
     evidenceDisposition,
     evidenceReasons: uniqueReasons(reasons),
+    ...(identityApproval ? { identityApproval } : {}),
+    ...(identityApproval ? { visualEvidence: identityApproval.decidingEvidence } : {}),
+    ...(identityApproval?.candidateIdentityFields !== undefined ? { normalizedStructuredMetadata: trustedInput.normalizedStructuredMetadata } : {}),
+    // These remain display diagnostics from the transported source row. They
+    // never mint authority, change economic facts, or supply scoring points.
+    visualAudit: input.visualAudit,
+    visualDifferences: Array.isArray(input.visualDifferences) ? input.visualDifferences.slice(0, 30) : null,
+    metadataMatchScore: Number.isFinite(input.metadataMatchScore) ? input.metadataMatchScore : null,
+    metadataMatchRank: Number.isInteger(input.metadataMatchRank) ? input.metadataMatchRank : null,
+    metadataMatchReasons: Array.isArray(input.metadataMatchReasons) ? input.metadataMatchReasons.slice(0, 40) : null,
+    metadataFieldComparisons: Array.isArray(input.metadataFieldComparisons) ? input.metadataFieldComparisons.slice(0, 40) : null,
   };
+  if (valuationEligible && identityApproval) transferVerifiedIdentityApproval(trustedInput, sale);
   return { sale, valuationEligible, reasons: sale.evidenceReasons ?? [] };
 }
 
-export function normalizeAnalysisMarketSales(inputs: MarketSale[] | null | undefined, now = new Date(), options?: { signingKey?: string; category?: string | null }): MarketSale[] {
-  const strict = (inputs ?? []).map((input) => normalizeAnalysisMarketSale(input, now, { signingKey: options?.signingKey, category: options?.category }).sale);
+export function normalizeAnalysisMarketSales(inputs: MarketSale[] | null | undefined, now = new Date(), options?: { signingKey?: string; category?: string | null; target?: ComparableTarget }): MarketSale[] {
+  const strict = (inputs ?? []).map((input) => normalizeAnalysisMarketSale(input, now, options).sale);
   // The extension is intentionally a second, explicit pass. Any available
   // current-window valuation record prevents older evidence from entering.
   if (strict.some((sale) => sale.evidenceDisposition === 'valuation_eligible')) return strict;
@@ -219,6 +238,7 @@ export function normalizeAnalysisMarketSales(inputs: MarketSale[] | null | undef
   return (inputs ?? []).map((input) => normalizeAnalysisMarketSale(input, now, {
     signingKey: options?.signingKey,
     category,
+    target: options?.target,
     allowIlliquidExtension: true,
   }).sale);
 }

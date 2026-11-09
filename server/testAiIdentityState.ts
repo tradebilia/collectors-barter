@@ -1,4 +1,5 @@
 import { normalizeNumericGrade } from '../shared/publicGradeValues';
+import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
 
 export type IdentityState = 'raw' | 'graded' | 'unknown';
 
@@ -145,11 +146,14 @@ export function extractIdentityState(input: { title?: string | null; grade?: str
   };
 }
 
-export function identityStateConflicts(target: IdentityStateSnapshot, sale: IdentityStateSnapshot, compareSignatureNames = false): string[] {
+export function identityStateConflicts(target: IdentityStateSnapshot, sale: IdentityStateSnapshot, compareSignatureNames = false, category?: string): string[] {
   const conflicts: string[] = [];
   if (target.state !== 'unknown' && sale.state !== 'unknown' && target.state !== sale.state) conflicts.push(`raw/graded state differs (${sale.state} vs ${target.state})`);
-  if (target.grader && sale.grader && target.grader !== sale.grader) conflicts.push(`grading company differs (${sale.grader.toUpperCase()} vs ${target.grader.toUpperCase()})`);
-  if (target.grade && sale.grade && target.grade !== sale.grade && normalizeNumericGrade(target.grade) !== normalizeNumericGrade(sale.grade)) conflicts.push(`grade differs (${sale.grade} vs ${target.grade})`);
+  if (target.grader && sale.grader && !videoGameGradersEquivalent(category, target.grader, sale.grader)) conflicts.push(`grading company differs (${sale.grader.toUpperCase()} vs ${target.grader.toUpperCase()})`);
+  const targetNumericGrade = normalizeNumericGrade(target.grade);
+  const saleNumericGrade = normalizeNumericGrade(sale.grade);
+  const numericGradesMatch = targetNumericGrade !== null && targetNumericGrade === saleNumericGrade;
+  if (target.grade && sale.grade && target.grade !== sale.grade && !numericGradesMatch) conflicts.push(`grade differs (${sale.grade} vs ${target.grade})`);
   if (target.parallel && sale.parallel && target.parallel !== sale.parallel) conflicts.push(`parallel/variant differs (${sale.parallel} vs ${target.parallel})`);
   if (target.autograph === 'auto' && sale.autograph === 'unknown') conflicts.push('autograph status is not stated');
   if (target.autograph === 'unknown' && sale.autograph === 'auto') conflicts.push('sale declares an autograph/signature not declared by target');

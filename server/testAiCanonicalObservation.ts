@@ -1,6 +1,13 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { ENV } from './_core/env';
 import type { MarketSale } from './testAiComparableEngine';
+import { canonicalizeIdentityApprovalTarget, canonicalizeIdentityApprovalCandidateFields, identityApprovalCandidateFieldsCompatible, canonicalIdentityApprovalGrade, identityApprovalTargetsEquivalent, IDENTITY_APPROVAL_TARGET_VERSION, type IdentityApprovalTargetInput } from '../shared/testAiIdentityApprovalTarget';
+import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
+import {
+  decidingVisualEvidence, gradedVisualEvidenceIsConfirmed, conservativeGradedVisualReviews,
+  hasCompletedCoinAdjudication, disneyPinsEvidenceIsExact,
+  type VisualEvidence, type VisualSourceReview,
+} from './testAiVisualSourceFilter';
 
 /**
  * Server-owned observation contract for the Test AI sandbox.
@@ -182,12 +189,51 @@ type SignedObservationPayload = {
   version: typeof CANONICAL_OBSERVATION_VERSION;
   provenance: CanonicalObservationProvenance;
   facts: CanonicalObservationFacts;
+  identityApproval?: IdentityApprovalV1;
 };
+
+export const IDENTITY_APPROVAL_VERSION = 'identity-approval-v1' as const;
+export const IDENTITY_APPROVAL_POLICY = 'sold-comps-final-visual-v1' as const;
+export type IdentityApprovalV1 = {
+  version: typeof IDENTITY_APPROVAL_VERSION;
+  policyVersion: typeof IDENTITY_APPROVAL_POLICY;
+  status: 'approved';
+  origin: 'server_final_visual';
+  verdict: 'match';
+  confidence: 'high' | 'medium';
+  decidingPass: 'initial' | 'high_resolution_retry';
+  requiredAdjudication: boolean;
+  adjudicationCompleted: boolean;
+  targetVersion: typeof IDENTITY_APPROVAL_TARGET_VERSION;
+  targetFields: Readonly<Record<string, string>>;
+  targetFingerprint: string;
+  targetImageReferenceFingerprint: string;
+  adapterId: 'sold_comps';
+  adapterVersion: string;
+  originMarketplace: 'ebay';
+  sourceRecordId: string | null;
+  canonicalTransactionId: string;
+  sourceFactsHash: string;
+  acquiredAt: string;
+  decidingEvidence: VisualEvidence;
+  decidingRationale: string;
+  visualDifferences: NonNullable<VisualSourceReview['visualDifferences']>;
+  /** Canonical subset of actual server-parsed provider facts, never copied from the target. */
+  candidateIdentityFields?: Readonly<Record<string, string>>;
+};
+/** An opaque mint handle. Only this module's WeakMap establishes its brand. */
+export type ServerFinalIdentityApproval = Readonly<{ readonly kind: 'server-final-identity-approval' }>;
+type MintedApproval = { sale: MarketSale; facts: CanonicalObservationFacts; approval: IdentityApprovalV1 };
+type VerifiedApproval = { facts: CanonicalObservationFacts; provenance: CanonicalObservationProvenance; approval: IdentityApprovalV1;
+  verifiedAtWallMs: number; remainingAgeMs: number };
+const mintedIdentityApprovals = new WeakMap<ServerFinalIdentityApproval, MintedApproval>();
+const verifiedIdentityApprovals = new WeakMap<MarketSale, VerifiedApproval>();
 
 export type SealedMarketObservation = {
   provenanceToken: string | null;
   provenance: CanonicalObservationProvenance | null;
   validationErrors: string[];
+  identityApproval?: IdentityApprovalV1;
 };
 
 export type VerifiedMarketObservation =
@@ -351,6 +397,273 @@ function normalizedFacts(
   return facts;
 }
 
+function transactionId(adapterId: AdapterId, facts: CanonicalObservationFacts): string | null {
+  return facts.canonicalUrl ? `url:${facts.canonicalUrl}`
+    : facts.sourceRecordId ? `record:${adapterId}:${normalizeKey(facts.sourceRecordId)}` : null;
+}
+function sourceFactsHash(facts: CanonicalObservationFacts): string {
+  return sha256(JSON.stringify(facts));
+}
+function imageFingerprint(reference: unknown): string | null {
+  return typeof reference === 'string' && reference.trim() && reference.trim().length <= 2_000
+    ? sha256(reference.trim()) : null;
+}
+const EVIDENCE_KEYS: Array<keyof VisualEvidence> = [
+  'slabVisible', 'gradingLabelVisible', 'graderVisible', 'numericGradeVisible', 'gradeMatches',
+  'rawOrLooseVisible', 'characterMatches', 'artworkMatches', 'silhouetteMatches', 'backingCardMatches',
+  'setDesignMatches', 'identityMatches', 'dateMatches', 'varietyMatches', 'mintMarkMatches', 'denominationMatches',
+];
+function boundedEvidence(evidence: VisualEvidence | undefined): VisualEvidence {
+  return Object.fromEntries(EVIDENCE_KEYS.filter((key) => typeof evidence?.[key] === 'boolean')
+    .map((key) => [key, evidence![key]]));
+}
+function immutableCopy<T>(value: T): T {
+  const copy = JSON.parse(JSON.stringify(value)) as T;
+  const freeze = (object: unknown): void => {
+    if (!object || typeof object !== 'object') return;
+    Object.values(object).forEach(freeze);
+    Object.freeze(object);
+  };
+  freeze(copy);
+  return copy;
+}
+function usableTransaction(facts: CanonicalObservationFacts): boolean {
+  const usableRecord = Boolean(facts.sourceRecordId && !/^(unknown|none|null|undefined|n\/?a)$/i.test(facts.sourceRecordId)
+    && /[a-z0-9]/i.test(facts.sourceRecordId));
+  return usableRecord || Boolean(facts.canonicalUrl && /^ebay\.[a-z.]+\/itm\/(?:[^/?]+\/)?\d+(?:\?|$)/i.test(facts.canonicalUrl));
+}
+function approvalFactsAreEligible(facts: CanonicalObservationFacts, acquiredAt: string): boolean {
+  const date = facts.date ? Date.parse(facts.date) : NaN, acquisition = Date.parse(acquiredAt);
+  return facts.validationErrors.length === 0 && facts.originMarketplace === 'ebay'
+    && usableTransaction(facts) && facts.currency === 'USD' && facts.price !== null && facts.price > 0
+    && Number.isFinite(date) && date <= acquisition && Number.isFinite(acquisition)
+    && facts.saleStatus === 'completed' && facts.priceBasis === 'sold'
+    && facts.visualRequirement === 'required' && facts.visualReviewStatus === 'match' && facts.evidenceDisposition === 'valuation_eligible'
+    && facts.evidenceReasons.length === 0 && !(facts.lotQuantity !== null && facts.lotQuantity > 1)
+    && !/\b(?:lot|bundle|components?|accessory[- ]only|manual[- ]only|box[- ]only)\b/i.test(facts.saleForm ?? '');
+}
+function metadataTarget(metadata: string): IdentityApprovalTargetInput | null {
+  const details = metadata.match(/(?:^|;)\s*fullItemDetails=(.*)$/s)?.[1];
+  if (!details) return null;
+  const field = (key: string) => metadata.match(new RegExp(`(?:^|;)\\s*${key}=([^;]*)`, 'i'))?.[1]?.trim();
+  return { title: field('title'), category: field('category'), itemType: field('itemType'),
+    grade: field('grade'), certificationCompany: field('certificationCompany'), itemDetails: details };
+}
+
+function hardDecidingDifference(difference: NonNullable<VisualSourceReview['visualDifferences']>[number], category: string): boolean {
+  if (!/hard|material|conflict|mismatch/i.test(difference.impact)
+    || /serial|tracking|qr|barcode|(?:certification|certificate|cert)[ _-]*(?:id|number)/i.test(difference.field)) return false;
+  if (category === 'disney_pins' && /^(?:(?:numeric[ _-]*)?grade|grader|grading[ _-]*company|certification[ _-]*company|slab|grading[ _-]*label|raw[ _-]*(?:or|versus|vs)[ _-]*graded|graded[ _-]*state|is[ _-]*graded)$/i.test(difference.field.trim())) return false;
+  const left = difference.targetObservation.trim(), right = difference.candidateObservation.trim();
+  if (left.normalize('NFKC').toLowerCase().replace(/[_\s-]+/g, ' ') === right.normalize('NFKC').toLowerCase().replace(/[_\s-]+/g, ' ')) return false;
+  if (/^(numeric[ _-]*)?grade$/i.test(difference.field)
+    && canonicalIdentityApprovalGrade(left) === canonicalIdentityApprovalGrade(right)) return false;
+  if (/grader|grading company|certification company/i.test(difference.field)
+    && videoGameGradersEquivalent(category, left, right)) return false;
+  if (category === 'video_games' && /label|designation|suffix|seal(?:ed)?[ _-]*(?:grade|rating)/i.test(difference.field)) {
+    const suffixOnly = (value: string) => value.replace(/\b(?:sealed\s+)?A\+{1,3}(?!\+)/gi, '')
+      .normalize('NFKC').toLowerCase().replace(/[_\s-]+/g, ' ').trim();
+    if (/\b(?:sealed\s+)?A\+{1,3}(?!\+)/i.test(`${left} ${right}`) && suffixOnly(left) === suffixOnly(right)) return false;
+  }
+  return true;
+}
+
+export type ServerFinalIdentityApprovalOptions = {
+  sale: MarketSale;
+  target: IdentityApprovalTargetInput;
+  reviewedTarget: IdentityApprovalTargetInput;
+  targetImageReference: string;
+  expectedImageReference: string;
+  targetMetadata: string;
+  review: VisualSourceReview;
+  acquiredAt?: Date;
+  /** Server wrapper passes only known declarations from its already parsed provider metadata. */
+  candidateIdentityFields?: Record<string, string>;
+};
+/** Called only by the server's post-Stage-1, record-bound ordinary Sold-Comps path. */
+export function createServerFinalIdentityApproval(options: ServerFinalIdentityApprovalOptions): ServerFinalIdentityApproval | null {
+  const { sale, target, reviewedTarget, review, targetMetadata } = options;
+  if (sale.sourceId !== 'sold_comps' || sale.sourceAdapter && sale.sourceAdapter !== 'sold_comps') return null;
+  const canonical = canonicalizeIdentityApprovalTarget(target);
+  if (canonical.conflicts.length || canonical.serialized.length > 3_000 || !identityApprovalTargetsEquivalent(reviewedTarget, target)) return null;
+  const actualMetadataTarget = metadataTarget(targetMetadata);
+  if (!actualMetadataTarget || !identityApprovalTargetsEquivalent(reviewedTarget, actualMetadataTarget)) return null;
+  const candidate = options.candidateIdentityFields === undefined ? undefined
+    : canonicalizeIdentityApprovalCandidateFields(canonical.fields.category, options.candidateIdentityFields);
+  if (candidate && (candidate.conflicts.length || !identityApprovalCandidateFieldsCompatible(canonical.fields, candidate.fields))) return null;
+  if (canonical.fields.category === 'autographs' || /original art|signed item|reference/.test(canonical.fields.itemType ?? '')) return null;
+  const picture = imageFingerprint(options.targetImageReference);
+  if (!picture || picture !== imageFingerprint(options.expectedImageReference)) return null;
+  const acquiredAt = (options.acquiredAt ?? new Date()).toISOString();
+  const facts = normalizedFacts(CANONICAL_ADAPTER_REGISTRY.sold_comps, sale);
+  if (!approvalFactsAreEligible(facts, acquiredAt) || review.verdict !== 'match' || !review.visualAudit) return null;
+  if (!identityApprovalCandidateFieldsCompatible(canonical.fields, { saleForm: facts.saleForm ?? '' })
+    || candidate && (Number(candidate.fields.lotQuantity) > 1
+      || /\b(?:lot|bundle|components?|accessory[- ]only|manual[- ]only|box[- ]only)\b/i.test(candidate.fields.saleForm ?? candidate.fields.productForm ?? ''))) return null;
+  const audit = review.visualAudit;
+  const isRetry = audit.finalPass === 'high_resolution_retry';
+  const confidence = isRetry ? audit.retryConfidence : audit.initialConfidence;
+  const decidingVerdict = isRetry ? audit.retryVerdict : audit.initialVerdict;
+  if (!Number.isInteger(audit.imageCount) || audit.imageCount < 1) return null;
+  // Final normalizations may correct initial unreadable/mismatch, but never
+  // manufacture confidence or replace the deciding pass's observations.
+  if (confidence !== 'high' && confidence !== 'medium' || review.confidence !== confidence) return null;
+  if (isRetry && (audit.retryStatus !== 'performed' || decidingVerdict !== 'match'
+    || audit.adjudicationStatus !== undefined && audit.adjudicationStatus !== 'confirmed')) return null;
+  if (!isRetry && audit.finalPass !== 'initial') return null;
+  if (!isRetry && decidingVerdict !== 'match' && !audit.normalizations?.some((normalization) => normalization.verdictAfter === 'match'
+    && ['video_game_identical_sealed_label', 'video_game_soft_sealed_suffix', 'video_game_sealed_implies_cib_self_description',
+      'video_game_psa_wata_equivalence', 'graded_final_evidence_confirmation', 'coin_unknown_crop_supplement'].includes(normalization.rule))) return null;
+  if (audit.adjudicationStatus === 'unavailable') return null;
+  const requiredAdjudication = canonical.fields.category === 'coins' || isRetry;
+  if (canonical.fields.category === 'coins' && !hasCompletedCoinAdjudication(review, targetMetadata, facts.title ?? '')) return null;
+  const ownEvidence = isRetry ? audit.finalEvidence : audit.finalEvidence ?? review.visualEvidence ?? audit.initialEvidence;
+  if (!ownEvidence || isRetry && !audit.finalEvidence) return null;
+  if (!isRetry && audit.finalEvidence && review.visualEvidence
+    && JSON.stringify(boundedEvidence(audit.finalEvidence)) !== JSON.stringify(boundedEvidence(review.visualEvidence))) return null;
+  const evidence = boundedEvidence(decidingVisualEvidence({ visualEvidence: ownEvidence, visualAudit: audit }));
+  const graded = canonical.fields.category !== 'disney_pins' && canonical.fields.gradedState === 'graded';
+  if (graded && !gradedVisualEvidenceIsConfirmed(evidence)) return null;
+  if (canonical.fields.category !== 'disney_pins' && canonical.fields.gradedState === 'raw' && (evidence.rawOrLooseVisible !== true || evidence.slabVisible === true)) return null;
+  if (canonical.fields.category !== 'disney_pins' && evidence.identityMatches !== true) return null;
+  if (canonical.fields.category === 'disney_pins' && !disneyPinsEvidenceIsExact(evidence, targetMetadata)) return null;
+  if (['identityMatches', 'artworkMatches', 'dateMatches', 'varietyMatches', 'mintMarkMatches', 'denominationMatches']
+    .some((key) => evidence[key as keyof VisualEvidence] === false)) return null;
+  const decidingRationale = audit.decidingRationale ?? (isRetry ? audit.retryRationale : audit.initialRationale) ?? review.rationale;
+  const reconciled = conservativeGradedVisualReviews([{ ...review, rationale: decidingRationale, candidateIndex: 0, visualEvidence: evidence }],
+    [{ title: facts.title, ...(candidate ? { normalizedStructuredMetadata: candidate.fields } : {}) }], targetMetadata)[0];
+  if (reconciled?.verdict !== 'match') return null;
+  if ((review.visualDifferences ?? []).length > 30) return null;
+  if ((review.visualDifferences ?? []).some((difference) => difference.field.length > 80 || difference.targetObservation.length > 300
+    || difference.candidateObservation.length > 300 || difference.impact.length > 120)) return null;
+  const differences = (review.visualDifferences ?? []).map((difference) => ({
+    field: clip(difference.field, 80) ?? '', targetObservation: clip(difference.targetObservation, 300) ?? '',
+    candidateObservation: clip(difference.candidateObservation, 300) ?? '', impact: clip(difference.impact, 120) ?? '',
+  }));
+  if (differences.some((difference) => hardDecidingDifference(difference, canonical.fields.category))) return null;
+  const rationale = clip(decidingRationale, 600) ?? '';
+  const approval: IdentityApprovalV1 = immutableCopy({
+    version: IDENTITY_APPROVAL_VERSION, policyVersion: IDENTITY_APPROVAL_POLICY, status: 'approved',
+    origin: 'server_final_visual', verdict: 'match', confidence, decidingPass: audit.finalPass,
+    // Reaching this point proves the retry's own complete deciding evidence.
+    // Coins additionally passed their independent confirmed-adjudication guard.
+    requiredAdjudication, adjudicationCompleted: true,
+    targetVersion: IDENTITY_APPROVAL_TARGET_VERSION, targetFields: canonical.fields,
+    targetFingerprint: sha256(canonical.serialized), targetImageReferenceFingerprint: picture,
+    adapterId: 'sold_comps', adapterVersion: CANONICAL_ADAPTER_REGISTRY.sold_comps.version, originMarketplace: 'ebay',
+    sourceRecordId: facts.sourceRecordId, canonicalTransactionId: transactionId('sold_comps', facts)!,
+    sourceFactsHash: sourceFactsHash(facts), acquiredAt, decidingEvidence: evidence, decidingRationale: rationale, visualDifferences: differences,
+    ...(candidate ? { candidateIdentityFields: candidate.fields } : {}),
+  });
+  if (!approval.adjudicationCompleted || JSON.stringify(approval).length > 7_000) return null;
+  const handle: ServerFinalIdentityApproval = Object.freeze({ kind: 'server-final-identity-approval' });
+  mintedIdentityApprovals.set(handle, { sale, facts: immutableCopy(facts), approval });
+  return handle;
+}
+
+function validApproval(approval: IdentityApprovalV1, facts: CanonicalObservationFacts, provenance: CanonicalObservationProvenance): boolean {
+  if (!approval || typeof approval !== 'object' || Array.isArray(approval)) return false;
+  const keys = ['version', 'policyVersion', 'status', 'origin', 'verdict', 'confidence', 'decidingPass', 'requiredAdjudication',
+    'adjudicationCompleted', 'targetVersion', 'targetFields', 'targetFingerprint', 'targetImageReferenceFingerprint',
+    'adapterId', 'adapterVersion', 'originMarketplace', 'sourceRecordId', 'canonicalTransactionId', 'sourceFactsHash',
+    'acquiredAt', 'decidingEvidence', 'decidingRationale', 'visualDifferences'];
+  if (Object.prototype.hasOwnProperty.call(approval, 'candidateIdentityFields')) keys.push('candidateIdentityFields');
+  if (Object.keys(approval).length !== keys.length || Object.keys(approval).some((key) => !keys.includes(key))) return false;
+  if (approval.version !== IDENTITY_APPROVAL_VERSION || approval.policyVersion !== IDENTITY_APPROVAL_POLICY
+    || approval.status !== 'approved' || approval.origin !== 'server_final_visual' || approval.verdict !== 'match'
+    || !['high', 'medium'].includes(approval.confidence) || !['initial', 'high_resolution_retry'].includes(approval.decidingPass)
+    || typeof approval.requiredAdjudication !== 'boolean' || approval.adjudicationCompleted !== true
+    || approval.targetVersion !== IDENTITY_APPROVAL_TARGET_VERSION) return false;
+  if (provenance.adapterId !== 'sold_comps' || approval.adapterId !== provenance.adapterId
+    || approval.adapterVersion !== provenance.adapterVersion || approval.originMarketplace !== 'ebay'
+    || provenance.originMarketplace !== facts.originMarketplace || approval.originMarketplace !== facts.originMarketplace
+    || approval.sourceRecordId !== facts.sourceRecordId || approval.acquiredAt !== provenance.acquiredAt
+    || approval.canonicalTransactionId !== transactionId(provenance.adapterId, facts)
+    || approval.canonicalTransactionId !== provenance.canonicalTransactionId
+    || approval.sourceFactsHash !== sourceFactsHash(facts) || !approvalFactsAreEligible(facts, provenance.acquiredAt)) return false;
+  if (!approval.targetFields || typeof approval.targetFields !== 'object' || Array.isArray(approval.targetFields)
+    || Object.keys(approval.targetFields).length > 100 || !approval.targetFields.category
+    || Object.values(approval.targetFields).some((value) => typeof value !== 'string' || !value || value.length > 2_000)) return false;
+  const fields = Object.fromEntries(Object.keys(approval.targetFields).sort().map((key) => [key, approval.targetFields[key]]));
+  if (sha256(JSON.stringify({ version: approval.targetVersion, fields })) !== approval.targetFingerprint
+    || !/^[a-f0-9]{64}$/.test(approval.targetImageReferenceFingerprint)) return false;
+  const reconstructedTarget = canonicalizeIdentityApprovalTarget({
+    title: fields.title, category: fields.category, itemType: fields.itemType, grade: fields.grade,
+    certificationCompany: fields.certificationCompany, condition: fields.hardCondition, itemDetails: fields,
+  });
+  if (reconstructedTarget.conflicts.length || sha256(reconstructedTarget.serialized) !== approval.targetFingerprint) return false;
+  if (fields.category === 'autographs' || /original art|signed item|reference/.test(fields.itemType ?? '')) return false;
+  if (Object.prototype.hasOwnProperty.call(approval, 'candidateIdentityFields')) {
+    const candidate = canonicalizeIdentityApprovalCandidateFields(fields.category, approval.candidateIdentityFields!);
+    if (candidate.conflicts.length || JSON.stringify(candidate.fields) !== JSON.stringify(approval.candidateIdentityFields)
+      || !identityApprovalCandidateFieldsCompatible(fields, candidate.fields) || Number(candidate.fields.lotQuantity) > 1
+      || /\b(?:lot|bundle|components?|accessory[- ]only|manual[- ]only|box[- ]only)\b/i.test(candidate.fields.saleForm ?? candidate.fields.productForm ?? '')) return false;
+  }
+  if (!identityApprovalCandidateFieldsCompatible(fields, { saleForm: facts.saleForm ?? '' })) return false;
+  if (fields.category === 'coins' && (!approval.requiredAdjudication || approval.decidingPass !== 'high_resolution_retry')
+    || approval.decidingPass === 'high_resolution_retry' && !approval.requiredAdjudication) return false;
+  const evidence = approval.decidingEvidence;
+  if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence)
+    || Object.keys(evidence).some((key) => !EVIDENCE_KEYS.includes(key as keyof VisualEvidence) || typeof evidence[key as keyof VisualEvidence] !== 'boolean')) return false;
+  if (fields.category !== 'disney_pins' && (fields.gradedState === 'graded' && !gradedVisualEvidenceIsConfirmed(evidence)
+    || fields.gradedState === 'raw' && (evidence.rawOrLooseVisible !== true || evidence.slabVisible === true))) return false;
+  if (fields.category !== 'disney_pins' && evidence.identityMatches !== true
+    || fields.category === 'disney_pins' && !disneyPinsEvidenceIsExact(evidence)) return false;
+  if (['identityMatches', 'artworkMatches', 'dateMatches', 'varietyMatches', 'mintMarkMatches', 'denominationMatches']
+    .some((key) => evidence[key as keyof VisualEvidence] === false)) return false;
+  if (typeof approval.decidingRationale !== 'string' || approval.decidingRationale.length > 600
+    || !Array.isArray(approval.visualDifferences) || approval.visualDifferences.length > 30) return false;
+  return approval.visualDifferences.every((difference) => difference && typeof difference === 'object'
+    && Object.keys(difference).length === 4 && ['field', 'targetObservation', 'candidateObservation', 'impact']
+      .every((key) => typeof difference[key as keyof typeof difference] === 'string'
+        && difference[key as keyof typeof difference].length <= (key === 'field' ? 80 : key === 'impact' ? 120 : 300))
+    && !hardDecidingDifference(difference, fields.category));
+}
+
+function authorityStillBound(sale: MarketSale, authority: VerifiedApproval): boolean {
+  const elapsed = Date.now() - authority.verifiedAtWallMs;
+  if (elapsed < 0 || elapsed > authority.remainingAgeMs) return false;
+  if (sale.sourceId !== 'sold_comps' || sale.sourceAdapter !== 'sold_comps'
+    || sale.observationId !== authority.provenance.payloadHash || sale.canonicalTransactionId !== authority.provenance.canonicalTransactionId
+    || sale.evidenceDisposition !== 'valuation_eligible' || sale.duplicateStatus && !['unique', 'possible_duplicate'].includes(sale.duplicateStatus)) return false;
+  const current = normalizedFacts(CANONICAL_ADAPTER_REGISTRY.sold_comps, sale);
+  // Reconstructed URLs are already scheme-less canonical facts. Preserve their
+  // path case only when exactly bound, or parse a scheme-less successor with an
+  // authority-local https prefix. Never change legacy sealing normalization.
+  if (sale.url === authority.facts.canonicalUrl) current.canonicalUrl = authority.facts.canonicalUrl;
+  else if (typeof sale.url === 'string' && !/^[a-z][a-z\d+.-]*:/i.test(sale.url)) current.canonicalUrl = canonicalUrl(`https://${sale.url}`);
+  const structured = (sale as MarketSale & { normalizedStructuredMetadata?: unknown }).normalizedStructuredMetadata;
+  if (authority.approval.candidateIdentityFields !== undefined) {
+    const candidate = canonicalizeIdentityApprovalCandidateFields(authority.approval.targetFields.category, structured as Record<string, string>);
+    if (candidate.conflicts.length || JSON.stringify(candidate.fields) !== JSON.stringify(authority.approval.candidateIdentityFields)) return false;
+  } else if (structured !== undefined) {
+    const candidate = canonicalizeIdentityApprovalCandidateFields(authority.approval.targetFields.category, structured as Record<string, string>);
+    if (candidate.conflicts.length || !identityApprovalCandidateFieldsCompatible(authority.approval.targetFields, candidate.fields)) return false;
+  }
+  // Normalization may append economic diagnostics, but cannot change signed
+  // economics, visual status, form, transaction, or primary source facts.
+  const { evidenceReasons: _reasons, validationErrors: _errors, ...signed } = authority.facts;
+  const { evidenceReasons: _currentReasons, validationErrors: _currentErrors, ...observed } = current;
+  return JSON.stringify(signed) === JSON.stringify(observed);
+}
+export function getVerifiedIdentityApproval(
+  sale: MarketSale, target: IdentityApprovalTargetInput & { approvalTargetImageReference?: string }, imageReference?: string,
+): IdentityApprovalV1 | null {
+  const authority = verifiedIdentityApprovals.get(sale);
+  if (!authority || !authorityStillBound(sale, authority)) return null;
+  const canonical = canonicalizeIdentityApprovalTarget(target);
+  if (canonical.conflicts.length || sha256(canonical.serialized) !== authority.approval.targetFingerprint
+    || imageFingerprint(imageReference ?? target.approvalTargetImageReference) !== authority.approval.targetImageReferenceFingerprint) return null;
+  return authority.approval;
+}
+/** Only an already verified object can deliberately authorize its normalized successor. */
+export function transferVerifiedIdentityApproval(from: MarketSale, to: MarketSale): boolean {
+  const authority = verifiedIdentityApprovals.get(from);
+  if (!authority || !authorityStillBound(from, authority) || !authorityStillBound(to, authority)) return false;
+  verifiedIdentityApprovals.set(to, authority);
+  return true;
+}
+
 function asMarketSale(facts: CanonicalObservationFacts, provenance: CanonicalObservationProvenance): MarketSale {
   const reasons = [...facts.evidenceReasons, ...facts.validationErrors];
   const recency = facts.date ? (Date.now() - Date.parse(facts.date) <= 365 * 86_400_000 ? 'recent' : 'historical') : 'undated';
@@ -392,7 +705,7 @@ function asMarketSale(facts: CanonicalObservationFacts, provenance: CanonicalObs
 export function sealCanonicalObservation(
   adapterId: AdapterId,
   sale: MarketSale,
-  options?: { query?: string | null; acquiredAt?: Date; signingKey?: string; visualRequirement?: VisualRequirement; saleForm?: string | null; lotQuantity?: number | null },
+  options?: { query?: string | null; acquiredAt?: Date; signingKey?: string; visualRequirement?: VisualRequirement; saleForm?: string | null; lotQuantity?: number | null; identityApproval?: ServerFinalIdentityApproval | null },
 ): SealedMarketObservation {
   const adapter = CANONICAL_ADAPTER_REGISTRY[adapterId];
   const facts = normalizedFacts(adapter, sale, options);
@@ -401,7 +714,17 @@ export function sealCanonicalObservation(
     : facts.sourceRecordId
       ? `record:${adapterId}:${normalizeKey(facts.sourceRecordId)}`
       : null;
-  const acquiredAt = (options?.acquiredAt ?? new Date()).toISOString();
+  const mint = options?.identityApproval && typeof options.identityApproval === 'object'
+    ? mintedIdentityApprovals.get(options.identityApproval) : undefined;
+  const acquiredAt = (options?.acquiredAt ?? (mint ? new Date(mint.approval.acquiredAt) : new Date())).toISOString();
+  const structured = (sale as MarketSale & { normalizedStructuredMetadata?: unknown }).normalizedStructuredMetadata;
+  const currentCandidate = mint?.approval.candidateIdentityFields !== undefined && structured !== undefined
+    ? canonicalizeIdentityApprovalCandidateFields(mint.approval.targetFields.category, structured as Record<string, string>) : undefined;
+  const candidateStillBound = !currentCandidate || currentCandidate.conflicts.length === 0
+    && JSON.stringify(currentCandidate.fields) === JSON.stringify(mint?.approval.candidateIdentityFields);
+  const identityApproval = mint && adapterId === 'sold_comps' && mint.sale === sale
+    && mint.approval.acquiredAt === acquiredAt && sourceFactsHash(facts) === mint.approval.sourceFactsHash
+    && candidateStillBound && canonicalTransactionId === mint.approval.canonicalTransactionId ? mint.approval : undefined;
   const provenance: CanonicalObservationProvenance = {
     version: CANONICAL_OBSERVATION_VERSION,
     policyVersion: CANONICAL_OBSERVATION_POLICY_VERSION,
@@ -410,14 +733,16 @@ export function sealCanonicalObservation(
     originMarketplace: facts.originMarketplace,
     acquiredAt,
     queryFingerprint: sha256(clip(options?.query, 600) ?? ''),
-    payloadHash: sha256(JSON.stringify({ adapterId, facts, acquiredAt })),
+    payloadHash: sha256(JSON.stringify(identityApproval ? { adapterId, facts, acquiredAt, identityApproval } : { adapterId, facts, acquiredAt })),
     canonicalTransactionId,
   };
   const payload: SignedObservationPayload = { version: CANONICAL_OBSERVATION_VERSION, provenance, facts };
+  if (identityApproval) payload.identityApproval = identityApproval;
   const signingKey = resolveSigningKey(options?.signingKey);
-  if (!signingKey) return { provenanceToken: null, provenance, validationErrors: facts.validationErrors };
+  const transport = identityApproval ? { identityApproval } : {};
+  if (!signingKey) return { provenanceToken: null, provenance, validationErrors: facts.validationErrors, ...transport };
   const encoded = toBase64Url(JSON.stringify(payload));
-  return { provenanceToken: `${encoded}.${tokenSignature(encoded, signingKey)}`, provenance, validationErrors: facts.validationErrors };
+  return { provenanceToken: `${encoded}.${tokenSignature(encoded, signingKey)}`, provenance, validationErrors: facts.validationErrors, ...transport };
 }
 
 /**
@@ -464,8 +789,13 @@ export function verifyCanonicalObservation(
   if (!payload || payload.version !== CANONICAL_OBSERVATION_VERSION || !payload.provenance || !payload.facts) {
     return { verified: false, sale: fallback(), reasons: ['server provenance payload does not match the active observation contract'] };
   }
+  if (payload.provenance.version !== CANONICAL_OBSERVATION_VERSION || payload.provenance.policyVersion !== CANONICAL_OBSERVATION_POLICY_VERSION
+    || !Array.isArray(payload.facts.evidenceReasons) || !Array.isArray(payload.facts.validationErrors)) {
+    return { verified: false, sale: fallback(), reasons: ['server provenance facts or policy are malformed'] };
+  }
   const adapter = CANONICAL_ADAPTER_REGISTRY[payload.provenance.adapterId];
-  if (!adapter || payload.provenance.adapterVersion !== adapter.version) {
+  if (!Object.prototype.hasOwnProperty.call(CANONICAL_ADAPTER_REGISTRY, payload.provenance.adapterId)
+    || !adapter || payload.provenance.adapterVersion !== adapter.version) {
     return { verified: false, sale: fallback(), reasons: ['server provenance adapter is unsupported or out of policy'] };
   }
   const timestamp = Date.parse(payload.provenance.acquiredAt);
@@ -473,11 +803,28 @@ export function verifyCanonicalObservation(
   if (!Number.isFinite(timestamp) || timestamp > now.getTime() || now.getTime() - timestamp > (options?.maxAgeMs ?? OBSERVATION_TOKEN_MAX_AGE_MS)) {
     return { verified: false, sale: fallback(), reasons: ['server provenance reference has expired or has an invalid acquisition time'] };
   }
-  const expectedHash = sha256(JSON.stringify({ adapterId: payload.provenance.adapterId, facts: payload.facts, acquiredAt: payload.provenance.acquiredAt }));
+  const hasApproval = Object.prototype.hasOwnProperty.call(payload, 'identityApproval');
+  const hashInput = { adapterId: payload.provenance.adapterId, facts: payload.facts, acquiredAt: payload.provenance.acquiredAt };
+  const expectedHash = sha256(JSON.stringify(hasApproval ? { ...hashInput, identityApproval: payload.identityApproval } : hashInput));
   if (payload.provenance.payloadHash !== expectedHash) {
     return { verified: false, sale: fallback(), reasons: ['server provenance payload hash is invalid'] };
   }
+  let approvalValid = !hasApproval;
+  if (hasApproval) {
+    try { approvalValid = validApproval(payload.identityApproval!, payload.facts, payload.provenance); }
+    catch { approvalValid = false; }
+  }
+  if (!approvalValid) {
+    return { verified: false, sale: fallback(), reasons: ['server identity approval contract or binding is invalid'] };
+  }
   const sale = asMarketSale(payload.facts, payload.provenance);
+  if (hasApproval) {
+    const authority: VerifiedApproval = immutableCopy({ facts: payload.facts, provenance: payload.provenance, approval: payload.identityApproval!,
+      verifiedAtWallMs: Date.now(), remainingAgeMs: OBSERVATION_TOKEN_MAX_AGE_MS - (now.getTime() - timestamp) });
+    Object.assign(sale, { identityApproval: authority.approval, visualEvidence: authority.approval.decidingEvidence,
+      ...(authority.approval.candidateIdentityFields !== undefined ? { normalizedStructuredMetadata: authority.approval.candidateIdentityFields } : {}) });
+    verifiedIdentityApprovals.set(sale, authority);
+  }
   return { verified: true, sale, provenance: payload.provenance, reasons: payload.facts.validationErrors };
 }
 

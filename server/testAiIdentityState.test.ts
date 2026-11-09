@@ -17,6 +17,24 @@ describe('universal analyzer identity state', () => {
     expect(identityStateConflicts(target, sale)).not.toContain('grade differs (9.6 vs 9.60)');
   });
 
+  it('uses PSA/WATA equivalence only for Video Games and retains the observed labels', () => {
+    const target = extractIdentityState({ title: 'Zelda NES', grade: '7.50', certificationCompany: 'PSA' });
+    const candidate = extractIdentityState({ title: 'Zelda NES WATA 7.5' });
+    expect(identityStateConflicts(target, candidate, false, 'video_games')).toEqual([]);
+    expect(identityStateConflicts(target, candidate, false, 'sports_cards').join(' ')).toContain('grading company differs');
+    expect(identityStateConflicts(target, candidate).join(' ')).toContain('grading company differs');
+    expect(candidate.grader).toBe('wata');
+  });
+
+  it('does not equate two different nonnumeric grades merely because both numeric parsers return null', () => {
+    const target = extractIdentityState({ title: 'Coin PCGS', grade: 'MS65', certificationCompany: 'PCGS' });
+    const candidate = extractIdentityState({ title: 'Coin PCGS', grade: 'MS66', certificationCompany: 'PCGS' });
+    expect(identityStateConflicts(target, candidate, false, 'coins').join(' ')).toContain('grade differs');
+    expect(identityStateConflicts(target, { ...candidate, grade: 'PR65' }, false, 'coins').join(' ')).toContain('grade differs');
+    expect(identityStateConflicts(target, { ...candidate, grade: 'MS65+' }, false, 'coins').join(' ')).toContain('grade differs');
+    expect(identityStateConflicts(target, { ...candidate, grade: 'MS65' }, false, 'coins')).toEqual([]);
+  });
+
   it('rejects a graded candidate for a raw target and a raw candidate for a graded target', () => {
     const rawTarget = { title: '2018 Panini Prizm Luka Doncic #280', category: 'sports_cards', itemDetails: JSON.stringify({ cardNumber: '280' }) };
     const gradedTarget = { ...rawTarget, title: `${rawTarget.title} PSA 10`, grade: '10', certificationCompany: 'PSA' };

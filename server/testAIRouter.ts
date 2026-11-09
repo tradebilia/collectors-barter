@@ -25,10 +25,10 @@ import { AUTOGRAPH_SEARCH_DESIGNATION, buildComicsOriginalArtQueries, buildSport
 import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
 import { extractMarketplaceLotQuantity, isExplicitMultiItemListing, normalizeMarketplaceCandidate } from '../shared/testAiMarketplaceCandidate';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
-import { deterministicTradeComparison, marketProfileForPrompt, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
+import { deterministicTradeComparison, marketProfileForPrompt, scoreComparable, signedComparableFormConflicts, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
 import { normalizeAnalysisMarketSales } from './testAiMarketEvidence';
-import { attachCanonicalProvenance } from './testAiCanonicalObservation';
+import { attachCanonicalProvenance, createServerFinalIdentityApproval, sealCanonicalObservation } from './testAiCanonicalObservation';
 import { numistaCoinGuideQuote, priceChartingCoinGuideQuote } from './testAiGuideEvidence';
 import { ANALYZER_NARRATIVE_RESPONSE_FORMAT, buildDeterministicNarrativeFallback, parseAnalyzerResponse, parseEvidenceBoundNarrative } from './testAiResponse';
 import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNewsFeeds';
@@ -1304,6 +1304,21 @@ const testAiEvidenceSummarySchema = z.object({
   sources: z.array(z.object({ id: z.string().max(80), label: z.string().max(120), kind: z.enum(['market_current', 'market_completed', 'market_historical', 'certification', 'reference']), role: z.enum(['valuation_candidate', 'valuation_guide', 'asking_price_context', 'historical_context', 'certification_context', 'reference_context']), status: z.enum(['success', 'not_found', 'error', 'idle']), message: z.string().max(600).nullable().optional() })).max(30),
 });
 
+/** Lossless diagnostic transport; browser fields never establish approval or sale authority. */
+const analysisMarketSaleTransportSchema = z.object({
+        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), originMarketplace: z.string().nullable().optional(), sourceLabel: z.string().nullable().optional(), sourceAdapter: z.string().nullable().optional(), recency: z.enum(['recent', 'extended', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(), completedStatusBasis: z.string().nullable().optional(), priceBasis: z.enum(['realized', 'sold', 'closed', 'unknown']).nullable().optional(), visualRequirement: z.enum(['not_required', 'required']).nullable().optional(), visualReviewStatus: z.enum(['match', 'rough_match', 'mismatch', 'unreadable', 'not_reviewed']).nullable().optional(), visualReviewRationale: z.string().nullable().optional(), visualDifferences: z.array(z.object({ field: z.string(), targetObservation: z.string(), candidateObservation: z.string(), impact: z.string() })).max(30).nullable().optional(), metadataFieldComparisons: z.array(z.object({ targetField: z.string(), targetValue: z.string(), candidateField: z.string(), candidateValue: z.string(), status: z.enum(['match', 'different', 'unknown']), titleDerivedField: z.string().optional(), titleDerivedValue: z.string().optional(), titleDerivedStatus: z.enum(['match', 'different', 'unknown']).optional(), rankingContribution: z.unknown().optional() })).max(40).nullable().optional(), evidenceDisposition: z.enum(['valuation_eligible', 'warning_review', 'context_only', 'rejected_objective_conflict', 'omitted_by_cap', 'not_visually_reviewed_window']).nullable().optional(), evidenceReasons: z.array(z.string()).max(20).nullable().optional(), buyerPremium: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), shipping: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), tax: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), saleForm: z.string().nullable().optional(), lotQuantity: z.number().int().positive().nullable().optional(), provenanceToken: z.string().max(16_000).nullable().optional(),
+  identityApproval: z.unknown().optional(),
+  visualEvidence: z.record(z.string(), z.boolean()).nullish(),
+  visualAudit: z.unknown().optional(),
+  provenance: z.unknown().optional(),
+  observationId: z.string().max(240).nullish(),
+  canonicalTransactionId: z.string().max(1_500).nullish(),
+  duplicateStatus: z.enum(['unique', 'exact_duplicate', 'probable_duplicate', 'possible_duplicate']).nullish(),
+  metadataMatchScore: z.number().finite().nullish(),
+  metadataMatchRank: z.number().int().positive().nullish(),
+  metadataMatchReasons: z.array(z.string().max(600)).max(40).nullish(),
+}).passthrough();
+
 const uspsScreenshotReviewSchema = z.object({
   trackingNumber: z.string().trim().min(4).max(40),
   imageDataUrl: z.string()
@@ -1320,6 +1335,72 @@ type UspsScreenshotReview = {
 
 function normalizeTrackingNumber(value: string | null | undefined) {
   return String(value ?? '').replace(/[^a-z0-9]/gi, '').toUpperCase();
+}
+
+const identityApprovalTargetInputSchema = z.object({
+  title: z.string().max(600),
+  category: z.string().max(80),
+  itemType: z.string().max(80).optional(),
+  grade: z.string().max(40).optional(),
+  condition: z.string().max(120).optional(),
+  certificationCompany: z.string().max(80).optional(),
+  itemDetails: z.string().max(12_000).optional(),
+});
+
+/** Ordinary eBay Sold-Comps only: mint from the actual post-Stage-1 row, not an index or browser status. */
+export function sealSoldCompsFinalVisualListings<T extends MarketSale>(sales: T[], context: {
+  reviewedTarget: ComparableTarget;
+  target?: ComparableTarget;
+  targetMetadata: string;
+  targetImageReference?: string | null;
+  expectedImageReference?: string | null;
+  query: string;
+  acquiredAt?: Date;
+  signingKey?: string;
+}) {
+  const acquiredAt = context.acquiredAt ?? new Date();
+  return sales.map((sale) => {
+    const row = sale as T & Pick<VisualSourceReview, 'visualEvidence' | 'visualAudit' | 'visualDifferences'>;
+    const audit = row.visualAudit;
+    const confidence = audit?.finalPass === 'high_resolution_retry' ? audit.retryConfidence : audit?.initialConfidence;
+    const review: VisualSourceReview = {
+      candidateIndex: 0,
+      verdict: sale.visualReviewStatus === 'match' || sale.visualReviewStatus === 'rough_match' || sale.visualReviewStatus === 'mismatch'
+        ? sale.visualReviewStatus : 'unreadable',
+      confidence: confidence === 'high' || confidence === 'medium' ? confidence : 'low',
+      rationale: String(sale.visualReviewRationale ?? ''),
+      visualEvidence: row.visualEvidence,
+      visualAudit: audit,
+      visualDifferences: row.visualDifferences,
+    };
+    // Reuse only known hard identity contradictions; no score/readiness or
+    // missing-title-field outcome is allowed to cancel a genuine final match.
+    const knownIdentity = scoreComparable(context.reviewedTarget, sale);
+    const knownHardConflict = knownIdentity.categoryIdentity.status === 'objective_conflict'
+      || knownIdentity.identityRelationship === 'conflict'
+      || knownIdentity.valuationRelationship === 'grade_adjacent_comparable'
+      || knownIdentity.valuationRelationship === 'variant_comparable'
+      || signedComparableFormConflicts(context.reviewedTarget, sale.saleForm).length > 0;
+    const candidateIdentityFields = (sale as MarketSale & { soldCompsMetadata?: Record<string, string> }).soldCompsMetadata
+      ?? normalizeSoldCompsMetadata(sale);
+    const approval = !knownHardConflict && context.target && audit && context.targetImageReference && context.expectedImageReference
+      ? createServerFinalIdentityApproval({ sale, target: context.target, reviewedTarget: context.reviewedTarget,
+          targetImageReference: context.targetImageReference, expectedImageReference: context.expectedImageReference,
+          targetMetadata: context.targetMetadata, review, candidateIdentityFields, acquiredAt })
+      : null;
+    // Required-visual legacy/missing-binding rows remain visible, but their
+    // source panel must not claim an approval that final analysis cannot verify.
+    const sealedSale = sale.visualRequirement === 'required' && !approval && sale.evidenceDisposition === 'valuation_eligible'
+      ? { ...sale, evidenceDisposition: 'context_only' as const,
+          evidenceReasons: [...(sale.evidenceReasons ?? []), knownHardConflict
+            ? `Known identity conflict prevents final approval: ${knownIdentity.categoryIdentity.conflicts.join('; ') || knownIdentity.reasons.filter((reason) => /conflict|differs/.test(reason)).join('; ')}`
+            : 'Server-final identity approval is unavailable or target/image binding changed; retained for review.'] }
+      : sale;
+    const sealed = sealCanonicalObservation('sold_comps', sealedSale, {
+      acquiredAt, signingKey: context.signingKey, query: context.query, identityApproval: approval ?? undefined,
+    });
+    return { ...sealedSale, ...sealed };
+  });
 }
 
 // ─── Router ─────────────────────────────────────────────────────────────────
@@ -2483,6 +2564,8 @@ export const testAIRouter = router({
       statedTradeValue: z.number().finite().nonnegative().optional(),
       imageUrl: z.string().url().optional(),
       visualProvider: z.enum(['manus_forge', 'openai']).optional(),
+      approvalTarget: identityApprovalTargetInputSchema.optional(),
+      approvalTargetImageReference: z.string().max(2_000).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -2861,6 +2944,9 @@ export const testAIRouter = router({
             priceBasis: 'sold',
           }),
           ...item,
+          // Already parsed provider facts, not title guesses. This is the
+          // shared reader's existing alias and preserves explicit grade/company.
+          normalizedStructuredMetadata: item.soldCompsMetadata ?? normalizeSoldCompsMetadata(item),
           imageUrls: collectEbayImageUrls(item),
         }));
         const scoreExcludedListings: any[] = [];
@@ -2961,17 +3047,28 @@ export const testAIRouter = router({
           targetMetadata: soldCompsTargetMetadata,
           visualReviewRequired: Boolean(safeTargetImage),
         }));
-        const canonicalListings = attachCanonicalProvenance('sold_comps', annotatedListings.map((item: any) => ({
+        const canonicalListings = sealSoldCompsFinalVisualListings(annotatedListings.map((item: any) => ({
           ...item,
           price: Number(item.soldPrice),
           currency: item.soldCurrency ?? null,
           date: item.endedAt ?? null,
           saleId: item.saleId ?? item.id ?? item.url ?? null,
           url: item.url ?? null,
-          saleStatus: 'completed',
+          sourceId: 'sold_comps',
+          saleStatus: 'completed' as const,
           completedStatusBasis: 'Sold-Comps completed-sale endpoint',
-          priceBasis: 'sold',
-        })), { query });
+          priceBasis: 'sold' as const,
+          saleForm: item.saleForm ?? null,
+          lotQuantity: item.lotQuantity ?? extractMarketplaceLotQuantity(item) ?? null,
+        })), {
+          reviewedTarget: { title: input.title, category: input.category, itemType: input.itemType,
+            grade: input.grade, condition: input.condition, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails },
+          target: input.approvalTarget,
+          targetMetadata: soldCompsTargetMetadata,
+          targetImageReference: safeTargetImage,
+          expectedImageReference: input.approvalTargetImageReference,
+          query,
+        });
         const valuationEligibleListings = canonicalListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible');
 
         // Metrics intentionally use only explicit completed-sale records whose
@@ -3003,6 +3100,21 @@ export const testAIRouter = router({
             saleId: i.saleId ?? i.id ?? null,
             sourceId: i.sourceId ?? 'sold_comps',
             sourceLabel: i.sourceLabel ?? 'eBay Sold-Comps',
+            date: i.date,
+            url: i.url,
+            originMarketplace: i.originMarketplace,
+            saleStatus: i.saleStatus,
+            completedStatusBasis: i.completedStatusBasis,
+            priceBasis: i.priceBasis,
+            visualRequirement: i.visualRequirement,
+            buyerPremium: i.buyerPremium,
+            shipping: i.shipping,
+            tax: i.tax,
+            saleForm: i.saleForm,
+            lotQuantity: i.lotQuantity,
+            identityApproval: i.identityApproval,
+            observationId: i.observationId,
+            canonicalTransactionId: i.canonicalTransactionId,
             retrievalQuery: i.retrievalQuery ?? null,
             evidenceDisposition: i.evidenceDisposition,
             evidenceReasons: i.evidenceReasons,
@@ -3016,6 +3128,7 @@ export const testAIRouter = router({
             visualDifferences: i.visualDifferences,
             visualAdmissionReason: i.visualAdmissionReason,
             visualAudit: i.visualAudit,
+            visualEvidence: i.visualEvidence,
             provenanceToken: i.provenanceToken,
             provenance: i.provenance,
             validationErrors: i.validationErrors,
@@ -4020,6 +4133,7 @@ export const testAIRouter = router({
         certificationCompany: z.string().nullish(),
         itemDetails: z.string().optional(),
         imageUrl: z.string().url().optional(),
+        approvalTargetImageReference: z.string().max(2_000).optional(),
       }),
       rightItem: z.object({
         title: z.string(),
@@ -4031,6 +4145,7 @@ export const testAIRouter = router({
         certificationCompany: z.string().nullish(),
         itemDetails: z.string().optional(),
         imageUrl: z.string().url().optional(),
+        approvalTargetImageReference: z.string().max(2_000).optional(),
       }),
       useImageAnalyzer: z.boolean().optional().default(true),
       useVisualFieldCompletion: z.boolean().optional().default(false),
@@ -4040,12 +4155,8 @@ export const testAIRouter = router({
       rightHipstampMetrics: z.any().optional(),
       leftSoldCompsMetrics: z.any().optional(),
       rightSoldCompsMetrics: z.any().optional(),
-      leftHistoricalTrendSales: z.array(z.object({
-        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), originMarketplace: z.string().nullable().optional(), sourceLabel: z.string().nullable().optional(), sourceAdapter: z.string().nullable().optional(), recency: z.enum(['recent', 'extended', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(), completedStatusBasis: z.string().nullable().optional(), priceBasis: z.enum(['realized', 'sold', 'closed', 'unknown']).nullable().optional(), visualRequirement: z.enum(['not_required', 'required']).nullable().optional(), visualReviewStatus: z.enum(['match', 'rough_match', 'mismatch', 'unreadable', 'not_reviewed']).nullable().optional(), visualReviewRationale: z.string().nullable().optional(), visualDifferences: z.array(z.object({ field: z.string(), targetObservation: z.string(), candidateObservation: z.string(), impact: z.string() })).max(30).nullable().optional(), metadataFieldComparisons: z.array(z.object({ targetField: z.string(), targetValue: z.string(), candidateField: z.string(), candidateValue: z.string(), status: z.enum(['match', 'different', 'unknown']), titleDerivedField: z.string().optional(), titleDerivedValue: z.string().optional(), titleDerivedStatus: z.enum(['match', 'different', 'unknown']).optional() })).max(40).nullable().optional(), evidenceDisposition: z.enum(['valuation_eligible', 'warning_review', 'context_only', 'rejected_objective_conflict', 'omitted_by_cap', 'not_visually_reviewed_window']).nullable().optional(), evidenceReasons: z.array(z.string()).max(20).nullable().optional(), buyerPremium: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), shipping: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), tax: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), saleForm: z.string().nullable().optional(), lotQuantity: z.number().int().positive().nullable().optional(), provenanceToken: z.string().max(16_000).nullable().optional(),
-      })).max(120).optional(),
-      rightHistoricalTrendSales: z.array(z.object({
-        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), originMarketplace: z.string().nullable().optional(), sourceLabel: z.string().nullable().optional(), sourceAdapter: z.string().nullable().optional(), recency: z.enum(['recent', 'extended', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(), completedStatusBasis: z.string().nullable().optional(), priceBasis: z.enum(['realized', 'sold', 'closed', 'unknown']).nullable().optional(), visualRequirement: z.enum(['not_required', 'required']).nullable().optional(), visualReviewStatus: z.enum(['match', 'rough_match', 'mismatch', 'unreadable', 'not_reviewed']).nullable().optional(), visualReviewRationale: z.string().nullable().optional(), visualDifferences: z.array(z.object({ field: z.string(), targetObservation: z.string(), candidateObservation: z.string(), impact: z.string() })).max(30).nullable().optional(), metadataFieldComparisons: z.array(z.object({ targetField: z.string(), targetValue: z.string(), candidateField: z.string(), candidateValue: z.string(), status: z.enum(['match', 'different', 'unknown']), titleDerivedField: z.string().optional(), titleDerivedValue: z.string().optional(), titleDerivedStatus: z.enum(['match', 'different', 'unknown']).optional() })).max(40).nullable().optional(), evidenceDisposition: z.enum(['valuation_eligible', 'warning_review', 'context_only', 'rejected_objective_conflict', 'omitted_by_cap', 'not_visually_reviewed_window']).nullable().optional(), evidenceReasons: z.array(z.string()).max(20).nullable().optional(), buyerPremium: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), shipping: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), tax: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), saleForm: z.string().nullable().optional(), lotQuantity: z.number().int().positive().nullable().optional(), provenanceToken: z.string().max(16_000).nullable().optional(),
-      })).max(120).optional(),
+      leftHistoricalTrendSales: z.array(analysisMarketSaleTransportSchema).max(120).optional(),
+      rightHistoricalTrendSales: z.array(analysisMarketSaleTransportSchema).max(120).optional(),
       leftIdentityGate: z.object({ materialReviewRequired: z.boolean().optional(), materialFlags: z.array(z.string()).max(20).optional(), sourceAlignmentStatus: z.enum(['aligned', 'conflicted', 'unavailable']).optional() }).optional(),
       rightIdentityGate: z.object({ materialReviewRequired: z.boolean().optional(), materialFlags: z.array(z.string()).max(20).optional(), sourceAlignmentStatus: z.enum(['aligned', 'conflicted', 'unavailable']).optional() }).optional(),
       cashAdjustment: z.object({ amount: z.number().finite().positive().max(1_000_000), paidBy: z.enum(['item_a', 'item_b']) }).nullable().optional(),
@@ -4262,8 +4373,8 @@ export const testAIRouter = router({
       // The client only transports marketplace observations. The server owns
       // the final status, date, currency, price-basis, visual, and disposition
       // decision before any record can reach deterministic valuation.
-      const normalizedLeftSales = normalizeAnalysisMarketSales((leftHistoricalTrendSales ?? []) as MarketSale[], analysisNow, { category: analysisLeftItem.category });
-      const normalizedRightSales = normalizeAnalysisMarketSales((rightHistoricalTrendSales ?? []) as MarketSale[], analysisNow, { category: analysisRightItem.category });
+      const normalizedLeftSales = normalizeAnalysisMarketSales((leftHistoricalTrendSales ?? []) as MarketSale[], analysisNow, { category: analysisLeftItem.category, target: analysisLeftItem as ComparableTarget });
+      const normalizedRightSales = normalizeAnalysisMarketSales((rightHistoricalTrendSales ?? []) as MarketSale[], analysisNow, { category: analysisRightItem.category, target: analysisRightItem as ComparableTarget });
       // Keep the narrative trend input strictly aligned with the server's
       // recency classification. In particular, PCGS rows older than one year
       // belong here; recent PCGS rows are current-value candidates instead.

@@ -3,6 +3,10 @@ import { classifyStampFormat, stampFormatsCompatible } from './stampFormat';
 import { extractIdentityState, identityStateConflicts } from './testAiIdentityState';
 import { isVerifiedGuideAnchor } from './testAiGuideEvidence';
 import type { GuideValueAnchor } from '../shared/testAiEvidenceNormalization';
+import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
+import { getVerifiedIdentityApproval, transferVerifiedIdentityApproval } from './testAiCanonicalObservation';
+import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
+import type { VisualEvidence } from './testAiVisualSourceFilter';
 
 export type EvidenceState =
   | 'no_market_evidence'
@@ -22,6 +26,8 @@ export interface ComparableTarget {
   condition?: string;
   certificationCompany?: string;
   itemDetails?: string;
+  /** Binding-only primary-image reference, independent of final vision dispatch. */
+  approvalTargetImageReference?: string;
 }
 
 export interface MarketSale {
@@ -64,6 +70,16 @@ export interface MarketSale {
   observationId?: string | null;
   canonicalTransactionId?: string | null;
   duplicateStatus?: 'unique' | 'exact_duplicate' | 'probable_duplicate' | 'possible_duplicate' | null;
+  /** Signed diagnostic payload only; server-only authority is not this property. */
+  identityApproval?: unknown;
+  visualEvidence?: VisualEvidence;
+  visualAudit?: unknown;
+  visualDifferences?: unknown[] | null;
+  normalizedStructuredMetadata?: Readonly<Record<string, string>>;
+  metadataMatchScore?: number | null;
+  metadataMatchRank?: number | null;
+  metadataMatchReasons?: string[] | null;
+  metadataFieldComparisons?: unknown[] | null;
 }
 
 export type ComparableClassification = 'exact' | 'near' | 'contextual' | 'rejected';
@@ -126,6 +142,18 @@ export interface ComparableMatch {
   visualReviewRationale?: string | null;
   evidenceDisposition?: string | null;
   evidenceReasons?: string[] | null;
+  identityApproval?: unknown;
+  identityAdmissionBasis?: 'server_final_visual' | 'title_evidence';
+  visualEvidence?: VisualEvidence;
+  visualAudit?: unknown;
+  visualDifferences?: unknown[] | null;
+  normalizedStructuredMetadata?: Readonly<Record<string, string>>;
+  metadataMatchScore?: number | null;
+  metadataMatchRank?: number | null;
+  metadataMatchReasons?: string[] | null;
+  metadataFieldComparisons?: unknown[] | null;
+  /** Unmodified title-only assessment remains available beside final approval. */
+  titleCategoryIdentity?: ComparableCategoryIdentity;
   /** Stable machine-readable reason for direct analyzer admission or exclusion. */
   admissionCode?: 'USED_DIRECT' | 'OMITTED_BY_CAP' | 'SECONDARY_EVIDENCE' | 'CONTEXT_ONLY' | 'REVIEW_REQUIRED' | 'REJECTED_IDENTITY';
   duplicateOf?: string;
@@ -444,6 +472,9 @@ export function deduplicateMarketSales(sales: MarketSale[]): { unique: MarketSal
     }
     const knownPossible = possibleKey ? seenPossible.get(possibleKey) : null;
     const retained = knownPossible ? { ...sale, duplicateStatus: 'possible_duplicate' as const } : { ...sale, duplicateStatus: 'unique' as const };
+    // This server-owned copy changes only duplicate diagnostics. Browser copies
+    // never acquire approval authority merely by carrying the same properties.
+    transferVerifiedIdentityApproval(sale, retained);
     if (knownPossible) possibleDuplicates.push(retained);
     if (exactKey) seenExact.set(exactKey, exactKey);
     if (probableKey) seenProbable.set(probableKey, probableKey);
@@ -1298,7 +1329,15 @@ export function assessComparableCategoryIdentity(
     const manufacturer = firstString(details, ['customManufacturer', 'manufacturer', 'brand']);
     const year = yearStatus();
     const brandConflict = knownBrandConflict(title, manufacturer, ['topps', 'panini', 'upper deck', 'bowman', 'donruss', 'fleer', 'score', 'leaf']);
-    record('Player', player, titleContainsExpectedPhrase(title, player));
+    const playerMatches = titleContainsExpectedPhrase(title, player);
+    const brandAnchor = manufacturer?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Only an explicit personal-name-shaped declaration between a known
+    // manufacturer and card#/grader anchor is treated as a different player.
+    // Sparse or set/finish-only text remains Unknown, not an invented person.
+    const namedPlayer = !playerMatches && brandAnchor ? title.match(new RegExp(`\\b${brandAnchor}\\s+([A-Z][A-Za-z'’.-]+(?:\\s+[A-Z][A-Za-z'’.-]+){1,3})\\s+(?=#?\\d|PSA\\b|BGS\\b|SGC\\b|CGC\\b)`, 'u'))?.[1] : null;
+    const playerConflict = namedPlayer && !/\b(?:chrome|refractor|rookie|card|basketball|baseball|football|hockey|edition|insert|parallel|gold|silver|label|autograph|auto|collection|series)\b/i.test(namedPlayer)
+      ? namedPlayer : null;
+    record('Player', player, playerMatches, playerConflict);
     // A different stated year may be a reissue, regional release, or listing
     // shorthand. Preserve it as review context rather than a hard rejection.
     record('Year', targetYear, year.matches);
@@ -1668,6 +1707,13 @@ export function assessComparableCategoryIdentity(
   };
 }
 
+/** Only form labels are compared; form-only text cannot invent a player or edition conflict. */
+export function signedComparableFormConflicts(target: ComparableTarget, saleForm: string | null | undefined): string[] {
+  if (!saleForm?.trim()) return [];
+  const assessment = assessComparableCategoryIdentity(target, parseDetails(target), saleForm.replace(/_/g, ' '), null);
+  return assessment.conflicts.filter((conflict) => /^(?:Stamp form|Object form|Package state|Format|Pin form|Packaging|Toy form|Signed item form|Movie collectible form|Poster format) differs\b/.test(conflict));
+}
+
 export function scoreComparable(target: ComparableTarget, sale: MarketSale): ComparableMatch {
   const title = String(sale.title ?? '').trim();
   const price = Number(sale.price);
@@ -1680,7 +1726,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const targetIdentityState = isDisneyPins ? null : extractIdentityState(target);
   const saleIdentityState = isDisneyPins ? null : extractIdentityState({ title, grade: null, certificationCompany: null, itemDetails: null });
   const universalIdentityConflicts = targetIdentityState && saleIdentityState
-    ? identityStateConflicts(targetIdentityState, saleIdentityState, categoryKey === 'comics')
+    ? identityStateConflicts(targetIdentityState, saleIdentityState, categoryKey === 'comics', categoryKey)
     : [];
   const identity = buildTestAiP0Identity(target);
   const targetTokens = new Set(textTokens(target.title));
@@ -1709,6 +1755,9 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const normalizedTargetNumber = normalizeComparableNumber(targetNumber);
   const observedNumber = extractComparableNumber(title, String(target.category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_'));
   const categoryIdentity = assessComparableCategoryIdentity(target, details, title, observedNumber);
+  const identityApproval = getVerifiedIdentityApproval(sale, target, target.approvalTargetImageReference);
+  const requiredApprovalMissing = sale.visualRequirement === 'required' && !identityApproval;
+  const transportedApprovalUnverified = Boolean(sale.identityApproval) && !identityApproval;
   let materialNumberConflict = false;
   if (normalizedTargetNumber && observedNumber === normalizedTargetNumber) {
     score += 12;
@@ -1742,9 +1791,12 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     reasons.push('visual comparison flagged a mismatch; manual review required');
   }
 
-  const targetCompany = isDisneyPins ? '' : normalizeCompany(target.certificationCompany || firstString(details, ['certificationCompany', 'gradingCompany', 'authenticationCompany']));
+  const resolvedTargetCompany = resolveTestAiGradingCompany(details, target.certificationCompany || firstString(details, ['certificationCompany', 'gradingCompany', 'authenticationCompany']) || undefined);
+  const targetCompany = isDisneyPins || /^(?:unknown|other|none|n\/?a|raw|ungraded)$/i.test(resolvedTargetCompany ?? '')
+    ? '' : normalizeCompany(resolvedTargetCompany);
   const saleCompanyMatch = isDisneyPins ? undefined : title.match(/\b(psa|cgc|bgs|sgc|pcgs|ngc|afa|wata|vga)\b/i)?.[1];
   const saleCompany = normalizeCompany(saleCompanyMatch);
+  const companiesEquivalent = videoGameGradersEquivalent(categoryKey, targetCompany, saleCompany);
   const isPcgsCoin = target.category === 'coins' && targetCompany === 'pcgs';
   const targetPcgsGrade = isPcgsCoin ? normalizePcgsCoinGrade(target.grade) : null;
   const salePcgsGrade = isPcgsCoin && saleCompany === 'pcgs' ? extractPcgsCoinGrade(title) : null;
@@ -1777,10 +1829,10 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     score -= 10;
     reasons.push('sale grade is not identifiable');
   }
-  if (targetCompany && saleCompany === targetCompany) {
+  if (targetCompany && companiesEquivalent) {
     score += 6;
     reasons.push('grading or authentication company matches');
-  } else if (targetCompany && saleCompany && saleCompany !== targetCompany) {
+  } else if (targetCompany && saleCompany && !companiesEquivalent) {
     score -= 10;
     materialCompanyConflict = true;
     reasons.push('grading or authentication company differs; retained as certification-adjacent evidence');
@@ -1803,6 +1855,24 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const universalNeedsReview = universalIdentityConflicts.some((reason) => reason.includes('not stated'));
   const categoryNeedsReview = categoryIdentity.status === 'needs_review';
   const categoryDirectConfirmed = categoryIdentity.status === 'direct_confirmed' || categoryIdentity.status === 'not_applicable';
+  const restrictiveSourceDisposition = Boolean(sale.evidenceDisposition && sale.evidenceDisposition !== 'valuation_eligible');
+  const approvalHardStateConflict = universalIdentityConflicts.some((reason) => /grade differs|grading company differs/.test(reason));
+  const signedFormConflicts = identityApproval ? signedComparableFormConflicts(target, sale.saleForm) : [];
+  const approvalStructuredLotConflict = Number(sale.lotQuantity) > 1
+    || /\b(?:lot|bundle|collection|multi[-_ ]?item|components?[-_ ]?only)\b/i.test(String(sale.saleForm ?? ''));
+  const approvedIdentity = Boolean(identityApproval) && !materialNumberConflict && !categoryHardConflict
+    && !universalHardConflict && !materialVariantConflict && !materialGradeConflict && !materialCompanyConflict
+    && !approvalHardStateConflict && !signedFormConflicts.length && !approvalStructuredLotConflict && !visualMismatch
+    && !materialVariantReview && !restrictiveSourceDisposition;
+  if (approvedIdentity) reasons.push('identity confirmed by server-final target/source/image-bound visual approval; title omissions do not reopen identity');
+  if (signedFormConflicts.length) reasons.push(...signedFormConflicts.map((conflict) => `signed structured form conflict: ${conflict}`));
+  if (requiredApprovalMissing || transportedApprovalUnverified) reasons.push('required or transported identity approval is not verified for this target/image; title-only admission is withheld');
+  const finalCategoryIdentity = approvedIdentity ? {
+    ...categoryIdentity,
+    status: 'direct_confirmed' as const,
+    confirmedFields: [...categoryIdentity.confirmedFields, 'Server-final visual identity'],
+    unconfirmedFields: [],
+  } : categoryIdentity;
   if (materialNumberConflict || categoryHardConflict || universalHardConflict) {
     identityRelationship = 'conflict';
     valuationRelationship = 'not_usable';
@@ -1812,6 +1882,9 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   } else if (materialGradeConflict || materialCompanyConflict) {
     identityRelationship = 'same_object_different_state';
     valuationRelationship = 'grade_adjacent_comparable';
+  } else if (approvedIdentity) {
+    identityRelationship = 'exact_identity';
+    valuationRelationship = 'direct_comparable';
   } else if (categoryDirectConfirmed && normalizedTargetNumber && observedNumber === normalizedTargetNumber) {
     identityRelationship = 'exact_identity';
     valuationRelationship = 'direct_comparable';
@@ -1821,7 +1894,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   } else if (categoryDirectConfirmed && categoryIdentity.confirmedFields.length > 0) {
     identityRelationship = 'exact_identity';
     valuationRelationship = 'direct_comparable';
-  } else if (categoryDirectConfirmed && hasKnownGradeState && hasObservedGradeState && (!targetGrade || saleGrade === targetGrade) && (!targetCompany || saleCompany === targetCompany)) {
+  } else if (categoryDirectConfirmed && hasKnownGradeState && hasObservedGradeState && (!targetGrade || saleGrade === targetGrade) && (!targetCompany || companiesEquivalent)) {
     identityRelationship = 'exact_identity';
     valuationRelationship = 'direct_comparable';
   } else if (tokenScore >= 0.8) {
@@ -1835,6 +1908,12 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
       ? 'contextual'
       : adjacentState
         ? 'contextual'
+    : approvedIdentity
+      ? 'exact'
+    : identityApproval && (approvalHardStateConflict || signedFormConflicts.length || approvalStructuredLotConflict || restrictiveSourceDisposition)
+      ? 'rejected'
+    : requiredApprovalMissing || transportedApprovalUnverified
+      ? 'contextual'
     : categoryNeedsReview || universalNeedsReview
       ? 'contextual'
     : visualMismatch || materialVariantReview || sale.evidenceDisposition === 'warning_review' || boundedScore < 48
@@ -1849,6 +1928,8 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const accepted = classification === 'exact' || classification === 'near';
   const exclusionReason = accepted
     ? undefined
+    : requiredApprovalMissing || transportedApprovalUnverified
+      ? 'server-final identity approval is missing, unverified, or bound to a different target/image; review required'
     : materialGradeConflict
       ? 'same underlying object is grade-adjacent; retained for secondary evidence, excluded from direct valuation'
       : materialCompanyConflict
@@ -1896,7 +1977,10 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     classification,
     identityRelationship,
     valuationRelationship,
-    categoryIdentity,
+    categoryIdentity: finalCategoryIdentity,
+    titleCategoryIdentity: categoryIdentity,
+    identityAdmissionBasis: approvedIdentity ? 'server_final_visual' : 'title_evidence',
+    ...(identityApproval ? { identityApproval } : {}),
     sourceId: sale.sourceId ?? sale.marketplace ?? null,
     sourceLabel: sale.sourceLabel ?? sale.marketplace ?? sale.sourceId ?? null,
     marketplace: sale.marketplace ?? null,
@@ -1918,6 +2002,14 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     provenance: sale.provenance ?? null,
     visualReviewStatus: sale.visualReviewStatus ?? 'not_reviewed',
     visualReviewRationale: sale.visualReviewRationale ?? null,
+    visualEvidence: identityApproval?.decidingEvidence,
+    visualAudit: sale.visualAudit,
+    visualDifferences: sale.visualDifferences,
+    normalizedStructuredMetadata: identityApproval?.candidateIdentityFields,
+    metadataMatchScore: sale.metadataMatchScore,
+    metadataMatchRank: sale.metadataMatchRank,
+    metadataMatchReasons: sale.metadataMatchReasons,
+    metadataFieldComparisons: sale.metadataFieldComparisons,
     evidenceDisposition: sale.evidenceDisposition ?? 'valuation_eligible',
     evidenceReasons: sale.evidenceReasons ?? null,
     admissionCode,
