@@ -45,12 +45,12 @@ export type VisualDifference = {
   impact: string;
 };
 export type VisualEvidence = {
-  slabVisible: boolean;
-  gradingLabelVisible: boolean;
-  graderVisible: boolean;
-  numericGradeVisible: boolean;
-  gradeMatches: boolean;
-  rawOrLooseVisible: boolean;
+  slabVisible?: boolean;
+  gradingLabelVisible?: boolean;
+  graderVisible?: boolean;
+  numericGradeVisible?: boolean;
+  gradeMatches?: boolean;
+  rawOrLooseVisible?: boolean;
   characterMatches?: boolean;
   artworkMatches?: boolean;
   silhouetteMatches?: boolean;
@@ -76,6 +76,18 @@ export type VisualSourceReview = {
     finalModel?: string;
     initialVerdict: VisualSourceReview["verdict"] | "no_decision";
     initialConfidence: VisualSourceReview["confidence"] | "no_decision";
+    initialRationale?: string;
+    decidingRationale?: string;
+    retryVerdict?: VisualSourceReview["verdict"];
+    retryConfidence?: VisualSourceReview["confidence"];
+    retryRationale?: string;
+    normalizations?: Array<{
+      rule: string;
+      verdictBefore: VisualSourceReview["verdict"];
+      confidenceBefore: VisualSourceReview["confidence"];
+      rationaleBefore: string;
+      verdictAfter: VisualSourceReview["verdict"];
+    }>;
     retryStatus: "not_needed" | "performed" | "failed";
     adjudicationStatus?: "confirmed" | "unavailable";
     retryReason?: string;
@@ -84,6 +96,73 @@ export type VisualSourceReview = {
     finalEvidence?: VisualEvidence;
   };
 };
+
+/** Preserve missing observations as unknown, including legacy JSON fallbacks. */
+function normalizeVisualEvidence(value: unknown): VisualEvidence | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const observed = value as Record<string, unknown>;
+  const keys: Array<keyof VisualEvidence> = [
+    "slabVisible", "gradingLabelVisible", "graderVisible", "numericGradeVisible",
+    "gradeMatches", "rawOrLooseVisible", "characterMatches", "artworkMatches",
+    "silhouetteMatches", "backingCardMatches", "setDesignMatches", "identityMatches",
+    "dateMatches", "varietyMatches", "mintMarkMatches", "denominationMatches",
+  ];
+  return Object.fromEntries(keys.filter((key) => typeof observed[key] === "boolean")
+    .map((key) => [key, observed[key]])) as VisualEvidence;
+}
+
+/** A later deciding pass must never borrow positive evidence from an older pass. */
+export function decidingVisualEvidence(item: {
+  visualEvidence?: VisualEvidence;
+  visualAudit?: VisualSourceReview["visualAudit"] | null;
+}): VisualEvidence | undefined {
+  const audit = item.visualAudit;
+  if (audit?.finalPass === "high_resolution_retry") return audit.finalEvidence ?? item.visualEvidence;
+  return audit?.finalEvidence ?? item.visualEvidence ?? audit?.initialEvidence;
+}
+
+/** Normalizer commentary must never supply its own missing confirmation. */
+function decidingVisualRationale(review: VisualSourceReview): string {
+  const audit = review.visualAudit;
+  return audit?.decidingRationale
+    ?? (audit?.finalPass === "high_resolution_retry" ? audit.retryRationale : audit?.initialRationale)
+    ?? review.rationale;
+}
+
+export function gradedVisualEvidenceIsConfirmed(evidence: VisualEvidence | undefined): boolean {
+  return evidence?.slabVisible === true && evidence.gradingLabelVisible === true
+    && evidence.graderVisible === true && evidence.numericGradeVisible === true
+    && evidence.gradeMatches === true && evidence.rawOrLooseVisible === false;
+}
+
+function withVisualNormalization(
+  review: VisualSourceReview,
+  patch: Pick<VisualSourceReview, "verdict" | "confidence" | "rationale">,
+  rule: string,
+): VisualSourceReview {
+  return {
+    ...review,
+    ...patch,
+    visualAudit: {
+      imageCount: 1,
+      initialVerdict: review.verdict,
+      initialConfidence: review.confidence,
+      initialRationale: review.rationale,
+      decidingRationale: review.rationale,
+      retryStatus: "not_needed",
+      finalPass: "initial",
+      ...review.visualAudit,
+      normalizations: [...(review.visualAudit?.normalizations ?? []), {
+        rule,
+        verdictBefore: review.verdict,
+        confidenceBefore: review.confidence,
+        rationaleBefore: review.rationale,
+        verdictAfter: patch.verdict,
+      }],
+    },
+  };
+}
+
 export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
   listings: T[];
   contextListings?: T[];
@@ -759,22 +838,38 @@ function hasExplicitCoinRawConflict(title: string, rationale = ""): boolean {
   return /\b(?:raw|ungraded|loose)\s+(?:coin|item|listing)\b|\b(?:appears?|is|shown|identified|declared|labeled)\s+(?:as\s+)?(?:raw|ungraded|loose)\b|\bno\s+(?:slab|holder|grade)\b/i.test(`${title} ${rationale}`);
 }
 
+function coinVisualEvidenceConflicts(review: VisualSourceReview, evidence: VisualEvidence): boolean {
+  return [evidence.identityMatches, evidence.dateMatches, evidence.varietyMatches,
+    evidence.denominationMatches, evidence.artworkMatches].some((value) => value === false)
+    || (evidence.gradeMatches === false && evidence.numericGradeVisible === true)
+    || /\b(?:date|year|variety|denomination|coin identity)\b[^.]{0,80}\b(?:differs?|different|mismatch|does not match)\b|\bdifferent\s+(?:coin|date|year|variety|denomination)\b/i.test(review.rationale)
+    || (review.visualDifferences ?? []).some((difference) =>
+      /identity|date|year|variety|denomination|mint|grade/i.test(difference.field)
+      && /material|hard|conflict|mismatch/i.test(difference.impact)
+      && normalizedChoice(difference.targetObservation) !== normalizedChoice(difference.candidateObservation));
+}
+
 export function coinVisualEvidenceIsExact(review: VisualSourceReview, targetMetadata: string, candidateTitle = "", evidenceOverride?: VisualEvidence): boolean {
   if (!isCoinMetadata(targetMetadata) || review.verdict !== "match") return false;
-  const evidence = evidenceOverride ?? review.visualEvidence;
-  if (!evidence) return false;
+  const evidence = evidenceOverride ?? decidingVisualEvidence(review);
+  if (!evidence || coinVisualEvidenceConflicts(review, evidence)) return false;
+  const rationale = decidingVisualRationale(review);
+  if (hasExplicitNumericGradeConflict(rationale, metadataValue(targetMetadata, "grade"))
+    || hasExplicitGraderConflict(rationale, targetMetadata)) return false;
   const titleIdentity = titleConfirmsCoinIdentity(candidateTitle, targetMetadata);
-  if (!(evidence?.identityMatches || titleIdentity) || !(evidence?.dateMatches || titleIdentity) || !(evidence?.varietyMatches || titleIdentity)) return false;
+  // Require actual coin imagery, not merely an evidence object plus a title.
+  if (evidence.identityMatches !== true || evidence.denominationMatches !== true) return false;
+  if (!(evidence.dateMatches === true || (evidence.dateMatches === undefined && titleIdentity))
+    || !(evidence.varietyMatches === true || (evidence.varietyMatches === undefined && titleIdentity))) return false;
   if (coinTargetRequiresMintMark(targetMetadata) && evidence.mintMarkMatches !== true) return false;
   const targetIsGraded = !hasExplicitlyUngradedTarget(targetMetadata)
     && Boolean(metadataValue(targetMetadata, "grade") || metadataValue(targetMetadata, "certificationCompany"));
   if (targetIsGraded) {
-    // Mercari often supplies a close crop of the coin face rather than the
-    // complete holder. The crop does not prove the item is raw; exact title
-    // grade evidence may supplement absent holder pixels. An explicit raw
-    // conflict still fails closed.
-    const explicitRawConflict = evidence.rawOrLooseVisible === true && hasExplicitCoinRawConflict(candidateTitle, review.rationale);
-    return Boolean(!explicitRawConflict && (evidence.gradeMatches || titleConfirmsCoinGrade(candidateTitle, targetMetadata)));
+    // Missing holder pixels may be supplemented by exact title evidence. Visible
+    // raw state, a readable contrary grade, or contrary identity may not.
+    if (evidence.rawOrLooseVisible === true || hasExplicitCoinRawConflict(candidateTitle, review.rationale)) return false;
+    return evidence.gradeMatches === true
+      || (evidence.numericGradeVisible !== true && titleConfirmsCoinGrade(candidateTitle, targetMetadata));
   }
   return evidence.rawOrLooseVisible === true;
 }
@@ -783,22 +878,21 @@ export function enforceCoinExactEvidence(review: VisualSourceReview, targetMetad
   if (!isCoinMetadata(targetMetadata)) return review;
   const titleIdentity = titleConfirmsCoinIdentity(candidateTitle, targetMetadata);
   const titleGrade = titleConfirmsCoinGrade(candidateTitle, targetMetadata);
-  const explicitRawConflict = hasExplicitCoinRawConflict(candidateTitle, review.rationale);
-  if ((review.verdict === "unreadable" || review.verdict === "rough_match") && review.visualEvidence && titleIdentity && titleGrade && !explicitRawConflict) {
-    return {
-      ...review,
+  const candidateMatch = { ...review, verdict: "match" as const };
+  if ((review.verdict === "unreadable" || review.verdict === "rough_match")
+    && titleIdentity && titleGrade && coinVisualEvidenceIsExact(candidateMatch, targetMetadata, candidateTitle)) {
+    return withVisualNormalization(review, {
       verdict: "match",
       confidence: "high",
-      rationale: `${review.rationale} Exact coin identity, grader, and grade are confirmed by the completed-sale title; the holder crop is incomplete but does not conflict, so the result is admitted for the independent coin review.`,
-    };
+      rationale: `${review.rationale} Visible coin identity and denomination agree; exact title evidence supplements only unknown cropped holder/date/variety facts, without overriding observed disagreement. The independent coin review remains required.`,
+    }, "coin_unknown_crop_supplement");
   }
   if (review.verdict !== "match" || coinVisualEvidenceIsExact(review, targetMetadata, candidateTitle)) return review;
-  return {
-    ...review,
+  return withVisualNormalization(review, {
     verdict: "unreadable",
     confidence: "low",
-    rationale: `${review.rationale} Coin admission requires visible confirmation of the coin identity, date, variety, and raw/graded state; the required evidence was not complete, so this remains manual review.`,
-  };
+    rationale: `${review.rationale} Coin admission requires matching visible identity and denomination with no contrary date, variety, grade, or raw/graded observation; the required evidence was incomplete or contradictory, so this remains manual review.`,
+  }, "coin_confirmation_incomplete_or_conflicting");
 }
 
 /**
@@ -1001,26 +1095,7 @@ export function normalizeVisualSourceReviews(
           .filter((difference: VisualDifference) => difference.field && difference.targetObservation && difference.candidateObservation && difference.impact)
           .slice(0, 20)
         : undefined,
-      visualEvidence: row?.visualEvidence && typeof row.visualEvidence === "object"
-        ? {
-            slabVisible: row.visualEvidence.slabVisible === true,
-            gradingLabelVisible: row.visualEvidence.gradingLabelVisible === true,
-            graderVisible: row.visualEvidence.graderVisible === true,
-            numericGradeVisible: row.visualEvidence.numericGradeVisible === true,
-            gradeMatches: row.visualEvidence.gradeMatches === true,
-            rawOrLooseVisible: row.visualEvidence.rawOrLooseVisible === true,
-            characterMatches: row.visualEvidence.characterMatches === true,
-            artworkMatches: row.visualEvidence.artworkMatches === true,
-            silhouetteMatches: row.visualEvidence.silhouetteMatches === true,
-            backingCardMatches: row.visualEvidence.backingCardMatches === true,
-            setDesignMatches: row.visualEvidence.setDesignMatches === true,
-            identityMatches: row.visualEvidence.identityMatches === true,
-            dateMatches: row.visualEvidence.dateMatches === true,
-            varietyMatches: row.visualEvidence.varietyMatches === true,
-            mintMarkMatches: row.visualEvidence.mintMarkMatches === true,
-            denominationMatches: row.visualEvidence.denominationMatches === true,
-          }
-        : undefined,
+      visualEvidence: normalizeVisualEvidence(row?.visualEvidence),
       visualAudit: row?.visualAudit && typeof row.visualAudit === "object" && RETRY_STATUSES.has(row.visualAudit.retryStatus) && FINAL_PASSES.has(row.visualAudit.finalPass)
         ? {
             imageCount: Number.isInteger(row.visualAudit.imageCount) && row.visualAudit.imageCount >= 0 ? row.visualAudit.imageCount : 0,
@@ -1033,45 +1108,17 @@ export function normalizeVisualSourceReviews(
             adjudicationStatus: ADJUDICATION_STATUSES.has(row.visualAudit.adjudicationStatus) ? row.visualAudit.adjudicationStatus : undefined,
             retryReason: typeof row.visualAudit.retryReason === "string" ? row.visualAudit.retryReason.trim() : undefined,
             finalPass: row.visualAudit.finalPass,
-            initialEvidence: row.visualAudit.initialEvidence && typeof row.visualAudit.initialEvidence === "object"
-              ? {
-                  slabVisible: row.visualAudit.initialEvidence.slabVisible === true,
-                  gradingLabelVisible: row.visualAudit.initialEvidence.gradingLabelVisible === true,
-                  graderVisible: row.visualAudit.initialEvidence.graderVisible === true,
-                  numericGradeVisible: row.visualAudit.initialEvidence.numericGradeVisible === true,
-                  gradeMatches: row.visualAudit.initialEvidence.gradeMatches === true,
-                  rawOrLooseVisible: row.visualAudit.initialEvidence.rawOrLooseVisible === true,
-                  characterMatches: row.visualAudit.initialEvidence.characterMatches === true,
-                  artworkMatches: row.visualAudit.initialEvidence.artworkMatches === true,
-                  silhouetteMatches: row.visualAudit.initialEvidence.silhouetteMatches === true,
-                  backingCardMatches: row.visualAudit.initialEvidence.backingCardMatches === true,
-                  setDesignMatches: row.visualAudit.initialEvidence.setDesignMatches === true,
-                  identityMatches: row.visualAudit.initialEvidence.identityMatches === true,
-                  dateMatches: row.visualAudit.initialEvidence.dateMatches === true,
-                  varietyMatches: row.visualAudit.initialEvidence.varietyMatches === true,
-                  mintMarkMatches: row.visualAudit.initialEvidence.mintMarkMatches === true,
-                  denominationMatches: row.visualAudit.initialEvidence.denominationMatches === true,
-                }
-              : undefined,
-            finalEvidence: row.visualAudit.finalEvidence && typeof row.visualAudit.finalEvidence === "object"
-              ? {
-                  slabVisible: row.visualAudit.finalEvidence.slabVisible === true,
-                  gradingLabelVisible: row.visualAudit.finalEvidence.gradingLabelVisible === true,
-                  graderVisible: row.visualAudit.finalEvidence.graderVisible === true,
-                  numericGradeVisible: row.visualAudit.finalEvidence.numericGradeVisible === true,
-                  gradeMatches: row.visualAudit.finalEvidence.gradeMatches === true,
-                  rawOrLooseVisible: row.visualAudit.finalEvidence.rawOrLooseVisible === true,
-                  characterMatches: row.visualAudit.finalEvidence.characterMatches === true,
-                  artworkMatches: row.visualAudit.finalEvidence.artworkMatches === true,
-                  silhouetteMatches: row.visualAudit.finalEvidence.silhouetteMatches === true,
-                  backingCardMatches: row.visualAudit.finalEvidence.backingCardMatches === true,
-                  setDesignMatches: row.visualAudit.finalEvidence.setDesignMatches === true,
-                  identityMatches: row.visualAudit.finalEvidence.identityMatches === true,
-                  dateMatches: row.visualAudit.finalEvidence.dateMatches === true,
-                  varietyMatches: row.visualAudit.finalEvidence.varietyMatches === true,
-                  mintMarkMatches: row.visualAudit.finalEvidence.mintMarkMatches === true,
-                  denominationMatches: row.visualAudit.finalEvidence.denominationMatches === true,
-                }
+            initialEvidence: normalizeVisualEvidence(row.visualAudit.initialEvidence),
+            finalEvidence: normalizeVisualEvidence(row.visualAudit.finalEvidence),
+            initialRationale: typeof row.visualAudit.initialRationale === "string" ? row.visualAudit.initialRationale : undefined,
+            decidingRationale: typeof row.visualAudit.decidingRationale === "string" ? row.visualAudit.decidingRationale : undefined,
+            retryVerdict: VERDICTS.has(row.visualAudit.retryVerdict) ? row.visualAudit.retryVerdict : undefined,
+            retryConfidence: CONFIDENCES.has(row.visualAudit.retryConfidence) ? row.visualAudit.retryConfidence : undefined,
+            retryRationale: typeof row.visualAudit.retryRationale === "string" ? row.visualAudit.retryRationale : undefined,
+            normalizations: Array.isArray(row.visualAudit.normalizations)
+              ? row.visualAudit.normalizations.filter((entry: any) => typeof entry?.rule === "string"
+                && typeof entry?.rationaleBefore === "string" && VERDICTS.has(entry?.verdictBefore)
+                && CONFIDENCES.has(entry?.confidenceBefore) && VERDICTS.has(entry?.verdictAfter))
               : undefined,
           }
         : undefined,
@@ -1152,16 +1199,10 @@ export function normalizeCompactCoinAdjudicationReview(
     confidence: "high",
     rationale: notes,
     visualEvidence: {
-      slabVisible: evidence.slabVisible === true,
-      gradingLabelVisible: evidence.gradingLabelVisible === true,
-      graderVisible: evidence.graderVisible === true,
-      numericGradeVisible: evidence.numericGradeVisible === true,
-      gradeMatches: evidence.gradeMatches === true,
-      rawOrLooseVisible: evidence.rawOrLooseVisible === true,
+      ...normalizeVisualEvidence(evidence),
       identityMatches: true,
       dateMatches: true,
       varietyMatches: true,
-      mintMarkMatches: evidence.mintMarkMatches === true,
       denominationMatches: true,
     },
   }];
@@ -1190,7 +1231,9 @@ export function conservativeComicVisualReviews(
         rationale: `${rationale} Because the candidate metadata declares a graded comic but the image is unclear, this is downgraded to unreadable/manual review rather than a definitive mismatch.`,
       };
     }
-    if ((review.verdict === "match" || review.verdict === "rough_match") && !/\b(?:exact(?:ly)?|same issue|issue number matches|cover art corresponds|identical cover)\b/i.test(rationale)) {
+    if ((review.verdict === "match" || review.verdict === "rough_match")
+      && !(decidingVisualEvidence(review)?.identityMatches === true && decidingVisualEvidence(review)?.artworkMatches === true)
+      && !/\b(?:exact(?:ly)?|same issue|issue number matches|cover art corresponds|identical cover)\b/i.test(rationale)) {
       return {
         ...review,
         verdict: "unreadable",
@@ -1372,7 +1415,7 @@ function normalizedGrade(value: string): string | null {
 function candidateGradeEvidence(title: string, rationale: string, targetGrade: string, grader: string): boolean {
   const targetNumericGrade = normalizedGrade(targetGrade);
   const candidateText = `${title} ${rationale}`;
-  const gradeMentioned = /\b(?:grade|graded|score|rating)\b/i.test(candidateText) || Boolean(grader && new RegExp(`\b${grader}\b`, "i").test(candidateText));
+  const gradeMentioned = /\b(?:grade|graded|score|rating)\b/i.test(candidateText) || Boolean(grader && new RegExp(`\\b${grader.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(candidateText));
   if (!gradeMentioned) return false;
   if (!targetNumericGrade) return /\b(?:grade|graded|score|rating)\b\s*(?:is|of|:)?\s*\d{1,3}(?:\.\d+)?/i.test(candidateText);
   const numeric = targetNumericGrade.replace(".", "\\.");
@@ -1390,26 +1433,23 @@ function isVideoGamePsaWataEquivalent(targetMetadata: string, candidateText: str
 }
 
 function hasVideoGameVisualIdentityConflict(rationale: string, targetMetadata?: string): boolean {
-  const targetDetails = targetMetadata ? metadataDetails(targetMetadata) : {};
-  const targetIsSealed = /^(?:yes|true|1)$/i.test(String(targetDetails.sealed ?? targetDetails.factorySealed ?? "").trim());
-  const targetSelfConflict = /target[^.]{0,120}(?:structured|details)[^.]{0,120}(?:complete[- ]in[- ]box|cib)[^.]{0,120}\bsealed\b/i.test(rationale);
-  if (targetIsSealed && targetSelfConflict) {
-    rationale = rationale.replace(/target[^.]{0,120}(?:structured|details)[^.]{0,120}(?:complete[- ]in[- ]box|cib)[^.]{0,120}\bsealed\b[^.]*\.?/gi, "");
-  }
-  return /\b(?:different game|different title|different artwork|different cover|different edition|different variant|does not match the (?:game|cover|artwork)|sealed\s+(?:versus|vs\.?|rather than)\s+(?:cib|complete in box|loose|raw)|(?:cib|complete in box|loose|raw)\s+(?:versus|vs\.?|rather than)\s+sealed|target[- ]form conflict|complete[- ]in[- ]box[^.]{0,100}\bsealed\b|\bsealed\b[^.]{0,100}complete[- ]in[- ]box|(?:appears?|is|looks?|visibly)\s+(?:raw|ungraded|loose))\b/i.test(rationale);
+  if (targetMetadata) rationale = normalizeVideoGameReviewRationale(rationale, targetMetadata);
+  return /\b(?:different game|different title|different artwork|different cover|different edition|different variant|different platform|platform[^.]{0,60}(?:differs|different|difference|mismatch|conflict)|does not match the (?:game|cover|artwork)|target[- ]form conflict|(?:appears?|is|looks?|visibly)\s+(?:raw|ungraded|loose))\b/i.test(rationale)
+    || /\bsealed\b[^.]{0,70}\b(?:versus|vs\.?|rather than|while|whereas)\b[^.]{0,70}\b(?:cib|complete[- ]in[- ]box|loose|raw)\b|\b(?:cib|complete[- ]in[- ]box|loose|raw)\b[^.]{0,70}\b(?:versus|vs\.?|rather than|while|whereas)\b[^.]{0,70}\bsealed\b/i.test(rationale);
 }
 function normalizeVideoGameReviewRationale(rationale: string, targetMetadata: string): string {
   const targetDetails = metadataDetails(targetMetadata);
   const targetIsSealed = /^(?:yes|true|1)$/i.test(String(targetDetails.sealed ?? targetDetails.factorySealed ?? "").trim());
   return targetIsSealed
-    ? rationale.replace(/target[^.]{0,120}(?:structured|details)[^.]{0,120}(?:complete[- ]in[- ]box|cib)[^.]{0,120}\bsealed\b[^.]*\.?/gi, "")
+    ? rationale.replace(/target[^.]{0,120}(?:structured|details)[^.]{0,120}(?:complete[- ]in[- ]box|cib)[^.]{0,120}\bsealed\b[^.]*\.?/gi,
+      (clause) => /\bcandidate\b/i.test(clause) ? clause : "")
     : rationale;
 }
 function hasVideoGameSoftLabelOnlyConflict(rationale: string, targetMetadata?: string): boolean {
   if (hasVideoGameVisualIdentityConflict(rationale, targetMetadata)) return false;
   const text = String(rationale ?? "");
   const labelConflict = /\b(?:grading|grade)\s+label(?:\s+(?:designation|suffix))?\b[^\n]{0,220}\b(?:differs?|different|difference|differences|mismatch|conflict)\b|\blabel\s+designation\b[^\n]{0,220}\b(?:differs?|different|difference|differences|mismatch|conflict)\b/i.test(text);
-  if (!labelConflict) return false;
+  if (!labelConflict || !/\bsealed\s+A\+{1,3}(?!\+)/i.test(text)) return false;
   return !/\b(?:numeric\s+grade|grader|certification\s+company|game|title|artwork|cover|edition)\b[^.]{0,100}\b(?:differs?|different|mismatch|conflict)\b/i.test(text);
 }
 function hasVideoGameIdenticalLabelEvidence(rationale: string): boolean {
@@ -1439,125 +1479,147 @@ function explicitTargetLabelFields(metadata: string): Array<{ label: string; val
 
 function labelFieldEvidence(title: string, rationale: string, expected: string): boolean {
   const escaped = expected.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
-  return new RegExp(`\\b${escaped}\\b`, 'i').test(`${title} ${rationale}`);
+  const field = new RegExp(`\\b${escaped}\\b`, 'i');
+  const clauses = rationale.split(/[;\n]|\.(?!\d)/);
+  const candidateNegative = clauses.some((clause) => field.test(clause) && /\bcandidate\b/i.test(clause)
+    && /\b(?:not|no|cannot|can't|unable|missing|absent|without|unreadable|unverified|unknown|lacks?)\b/i.test(clause));
+  const observedAbsence = new RegExp(`\\b(?:no|without|lacks?|not)\\s+(?:an?\\s+)?${escaped}\\b|\\b${escaped}\\b[^;]{0,40}\\b(?:absent|missing)\\b`, 'i');
+  if (clauses.some((clause) => /\bcandidate\b/i.test(clause) && observedAbsence.test(clause)
+    && !/\b(?:not visible|not readable|unreadable|unclear|unknown|cannot|can't|unable)\b/i.test(clause))) return false;
+  if (field.test(title)) return true;
+  if (candidateNegative) return false;
+  return clauses.some((clause) => field.test(clause)
+    && /\b(?:candidate|both|label)\b/i.test(clause)
+    && /\b(?:visible|readable|matches|match|confirmed|same|reads)\b/i.test(clause)
+    && !/\b(?:target|requires?|declares?|not|no|cannot|can't|unable|missing|absent|without|unreadable|unverified|unknown)\b/i.test(clause));
 }
 
-/** A graded target requires readable candidate-grade evidence; holder similarity alone is insufficient. */
+function hasExplicitNumericGradeConflict(rationale: string, targetGrade: string): boolean {
+  const affirmative = rationale.replace(/\b(?:numeric\s+grade|grade|score)\b[^.;\n]{0,25}\b(?:does not|doesn't|do not|don't)\s+differ\b/gi, "");
+  if (/\b(?:numeric\s+grade|grade|score)\b[^.;\n]{0,70}\b(?:differs?|different|mismatch|does not match)\b/i.test(affirmative)) return true;
+  const candidateGrade = rationale.match(/\bcandidate\b[^.\n]{0,80}\b(?:numeric\s+grade|grade|score)\b[^0-9]{0,24}(\d{1,3}(?:\.\d+)?)/i)?.[1];
+  const numericTarget = normalizedGrade(targetGrade);
+  return Boolean(candidateGrade && numericTarget && Number(candidateGrade) !== Number(numericTarget));
+}
+
+function hasExplicitGraderConflict(rationale: string, targetMetadata: string): boolean {
+  const targetGrader = metadataValue(targetMetadata, "certificationCompany");
+  if (!targetGrader || /^(unknown|other|none|n\/?a)$/i.test(targetGrader)) return false;
+  const candidateGrader = rationale.match(/\bcandidate\b[^.\n]{0,100}\b(PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\b/i)?.[1];
+  return Boolean(candidateGrader && !videoGameGradersEquivalent(metadataValue(targetMetadata, "category"), targetGrader, candidateGrader));
+}
+
+function hasHardVisualIdentityConflict(review: VisualSourceReview, targetMetadata: string): boolean {
+  const evidence = decidingVisualEvidence(review);
+  if (evidence?.identityMatches === false || evidence?.artworkMatches === false) return true;
+  const isVideoGame = normalizedChoice(metadataValue(targetMetadata, "category")) === "video_games";
+  return (review.visualDifferences ?? []).some((difference) => {
+    if (!/material|hard|mandatory|conflict|mismatch/i.test(difference.impact)) return false;
+    const field = normalizedChoice(difference.field);
+    if (/serial|barcode|qr_code|tracking|(?:certification|certificate|cert)[_-](?:id|number)|holder[_-]id/.test(field)) return false;
+    if (!/identity|artwork|cover|game|platform|grade|grading|label|grader|certification|holder|slab|form|edition|variant|qualifier/.test(field)) return false;
+    const target = difference.targetObservation.trim();
+    const candidate = difference.candidateObservation.trim();
+    if (normalizedChoice(target) === normalizedChoice(candidate)) return false;
+    if (/^(?:numeric_grade|grade)$/.test(field) && /^\d+(?:\.\d+)?$/.test(target)
+      && /^\d+(?:\.\d+)?$/.test(candidate) && Number(target) === Number(candidate)) return false;
+    if (isVideoGame && /grader|certification/.test(field)
+      && videoGameGradersEquivalent("video_games", target, candidate)) return false;
+    if (isVideoGame && /label|designation|suffix/.test(field)) {
+      const withoutSuffix = (value: string) => normalizedChoice(value.replace(/\b(?:sealed\s+)?A\+{1,3}(?!\+)/gi, ""));
+      if (/\bsealed\s+A\+{1,3}(?!\+)/i.test(`${target} ${candidate}`)
+        && withoutSuffix(target) === withoutSuffix(candidate)) return false;
+    }
+    return true;
+  });
+}
+
+/** Reconcile required grading facts before issuing identity approval. */
 export function conservativeGradedVisualReviews(
   reviews: VisualSourceReview[],
   listings: VisualSourceCandidate[],
   targetMetadata: string,
 ): VisualSourceReview[] {
-  if (isDisneyPinsMetadata(targetMetadata)) return reviews;
-  if (hasExplicitlyUngradedTarget(targetMetadata)) return reviews;
+  if (isDisneyPinsMetadata(targetMetadata) || hasExplicitlyUngradedTarget(targetMetadata)) return reviews;
+  // Coins retain their independent, crop-aware confirmation contract.
+  if (isCoinMetadata(targetMetadata)) return conservativeCoinVisualReviews(reviews, listings, targetMetadata);
   const targetGrade = metadataValue(targetMetadata, "grade");
   const targetGrader = metadataValue(targetMetadata, "certificationCompany");
   const targetLabelFields = explicitTargetLabelFields(targetMetadata);
-  const targetIsGraded = Boolean(targetGrade && targetGrade.toLowerCase() !== "unknown") || Boolean(targetGrader && targetGrader.toLowerCase() !== "unknown");
+  const targetIsGraded = Boolean(targetGrade && !/^(unknown|none|n\/?a)$/i.test(targetGrade))
+    || Boolean(targetGrader && !/^(unknown|other|none|n\/?a)$/i.test(targetGrader));
   if (!targetIsGraded) return reviews;
   return reviews.map((review) => {
     const title = String(listings[review.candidateIndex]?.title ?? "");
-    const gradeEvidence = candidateGradeEvidence(title, review.rationale, targetGrade, targetGrader);
-    const structuredEvidence = review.visualEvidence;
-    const visualGradeEvidence = Boolean(structuredEvidence &&
-      structuredEvidence.slabVisible &&
-      structuredEvidence.gradingLabelVisible &&
-      structuredEvidence.graderVisible &&
-      structuredEvidence.numericGradeVisible &&
-      structuredEvidence.gradeMatches &&
-      !structuredEvidence.rawOrLooseVisible
-    );
+    const evidence = decidingVisualEvidence(review);
+    const visualGradeEvidence = gradedVisualEvidenceIsConfirmed(evidence);
+    const isVideoGameTarget = normalizedChoice(metadataValue(targetMetadata, "category")) === "video_games";
+    const rawRationale = decidingVisualRationale(review);
+    const rationale = isVideoGameTarget ? normalizeVideoGameReviewRationale(rawRationale, targetMetadata) : rawRationale;
+    const unresolvedLabelField = targetLabelFields.find((field) =>
+      !(isVideoGameTarget && field.label === "grade qualifier / label designation")
+      && !labelFieldEvidence(title, rationale, field.value));
+    const hardIdentityConflict = hasHardVisualIdentityConflict(review, targetMetadata);
+    const textIdentityConflict = isVideoGameTarget ? hasVideoGameVisualIdentityConflict(rawRationale, targetMetadata)
+      : /\b(?:different (?:item|artwork|cover|edition|variant)|(?:artwork|identity|cover|numeric grade|grader)[^.]{0,60}(?:differs|mismatch))\b/i.test(rationale);
+    const numericGradeConflict = hasExplicitNumericGradeConflict(rawRationale, targetGrade) || hasExplicitGraderConflict(rawRationale, targetMetadata);
+    const safeEvidence = visualGradeEvidence && !hardIdentityConflict && !textIdentityConflict && !numericGradeConflict && !unresolvedLabelField;
+    // A completed positive visual decision does not require particular prose.
+    // Explicit contrary evidence still prevents a contradictory approval.
+    if ((review.verdict === "match" || review.verdict === "rough_match") && safeEvidence) return review;
     const titleDeclaresGraded = /\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*(?:graded\s*)?\d{1,3}(?:\.\d+)?\b|\b(?:graded|slabbed|encapsulated)\b/i.test(title);
     const imageClaimsRaw = /\b(?:raw|ungraded|loose|un[- ]slabbed|no slab|no holder|no certification|no grade|grade (?:is )?not visible)\b/i.test(review.rationale);
-    const isVideoGameTarget = normalizedChoice(metadataValue(targetMetadata, "category")) === "video_games";
-    const adjudicationRationale = isVideoGameTarget ? normalizeVideoGameReviewRationale(review.rationale, targetMetadata) : review.rationale;
-    const unresolvedLabelField = targetLabelFields.find((field) => !(isVideoGameTarget && field.label === "grade qualifier / label designation") && !labelFieldEvidence(title, review.rationale, field.value));
-    const explicitGradeConfirmation = /\b(?:grade|numeric|descriptive)\b.{0,90}\b(?:clearly?\s+)?(?:readable|visible|confirmed|matches|match)\b/i.test(adjudicationRationale);
-    const explicitGradeConflict = /\b(?:not\s+(?:clearly\s+)?(?:readable|visible|verified)|unreadable|unclear|obscured|cannot|can't|unable|conflict(?:ing)?)\b/i.test(adjudicationRationale);
-    const equivalentVideoGameGrader = isVideoGamePsaWataEquivalent(targetMetadata, `${title} ${review.rationale}`);
-    const equivalentVideoGameReview = equivalentVideoGameGrader && Boolean(structuredEvidence &&
-      structuredEvidence.slabVisible &&
-      structuredEvidence.gradingLabelVisible &&
-      structuredEvidence.graderVisible &&
-      structuredEvidence.numericGradeVisible &&
-      structuredEvidence.gradeMatches &&
-      !structuredEvidence.rawOrLooseVisible) &&
-      /\b(?:same|match(?:es)?|identical|correspond(?:s|ing)|cover art|game identity)\b/i.test(review.rationale) &&
-      !hasVideoGameVisualIdentityConflict(review.rationale, targetMetadata);
-    if ((review.verdict === "match" || review.verdict === "rough_match") && gradeEvidence && visualGradeEvidence && !unresolvedLabelField) return review;
-    if (review.verdict === "mismatch" && titleDeclaresGraded && imageClaimsRaw) {
-      return {
-        ...review,
-        verdict: "unreadable",
-        confidence: "low",
-        rationale: `${review.rationale} The candidate title declares a graded item, but the image interpretation conflicts with that evidence; retained for additional-image/manual review rather than finalized as a graded-versus-raw mismatch.`,
-      };
+    if (review.verdict === "mismatch" && titleDeclaresGraded && imageClaimsRaw && evidence?.rawOrLooseVisible !== true) {
+      return withVisualNormalization(review, {
+        verdict: "unreadable", confidence: "low",
+        rationale: `${review.rationale} The candidate title declares a graded item, but the image interpretation is uncertain; retained for additional-image/manual review rather than finalized as a graded-versus-raw mismatch.`,
+      }, "graded_title_with_uncertain_image");
     }
-    if (isVideoGameTarget && review.verdict === "mismatch" && hasVideoGameSoftLabelOnlyConflict(review.rationale, targetMetadata)) {
-      return {
-        ...review,
-        verdict: "match",
-        confidence: review.confidence === "low" ? "medium" : review.confidence,
-        rationale: `${review.rationale} The only reported difference is a descriptive sealed-label suffix such as A+, A++, or A+++; suffix text is ignored as soft evidence because the numeric grade, grader/holder, game identity, and sealed/CIB/loose form are otherwise consistent. Treated as a visual match and eligible for valuation.`,
-      };
+    const confirmedVisualIdentity = evidence?.identityMatches === true || evidence?.artworkMatches === true;
+    const canCorrect = (review.verdict === "mismatch" || review.verdict === "unreadable") && safeEvidence && confirmedVisualIdentity;
+    if (canCorrect && isVideoGameTarget && hasVideoGameSoftLabelOnlyConflict(rawRationale, targetMetadata)) {
+      const identical = hasVideoGameIdenticalLabelEvidence(rawRationale);
+      return withVisualNormalization(review, {
+        verdict: "match", confidence: review.confidence === "low" ? "medium" : review.confidence,
+        rationale: identical
+          ? `${review.rationale} The label designations are identical, so label wording is not a material difference. Confirmed graded game identity is eligible for valuation.`
+          : `${review.rationale} The A+, A++, or A+++ sealed-label suffix is explicitly ignored; required grading evidence is confirmed and no hard image conflict remains. The visual match is eligible for valuation.`,
+      }, identical ? "video_game_identical_sealed_label" : "video_game_soft_sealed_suffix");
     }
-    if (isVideoGameTarget && (review.verdict === "mismatch" || review.verdict === "unreadable")
-      && hasVideoGameSoftLabelOnlyConflict(review.rationale, targetMetadata)
-      && !hasVideoGameIdenticalLabelEvidence(review.rationale)
-      && visualGradeEvidence
-      && !hasVideoGameVisualIdentityConflict(review.rationale, targetMetadata)) {
-      return {
-        ...review,
-        verdict: "match",
-        confidence: review.confidence === "low" ? "medium" : review.confidence,
-        rationale: `${review.rationale} The A+, A++, or A+++ sealed-label suffix is explicitly ignored for Video Games and cannot determine match status; the verified graded game identity and form are treated as a match eligible for valuation.`,
-      };
+    if (canCorrect && isVideoGameTarget && rationale !== rawRationale) {
+      return withVisualNormalization(review, {
+        verdict: "match", confidence: review.confidence === "low" ? "medium" : review.confidence,
+        rationale: `${review.rationale} Sealed=Yes logically implies Complete in Box=Yes for the target, so this target self-description is not a material form conflict. Required grading evidence is confirmed.`,
+      }, "video_game_sealed_implies_cib_self_description");
     }
-    if (isVideoGameTarget && review.verdict === "unreadable" && hasVideoGameIdenticalLabelEvidence(review.rationale)
-      && visualGradeEvidence && !hasVideoGameVisualIdentityConflict(review.rationale, targetMetadata)) {
-      return {
-        ...review,
-        verdict: "match",
-        confidence: review.confidence === "low" ? "medium" : review.confidence,
-        rationale: `${review.rationale} The target and candidate label designations are identical, so the label wording is not a material difference. The graded game is eligible for valuation review.`,
-      };
+    const equivalentVideoGameGrader = isVideoGamePsaWataEquivalent(targetMetadata, `${title} ${rationale}`);
+    const gradeEvidence = candidateGradeEvidence(title, rationale, targetGrade, targetGrader);
+    const explicitGradeConfirmation = /\b(?:grade|numeric|descriptive)\b.{0,90}\b(?:clearly?\s+)?(?:readable|visible|confirmed|matches|match)\b/i.test(rationale);
+    const explicitGradeConflict = /\b(?:not\s+(?:clearly\s+)?(?:readable|visible|verified)|unreadable|unclear|obscured|cannot|can't|unable|conflict(?:ing)?)\b/i.test(rationale);
+    const visibleIdentityConfirmation = evidence?.identityMatches === true && evidence?.artworkMatches !== false;
+    if (review.verdict === "unreadable" && safeEvidence && equivalentVideoGameGrader && confirmedVisualIdentity) {
+      return withVisualNormalization(review, {
+        verdict: "match", confidence: review.confidence === "low" ? "medium" : review.confidence,
+        rationale: `${review.rationale} For video games, PSA and WATA labels are accepted as equivalent grader evidence; numeric grade, holder, form, and item identity remain confirmed.`,
+      }, "video_game_psa_wata_equivalence");
     }
-    if (isVideoGameTarget && review.verdict === "unreadable"
-      && visualGradeEvidence
-      && adjudicationRationale !== review.rationale
-      && !hasVideoGameVisualIdentityConflict(review.rationale, targetMetadata)) {
-      return {
-        ...review,
-        verdict: "match",
-        confidence: review.confidence === "low" ? "medium" : review.confidence,
-        rationale: `${review.rationale} Sealed=Yes logically implies Complete in Box=Yes for the target, so the model's target self-description is not a material form conflict. The readable matching graded game is eligible for valuation.`,
-      };
-    }
-    if (review.verdict === "unreadable" && gradeEvidence && explicitGradeConfirmation && !explicitGradeConflict) {
-      return {
-        ...review,
-        verdict: "match",
-        confidence: review.confidence === "low" ? "medium" : review.confidence,
-        rationale: `${review.rationale} The title and gallery review explicitly confirm the target grader and equivalent numeric grade, so this is eligible for visual identity consideration.` ,
-      };
-    }
-    if (review.verdict === "unreadable" && equivalentVideoGameReview) {
-      return {
-        ...review,
-        verdict: "match",
-        confidence: review.confidence === "low" ? "medium" : review.confidence,
-        rationale: `${review.rationale} For video games, PSA and WATA labels are accepted as equivalent grader evidence; the visible grader label is preserved, while the numeric grade, slab, item form, and visual identity remain mandatory.` ,
-      };
+    const escapedGrader = targetGrader.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const matchingGrader = !targetGrader || new RegExp(`\\b${escapedGrader}\\b`, "i").test(title)
+      || new RegExp(`\\b(?:candidate|both)\\b[^.]{0,100}\\b${escapedGrader}\\b`, "i").test(rationale);
+    if (review.verdict === "unreadable" && safeEvidence && gradeEvidence && matchingGrader
+      && explicitGradeConfirmation && !explicitGradeConflict && visibleIdentityConfirmation) {
+      return withVisualNormalization(review, {
+        verdict: "match", confidence: review.confidence === "low" ? "medium" : review.confidence,
+        rationale: `${review.rationale} Required final grading and item-identity evidence independently confirm this visual match.`,
+      }, "graded_final_evidence_confirmation");
     }
     if (review.verdict !== "match" && review.verdict !== "rough_match") return review;
-    return {
-      ...review,
-      verdict: "unreadable",
-      confidence: "low",
+    return withVisualNormalization(review, {
+      verdict: "unreadable", confidence: "low",
       rationale: unresolvedLabelField
-        ? `${review.rationale} The target declares ${unresolvedLabelField.label} “${unresolvedLabelField.value}”, but the candidate title or image review does not explicitly verify it; retained for manual review rather than sent as a confirmed visual match.`
-        : `${review.rationale} The target is graded, but the candidate's numeric or descriptive grade is not clearly verified and the candidate's slab, label, grader, numeric grade, or raw/ungraded state is not fully verified by structured visual evidence; retained for manual review rather than sent as a confirmed visual match.`,
-    };
+        ? `${review.rationale} The target declares ${unresolvedLabelField.label} “${unresolvedLabelField.value}”, but the candidate title or image review does not explicitly verify it; retained for manual review.`
+        : `${review.rationale} The target is graded, but the numeric or descriptive grade is not clearly verified or structured visual evidence is incomplete or contradictory; retained for manual review rather than sent as a confirmed visual match.`,
+    }, hardIdentityConflict || textIdentityConflict ? "graded_conflicting_final_evidence" : "graded_incomplete_final_evidence");
   });
 }
 
@@ -1589,7 +1651,8 @@ export function normalizeExplicitUngradedVisualReviews(
     const rawMentions = rationale.match(/\b(?:raw|ungraded)\b/gi)?.length ?? 0;
     const identityMatch = /\b(?:matches?|same|corresponds|visually match(?:es)?|artwork|packaging|layout).{0,220}\b(?:match|matches|same|corresponds|identical|confirmed)\b/i.test(rationale);
     const unresolvedConflict = /\b(?:different item|different edition|different variant|materially different|conflict(?:ing)?|cannot identify|unable to determine|not enough information)\b/i.test(rationale);
-    if (rawMentions < 2 || !identityMatch || unresolvedConflict) return review;
+    if (rawMentions < 2 || !identityMatch || unresolvedConflict
+      || hasHardVisualIdentityConflict(review, targetMetadata)) return review;
     return {
       ...review,
       verdict: "match",
@@ -1651,6 +1714,7 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
         visualReviewRationale: `${review.rationale}${differenceText}`,
         ...(allDifferences.length > 0 ? { visualDifferences: allDifferences } : {}),
         ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
+        ...(decidingVisualEvidence(review) ? { visualEvidence: decidingVisualEvidence(review) } : {}),
         ...((review.verdict === "mismatch" || (options?.requireExactMatch && review.verdict !== "match") || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? ""))))
           ? {
               evidenceDisposition: "warning_review",
@@ -6504,8 +6568,11 @@ export async function filterVisualSourceCandidates<
         provider: args.visualProvider ?? "manus_forge",
         initialModel: visualReviewModel(args.visualProvider, "initial"),
         finalModel: visualReviewModel(args.visualProvider, "initial"),
-        initialVerdict: primaryReview?.verdict ?? "no_decision" as const,
-        initialConfidence: primaryReview?.confidence ?? "no_decision" as const,
+        initialVerdict: primaryReviews[0]?.verdict ?? "no_decision" as const,
+        initialConfidence: primaryReviews[0]?.confidence ?? "no_decision" as const,
+        initialRationale: primaryReviews[0]?.rationale,
+        decidingRationale: primaryReviews[0]?.rationale,
+        normalizations: primaryReview?.visualAudit?.normalizations,
         retryStatus: needsGalleryReview ? "performed" as const : "not_needed" as const,
         retryReason: needsGalleryReview
           ? needsDisneyAdjudication
@@ -6517,7 +6584,7 @@ export async function filterVisualSourceCandidates<
             : "The first pass found an image-evidence uncertainty or a title/visual grading conflict."
           : undefined,
         finalPass: "initial" as const,
-        initialEvidence: primaryReview?.visualEvidence,
+        initialEvidence: primaryReviews[0]?.visualEvidence,
         finalEvidence: primaryReview?.visualEvidence,
       };
       if (!needsGalleryReview) {
@@ -6643,7 +6710,7 @@ export async function filterVisualSourceCandidates<
                 ...enforceCoinExactEvidence(review, targetMetadata, String(candidate.item.title ?? "")),
                 visualAudit: {
                 ...initialAudit,
-                finalModel: visualReviewModel(args.visualProvider, "retry"),
+                finalModel: visualReviewModel(args.visualProvider, "retry", needsFocusedGradeEscalation),
                 retryStatus: "failed",
                   adjudicationStatus: "unavailable",
                   retryReason: thirdDisneyAttempted
@@ -6662,13 +6729,18 @@ export async function filterVisualSourceCandidates<
           error: galleryError ?? null,
         };
       }
-      const finalReviews = galleryReviews;
+      const finalReviews = galleryReviews.map((review) => enforceCoinExactEvidence(review, targetMetadata, String(candidate.item.title ?? "")));
       return {
         reviews: finalReviews.map((review) => review.candidateIndex === candidate.candidateIndex
           ? {
-              ...enforceCoinExactEvidence(review, targetMetadata, String(candidate.item.title ?? "")),
+              ...review,
               visualAudit: {
                 ...initialAudit,
+                retryVerdict: galleryReviews[0]?.verdict,
+                retryConfidence: galleryReviews[0]?.confidence,
+                retryRationale: galleryReviews[0]?.rationale,
+                decidingRationale: galleryReviews[0]?.rationale,
+                normalizations: [...(initialAudit.normalizations ?? []), ...(review.visualAudit?.normalizations ?? [])],
                 finalModel: thirdDisneyAttempted
                   ? visualReviewModel(args.visualProvider, "retry")
                   : visualReviewModel(args.visualProvider, "retry", needsFocusedGradeEscalation),

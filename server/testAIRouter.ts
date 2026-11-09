@@ -34,7 +34,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { annotatePreVisualComparableScores, applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildMetadataFieldComparisons, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, withMetadataFieldComparisons, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { annotatePreVisualComparableScores, applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildMetadataFieldComparisons, buildVisualTargetMetadata, decidingVisualEvidence, filterVisualSourceCandidates, gradedVisualEvidenceIsConfirmed, hasExplicitlyUngradedTarget, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, withMetadataFieldComparisons, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { autographReplicaReasonFromText } from '../shared/testAiAutographEvidence';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
@@ -979,29 +979,26 @@ export function hasExplicitSoldCompLot(title: string): boolean {
     || /\b(?:multi[- ]?pack|multipack|bundle|collection)\b/i.test(normalized);
 }
 
-function targetRequiresGradedEvidence(context: { targetGrade: ExtractedGrade | null; certificationCompany: string }): boolean {
+function targetRequiresGradedEvidence(context: { targetGrade: ExtractedGrade | null; certificationCompany: string; category?: string; targetMetadata?: string }): boolean {
+  if (context.targetMetadata && hasExplicitlyUngradedTarget(context.targetMetadata)) return false;
+  if (String(context.category ?? '').toLowerCase().replace(/[\s-]+/g, '_') === 'disney_pins') return false;
   const certificationCompany = normalizeCertificationCompany(context.certificationCompany);
   return Boolean(context.targetGrade)
     || Boolean(certificationCompany && !/^(?:UNKNOWN|OTHER|N\/A|NA|NONE)$/i.test(certificationCompany));
 }
 
 function hasConfirmedGradedVisualEvidence(item: any): boolean {
-  const evidence = item?.visualAudit?.finalEvidence ?? item?.visualAudit?.initialEvidence ?? item?.visualEvidence;
-  return evidence?.slabVisible === true
-    && evidence?.gradingLabelVisible === true
-    && evidence?.graderVisible === true
-    && evidence?.numericGradeVisible === true
-    && evidence?.gradeMatches === true
-    && evidence?.rawOrLooseVisible !== true;
+  const evidence = decidingVisualEvidence(item);
+  return gradedVisualEvidenceIsConfirmed(evidence)
+    && evidence?.identityMatches !== false && evidence?.artworkMatches !== false;
 }
 
 function hasVisualRawCandidateConflict(item: any): boolean {
-  const evidence = item?.visualAudit?.finalEvidence ?? item?.visualAudit?.initialEvidence ?? item?.visualEvidence;
+  const evidence = decidingVisualEvidence(item);
   if (evidence?.rawOrLooseVisible === true) return true;
-  const text = [item?.visualReviewRationale, item?.visualAudit?.retryReason]
-    .filter(Boolean)
-    .join(' ');
-  return /(?:candidate|item)\s+(?:appears?|is|looks?)\s+(?:raw|loose|ungraded|un-?slabbed)|no\s+(?:visible\s+)?(?:slab|holder|grading\s+label|grade)/i.test(text);
+  if (evidence?.slabVisible === true && evidence.gradingLabelVisible === true && evidence.rawOrLooseVisible === false) return false;
+  // Historical retry reasons and an unreadable grade are not current raw facts.
+  return /\bcandidate\s+(?:appears?|is|looks?)\s+(?:raw|loose|ungraded|un-?slabbed)\b/i.test(String(item?.visualReviewRationale ?? ''));
 }
 
 /**
@@ -1036,14 +1033,15 @@ export function annotateSoldComparableCandidate(
   // caller is only a legacy fallback for an item that has no bound review.
   // Reusing a review by the compacted display index can attach a neighbour's
   // image decision after conflict rows have been removed.
+  const recordHasBoundReview = item?.visualReviewStatus != null;
   const carriedVisualStatus = item?.visualReviewStatus ?? context.visualReview?.verdict ?? 'not_reviewed';
-  const carriedVisualRationale = item?.visualReviewRationale ?? context.visualReview?.rationale ?? null;
-  const carriedVisualAudit = item?.visualAudit ?? context.visualReview?.visualAudit ?? null;
+  const carriedVisualRationale = recordHasBoundReview ? item?.visualReviewRationale ?? null : context.visualReview?.rationale ?? null;
+  const carriedVisualAudit = recordHasBoundReview ? item?.visualAudit ?? null : context.visualReview?.visualAudit ?? null;
   const reviewEvidenceItem = {
     ...item,
     visualReviewRationale: carriedVisualRationale,
     visualAudit: carriedVisualAudit,
-    visualEvidence: item?.visualEvidence ?? context.visualReview?.visualEvidence,
+    visualEvidence: recordHasBoundReview ? item?.visualEvidence : context.visualReview?.visualEvidence,
   };
   const targetIsGraded = targetRequiresGradedEvidence(context);
 
@@ -1061,6 +1059,11 @@ export function annotateSoldComparableCandidate(
   if (context.targetGrade && !observedGrade) reasons.push('grade is not stated or cannot be normalized from the marketplace title');
   if (targetIsGraded && hasVisualRawCandidateConflict(reviewEvidenceItem)) {
     reasons.push('candidate is visually raw/ungraded while the target is graded; this is a hard identity conflict');
+  }
+  if (targetIsGraded && carriedVisualStatus === 'match'
+    && String(context.category).toLowerCase().replace(/[\s-]+/g, '_') !== 'coins'
+    && !hasConfirmedGradedVisualEvidence(reviewEvidenceItem)) {
+    reasons.push('graded visual confirmation is incomplete or contradictory; a matching title cannot replace the deciding image evidence');
   }
   if (context.targetNumber && !extractIssueFromTitle(title)) reasons.push('catalog, card, or issue number is not stated in the marketplace title');
   const surname = playerSurname(context.targetPlayer);
@@ -1138,6 +1141,7 @@ export function annotateSoldComparableCandidate(
     // visual filter creates this audit object, but the Sold-Comps annotation
     // layer must carry it forward into the returned listing record.
     visualAudit: carriedVisualAudit,
+    ...(decidingVisualEvidence(reviewEvidenceItem) ? { visualEvidence: decidingVisualEvidence(reviewEvidenceItem) } : {}),
   };
 }
 

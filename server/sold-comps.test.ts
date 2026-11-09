@@ -4,6 +4,9 @@ import { resolve } from 'node:path';
 import { annotateSoldComparableCandidate, applyAutographPriceTailGate, applyIsolatedMarketPriceTailGate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromQuery, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata } from './testAIRouter';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 import { isExplicitMultiItemListing } from '../shared/testAiMarketplaceCandidate';
+import { applyVisualSourceReviews, conservativeGradedVisualReviews } from './testAiVisualSourceFilter';
+
+const confirmedGradedEvidence = { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, artworkMatches: true };
 
 describe('Sold-Comps API key validation', () => {
   it('accepts the configured SOLID_COMPS_API_KEY name without exposing its value', () => {
@@ -440,6 +443,7 @@ describe('Sold-Comps API key validation', () => {
         evidenceDisposition: 'context_only',
         evidenceReasons: [],
         visualReviewStatus: 'match',
+        visualEvidence: confirmedGradedEvidence,
       },
       {
         category: 'movies',
@@ -463,6 +467,7 @@ describe('Sold-Comps API key validation', () => {
         evidenceDisposition: 'context_only',
         evidenceReasons: [],
         visualReviewStatus: 'match',
+        visualEvidence: confirmedGradedEvidence,
         visualReviewRationale: 'The target and candidate are the same CGC graded VHS and the visible 9.8 grade matches.',
       },
       {
@@ -832,5 +837,68 @@ describe('Original Art automatic price-tail protection', () => {
     expect(isolated).toMatchObject({ evidenceDisposition: 'context_only', priceTailExcludedFromMetrics: true });
     expect(isolated?.evidenceReasons?.join(' ')).toContain('isolated Original Art price-tail outlier');
     expect(gated.filter((listing) => !listing.priceTailExcludedFromMetrics).map((listing) => listing.price)).toEqual([12_500, 10_000, 7_499, 1_099, 9_000, 4_500]);
+  });
+});
+
+
+describe('Stage 1 composed grading admission', () => {
+  const context = { category: 'video_games', targetItemType: 'game', certificationCompany: 'PSA', targetGrade: 7.5, targetNumber: null, targetPlayer: null, visualReviewRequired: true,
+    targetMetadata: 'title=The Legend of Zelda; category=video_games; grade=7.50; certificationCompany=PSA' };
+  const item = { title: 'The Legend of Zelda NES PSA 7.5', soldPrice: '100', visualReviewStatus: 'match', visualReviewRationale: 'The item identity matches.' };
+
+  it.each([undefined, { ...confirmedGradedEvidence, gradeMatches: false }, { ...confirmedGradedEvidence, numericGradeVisible: false }, { ...confirmedGradedEvidence, identityMatches: false }])('does not admit title-matching graded records without valid deciding evidence %#', (visualEvidence) => {
+    const result = annotateSoldComparableCandidate({ ...item, visualEvidence }, context);
+    expect(result.evidenceDisposition).not.toBe('valuation_eligible');
+    expect(result.evidenceReasons).toContain('graded visual confirmation is incomplete or contradictory; a matching title cannot replace the deciding image evidence');
+  });
+
+  it('uses confirmed final evidence rather than historical raw retry wording', () => {
+    const result = annotateSoldComparableCandidate({ ...item, visualAudit: { finalPass: 'high_resolution_retry', retryStatus: 'performed', retryReason: 'The candidate appears raw in the preliminary pass.', initialEvidence: { ...confirmedGradedEvidence, rawOrLooseVisible: true }, finalEvidence: confirmedGradedEvidence } }, context);
+    expect(result.evidenceDisposition).toBe('valuation_eligible');
+  });
+
+  it('does not borrow initial positive evidence when the actual final evidence is raw', () => {
+    const result = annotateSoldComparableCandidate({ ...item, visualEvidence: { ...confirmedGradedEvidence, rawOrLooseVisible: true }, visualAudit: { finalPass: 'high_resolution_retry', initialEvidence: confirmedGradedEvidence } }, context);
+    expect(result.evidenceDisposition).not.toBe('valuation_eligible');
+    expect(result.evidenceReasons).toContain('candidate is visually raw/ungraded while the target is graded; this is a hard identity conflict');
+  });
+
+  it('does not call unknown grade readability a proven raw conflict', () => {
+    const result = annotateSoldComparableCandidate({ ...item, visualReviewRationale: 'No visible grade can be read.', visualEvidence: { ...confirmedGradedEvidence, numericGradeVisible: false } }, context);
+    expect(result.evidenceDisposition).not.toBe('valuation_eligible');
+    expect(result.evidenceReasons).not.toContain('candidate is visually raw/ungraded while the target is graded; this is a hard identity conflict');
+  });
+
+  it('keeps confirmed evidence through attachment and repeated annotation', () => {
+    const reviews = [{ candidateIndex: 0, verdict: 'match' as const, confidence: 'high' as const, rationale: 'The exact identity and grading are confirmed.', visualEvidence: confirmedGradedEvidence }];
+    const attached = applyVisualSourceReviews([{ title: 'The Legend of Zelda NES', soldPrice: '100' }], reviews, 1).listings[0];
+    const first = annotateSoldComparableCandidate(attached, context);
+    const second = annotateSoldComparableCandidate(first, context);
+    expect(first.evidenceDisposition).toBe('valuation_eligible');
+    expect(second.evidenceDisposition).toBe('valuation_eligible');
+    expect(second.visualEvidence).toEqual(confirmedGradedEvidence);
+  });
+
+  it('never hands a narrative-promoted grading contradiction to valuation', () => {
+    const reviews = conservativeGradedVisualReviews([{ candidateIndex: 0, verdict: 'unreadable', confidence: 'low', rationale: 'The PSA grade 7.5 is clearly readable and matches; the game identity matches.', visualEvidence: { ...confirmedGradedEvidence, gradeMatches: false } }], [item], context.targetMetadata);
+    const attached = applyVisualSourceReviews([item], reviews, 1).listings[0];
+    expect(annotateSoldComparableCandidate(attached, context).evidenceDisposition).not.toBe('valuation_eligible');
+  });
+
+  it('keeps explicit lots and high-value safety blocking despite positive graded review', () => {
+    const lot = annotateSoldComparableCandidate({ ...item, title: item.title + ' Lot of 2', visualEvidence: confirmedGradedEvidence }, context);
+    expect(lot.evidenceDisposition).not.toBe('valuation_eligible');
+    const unsafe = annotateSoldComparableCandidate({ ...item, soldPrice: '1', visualEvidence: confirmedGradedEvidence }, { ...context, statedTradeValue: 20000 });
+    expect(unsafe.evidenceDisposition).not.toBe('valuation_eligible');
+  });
+
+  it('does not let a neighbouring fallback review supply missing bound grading evidence', () => {
+    const result = annotateSoldComparableCandidate(item, { ...context, visualReview: { candidateIndex: 1, verdict: 'match', confidence: 'high', rationale: 'Different listing confirmed.', visualEvidence: confirmedGradedEvidence } });
+    expect(result.evidenceDisposition).not.toBe('valuation_eligible');
+  });
+
+  it('respects an explicitly ungraded target instead of stale grade context', () => {
+    const result = annotateSoldComparableCandidate({ ...item, visualEvidence: { rawOrLooseVisible: true }, visualReviewRationale: 'Both items are raw and match.' }, { ...context, targetMetadata: 'title=The Legend of Zelda; category=video_games; isGraded=No' });
+    expect(result.evidenceDisposition).toBe('valuation_eligible');
   });
 });

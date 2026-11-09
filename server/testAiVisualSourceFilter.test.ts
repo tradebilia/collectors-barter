@@ -2026,7 +2026,7 @@ describe("visual source filter", () => {
     expect(conservativeCoinVisualReviews([exact], [{ title: "1896 Morgan Silver Dollar PCGS MS63" }], metadata)[0]).toMatchObject({ verdict: "match" });
     const cropped = enforceCoinExactEvidence({
       candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The crop does not show enough of the holder to determine raw-versus-graded status.",
-      visualEvidence: { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, gradeMatches: false, rawOrLooseVisible: true, identityMatches: false, dateMatches: false, varietyMatches: false },
+      visualEvidence: { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, rawOrLooseVisible: false, identityMatches: true, denominationMatches: true },
     }, metadata, "1896 Morgan Silver Dollar PCGS MS63");
     expect(cropped).toMatchObject({ verdict: "match", confidence: "high" });
     const explicitRaw = enforceCoinExactEvidence({ ...cropped, rationale: "The listing is a raw ungraded coin with no slab." }, metadata, "1896 Morgan Silver Dollar PCGS MS63");
@@ -2040,7 +2040,7 @@ describe("visual source filter", () => {
       verdict: "unreadable" as const,
       confidence: "low" as const,
       rationale: "The close crop does not show enough of the holder to independently classify the listing.",
-      visualEvidence: { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, gradeMatches: false, rawOrLooseVisible: false, identityMatches: false, dateMatches: false, varietyMatches: false, mintMarkMatches: false, denominationMatches: false },
+      visualEvidence: { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, rawOrLooseVisible: false, identityMatches: true, denominationMatches: true },
     };
 
     const reconciled = reconcileCoinPrimaryReviewForAdjudication(firstPass, metadata, "1896 Morgan Silver Dollar PCGS MS63");
@@ -2053,7 +2053,7 @@ describe("visual source filter", () => {
 
   it("runs the independent second review for an exact-title Mercari coin holder crop before making an admission decision", async () => {
     const metadata = "title=1896 Morgan PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
-    const cropEvidence = { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, gradeMatches: false, rawOrLooseVisible: false, identityMatches: false, dateMatches: false, varietyMatches: false, mintMarkMatches: false, denominationMatches: false };
+    const cropEvidence = { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, rawOrLooseVisible: false, identityMatches: true, denominationMatches: true };
     const finalEvidence = { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, dateMatches: true, varietyMatches: true, mintMarkMatches: false, denominationMatches: true };
     mockedInvokeLLM
       .mockResolvedValueOnce(structuredVisualResponse({
@@ -2522,6 +2522,7 @@ describe("visual source filter", () => {
           numericGradeVisible: true,
           gradeMatches: true,
           rawOrLooseVisible: false,
+          identityMatches: true, artworkMatches: true,
         },
       },
     ], [{ title: "Grand Theft Auto III PS2 Sealed Graded PSA 9.4" }], target);
@@ -2551,6 +2552,7 @@ describe("visual source filter", () => {
           numericGradeVisible: true,
           gradeMatches: true,
           rawOrLooseVisible: false,
+          identityMatches: true, artworkMatches: true,
         },
       },
     ], [{ title: "Grand Theft Auto III PS2 CIB Graded PSA 9.4" }], target);
@@ -2704,7 +2706,7 @@ describe("visual source filter", () => {
         verdict: "mismatch",
         confidence: "high",
         rationale: "grading label: target PSA label reads 9.4 and Sealed A++ vs candidate PSA label reads 9.4 and Sealed A+ — material identity difference",
-        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false },
+        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, artworkMatches: true },
       },
     ], [{ title: "Grand Theft Auto III PS2 Sealed PSA 9.4 A+" }], metadata);
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
@@ -2719,7 +2721,7 @@ describe("visual source filter", () => {
         verdict: "unreadable",
         confidence: "low",
         rationale: "The PSA 9.4 holder, numeric grade, game identity, and sealed form match, but the target label reads Sealed A++ and the candidate label reads Sealed A+; label designation difference is not reliably readable.",
-        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false },
+        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, artworkMatches: true },
       },
     ], [{ title: "Grand Theft Auto III PS2 Sealed PSA 9.4 A+" }], metadata);
     expect(result[0]).toMatchObject({ verdict: "match" });
@@ -2734,7 +2736,7 @@ describe("visual source filter", () => {
         verdict: "unreadable",
         confidence: "low",
         rationale: 'grading label designation: target label reads "Sealed A++" vs candidate The candidate label reads "Sealed A++" — material identity difference',
-        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false },
+        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, artworkMatches: true },
       },
     ], [{ title: "Grand Theft Auto III PS2 Sealed PSA 9.4 A++" }], metadata);
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "medium" });
@@ -2786,7 +2788,7 @@ describe("visual source filter", () => {
         verdict: "unreadable",
         confidence: "low",
         rationale: "The WATA 9.0 label and numeric grade are clearly visible, the sealed game identity and cover art match, there is no raw/loose signal, and the grader conflict is only PSA versus WATA.",
-        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false },
+        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, artworkMatches: true },
       },
     ], [{ title: "Super Mario Bros. 3 NES WATA 9.0 Sealed" }], "title=Super Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA");
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "medium" });
@@ -3518,7 +3520,8 @@ describe("visual source filter", () => {
   });
   it("promotes an unreadable review only when title and gallery rationale explicitly confirm the grade", () => {
     const result = conservativeGradedVisualReviews([
-      { candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The AFA 75+ grade is clearly readable in the additional gallery image and matches the target; the holder and item also match.", visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false }, }
+      // A promotion needs positive image identity, not only a matching holder.
+      { candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The AFA 75+ grade is clearly readable in the additional gallery image and matches the target; the holder and item also match.", visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, artworkMatches: true }, }
     ], [{ title: "MOTU Man-at-Arms AFA 75+" }], "title=MOTU Man-at-Arms; category=vintage_toys; grade=75; certificationCompany=AFA");
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "medium" });
   });
@@ -4268,5 +4271,194 @@ describe("visual source filter", () => {
     expect(pageSource).toContain("maximum 2 minutes");
     expect(pageSource).toContain("Only candidates with a completed visual result can support current-value evidence");
     expect(pageSource).toContain("cannot enter the analyzer implicitly");
+  });
+});
+
+
+describe("Stage 1 safe visual confirmation", () => {
+  beforeEach(() => mockedInvokeLLM.mockReset());
+  const metadata = 'title=The Legend of Zelda NES; category=video_games; grade=7.50; certificationCompany=PSA; fullItemDetails={"gameTitle":"The Legend of Zelda","platform":"NES","sealed":"Yes","isGraded":"Yes"}';
+  const title = 'The Legend of Zelda NES 1987 Sealed PSA 7.5 A+';
+  const evidence = { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, artworkMatches: true };
+  const suffix = 'Grading label difference: target label reads Sealed A++ versus candidate label reads Sealed A+; the game identity otherwise matches.';
+  const normalize = (review: any, target = metadata, candidateTitle = title) => conservativeGradedVisualReviews([{ candidateIndex: 0, confidence: 'high', ...review }], [{ title: candidateTitle }], target)[0];
+
+  it.each(['mismatch', 'unreadable'])('does not promote a %s suffix result without required image evidence', (verdict) => {
+    expect(normalize({ verdict, rationale: suffix }).verdict).not.toBe('match');
+    expect(normalize({ verdict, rationale: suffix, visualEvidence: { ...evidence, identityMatches: undefined, artworkMatches: undefined } }).verdict).not.toBe('match');
+  });
+
+  it.each([
+    ['raw item', { ...evidence, rawOrLooseVisible: true }],
+    ['numeric grade disagreement', { ...evidence, gradeMatches: false }],
+    ['unreadable grade', { ...evidence, numericGradeVisible: false }],
+    ['identity disagreement', { ...evidence, identityMatches: false }],
+    ['artwork disagreement', { ...evidence, artworkMatches: false }],
+  ])('does not promote a suffix result with %s', (_name, visualEvidence) => {
+    expect(normalize({ verdict: 'mismatch', rationale: suffix, visualEvidence }).verdict).not.toBe('match');
+    expect(normalize({ verdict: 'unreadable', rationale: suffix, visualEvidence }).verdict).not.toBe('match');
+  });
+
+  it.each(['artwork', 'platform', 'numeric grade', 'product form'])('retains a material structured %s conflict beside a soft suffix', (field) => {
+    expect(normalize({ verdict: 'unreadable', rationale: suffix, visualEvidence: evidence,
+      visualDifferences: [{ field, targetObservation: 'target identity', candidateObservation: 'different candidate', impact: 'material identity difference' }],
+    }).verdict).not.toBe('match');
+  });
+
+  it('does not misclassify numeric grade discrepancy as a soft label suffix', () => {
+    expect(normalize({ verdict: 'mismatch', rationale: 'Grading label difference: target label reads PSA 9.4 versus candidate label reads PSA 8.0.', visualEvidence: { ...evidence, gradeMatches: false } }).verdict).toBe('mismatch');
+  });
+
+  it('does not erase a Sealed-versus-candidate-CIB hard conflict', () => {
+    const review = normalize({ verdict: 'mismatch', rationale: suffix + ' The target is Sealed versus candidate CIB.', visualEvidence: evidence });
+    expect(review.verdict).toBe('mismatch');
+  });
+
+  it('records the actual permitted correction without changing the original review', () => {
+    const original = { candidateIndex: 0, verdict: 'mismatch' as const, confidence: 'high' as const, rationale: suffix, visualEvidence: evidence };
+    const result = normalize(original);
+    expect(original.verdict).toBe('mismatch');
+    expect(result.verdict).toBe('match');
+    expect(result.visualAudit?.normalizations).toEqual([expect.objectContaining({ rule: 'video_game_soft_sealed_suffix', verdictBefore: 'mismatch', rationaleBefore: suffix, verdictAfter: 'match' })]);
+  });
+
+  it('preserves a completed graded match without grade-confirmation prose', () => {
+    expect(normalize({ verdict: 'match', rationale: 'All inspected item features correspond.', visualEvidence: evidence }).verdict).toBe('match');
+  });
+
+  it('preserves a completed comic identity and artwork match without a magic phrase', () => {
+    const result = conservativeComicVisualReviews([{ candidateIndex: 0, verdict: 'match', confidence: 'high', rationale: 'All visible features correspond.', visualEvidence: evidence }], [{ title: 'X-Men #1 CGC 9.8' }], 'title=X-Men #1; category=comics');
+    expect(result[0].verdict).toBe('match');
+  });
+
+  it.each([undefined, { ...evidence, gradeMatches: false }, { ...evidence, numericGradeVisible: false }, { ...evidence, rawOrLooseVisible: true }, { ...evidence, artworkMatches: false }])('does not promote unreadable by narrative against absent/contrary evidence %#', (visualEvidence) => {
+    expect(normalize({ verdict: 'unreadable', rationale: 'The PSA grade 7.5 is clearly readable and matches the target; the game identity matches.', visualEvidence }).verdict).toBe('unreadable');
+  });
+
+  it('does not generalize PSA/WATA equivalence to Sports Cards', () => {
+    expect(normalize({ verdict: 'unreadable', rationale: 'The WATA 7.5 numeric grade is clearly visible and matches; item identity matches.', visualEvidence: evidence }, 'title=Sports Card; category=sports_cards; grade=7.5; certificationCompany=PSA', 'Sports Card WATA 7.5').verdict).toBe('unreadable');
+  });
+
+  it('cannot promote an unreadable card without its mandatory qualifier', () => {
+    expect(normalize({ verdict: 'unreadable', rationale: 'The PSA 8 numeric grade is clearly readable and matches.', visualEvidence: evidence }, 'title=Sports Card; category=sports_cards; grade=8; certificationCompany=PSA; fullItemDetails={"gradeQualifier":"OC"}', 'Sports Card PSA 8').verdict).toBe('unreadable');
+  });
+
+  it('keeps missing qualifier normalization idempotent instead of confirming its own commentary', () => {
+    const target = 'title=Sports Card; category=sports_cards; grade=8; certificationCompany=PSA; fullItemDetails={"gradeQualifier":"OC"}';
+    const review = { verdict: 'match', rationale: 'The PSA 8 numeric grade is clearly readable and matches; the card artwork matches.', visualEvidence: evidence };
+    const first = normalize(review, target, 'Sports Card PSA 8');
+    const second = normalize(first, target, 'Sports Card PSA 8');
+    expect(first.verdict).toBe('unreadable');
+    expect(second).toEqual(first);
+  });
+
+  it('does not treat target-only or negated qualifier mentions as candidate confirmation', () => {
+    const target = 'title=Sports Card; category=sports_cards; grade=8; certificationCompany=PSA; fullItemDetails={"gradeQualifier":"OC"}';
+    expect(normalize({ verdict: 'unreadable', rationale: 'The target requires OC, but the candidate qualifier cannot be established. The PSA 8 numeric grade is clearly readable and matches.', visualEvidence: evidence }, target, 'Sports Card PSA 8').verdict).toBe('unreadable');
+    expect(normalize({ verdict: 'match', rationale: 'The candidate OC qualifier is not visible; the numeric grade and artwork match.', visualEvidence: evidence }, target, 'Sports Card PSA 8').verdict).toBe('unreadable');
+    expect(normalize({ verdict: 'match', rationale: 'The candidate qualifier is too small to read, but grading and artwork match.', visualEvidence: evidence }, target, 'Sports Card PSA 8 OC').verdict).toBe('match');
+  });
+
+  it('does not let a matching qualifier title erase a known contrary candidate observation', () => {
+    const target = 'title=2018 Topps; category=sports_cards; grade=8; certificationCompany=PSA; fullItemDetails={"gradeQualifier":"OC"}';
+    expect(normalize({ verdict: 'match', rationale: 'The candidate has no OC qualifier; its label clearly reads PSA 8. The card identity and artwork match.', visualEvidence: evidence }, target, '2018 Topps PSA 8 OC').verdict).toBe('unreadable');
+    const comicTarget = 'title=X-Men; category=comics; grade=9.8; certificationCompany=CGC; fullItemDetails={"certificationLabelStatus":"Restored"}';
+    expect(normalize({ verdict: 'match', rationale: 'The candidate is not Restored; its visible CGC 9.8 label and cover are readable.', visualEvidence: evidence }, comicTarget, 'X-Men CGC 9.8 Restored').verdict).toBe('unreadable');
+  });
+
+  it('keeps an actual candidate CIB conflict within a target self-description sentence', () => {
+    expect(normalize({ verdict: 'mismatch', rationale: 'The target structured details indicate CIB and Sealed, while the candidate is CIB without factory wrap.', visualEvidence: evidence }, metadata, 'The Legend of Zelda NES PSA 7.5').verdict).toBe('mismatch');
+  });
+
+  it('does not let PSA/WATA equivalence override contrary observed numeric grades', () => {
+    expect(normalize({ verdict: 'unreadable', rationale: 'The target PSA numeric grade is 7.5. The candidate WATA numeric grade is 6.0; numeric grade differs. Game identity and artwork match.', visualEvidence: evidence }, metadata, 'The Legend of Zelda NES WATA 6.0').verdict).toBe('unreadable');
+  });
+
+  it('preserves equivalent numeric grades in structured visual differences', () => {
+    expect(normalize({ verdict: 'match', rationale: 'All item features correspond.', visualEvidence: evidence,
+      visualDifferences: [{ field: 'numeric grade', targetObservation: '7.50', candidateObservation: '7.5', impact: 'material identity difference' }],
+    }).verdict).toBe('match');
+  });
+
+  it('preserves a genuine match when the model explicitly says the numeric grade does not differ', () => {
+    expect(normalize({ verdict: 'match', rationale: 'The numeric grade does not differ; only the Sealed A++ versus Sealed A+ suffix differs. All game identity and artwork match.', visualEvidence: evidence }).verdict).toBe('match');
+  });
+
+  it.each(['certification ID', 'certification number', 'serial number', 'barcode', 'QR code'])('ignores specimen-specific %s differences without weakening grade checks', (field) => {
+    expect(normalize({ verdict: 'match', rationale: 'All item identity and grading features correspond.', visualEvidence: evidence,
+      visualDifferences: [{ field, targetObservation: '123456', candidateObservation: '654321', impact: 'material identity difference' }],
+    }).verdict).toBe('match');
+  });
+
+  it('preserves optional unknown observations instead of manufacturing false conflicts', () => {
+    const review = normalizeVisualSourceReviews({ reviews: [{ candidateIndex: 0, verdict: 'unreadable', confidence: 'low', rationale: 'The holder is cropped.', visualEvidence: { slabVisible: false } }] }, 1)[0];
+    expect(review.visualEvidence).toEqual({ slabVisible: false });
+    expect(review.visualEvidence).not.toHaveProperty('identityMatches');
+    expect(review.visualEvidence).not.toHaveProperty('gradeMatches');
+  });
+
+  const coinMetadata = 'title=1896 Morgan Dollar PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={"year":"1896","variety":"Morgan"}';
+  const coinTitle = '1896 Morgan Silver Dollar PCGS MS63';
+  it.each(['identityMatches', 'dateMatches', 'varietyMatches', 'denominationMatches', 'artworkMatches'])('coin title cannot erase explicitly false %s evidence', (field) => {
+    const review = enforceCoinExactEvidence({ candidateIndex: 0, verdict: 'unreadable', confidence: 'low', rationale: 'The independent image check found a disagreement.', visualEvidence: { ...evidence, denominationMatches: true, dateMatches: true, varietyMatches: true, [field]: false } }, coinMetadata, coinTitle);
+    expect(review.verdict).toBe('unreadable');
+  });
+
+  it('allows exact title facts to supplement only an unknown coin-holder crop', () => {
+    const result = enforceCoinExactEvidence({ candidateIndex: 0, verdict: 'unreadable', confidence: 'low', rationale: 'Coin identity and denomination are visible; date and holder label are cropped.', visualEvidence: { identityMatches: true, denominationMatches: true, rawOrLooseVisible: false } }, coinMetadata, coinTitle);
+    expect(result.verdict).toBe('match');
+    expect(result.visualAudit?.normalizations?.[0]?.rule).toBe('coin_unknown_crop_supplement');
+  });
+
+  it('coin title does not turn an arbitrary empty evidence object into confirmation', () => {
+    expect(enforceCoinExactEvidence({ candidateIndex: 0, verdict: 'unreadable', confidence: 'low', rationale: 'The image cannot be inspected.', visualEvidence: {} }, coinMetadata, coinTitle).verdict).toBe('unreadable');
+  });
+
+  it('coin title does not overwrite a date disagreement reported in the final rationale', () => {
+    expect(enforceCoinExactEvidence({ candidateIndex: 0, verdict: 'unreadable', confidence: 'low', rationale: 'The visible date differs from the target.', visualEvidence: { identityMatches: true, denominationMatches: true } }, coinMetadata, coinTitle).verdict).toBe('unreadable');
+  });
+
+  it('a completed independent coin retry cannot erase its contrary observed numeric grade', () => {
+    const finalEvidence = { ...evidence, dateMatches: true, varietyMatches: true, denominationMatches: true };
+    const rationale = 'The target PCGS numeric grade is 63. The candidate PCGS numeric grade is 62; numeric grade differs. Coin identity and denomination match.';
+    const review = { candidateIndex: 0, verdict: 'match' as const, confidence: 'high' as const, rationale, visualEvidence: finalEvidence,
+      visualAudit: { imageCount: 1, initialVerdict: 'match' as const, initialConfidence: 'high' as const, retryStatus: 'performed' as const, finalPass: 'high_resolution_retry' as const, adjudicationStatus: 'confirmed' as const, retryRationale: rationale, finalEvidence } };
+    expect(enforceCoinExactEvidence({ ...review, verdict: 'unreadable' }, coinMetadata, coinTitle).verdict).toBe('unreadable');
+    expect(enforceCoinExactEvidence(review, coinMetadata, coinTitle).verdict).toBe('unreadable');
+    expect(hasCompletedCoinAdjudication(review, coinMetadata, coinTitle)).toBe(false);
+  });
+
+  it('coin title cannot override a visibly different grader in the deciding review', () => {
+    const review = { candidateIndex: 0, verdict: 'match' as const, confidence: 'high' as const, rationale: 'The candidate NGC numeric grade is 63. Coin identity and denomination match.', visualEvidence: { ...evidence, dateMatches: true, varietyMatches: true, denominationMatches: true } };
+    expect(enforceCoinExactEvidence(review, coinMetadata, coinTitle).verdict).toBe('unreadable');
+  });
+
+  it('never promotes a raw suffix mismatch after both retry formats fail', async () => {
+    mockedInvokeLLM.mockResolvedValueOnce(structuredVisualResponse({ reviews: [{ candidateIndex: 0, verdict: 'mismatch', confidence: 'high', rationale: suffix, visualEvidence: { ...evidence, rawOrLooseVisible: true, slabVisible: false, gradeMatches: false } }] }) as any)
+      .mockRejectedValueOnce(new Error('isolated retry unavailable')).mockRejectedValueOnce(new Error('isolated retry fallback unavailable'));
+    const result = await filterVisualSourceCandidates({ sourceRole: 'marketplace', sourceLabel: 'Stage 1 mocked eBay Sold', targetImageUrl: 'https://example.com/target.jpg', targetMetadata: metadata, listings: [{ title, imageUrl: 'https://example.com/candidate.jpg' }] });
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(3);
+    expect(result.listings[0].visualReviewStatus).not.toBe('match');
+    expect(result.listings[0].evidenceDisposition).not.toBe('valuation_eligible');
+    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: 'mismatch', retryStatus: 'failed', finalPass: 'initial' });
+  });
+
+  it('preserves an earlier confirmed graded match when an optional gallery retry fails', async () => {
+    mockedInvokeLLM.mockResolvedValueOnce(structuredVisualResponse({ reviews: [{ candidateIndex: 0, verdict: 'match', confidence: 'high', rationale: 'The graded item identity, holder, and numeric grade match.', visualEvidence: evidence }] }) as any)
+      .mockRejectedValueOnce(new Error('isolated optional retry unavailable')).mockRejectedValueOnce(new Error('isolated optional retry fallback unavailable'));
+    const result = await filterVisualSourceCandidates({ sourceRole: 'marketplace', sourceLabel: 'Stage 1 mock', targetImageUrl: 'https://example.com/target.jpg', targetMetadata: metadata,
+      listings: [{ title: 'The Legend of Zelda NES Sealed', fullItemDetails: { gameTitle: 'The Legend of Zelda', platform: 'NES', sealed: 'Yes', isGraded: 'Yes' }, imageUrl: 'https://example.com/candidate.jpg', imageUrls: ['https://example.com/candidate.jpg', 'https://example.com/gallery.jpg'] }] });
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(3);
+    expect(result.listings[0].visualReviewStatus).toBe('match');
+    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: 'match', retryStatus: 'failed', finalPass: 'initial', finalEvidence: evidence });
+  });
+
+  it('preserves raw retry provenance separately from the permitted normalized decision', async () => {
+    const initial = { candidateIndex: 0, verdict: 'mismatch', confidence: 'high', rationale: 'The primary image is unclear; candidate appears raw.', visualEvidence: { rawOrLooseVisible: false } };
+    mockedInvokeLLM.mockResolvedValueOnce(structuredVisualResponse({ reviews: [initial] }) as any)
+      .mockResolvedValueOnce(structuredVisualResponse({ reviews: [{ candidateIndex: 0, verdict: 'unreadable', confidence: 'low', rationale: suffix, visualEvidence: evidence }] }) as any);
+    const result = await filterVisualSourceCandidates({ sourceRole: 'marketplace', sourceLabel: 'Stage 1 mock', targetImageUrl: 'https://example.com/target.jpg', targetMetadata: metadata, listings: [{ title, imageUrl: 'https://example.com/candidate.jpg' }] });
+    expect(result.listings[0].visualReviewStatus).toBe('match');
+    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: 'mismatch', initialRationale: initial.rationale, retryVerdict: 'unreadable', retryConfidence: 'low', retryRationale: suffix, finalPass: 'high_resolution_retry' });
   });
 });
