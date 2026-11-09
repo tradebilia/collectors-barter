@@ -20,6 +20,7 @@ import { rankingAwardContribution, rankingAwardFieldKey } from "../shared/testAi
 import { randomUUID } from "node:crypto";
 import { freezeMetadataRankingPopulation, bindMetadataRankingPopulation, overlayMetadataRankingPopulation, type MetadataRankingPopulation, type MetadataRankingBinding } from "../shared/testAiRankingPopulation";
 import { compareComparableGrades, parseComparableGrade, parseSourceGradeFromTitle, findStructuredGradeConflict, type ComparableGrade, type ComparableGradeOptions } from "../shared/testAiGradeComparison";
+import { summarizeVisualExecutionOccurrences, type VisualExecution, type VisualExecutionAttempt, type VisualExecutionCounts, type VisualExecutionReasonCode, type VisualExecutionStage, type VisualExecutionFormat } from "../shared/testAiVisualExecution";
 
 export type VisualSourceCandidate = {
   title?: string | null;
@@ -29,6 +30,7 @@ export type VisualSourceCandidate = {
   metadataScoreAwards?: RankingAward[];
   metadataRanking?: MetadataRankingBinding;
   metadataOriginOccurrenceKey?: string;
+  visualExecution?: VisualExecution;
   [key: string]: unknown;
 };
 export type MetadataFieldComparison = {
@@ -192,6 +194,7 @@ export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
   timedOutCount?: number;
   deadlineReached?: boolean;
   reviews: VisualSourceReview[];
+  visualExecutionCounts?: VisualExecutionCounts;
   note: string;
 };
 
@@ -583,6 +586,31 @@ class VisualReviewTimeoutError extends Error {
     super(message);
     this.name = "VisualReviewTimeoutError";
   }
+}
+
+function undispatchedVisualExecution(reasonCode: VisualExecutionReasonCode, hardExclusion = false): VisualExecution {
+  return { version: 1, state: "not_dispatched", reasonCode, selectedForReview: false,
+    hardExclusion, identity: { result: "not_established", origin: "none" }, attempts: [] };
+}
+
+/** Operational terminal state is independent of any retained deciding identity. */
+function terminalVisualExecution(receipt: VisualExecution): VisualExecution {
+  const attempts = receipt.attempts.map((attempt) => ({ ...attempt }));
+  const last = attempts[attempts.length - 1];
+  if (!last) return { ...receipt, attempts };
+  const state = last.outcome === "usable_review" ? "completed"
+    : last.outcome === "timed_out" ? "timed_out" : "dispatched_inconclusive";
+  const reasonCode = last.outcome === "usable_review" ? "review_returned"
+    : last.outcome === "timed_out" ? "candidate_timeout"
+    : last.outcome === "no_decision" ? "no_usable_decision" : "provider_error";
+  return { ...receipt, state, reasonCode, attempts };
+}
+
+function recordVisualExecutionError(attempt: VisualExecutionAttempt, error: unknown): void {
+  // Empty/invalid replies already settled at the existing parser boundary.
+  if (attempt.outcome !== "started") return;
+  attempt.outcome = error instanceof VisualReviewTimeoutError ? "timed_out" : "error";
+  attempt.errorCode = error instanceof VisualReviewTimeoutError ? "candidate_timeout" : "provider_error";
 }
 
 async function invokeVisualReview(
@@ -1694,7 +1722,9 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
   listings: T[],
   reviews: VisualSourceReview[],
   reviewedCandidateCount: number,
-  options?: { requireExactMatch?: boolean; requireCoinExactMatch?: boolean; targetMetadata?: string },
+  options?: { requireExactMatch?: boolean; requireCoinExactMatch?: boolean; targetMetadata?: string;
+    /** Invocation-owned executor receipts, never reconstructed from attached review/audit fields. */
+    executionReceipts?: ReadonlyMap<number, VisualExecution> },
 ) {
   const reviewsByIndex = new Map(reviews.map(review => [review.candidateIndex, review]));
   return {
@@ -1703,7 +1733,8 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
     // conflict may exclude the candidate from deterministic valuation.
     listings: listings.map((listing, index) => {
       const review = reviewsByIndex.get(index);
-      if (!review) return listing;
+      if (!review) return { ...listing, visualExecution: options?.executionReceipts?.get(index)
+        ?? { ...undispatchedVisualExecution("legacy_unknown"), state: "unknown" as const } } as T;
       // Once a Disney candidate has reached vision and received an explicit
       // match, the visual stage has already done its job. Do not require a
       // second redundant structured-evidence gate before valuation.
@@ -1736,14 +1767,30 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
       const differenceText = allDifferences.length > 0
         ? ` Differences found: ${allDifferences.map((difference) => `${difference.field}: target “${difference.targetObservation}” vs candidate “${difference.candidateObservation}” (${difference.impact})`).join("; ")}.`
         : "";
+      // Evaluate the existing attachment predicate exactly once, preserving its short circuit.
+      const warningReview = review.verdict === "mismatch" || (options?.requireExactMatch && review.verdict !== "match") || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? "")));
+      const executorReceipt = options?.executionReceipts?.get(index);
+      const actualResponse = executorReceipt?.attempts.some((attempt) => attempt.outcome === "usable_review") === true;
+      const visualExecution: VisualExecution = {
+        ...(executorReceipt ?? { ...undispatchedVisualExecution("legacy_unknown"), state: "unknown" as const }),
+        identity: {
+          result: !actualResponse && executorReceipt ? "manual_unknown"
+            : review.verdict === "mismatch" ? "mismatch"
+            : review.verdict === "match" && !warningReview ? "match" : "manual_unknown",
+          origin: actualResponse ? "visual" : "unknown",
+          reviewVerdict: review.verdict,
+        },
+      };
+      if (executorReceipt) executorReceipt.identity = visualExecution.identity;
       return {
         ...cleanConfirmedDisneyListing,
+        visualExecution,
         visualReviewStatus: review.verdict,
         visualReviewRationale: `${review.rationale}${differenceText}`,
         ...(allDifferences.length > 0 ? { visualDifferences: allDifferences } : {}),
         ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
         ...(decidingVisualEvidence(review) ? { visualEvidence: decidingVisualEvidence(review) } : {}),
-        ...((review.verdict === "mismatch" || (options?.requireExactMatch && review.verdict !== "match") || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? ""))))
+        ...(warningReview
           ? {
               evidenceDisposition: "warning_review",
               ...(options?.requireCoinExactMatch && options.targetMetadata
@@ -2481,6 +2528,7 @@ function universalCandidateConflict(targetMetadata: string, candidate: Normalize
 type UniversalPreparation<T extends VisualSourceCandidate> = {
   listings: T[];
   contextReasons: Map<number, string>;
+  contextCodes: Map<number, "universal_duplicate_hold" | "universal_pre_visual_hold">;
 };
 
 /**
@@ -2493,12 +2541,14 @@ export function prepareUniversalVisualCandidates<T extends VisualSourceCandidate
   const canonicalIndexByReference = new Map<string, number>();
   const mergedImages = normalized.map((candidate) => [...candidate.imageUrls]);
   const contextReasons = new Map<number, string>();
+  const contextCodes = new Map<number, "universal_duplicate_hold" | "universal_pre_visual_hold">();
   normalized.forEach((candidate, index) => {
     if (candidate.providerReference) {
       const canonicalIndex = canonicalIndexByReference.get(candidate.providerReference);
       if (canonicalIndex !== undefined) {
         mergedImages[canonicalIndex] = Array.from(new Set([...mergedImages[canonicalIndex], ...candidate.imageUrls])).slice(0, 8);
         contextReasons.set(index, "Universal duplicate filter: same provider record reference as an earlier candidate; retained as context-only and not sent to visual review.");
+        contextCodes.set(index, "universal_duplicate_hold");
         return;
       }
       canonicalIndexByReference.set(candidate.providerReference, index);
@@ -2506,6 +2556,7 @@ export function prepareUniversalVisualCandidates<T extends VisualSourceCandidate
     const conflict = universalCandidateConflict(targetMetadata, candidate);
     if (conflict) {
       contextReasons.set(index, `${conflict} Retained as context-only before visual review.`);
+      contextCodes.set(index, "universal_pre_visual_hold");
       return;
     }
   });
@@ -2516,6 +2567,7 @@ export function prepareUniversalVisualCandidates<T extends VisualSourceCandidate
       imageUrls: mergedImages[index],
     }) as T),
     contextReasons,
+    contextCodes,
   };
 }
 
@@ -6425,15 +6477,53 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
 	  const comparisonListings = args.listings.map((listing) => ({
 	    ...listing,
 	    metadataFieldComparisons: buildMetadataFieldComparisons(targetMetadata, listing),
-	  } as T));
-	  const universalPreparation = prepareUniversalVisualCandidates(comparisonListings, targetMetadata);
-	  const preparedListings = universalPreparation.listings;
-	  const isOriginalArtTarget = /(?:^|;\s*)category=comics(?:;|$)/i.test(targetMetadata)
-	    && /(?:^|;\s*)itemType=original_art(?:;|$)/i.test(targetMetadata);
-	  if (isOriginalArtTarget) {
-	    const rankedOriginalArtListings = annotateOriginalArtMarketCandidates(preparedListings, targetMetadata);
-	    const contextListings = rankedOriginalArtListings.map((listing, index) => ({
-	      ...listing,
+		  } as T));
+		  const universalPreparation = prepareUniversalVisualCandidates(comparisonListings, targetMetadata);
+		  const preparedListings = universalPreparation.listings;
+  // Invocation-owned reporting lives outside the provider try/catch. No receipt
+  // is inferred from required/status/audit or inherited from another invocation.
+  const executionReceipts = new Map<number, VisualExecution>(preparedListings.map((_, index) => [index, undispatchedVisualExecution("selected_not_dispatched")]));
+  const indexByOccurrence = new Map(preparedListings.flatMap((listing, index) => listing.metadataRanking
+    ? [[JSON.stringify([listing.metadataRanking.populationId, listing.metadataRanking.sourceId, listing.metadataRanking.occurrenceKey]), index] as const] : []));
+  const receiptAt = (index: number) => executionReceipts.get(index)!;
+  const holdAt = (index: number, reasonCode: VisualExecutionReasonCode, hardExclusion = false, deterministicMismatch = false) => {
+    const receipt = undispatchedVisualExecution(reasonCode, hardExclusion);
+    if (deterministicMismatch) receipt.identity = { result: "mismatch", origin: "deterministic" };
+    executionReceipts.set(index, receipt);
+  };
+  const selectAt = (index: number, reasonCode: VisualExecutionReasonCode) => {
+    const receipt = receiptAt(index);
+    receipt.selectedForReview = true;
+    receipt.state = "selected_pending";
+    receipt.reasonCode = reasonCode;
+  };
+  const beginAttempt = (index: number, stage: VisualExecutionStage, format: VisualExecutionFormat): VisualExecutionAttempt => {
+    const receipt = receiptAt(index);
+    const attempt: VisualExecutionAttempt = { ordinal: receipt.attempts.length + 1, stage, format, outcome: "started" };
+    receipt.attempts.push(attempt);
+    return attempt;
+  };
+  const finish = (result: VisualSourceFilterResult<T>): VisualSourceFilterResult<T> => {
+    const project = (rows: T[]) => rows.map((listing) => {
+      const rank = listing.metadataRanking;
+      const index = rank ? indexByOccurrence.get(JSON.stringify([rank.populationId, rank.sourceId, rank.occurrenceKey])) : undefined;
+      const receipt = index === undefined ? undefined : executionReceipts.get(index);
+      return { ...listing, visualExecution: receipt ? terminalVisualExecution(receipt)
+        : { ...undispatchedVisualExecution("legacy_unknown"), state: "unknown" as const } } as T;
+    });
+    const listings = project(result.listings);
+    const contextListings = result.contextListings ? project(result.contextListings) : undefined;
+    return { ...result, listings, ...(contextListings ? { contextListings } : {}),
+      visualExecutionCounts: summarizeVisualExecutionOccurrences([...listings, ...(contextListings ?? [])], preparedListings.length,
+        args.rankingPopulation ? { populationId: args.rankingPopulation.populationId, sourceId: args.rankingPopulation.sourceId } : undefined) };
+  };
+		  const isOriginalArtTarget = /(?:^|;\s*)category=comics(?:;|$)/i.test(targetMetadata)
+		    && /(?:^|;\s*)itemType=original_art(?:;|$)/i.test(targetMetadata);
+		  if (isOriginalArtTarget) {
+		    preparedListings.forEach((_, index) => holdAt(index, "workflow_context_only"));
+		    const rankedOriginalArtListings = annotateOriginalArtMarketCandidates(preparedListings, targetMetadata);
+		    const contextListings = rankedOriginalArtListings.map((listing, index) => ({
+		      ...listing,
 	      visualRequirement: 'not_required_original_art',
 	      visualReviewStatus: 'not_reviewed',
 	      visualReviewRationale: 'Original Art uses broad market context; different artworks are not exact visual comparables.',
@@ -6441,24 +6531,25 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
 	      evidenceReasons: [
 	        ...(universalPreparation.contextReasons.get(index) ? [universalPreparation.contextReasons.get(index)!] : []),
 
-	        'Original Art market-context workflow does not use visual analysis.',
-	      ],
-	    } as T));
-	    return {
-	      listings: [],
-	      contextListings,
-	      preVisualExcludedCount: contextListings.length,
+		        'Original Art market-context workflow does not use visual analysis.',
+		      ],
+		    } as T));
+		    return finish({
+		      listings: [],
+		      contextListings,
+		      preVisualExcludedCount: contextListings.length,
 	      status: 'skipped_no_target_image',
 	      reviewedCount: 0,
 	      removedCount: 0,
-	      retainedUnreviewedCount: contextListings.length,
-	      reviews: [],
-	      note: 'Original Art market context only: candidates are not sent to visual analysis because different artworks are not exact matches.',
-	    };
-	  }
-	  if (isAutographSignedItemTarget(targetMetadata)) {
-	    const autographExcluded = preparedListings.map((listing) => autographMarketExclusionReason(targetMetadata, listing));
-	    const autographExcludedCount = autographExcluded.filter(Boolean).length;
+		      retainedUnreviewedCount: contextListings.length,
+		      reviews: [],
+		      note: 'Original Art market context only: candidates are not sent to visual analysis because different artworks are not exact matches.',
+		    });
+		  }
+		  if (isAutographSignedItemTarget(targetMetadata)) {
+		    const autographExcluded = preparedListings.map((listing) => autographMarketExclusionReason(targetMetadata, listing));
+		    preparedListings.forEach((_, index) => holdAt(index, autographExcluded[index] ? "universal_pre_visual_hold" : "workflow_context_only", Boolean(autographExcluded[index])));
+		    const autographExcludedCount = autographExcluded.filter(Boolean).length;
     const autographEligibleListings = preparedListings.filter((_, index) => !autographExcluded[index]);
     const rankedAutographListings = annotateAutographMarketCandidates(autographEligibleListings, targetMetadata);
 	    const contextListings = rankedAutographListings.map((listing, index) => ({
@@ -6477,33 +6568,39 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       ...listing,
       visualRequirement: 'not_required_pre_visual', visualReviewStatus: 'not_reviewed',
       visualReviewRationale: autographExcluded[index]!,
-      evidenceDisposition: 'context_only', valuationEligible: false, hardException: true,
-      evidenceReasons: [autographExcluded[index]!],
-    } as T] : []);
-    return {
-	      listings: [],
-	      contextListings: [...contextListings, ...heldListings],
-	      preVisualExcludedCount: autographExcludedCount,
+	      evidenceDisposition: 'context_only', valuationEligible: false, hardException: true,
+	      evidenceReasons: [autographExcluded[index]!],
+	    } as T] : []);
+	    return finish({
+		      listings: [],
+		      contextListings: [...contextListings, ...heldListings],
+		      preVisualExcludedCount: autographExcludedCount,
 	      status: 'skipped_no_target_image',
 	      reviewedCount: 0,
 	      removedCount: autographExcludedCount,
-	      retainedUnreviewedCount: contextListings.length,
-	      reviews: [],
-	      note: 'Autographs / Signed Item market range only: candidates are ranked as similar market evidence and are not sent to visual analysis.',
-	    };
-	  }
-	  const preVisualUniversalReasons = universalPreparation.contextReasons;
+		      retainedUnreviewedCount: contextListings.length,
+		      reviews: [],
+		      note: 'Autographs / Signed Item market range only: candidates are ranked as similar market evidence and are not sent to visual analysis.',
+		    });
+		  }
+		  const preVisualUniversalReasons = universalPreparation.contextReasons;
   const preVisualLotReasons = new Map<number, string>();
 	  preparedListings.forEach((listing, index) => {
     const reason = multiItemLotReason(listing, targetMetadata);
     if (reason) preVisualLotReasons.set(index, reason);
   });
-	  const declaredReviews = buildDeclaredIdentityReviews(preparedListings, targetMetadata, {
+		  const declaredReviews = buildDeclaredIdentityReviews(preparedListings, targetMetadata, {
     ignoreSubjectiveConditionDifferences: args.ignoreSubjectiveConditionDifferences,
   });
   const declaredReviewByIndex = new Map(declaredReviews.map((review) => [review.candidateIndex, review]));
+  preparedListings.forEach((_, index) => {
+    const universalCode = universalPreparation.contextCodes.get(index);
+    if (universalCode) holdAt(index, universalCode, true, universalCode !== "universal_duplicate_hold" && declaredReviewByIndex.has(index));
+    else if (preVisualLotReasons.has(index)) holdAt(index, "multi_item_hold", true);
+    else if (declaredReviewByIndex.has(index)) holdAt(index, "declared_identity_conflict", true, true);
+  });
   const preVisualExcludedIndexes = new Set([
-	    ...preVisualUniversalReasons.keys(),
+		    ...preVisualUniversalReasons.keys(),
     ...preVisualLotReasons.keys(),
     ...declaredReviewByIndex.keys(),
   ]);
@@ -6594,6 +6691,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
         .filter((candidate) => !selectedCandidateIndexes.has(candidate.candidateIndex))
         .map((candidate) => candidate.candidateIndex),
     );
+    preVisualScoreExcludedIndexes.forEach((index) => holdAt(index, "selection_excluded"));
     itemTypeRankedItems = new Map(rankedSelection.ranked.map((candidate) => [candidate.candidateIndex, candidate.item]));
     for (const [candidateIndex, item] of itemTypeRankedItems) rankedItems.set(candidateIndex, item);
     preVisualScoreExcludedListings = rankedSelection.excluded.map((listing) => ({
@@ -6607,6 +6705,12 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
     });
   }
   const target = safeRemoteImageUrl(args.targetImageUrl);
+  // Same actual image-bearing selected population even on the missing-target return.
+  const selectedBeforeTarget = (rankedSelection ? rankedSelection.selected : allCandidates)
+    .filter((candidate) => candidate.imageUrls.length > 0 && !preVisualScoreExcludedIndexes.has(candidate.candidateIndex));
+  selectedBeforeTarget.forEach((candidate) => selectAt(candidate.candidateIndex, target ? "selected_not_dispatched" : "target_image_unavailable"));
+  allCandidates.filter((candidate) => candidate.imageUrls.length === 0 && !preVisualScoreExcludedIndexes.has(candidate.candidateIndex))
+    .forEach((candidate) => holdAt(candidate.candidateIndex, target ? "candidate_image_unavailable" : "target_image_unavailable"));
   const remainingUnrankedEligible = rankedSelection ? [] : eligibleListings;
   // A ranking cap selects the strongest candidates for visual review, but a
   // missing target image means visual review cannot start. Keep those selected
@@ -6619,10 +6723,10 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       visualReviewRationale: "Not visually analyzed because the target item has no usable image for comparison.",
       evidenceDisposition: "context_only",
       evidenceReasons: ["target image unavailable; visual analysis did not run"],
-    } as T))
-    : [];
+	    } as T))
+	    : [];
   if (!target)
-    return {
+    return finish({
       listings: [],
       contextListings: [...rankedSelectedContextListings, ...preVisualContextListings, ...preVisualScoreExcludedListings, ...remainingUnrankedEligible.map((listing) => ({
         ...listing,
@@ -6639,7 +6743,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       retainedUnreviewedCount: 0,
       reviews: [],
       note: `No target listing image was supplied; ${args.sourceLabel} candidates were not visually filtered. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
-    };
+    });
   const candidates = allCandidates
     .filter(
       (entry): entry is { item: T; candidateIndex: number; imageUrl: string; imageUrls: string[] } =>
@@ -6648,7 +6752,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
     );
   const imageLessIndexes = new Set(allCandidates.filter((candidate) => candidate.imageUrls.length === 0).map((candidate) => candidate.candidateIndex));
   if (!candidates.length) {
-    return {
+    return finish({
       listings: [],
       contextListings: [...rankedSelectedContextListings, ...preVisualContextListings, ...preVisualScoreExcludedListings, ...remainingUnrankedEligible.map((listing) => ({
         ...listing,
@@ -6667,7 +6771,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       note: eligibleListings.length === 0
         ? `No ${args.sourceLabel.toLowerCase()} candidates remained after deterministic identity and multi-item filtering; ${preVisualContextListings.length} listing${preVisualContextListings.length === 1 ? " was" : "s were"} retained as context-only before vision.`
         : `No ${args.sourceLabel.toLowerCase()} candidate images were available; all eligible candidates were retained. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
-    };
+    });
   }
   let reviewCandidates = candidates;
   try {
@@ -6748,6 +6852,12 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
         .map((candidate) => ({ ...candidate, imageUrl: candidate.imageUrl as string }))
       : candidates;
     const reviewQueue = prioritizeVisualSourceCandidates(reviewCandidates, targetMetadata, declaredReviews);
+    const queuedIndexes = new Set(reviewQueue.map((candidate) => candidate.candidateIndex));
+    reviewCandidates.filter((candidate) => !queuedIndexes.has(candidate.candidateIndex))
+      .forEach((candidate) => selectAt(candidate.candidateIndex, "adaptive_window_limit"));
+    const markUnreachedQueue = (reasonCode: VisualExecutionReasonCode) => reviewQueue.forEach((candidate) => {
+      if (!receiptAt(candidate.candidateIndex).attempts.length) selectAt(candidate.candidateIndex, reasonCode);
+    });
     const reviews: VisualSourceReview[] = [];
     let completedBatches = 0;
     let reviewedCandidateCount = 0;
@@ -6765,6 +6875,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       for (let offset = 0; offset < window.length; offset += 4) {
       if (Date.now() >= reviewDeadline) {
         deadlineReached = true;
+        markUnreachedQueue("overall_deadline");
         break;
       }
       const batch = window.slice(offset, offset + 4);
@@ -6781,14 +6892,19 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       content.push({ type: "image_url", image_url: { url: promoteEbayImageUrl(candidate.imageUrl) ?? candidate.imageUrl, detail: "high" } });
       let text = "";
       let candidateError: unknown;
+      let initialResponseAttempt: VisualExecutionAttempt | undefined;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
+        const attempt = beginAttempt(candidate.candidateIndex, "initial", responseFormat.type);
         try {
           const response = await invokeVisualReview({ provider: args.visualProvider, model: visualReviewModel(args.visualProvider, "initial"), messages: [{ role: "user", content }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
           const raw = response.choices[0]?.message?.content;
           text = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
+          attempt.outcome = "no_decision";
+          initialResponseAttempt = attempt;
           if (text.trim()) break;
           throw new Error("The vision model returned no structured content");
         } catch (error) {
+          recordVisualExecutionError(attempt, error);
           candidateError = error;
         }
       }
@@ -6798,6 +6914,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
 	        preparedListings.length,
         candidate.candidateIndex,
       );
+      if (initialResponseAttempt) initialResponseAttempt.outcome = primaryReviews.length ? "usable_review" : "no_decision";
       // Reconcile a holder-cropped coin result with an exact completed-sale
       // title before calculating the retry. The reconciliation only unlocks
       // the independent second visual pass; it does not itself admit a sale.
@@ -6906,10 +7023,12 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       let galleryError: unknown;
       let galleryTimedOut = false;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
+        const attempt = beginAttempt(candidate.candidateIndex, "high_resolution_retry", responseFormat.type);
         try {
           const response = await invokeVisualReview({ provider: args.visualProvider, model: visualReviewModel(args.visualProvider, "retry", needsFocusedGradeEscalation), messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 1800, reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
           const raw = response.choices[0]?.message?.content;
           const galleryText = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
+          attempt.outcome = "no_decision";
           if (!galleryText.trim()) throw new Error("The gallery visual review returned no structured content");
           galleryReviews = normalizeSingleCandidateVisualReview(
             parseAnalyzerResponse(galleryText),
@@ -6924,9 +7043,11 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
               String(candidate.item.title ?? ""),
             );
           }
+          attempt.outcome = galleryReviews.length ? "usable_review" : "no_decision";
           if (galleryReviews.length) break;
           galleryError = new Error("The high-resolution visual-review call returned a structured reply without the required review decision.");
         } catch (error) {
+          recordVisualExecutionError(attempt, error);
           galleryError = error;
           if (error instanceof VisualReviewTimeoutError) galleryTimedOut = true;
         }
@@ -6934,6 +7055,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       let thirdDisneyAttempted = false;
       if (!galleryReviews.length && canAttemptThirdDisneyReview && galleryTimedOut) {
         thirdDisneyAttempted = true;
+        const attempt = beginAttempt(candidate.candidateIndex, "disney_third_confirmation", "json_object");
         try {
           const response = await invokeVisualReview({
             provider: args.visualProvider,
@@ -6954,16 +7076,19 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
           }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
           const raw = response.choices[0]?.message?.content;
           const thirdText = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
+          attempt.outcome = "no_decision";
           if (!thirdText.trim()) throw new Error("The third Disney visual confirmation returned no structured content");
           galleryReviews = normalizeSingleCandidateVisualReview(
             parseAnalyzerResponse(thirdText),
             preparedListings.length,
             candidate.candidateIndex,
           );
+          attempt.outcome = galleryReviews.length ? "usable_review" : "no_decision";
           if (!galleryReviews.length) {
             galleryError = new Error("The third Disney visual confirmation returned no usable review decision.");
           }
         } catch (error) {
+          recordVisualExecutionError(attempt, error);
           galleryError = error;
           if (error instanceof VisualReviewTimeoutError) galleryTimedOut = true;
         }
@@ -7039,7 +7164,10 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
           ), preparedListings, targetMetadata),
           targetMetadata,
         ).filter((review) => review.verdict === 'match' || review.verdict === 'rough_match').length;
-      if (acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) break;
+      if (acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) {
+        markUnreachedQueue("adaptive_match_target");
+        break;
+      }
     }
     if (!completedBatches && reviewQueue.length && !timedOutCount && !deadlineReached) {
       throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
@@ -7153,7 +7281,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       requirementAnnotatedListings,
       uniqueReviews,
       reviewedCandidateCount,
-      { requireExactMatch: isDisneyPinsMetadata(targetMetadata), requireCoinExactMatch: isCoinMetadata(targetMetadata), targetMetadata: targetMetadata },
+      { requireExactMatch: isDisneyPinsMetadata(targetMetadata), requireCoinExactMatch: isCoinMetadata(targetMetadata), targetMetadata: targetMetadata, executionReceipts },
     );
     const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
     // Ranking indexes can be stale after visual-review rows are merged back
@@ -7174,7 +7302,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
     const contextListings = applied.listings.filter((_, index) => contextIndexes.has(index));
     const visibleListings = applied.listings.filter((_, index) => !contextIndexes.has(index));
     const completedWithTimeout = timedOutCount > 0 || deadlineReached;
-    return {
+    return finish({
       ...applied,
       listings: visibleListings,
       contextListings,
@@ -7185,9 +7313,15 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       timedOutCount,
       deadlineReached,
 	      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Adaptive visual review sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates in batches of ${VISUAL_REVIEW_BATCH_SIZE}, stopping after ${VISUAL_REVIEW_TARGET_MATCHES} accepted visual matches, the ${VISUAL_REVIEW_MAX_CANDIDATES}-image maximum, or the ${VISUAL_REVIEW_OVERALL_DEADLINE_MS / 1000}-second overall deadline; ${timedOutCount} candidate${timedOutCount === 1 ? "" : "s"} timed out; ${preVisualUniversalReasons.size} universal duplicate, quantity, state, grade, component, or image-readiness record${preVisualUniversalReasons.size === 1 ? " was" : "s were"} retained as context-only; ${preVisualLotReasons.size} multi-item listing${preVisualLotReasons.size === 1 ? " was" : "s were"} excluded before vision and retained as context-only; ${declaredConflictIndexes.size} other explicit identity conflict${declaredConflictIndexes.size === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.${completedWithTimeout ? " Remaining candidates are retained for manual review and cannot enter valuation implicitly." : ""}`,
-    };
+    });
   } catch {
-	    const unavailableContextListings = [
+	    executionReceipts.forEach((receipt) => {
+      // No final attachment survived this catch: retain operations, never
+      // reconstruct an identity approval from preliminary response attempts.
+      if (receipt.attempts.length) receipt.identity = { result: "manual_unknown", origin: "unknown" };
+      else if (receipt.selectedForReview && receipt.reasonCode === "selected_not_dispatched") receipt.reasonCode = "provider_error";
+    });
+		    const unavailableContextListings = [
       ...preVisualContextListings,
       ...preVisualScoreExcludedListings,
       ...preparedListings.flatMap((listing, index) => imageLessIndexes.has(index)
@@ -7199,10 +7333,10 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
             visualReviewRationale: "No usable candidate image was supplied; ranked candidate retained as context-only and not sent to visual review.",
             evidenceDisposition: "context_only",
           } as T]
-        : []),
-	    ].map((listing) => withMetadataFieldComparisons(targetMetadata, listing));
-    return {
-	      listings: preparedListings.map((listing, index) => reviewCandidates.some((candidate) => candidate.candidateIndex === index)
+	        : []),
+		    ].map((listing) => withMetadataFieldComparisons(targetMetadata, listing));
+    return finish({
+		      listings: preparedListings.map((listing, index) => reviewCandidates.some((candidate) => candidate.candidateIndex === index)
         ? {
             ...listing,
             ...(rankedItems.get(index) ?? {}),
@@ -7220,7 +7354,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       retainedUnreviewedCount: candidates.length,
       reviews: [],
       note: `The ${args.sourceLabel.toLowerCase()} visual filter was unavailable; all eligible text-filtered candidates were retained. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
-    };
+    });
   }
 }
 

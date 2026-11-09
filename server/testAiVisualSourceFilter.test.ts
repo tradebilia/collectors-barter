@@ -4197,9 +4197,20 @@ describe("visual source filter", () => {
   });
   it("shows each reviewed candidate price beside its match or mismatch verdict", () => {
     const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
-    expect(pageSource).toContain("formatVisualReviewPrice");
-    expect(pageSource).toContain("listing?.price ?? listing?.soldPrice");
-    expect(pageSource).toContain("{formatVisualReviewPrice(listing)}");
+    const componentSource = readFileSync(resolve(import.meta.dirname, "../client/src/components/TestAiCandidateStatus.tsx"), "utf8");
+    const statusSource = readFileSync(resolve(import.meta.dirname, "../shared/testAiCandidateStatus.ts"), "utf8");
+    expect(pageSource).toContain("from '@/components/TestAiCandidateStatus'");
+    expect(pageSource).toContain("<TestAiVisualReviewRow key={candidateDisplayKey(listing, {}, String(index))} listing={listing} targetImageUrl={targetImageUrl} />");
+    expect(componentSource).toContain("export function TestAiVisualReviewRow({ listing, targetImageUrl }");
+    expect(componentSource).toContain("{formatCandidateDisplayPrice(listing)}");
+    expect(componentSource).toContain("<TestAiCandidateStatus listing={listing} />");
+    expect(componentSource).toContain("<TestAiCandidateImagePair listing={listing} targetImageUrl={targetImageUrl} />");
+    expect(componentSource).toContain("View full explanation");
+    expect(statusSource).toContain("row.price ?? row.soldPrice ?? row.salePrice ?? row.finalPrice ?? row.currentPrice ?? row.current_price");
+    expect(statusSource).toContain("row.currency ?? row.soldCurrency ?? (typeof raw === 'object' ? raw?.currency : null) ?? ''");
+    expect(statusSource).toContain("${currency || 'Currency unknown'}");
+    expect(statusSource).toContain("label: 'Image match'");
+    expect(statusSource).toContain("label: 'Image mismatch'");
   });
 
   it("keeps visual review bounded and fails closed when the provider times out", () => {
@@ -4274,9 +4285,24 @@ describe("visual source filter", () => {
 
   it("explains timeout and partial-review states in the eBay Active UI", () => {
     const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
+    const componentSource = readFileSync(resolve(import.meta.dirname, "../client/src/components/TestAiCandidateStatus.tsx"), "utf8");
+    const statusSource = readFileSync(resolve(import.meta.dirname, "../shared/testAiCandidateStatus.ts"), "utf8");
     expect(pageSource).toContain("maximum 2 minutes");
     expect(pageSource).toContain("Only candidates with a completed visual result can support current-value evidence");
-    expect(pageSource).toContain("cannot enter the analyzer implicitly");
+    expect(pageSource).toContain("AI image checks stopped after returning partial results");
+    expect(pageSource).toContain("Partial/error source response — known completed observations are retained.");
+    expect(pageSource).toContain("No actual dispatch receipts are available. Legacy verdicts are not proof of image execution.");
+    expect(pageSource).toMatch(/import \{[^}]*\bTestAiProcessCompleteNotice as ProcessCompleteNotice\b[^}]*\} from '@\/components\/TestAiCandidateStatus';/);
+    expect(componentSource).toContain(`export function TestAiProcessCompleteNotice({ data }: { data?: any }) {
+  const retrieval = sourceRetrievalCoverage(data);`);
+    expect(componentSource).toContain("import { sourceCurrentWindowLabel, sourceMetricDisplay, sourceRetrievalCoverage } from '../../../shared/testAiSourceDisplay';");
+    expect(componentSource).toContain("Selected but undispatched rows are not background jobs.");
+    expect(componentSource).toContain("aria-label=\"Source request end coverage\">{retrieval.partial ? 'Source request ended with partial/error coverage — known returned rows retained below.' : 'Source request ended — returned source results are displayed below.'}");
+    expect(componentSource).toContain("return mergeCandidateDisplayGroups(groups, scope).filter(hasActualVisualDispatch);");
+    expect(componentSource).toContain("const dispatched = rows.filter(hasActualVisualDispatch), responses = rows.filter(hasActualVisualResponse);");
+    expect(statusSource).toContain("label: 'Timed out — no usable response'");
+    expect(statusSource).toContain("label: 'Provider failure — dispatched'");
+    expect(statusSource).toContain("label: 'Source eligible — final analysis not run'");
   });
 });
 

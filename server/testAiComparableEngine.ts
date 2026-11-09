@@ -7,6 +7,12 @@ import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence
 import { getVerifiedIdentityApproval, transferVerifiedIdentityApproval } from './testAiCanonicalObservation';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 import type { VisualEvidence } from './testAiVisualSourceFilter';
+import { randomUUID } from 'node:crypto';
+import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAuditRef,
+  readServerNormalizationReport, retainServerNormalizationReport, finalUsePopulation,
+  type FinalIntakeReport, type FinalIdentityAdmission, type FinalValuationUse, type FinalUseReport,
+  boundedFinalDisplayCorrelation, boundedDiagnosticVisualExecution, type FinalDisplayCorrelation, type FinalUsePriceGroup, type ValuationUseOptions } from '../shared/testAiValuationUse';
+import type { MetadataRankingBinding } from '../shared/testAiRankingPopulation';
 
 export type EvidenceState =
   | 'no_market_evidence'
@@ -80,6 +86,17 @@ export interface MarketSale {
   metadataMatchRank?: number | null;
   metadataMatchReasons?: string[] | null;
   metadataFieldComparisons?: unknown[] | null;
+  metadataRanking?: MetadataRankingBinding | null;
+  metadataOriginOccurrenceKey?: string | null;
+  metadataUnknownFields?: unknown[] | null;
+  metadataScoreAwards?: unknown[] | null;
+  metadataMatchLabel?: string | null;
+  visualExecution?: unknown;
+  reportedVisualExecution?: unknown;
+  displayCorrelation?: FinalDisplayCorrelation | null;
+  /** Inbound JSON never establishes this server-owned reporting receipt. */
+  analysisIntake?: FinalIntakeReport;
+  valuationUse?: FinalValuationUse;
 }
 
 export type ComparableClassification = 'exact' | 'near' | 'contextual' | 'rejected';
@@ -157,6 +174,16 @@ export interface ComparableMatch {
   /** Stable machine-readable reason for direct analyzer admission or exclusion. */
   admissionCode?: 'USED_DIRECT' | 'OMITTED_BY_CAP' | 'SECONDARY_EVIDENCE' | 'CONTEXT_ONLY' | 'REVIEW_REQUIRED' | 'REJECTED_IDENTITY';
   duplicateOf?: string;
+  metadataRanking?: MetadataRankingBinding | null;
+  metadataOriginOccurrenceKey?: string | null;
+  metadataUnknownFields?: unknown[] | null;
+  metadataScoreAwards?: unknown[] | null;
+  metadataMatchLabel?: string | null;
+  visualExecution?: unknown;
+  reportedVisualExecution?: unknown;
+  /** Raw branch result before financial ledger context/cap/duplicate wrapping. */
+  identityAdmission?: FinalIdentityAdmission;
+  valuationUse?: FinalValuationUse;
 }
 
 export type ComparableSourceDiagnostic = {
@@ -286,6 +313,7 @@ export interface MarketProfile {
   valuationWarnings: string[];
   comparables: ComparableMatch[];
   selectionDiagnostics: ComparableSelectionDiagnostics;
+  finalUseReport?: FinalUseReport;
 }
 
 export interface ComparableIdentityGate {
@@ -453,21 +481,29 @@ function possibleTransactionKey(sale: MarketSale): string | null {
   return origin && title && date ? `possible:${origin}|${title}|${date}` : null;
 }
 
-export function deduplicateMarketSales(sales: MarketSale[]): { unique: MarketSale[]; duplicates: Array<{ sale: MarketSale; duplicateOf: string }>; possibleDuplicates: MarketSale[] } {
+export function deduplicateMarketSales(sales: MarketSale[], captureIdentity?: (sale: MarketSale) => FinalIdentityAdmission): { unique: MarketSale[]; duplicates: Array<{ sale: MarketSale; duplicateOf: string; originalSale: MarketSale; originalIdentityAdmission?: FinalIdentityAdmission }>; possibleDuplicates: MarketSale[]; inputOrdinals: Map<MarketSale, number> } {
   const seenExact = new Map<string, string>();
   const seenProbable = new Map<string, string>();
   const seenPossible = new Map<string, string>();
   const unique: MarketSale[] = [];
-  const duplicates: Array<{ sale: MarketSale; duplicateOf: string }> = [];
+  const duplicates: Array<{ sale: MarketSale; duplicateOf: string; originalSale: MarketSale; originalIdentityAdmission?: FinalIdentityAdmission }> = [];
   const possibleDuplicates: MarketSale[] = [];
-  for (const sale of sales) {
+  const inputOrdinals = new Map<MarketSale, number>();
+  for (const [inputOrdinal, sale] of sales.entries()) {
     const exactKey = canonicalMarketplaceItemKey(sale);
     const probableKey = probableTransactionKey(sale);
     const possibleKey = possibleTransactionKey(sale);
     const knownExact = exactKey ? seenExact.get(exactKey) : null;
     const knownProbable = probableKey ? seenProbable.get(probableKey) : null;
     if (knownExact || knownProbable) {
-      duplicates.push({ sale: { ...sale, duplicateStatus: knownExact ? 'exact_duplicate' : 'probable_duplicate' }, duplicateOf: knownExact ?? knownProbable! });
+      // Capture on the original verified object BEFORE duplicate diagnostics
+      // deliberately make its copy ineligible for approval transfer.
+      const originalIdentityAdmission = captureIdentity?.(sale);
+      const duplicateSale: MarketSale = { ...sale, duplicateStatus: knownExact ? 'exact_duplicate' : 'probable_duplicate' };
+      const receipt = readServerNormalizationReport(sale);
+      if (receipt) retainServerNormalizationReport(duplicateSale, receipt);
+      duplicates.push({ sale: duplicateSale, duplicateOf: knownExact ?? knownProbable!, originalSale: sale, originalIdentityAdmission });
+      inputOrdinals.set(duplicateSale, inputOrdinal);
       continue;
     }
     const knownPossible = possibleKey ? seenPossible.get(possibleKey) : null;
@@ -475,13 +511,16 @@ export function deduplicateMarketSales(sales: MarketSale[]): { unique: MarketSal
     // This server-owned copy changes only duplicate diagnostics. Browser copies
     // never acquire approval authority merely by carrying the same properties.
     transferVerifiedIdentityApproval(sale, retained);
+    const receipt = readServerNormalizationReport(sale);
+    if (receipt) retainServerNormalizationReport(retained, receipt);
     if (knownPossible) possibleDuplicates.push(retained);
     if (exactKey) seenExact.set(exactKey, exactKey);
     if (probableKey) seenProbable.set(probableKey, probableKey);
     if (possibleKey && !seenPossible.has(possibleKey)) seenPossible.set(possibleKey, possibleKey);
     unique.push(retained);
+    inputOrdinals.set(retained, inputOrdinal);
   }
-  return { unique, duplicates, possibleDuplicates };
+  return { unique, duplicates, possibleDuplicates, inputOrdinals };
 }
 
 export const MAX_VALUATION_COMPARABLES = 48;
@@ -692,7 +731,7 @@ export function selectBalancedComparableSales(
   cap = MAX_VALUATION_COMPARABLES,
 ) {
   const nowMs = now.getTime();
-  const deduplicated = deduplicateMarketSales(sales);
+  const deduplicated = deduplicateMarketSales(sales, (sale) => scoreComparable(target, sale).identityAdmission!);
   const valuationCandidates = deduplicated.unique.filter((sale) => isCompletedSaleCandidate(sale, nowMs));
   const valuationMatches = valuationCandidates
     .filter((sale) => String(sale.currency ?? 'UNKNOWN').toUpperCase() === 'USD')
@@ -1964,6 +2003,35 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
         : classification === 'contextual'
           ? 'CONTEXT_ONLY'
           : 'REVIEW_REQUIRED';
+  const identityBlockerCodes: string[] = [];
+  if (!priceIsUsable) identityBlockerCodes.push('INVALID_PRICE');
+  if (materialNumberConflict) identityBlockerCodes.push('CATALOG_NUMBER_CONFLICT');
+  if (categoryHardConflict) identityBlockerCodes.push('CATEGORY_IDENTITY_CONFLICT');
+  if (universalHardConflict) identityBlockerCodes.push('UNIVERSAL_IDENTITY_CONFLICT');
+  if (materialVariantConflict) identityBlockerCodes.push('VARIANT_CONFLICT');
+  if (materialGradeConflict) identityBlockerCodes.push('GRADE_ADJACENT');
+  if (materialCompanyConflict) identityBlockerCodes.push('CERTIFICATION_ADJACENT');
+  if (requiredApprovalMissing || transportedApprovalUnverified) identityBlockerCodes.push('REQUIRED_APPROVAL_MISSING');
+  if (categoryNeedsReview && !approvedIdentity) identityBlockerCodes.push('CATEGORY_REVIEW_REQUIRED');
+  if (universalNeedsReview && !approvedIdentity) identityBlockerCodes.push('UNIVERSAL_REVIEW_REQUIRED');
+  if (visualMismatch) identityBlockerCodes.push('VISUAL_MISMATCH');
+  if (materialVariantReview) identityBlockerCodes.push('VARIANT_REVIEW_REQUIRED');
+  if (identityApproval && signedFormConflicts.length) identityBlockerCodes.push('SIGNED_FORM_CONFLICT');
+  if (identityApproval && approvalStructuredLotConflict) identityBlockerCodes.push('APPROVED_LOT_CONFLICT');
+  if (identityApproval && approvalHardStateConflict) identityBlockerCodes.push('APPROVED_STATE_CONFLICT');
+  if (restrictiveSourceDisposition) identityBlockerCodes.push('SOURCE_DISPOSITION_RESTRICTIVE');
+  if (!approvedIdentity && identity.readiness !== 'ready') identityBlockerCodes.push('TARGET_IDENTITY_INCOMPLETE');
+  if (!accepted && boundedScore < 48) identityBlockerCodes.push('IDENTITY_SCORE_BELOW_THRESHOLD');
+  const identityAdmission: FinalIdentityAdmission = {
+    accepted, classification, score: boundedScore, identityRelationship, valuationRelationship,
+    categoryIdentity: { ...finalCategoryIdentity, confirmedFields: [...finalCategoryIdentity.confirmedFields],
+      unconfirmedFields: [...finalCategoryIdentity.unconfirmedFields], conflicts: [...finalCategoryIdentity.conflicts] },
+    titleCategoryIdentity: { ...categoryIdentity, confirmedFields: [...categoryIdentity.confirmedFields],
+      unconfirmedFields: [...categoryIdentity.unconfirmedFields], conflicts: [...categoryIdentity.conflicts] },
+    serverFinalApprovalVerified: Boolean(identityApproval),
+    basis: accepted ? approvedIdentity ? 'server_final_visual' : 'title_evidence' : 'not_admitted',
+    visualReviewStatus: sale.visualReviewStatus ?? 'not_reviewed', blockerCodes: identityBlockerCodes,
+  };
   return {
     title: title || 'Untitled comparable',
     price: Number.isFinite(price) ? price : 0,
@@ -2010,9 +2078,16 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     metadataMatchRank: sale.metadataMatchRank,
     metadataMatchReasons: sale.metadataMatchReasons,
     metadataFieldComparisons: sale.metadataFieldComparisons,
+    metadataRanking: boundedFinalSourceCorrelation(sale).metadataRanking,
+    metadataOriginOccurrenceKey: boundedFinalSourceCorrelation(sale).metadataOriginOccurrenceKey,
+    metadataUnknownFields: sale.metadataUnknownFields,
+    metadataScoreAwards: sale.metadataScoreAwards,
+    metadataMatchLabel: sale.metadataMatchLabel,
+    reportedVisualExecution: boundedDiagnosticVisualExecution(sale.reportedVisualExecution ?? sale.visualExecution),
     evidenceDisposition: sale.evidenceDisposition ?? 'valuation_eligible',
     evidenceReasons: sale.evidenceReasons ?? null,
     admissionCode,
+    identityAdmission,
   };
 }
 
@@ -2044,6 +2119,7 @@ export function buildMarketProfile(
   now = new Date(),
   identityGate?: ComparableIdentityGate | null,
   guideAnchor?: GuideValueAnchor | null,
+  reportingOptions?: ValuationUseOptions,
 ): MarketProfile {
   const nowMs = now.getTime();
   const selection = selectBalancedComparableSales(target, sales, now, MAX_VALUATION_COMPARABLES);
@@ -2073,8 +2149,11 @@ export function buildMarketProfile(
         reasons: evidenceReason ? [...match.reasons, `server evidence gate: ${evidenceReason}`] : match.reasons,
       };
     });
-  const duplicateMatches: ComparableMatch[] = deduplicated.duplicates.map(({ sale, duplicateOf }) => ({
+  const duplicateMatches: ComparableMatch[] = deduplicated.duplicates.map(({ sale, duplicateOf, originalIdentityAdmission }) => ({
     ...scoreComparable(target, sale),
+    // Preserve reporting captured on the original object before duplicate status
+    // invalidated its copy's authority. This cannot authorize duplicate pricing.
+    identityAdmission: originalIdentityAdmission,
     accepted: false,
     classification: 'rejected',
     exclusionReason: `duplicate sale observation; canonical record ${duplicateOf}`,
@@ -2276,6 +2355,151 @@ export function buildMarketProfile(
     `${categoryEvidenceThresholds.category} threshold: ${categoryEvidenceThresholds.minimumSelectedSales} selected sales, ${categoryEvidenceThresholds.minimumIndependentMarketplaces} independent marketplaces, and no more than ${categoryEvidenceThresholds.maximumSpreadPct}% spread for strong evidence.`,
     outlierExcludedCount ? `${outlierExcludedCount} price outlier${outlierExcludedCount === 1 ? '' : 's'} was withheld from the deterministic value.` : flaggedSmallSampleOutliers.size ? `${flaggedSmallSampleOutliers.size} suspicious price tail${flaggedSmallSampleOutliers.size === 1 ? '' : 's'} remains in the small-sample review set.` : 'No selected price was withheld by the IQR outlier rule.',
   ];
+  // Everything below projects already-computed sets. It never feeds selection,
+  // IQR, support, confidence, reliability, guide weighting or cash arithmetic.
+  const existingReceipt = sales.map(readServerNormalizationReport).find(Boolean);
+  const analysisRunId = reportingOptions?.analysisRunId ?? existingReceipt?.auditRef.analysisRunId ?? randomUUID();
+  const side = reportingOptions?.side ?? existingReceipt?.auditRef.side ?? undefined;
+  const historicalPromptKnown = reportingOptions?.historicalPromptSales !== undefined;
+  const historicalPromptSet = new Set(reportingOptions?.historicalPromptSales ?? []);
+  const postPolicySet = new Set(filtered.map(({ match }) => match));
+  const currentSet = new Set(currentSales.map(({ match }) => match));
+  const representedSales = new Set([...valuationMatches.map(({ sale }) => sale), ...contextualSales]);
+  const ledgerOnlySales = deduplicated.unique.filter((sale) => !representedSales.has(sale));
+  // Direct-engine USD filtering can leave a raw non-USD candidate unrepresented.
+  // Append it ONLY to the final reporting ledger, never financial populations or
+  // existing financial/legacy counts calculated above.
+  const ledgerOnlyMatches = ledgerOnlySales.map((sale) => ({ ...scoreComparable(target, sale),
+    accepted: false, classification: 'contextual' as const,
+    exclusionReason: 'unsupported currency; retained only for final ledger coverage' }));
+  const rowInputs: Array<{ sale: MarketSale; match: ComparableMatch; rawMatch?: ComparableMatch; duplicate: boolean; ledgerOnly: boolean }> = [
+    ...valuationMatchRecordsAfterOutliers.map((match, index) => ({ sale: valuationMatches[index].sale,
+      match, rawMatch: valuationMatches[index].match, duplicate: false, ledgerOnly: false })),
+    ...contextualMatches.map((match, index) => ({ sale: contextualSales[index], match, duplicate: false, ledgerOnly: false })),
+    ...duplicateMatches.map((match, index) => ({ sale: deduplicated.duplicates[index].sale, match, duplicate: true, ledgerOnly: false })),
+    ...ledgerOnlyMatches.map((match, index) => ({ sale: ledgerOnlySales[index], match, duplicate: false, ledgerOnly: true })),
+  ];
+  const hardIdentityCodes = new Set(['CATALOG_NUMBER_CONFLICT', 'CATEGORY_IDENTITY_CONFLICT', 'UNIVERSAL_IDENTITY_CONFLICT',
+    'SIGNED_FORM_CONFLICT', 'APPROVED_LOT_CONFLICT', 'APPROVED_STATE_CONFLICT']);
+  const finalComparableMatches = rowInputs.map(({ sale, match, rawMatch, duplicate, ledgerOnly }): ComparableMatch => {
+    const intakeOrdinal = deduplicated.inputOrdinals.get(sale)!;
+    const original = sales[intakeOrdinal];
+    const receipt = readServerNormalizationReport(original);
+    const sourceAdmission = receipt?.sourceAdmission ?? {
+      reportedDisposition: typeof original.evidenceDisposition === 'string' ? original.evidenceDisposition.slice(0, 80) : null,
+      reportedVisualReviewStatus: typeof original.visualReviewStatus === 'string' ? original.visualReviewStatus.slice(0, 40) : null,
+      verifiedSourceId: null, verifiedSourceDisposition: null, verification: 'unmeasured' as const, normalizationEligible: null,
+      blockerCodes: [], warningCodes: ['NORMALIZATION_NOT_MEASURED'],
+    };
+    const identityAdmission = match.identityAdmission!;
+    const preselected = Boolean(rawMatch && selectedMatches.has(rawMatch));
+    const omittedByCap = Boolean(rawMatch?.accepted && !preselected);
+    const postPolicySaleDiagnostics = Boolean(rawMatch && postPolicySet.has(rawMatch));
+    const currentSaleMedianDiagnostics = Boolean(rawMatch && currentSet.has(rawMatch));
+    const primaryMarketSales = currentSaleMedianDiagnostics && valuationBasis === 'market_sales';
+    const outlierExcluded = Boolean(rawMatch && outlierMatches.has(rawMatch));
+    const unsupportedCurrency = sourceAdmission.blockerCodes.includes('UNSUPPORTED_CURRENCY')
+      || (ledgerOnly && String(sale.currency ?? 'UNKNOWN').toUpperCase() !== 'USD');
+    const hardExcluded = sourceAdmission.verification !== 'unverified' && (
+      identityAdmission.blockerCodes.some((code) => hardIdentityCodes.has(code))
+      || sourceAdmission.verifiedSourceDisposition === 'rejected_objective_conflict');
+    const reviewRequired = sourceAdmission.blockerCodes.some((code) => ['PROVENANCE_UNVERIFIED', 'REQUIRED_APPROVAL_MISSING', 'VISUAL_MISMATCH'].includes(code))
+      || identityAdmission.blockerCodes.some((code) => ['REQUIRED_APPROVAL_MISSING', 'CATEGORY_REVIEW_REQUIRED', 'UNIVERSAL_REVIEW_REQUIRED',
+        'VISUAL_MISMATCH', 'VARIANT_REVIEW_REQUIRED', 'TARGET_IDENTITY_INCOMPLETE'].includes(code));
+    const code: FinalValuationUse['use']['code'] = duplicate
+      ? sale.duplicateStatus === 'exact_duplicate' ? 'EXACT_DUPLICATE' : 'PROBABLE_DUPLICATE'
+      : outlierExcluded ? 'OUTLIER_EXCLUDED'
+      : omittedByCap ? 'OMITTED_BY_CAP'
+      : primaryMarketSales ? 'CURRENT_SALES_PRIMARY'
+      : currentSaleMedianDiagnostics ? 'CURRENT_SALES_DIAGNOSTIC_ONLY'
+      : postPolicySaleDiagnostics ? 'HISTORICAL_DIAGNOSTIC_ONLY'
+      : hardExcluded ? 'FINAL_HARD_EXCLUDED'
+      : unsupportedCurrency ? 'UNSUPPORTED_CURRENCY'
+      : reviewRequired ? 'REVIEW_REQUIRED'
+      : ['grade_adjacent_comparable', 'condition_adjacent', 'variant_comparable'].includes(identityAdmission.valuationRelationship) ? 'SECONDARY_ONLY'
+      : sourceAdmission.normalizationEligible ? 'SOURCE_ELIGIBLE_NOT_SELECTED' : 'CONTEXT_ONLY';
+    const reasonCodes = [...sourceAdmission.blockerCodes, ...identityAdmission.blockerCodes];
+    if (duplicate) reasonCodes.push(sale.duplicateStatus === 'exact_duplicate' ? 'EXACT_DUPLICATE_POLICY' : 'PROBABLE_DUPLICATE_POLICY');
+    if (outlierExcluded) reasonCodes.push('IQR_EXCLUDED_N_GE_10');
+    if (omittedByCap) reasonCodes.push('SOURCE_BALANCED_CAP');
+    if (currentSaleMedianDiagnostics && !primaryMarketSales) reasonCodes.push(materialReviewRequired ? 'MATERIAL_IDENTITY_HOLD'
+      : valuationBasis === 'guide_fallback' ? 'GUIDE_FALLBACK_PRIMARY' : 'INSUFFICIENT_CURRENT_SUPPORT');
+    if (postPolicySaleDiagnostics && !currentSaleMedianDiagnostics) reasonCodes.push('HISTORICAL_EXTENSION_NOT_CURRENT_PRIMARY');
+    if (ledgerOnly) reasonCodes.push('LEDGER_ONLY_COVERAGE_FALLBACK');
+    const valuationUse: FinalValuationUse = {
+      version: FINAL_VALUATION_USE_VERSION,
+      auditRef: makeFinalAuditRef({ side, analysisRunId, intakeOrdinal,
+        sourceCorrelation: receipt?.auditRef.sourceCorrelation ?? boundedFinalSourceCorrelation(original),
+        displayCorrelation: receipt?.auditRef.displayCorrelation ?? boundedFinalDisplayCorrelation(original.displayCorrelation),
+        verifiedObservationId: receipt?.auditRef.verifiedObservationId,
+        verifiedCanonicalTransactionId: receipt?.auditRef.verifiedCanonicalTransactionId }),
+      sourceAdmission, identityAdmission,
+      selection: preselected ? 'selected_pre_outlier' : omittedByCap ? 'omitted_by_cap' : 'not_selected',
+      use: { code, reasonCodes: [...new Set(reasonCodes)], postPolicySaleDiagnostics, currentSaleMedianDiagnostics, primaryMarketSales,
+        historicalPromptIncluded: historicalPromptKnown ? historicalPromptSet.has(original) : null,
+        possibleDuplicateWarning: sale.duplicateStatus === 'possible_duplicate',
+        smallSampleOutlierWarning: Boolean(rawMatch && flaggedSmallSampleOutliers.has(rawMatch)) },
+    };
+    return { ...match, valuationUse };
+  });
+  const allUseRows = finalComparableMatches.map((match) => match.valuationUse!).sort((a, b) => a.auditRef.intakeOrdinal - b.auditRef.intakeOrdinal);
+  const financialUniqueRefs = new Set(deduplicated.unique.map((sale) => deduplicated.inputOrdinals.get(sale)));
+  const consideredRefs = new Set(valuationMatches.map(({ sale }) => deduplicated.inputOrdinals.get(sale)));
+  const populationDefinitions: Array<{ id: string; label: string; currency?: 'USD'; role?: string; includes: (row: FinalValuationUse) => boolean; unmeasured?: boolean }> = [
+    { id: 'submitted_intake', label: 'Actual submitted final-intake occurrences', includes: () => true },
+    { id: 'normalization_eligible', label: 'Final-normalization eligible occurrences before deduplication', includes: (row) => row.sourceAdmission.normalizationEligible === true,
+      unmeasured: allUseRows.some((row) => row.sourceAdmission.normalizationEligible === null) },
+    { id: 'financial_unique', label: 'Financial policy retained unique occurrences', includes: (row) => financialUniqueRefs.has(row.auditRef.intakeOrdinal) },
+    { id: 'suppressed_duplicates', label: 'Financial exact/probable duplicate occurrences suppressed', includes: (row) => ['EXACT_DUPLICATE', 'PROBABLE_DUPLICATE'].includes(row.use.code) },
+    { id: 'direct_identity_considered', label: 'USD completed-sale occurrences scored for direct identity before cap', currency: 'USD', includes: (row) => consideredRefs.has(row.auditRef.intakeOrdinal) },
+    { id: 'direct_identity_admitted', label: 'Direct identity admitted in actual unique USD candidate set before cap', currency: 'USD', includes: (row) => consideredRefs.has(row.auditRef.intakeOrdinal) && row.identityAdmission.accepted },
+    { id: 'selected_pre_iqr', label: 'Actual source-balanced selected occurrences before IQR', currency: 'USD', role: 'selected_before_iqr', includes: (row) => row.selection === 'selected_pre_outlier' },
+    { id: 'post_policy_sale_diagnostics', label: 'Actual sale-statistics occurrences after outlier policy', currency: 'USD', role: 'post_policy_sale_diagnostic', includes: (row) => row.use.postPolicySaleDiagnostics },
+    { id: 'current_sale_median_diagnostics', label: 'Actual current 365-day sale-median diagnostic occurrences', currency: 'USD', role: 'current_sale_median_diagnostic', includes: (row) => row.use.currentSaleMedianDiagnostics },
+    { id: 'primary_market_sales', label: 'Actual contributors to primary market-sales valuation; zero for guide/hold', currency: 'USD', role: 'primary_market_sales', includes: (row) => row.use.primaryMarketSales },
+    { id: 'historical_diagnostics', label: 'Included post-policy historical-extension sale diagnostics, not current primary', currency: 'USD', role: 'historical_sale_diagnostic', includes: (row) => row.use.postPolicySaleDiagnostics && !row.use.currentSaleMedianDiagnostics },
+    { id: 'historical_prompt', label: 'Actual qualitative historical formatter inclusion, not model attention', role: 'qualitative_historical_prompt', includes: (row) => row.use.historicalPromptIncluded === true, unmeasured: !historicalPromptKnown },
+  ];
+  const populationsFor = (rows: FinalValuationUse[]) => populationDefinitions.map((definition) => finalUsePopulation(definition.id,
+    definition.label, (definition.id === 'normalization_eligible' ? rows.some((row) => row.sourceAdmission.normalizationEligible === null) : definition.unmeasured)
+      ? null : rows.filter(definition.includes), definition.currency ?? null, definition.role ?? null));
+  const sourceGroups = new Map<string, { sourceId: string | null; diagnosticSourceId: string | null; sourceRunId: string | null; rows: FinalValuationUse[] }>();
+  for (const row of allUseRows) {
+    const sourceId = row.sourceAdmission.verifiedSourceId;
+    const correlation = row.auditRef.displayCorrelation;
+    const ranking = row.auditRef.sourceCorrelation.metadataRanking;
+    const diagnosticSourceId = correlation?.sourceId ?? ranking?.sourceId ?? null;
+    const sourceRunId = correlation?.runId ?? ranking?.populationId ?? null;
+    const key = JSON.stringify([sourceId, diagnosticSourceId, sourceRunId]);
+    const group: { sourceId: string | null; diagnosticSourceId: string | null; sourceRunId: string | null; rows: FinalValuationUse[] }
+      = sourceGroups.get(key) ?? { sourceId, diagnosticSourceId, sourceRunId, rows: [] };
+    group.rows.push(row); sourceGroups.set(key, group);
+  }
+  const priceGroups: FinalUsePriceGroup[] = [];
+  for (const definition of populationDefinitions.filter((entry) => entry.role && !entry.unmeasured)) {
+    const groups = new Map<string, FinalUsePriceGroup>();
+    for (const match of finalComparableMatches) {
+      if (!definition.includes(match.valuationUse!)) continue;
+      const actualCurrency = match.currency === 'UNKNOWN' ? null : match.currency;
+      const key = JSON.stringify([actualCurrency, match.priceBasis, match.buyerPremium, match.shipping, match.tax]);
+      const group: FinalUsePriceGroup = groups.get(key) ?? { population: definition.id, priceRole: definition.role!, currency: actualCurrency,
+        priceBasis: match.priceBasis ?? null, buyerPremium: match.buyerPremium ?? null, shipping: match.shipping ?? null,
+        tax: match.tax ?? null, semantics: 'as_reported_no_fx_or_fee_recomputation', count: 0, memberRefs: [], prices: [] };
+      const actualAmount = sales[match.valuationUse!.auditRef.intakeOrdinal].price;
+      const reportedAmount = actualAmount === null || actualAmount === undefined || !Number.isFinite(Number(actualAmount)) ? null : Number(actualAmount);
+      group.count += 1; group.memberRefs.push(match.valuationUse!.auditRef.intakeRef); group.prices.push(reportedAmount); groups.set(key, group);
+    }
+    priceGroups.push(...groups.values());
+  }
+  const finalUseReport: FinalUseReport = {
+    version: FINAL_VALUATION_USE_VERSION, side: side ?? null, analysisRunId,
+    coverage: { population: 'actual_submitted_final_intake', unit: 'submitted_intake_occurrence', availableSourceIngress: 'unmeasured',
+      retrievedObservations: 'unmeasured', notAllRetrievedReachIntake: true, ledgerOnlyFallbackCount: ledgerOnlyMatches.length },
+    valuationBasis, primaryPricingReasonCodes: materialReviewRequired ? ['MATERIAL_IDENTITY_HOLD']
+      : valuationBasis === 'guide_fallback' ? ['GUIDE_FALLBACK_PRIMARY'] : valuationBasis === 'insufficient_evidence' ? ['INSUFFICIENT_CURRENT_SUPPORT'] : [],
+    populations: populationsFor(allUseRows), sources: [...sourceGroups.values()].map(({ rows, ...group }) => ({ ...group, populations: populationsFor(rows) })),
+    priceGroups,
+  };
   return {
     marketRange,
     typicalBand: supported && currentQ1 !== null && currentQ3 !== null ? { low: Math.round(currentQ1), high: Math.round(currentQ3), supported: true } : { low: null, high: null, supported: false },
@@ -2339,8 +2563,9 @@ export function buildMarketProfile(
     majorAssumptions: ['Only USD observations with positive prices were considered.', 'Only sufficient completed, dated records within one year and classified exact or near determine the market valuation; a labeled 366–730-day illiquid-market extension remains diagnostic evidence and cannot alone establish current support.', 'Active asking prices, historical or undated context, certification, population, and RSS are not completed sales. A verified applicable guide may determine only an explicitly provisional fallback when current market evidence is insufficient; guides never enter observed-sale ranges or counts.', 'Exact and documented-probable duplicates are excluded; possible duplicates remain visible for review; existing hard identity and source/financial safeguards remain in force.'],
     missingInformation,
     valuationWarnings,
-    comparables: comparableMatches,
+    comparables: finalComparableMatches,
     selectionDiagnostics: selection.diagnostics,
+    finalUseReport,
   };
 }
 

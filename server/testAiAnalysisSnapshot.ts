@@ -1,5 +1,6 @@
 import { selectPreferredGuideAnchor, type NormalizedEvidenceSummary } from '../shared/testAiEvidenceNormalization';
 import { verifyGuideAnchors } from './testAiGuideEvidence';
+import type { FinalUseReport, ValuationUseSide } from '../shared/testAiValuationUse';
 import {
   buildMarketProfile,
   deterministicTradeComparison,
@@ -23,6 +24,7 @@ export type AnalysisSnapshot = {
   generatedAt: string;
   item: { title: string; category: string };
   profile: MarketProfile;
+  finalUseReport: FinalUseReport;
   evidence: {
     identityReadiness: string | null;
     sourceStatuses: Array<{
@@ -40,6 +42,13 @@ export type AnalysisSnapshot = {
       mismatch: number;
       unreadable: number;
       notReviewed: number;
+    };
+    visualReviewPopulation: {
+      population: 'normalized_submitted_attached_visual_status_observations';
+      unit: 'submitted_intake_occurrence';
+      coverage: 'submitted_intake_only';
+      label: string;
+      provesExecutionOrIdentityApproval: false;
     };
   };
 };
@@ -93,6 +102,9 @@ export function buildAnalysisSnapshot(input: {
   identityGate?: ComparableIdentityGate | null;
   evidenceSummary?: NormalizedEvidenceSummary | null;
   now?: Date;
+  side?: ValuationUseSide;
+  analysisRunId?: string;
+  historicalPromptSales?: MarketSale[];
 }, guideVerificationOptions?: { signingKey?: string }): AnalysisSnapshot {
   const sales = input.sales ?? [];
   const now = input.now ?? new Date();
@@ -108,6 +120,7 @@ export function buildAnalysisSnapshot(input: {
     now,
     input.identityGate,
     valuationGuideAnchor,
+    { side: input.side, analysisRunId: input.analysisRunId, historicalPromptSales: input.historicalPromptSales },
   );
   profile.valuationWarnings.push(...verifiedGuides.warnings);
   const summary = input.evidenceSummary;
@@ -116,6 +129,7 @@ export function buildAnalysisSnapshot(input: {
     generatedAt: now.toISOString(),
     item: { title: input.target.title, category: input.target.category },
     profile,
+    finalUseReport: profile.finalUseReport!,
     evidence: {
       identityReadiness: summary?.identityReadiness.readiness ?? null,
       sourceStatuses: (summary?.sources ?? []).map((source) => ({
@@ -128,6 +142,10 @@ export function buildAnalysisSnapshot(input: {
       })),
       reviewFlags: [...(summary?.reviewFlags ?? []).map((flag) => flag.message), ...verifiedGuides.warnings],
       visualReview: sourceReviewCounts(sales),
+      visualReviewPopulation: { population: 'normalized_submitted_attached_visual_status_observations',
+        unit: 'submitted_intake_occurrence', coverage: 'submitted_intake_only',
+        label: 'Legacy attached-row visual status diagnostics; not dispatch, model responses, verified identity or pricing use',
+        provesExecutionOrIdentityApproval: false },
     },
   };
 }

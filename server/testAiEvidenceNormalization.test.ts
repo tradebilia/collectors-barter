@@ -83,7 +83,7 @@ describe('normalizeTestAiEvidence', () => {
       { id: 'one_thirty_point', label: '130point', kind: 'market_completed', role: 'valuation_candidate', status: 'success', market: { completedSaleCount: 2, historicalSaleCount: 3, undatedSaleCount: 1 } },
     ]);
 
-    expect(summary.marketEvidence).toEqual(['130point: 2 completed sales, 0 current-value, 3 historical-trend, 3 historical records, 1 undated record.']);
+    expect(summary.marketEvidence).toEqual(['130point: 2 completed sales, 0 current-window source candidates, 3 historical source candidates, 3 historical records, 1 undated record.']);
     expect(summary.reviewFlags).toHaveLength(0);
     expect(summary.evidenceSufficiency.status).toBe('limited');
     expect(summary.sources[0]?.role).toBe('valuation_candidate');
@@ -94,7 +94,7 @@ describe('normalizeTestAiEvidence', () => {
       { id: 'the_card_api', label: 'The Card API Sales', kind: 'market_completed', role: 'valuation_candidate', status: 'success', market: { completedSaleCount: 3, analyzerSubmittedSaleCount: 2, analyzerSubmittedPrices: [100, 300] } },
     ]);
 
-    expect(summary.marketEvidencePriceSummaries).toEqual(['The Card API Sales: submitted-price summary — 2 sales · average $200 · median $200 · range $100–$300.']);
+    expect(summary.marketEvidencePriceSummaries).toEqual(['The Card API Sales: source-stage price observations — 2 priced observations · currency/basis unresolved — aggregate not shown; anonymous source observations, not final-price statistics.']);
   });
 
   it('reports Sirius completed candidates separately from zero analyzer submissions', () => {
@@ -102,8 +102,8 @@ describe('normalizeTestAiEvidence', () => {
       { id: 'sirius_sports_auctions', label: 'Sirius Sports Auctions', kind: 'market_completed', role: 'valuation_candidate', status: 'success', market: { completedSaleCount: 3, analyzerSubmittedSaleCount: 0, analyzerSubmittedPrices: [], historicalSaleCount: 3 } },
     ]);
 
-    expect(summary.marketEvidence).toEqual(['Sirius Sports Auctions: 3 completed sales, 0 submitted to analyzer, 0 current-value, 3 historical-trend, 3 historical records.']);
-    expect(summary.marketEvidencePriceSummaries).toEqual(['Sirius Sports Auctions: submitted-price summary — 0 sales · no prices submitted to analyzer.']);
+    expect(summary.marketEvidence).toEqual(['Sirius Sports Auctions: 3 completed sales, 0 source-stage eligible (not request receipts), 0 current-window source candidates, 3 historical source candidates, 3 historical records.']);
+    expect(summary.marketEvidencePriceSummaries).toEqual(['Sirius Sports Auctions: source-stage price observations — 0 priced observations · currency/basis unresolved — aggregate not shown; anonymous source observations, not final-price statistics.']);
   });
 
   it('summarizes every selected source, including non-market sources', () => {
@@ -114,9 +114,9 @@ describe('normalizeTestAiEvidence', () => {
     ]);
 
     expect(summary.selectedSourceSummaries).toEqual([
-      'Sold-Comps: 2 completed sales, 1 submitted to analyzer.',
+      'Sold-Comps: 2 completed sales, 1 source-stage eligible (not request receipts).',
       'TCGdex: selected reference source; completed-sales and analyzer-price summary not applicable.',
-      'Parse.bot PSA: no record returned; 0 completed sales and 0 submitted to analyzer.',
+      'Parse.bot PSA: no record returned; returned no record; source/final populations not measured.',
     ]);
   });
 
@@ -125,9 +125,9 @@ describe('normalizeTestAiEvidence', () => {
       { id: 'sirius_sports_auctions', label: 'Sirius Sports Auctions', kind: 'market_completed', status: 'success', market: { completedSaleCount: 4, analyzerSubmittedSaleCount: 4, currentValueSaleCount: 1, historicalTrendSaleCount: 3, currentValuePrices: [5000], historicalTrendPrices: [100, 200, 300] } },
     ]);
 
-    expect(summary.marketEvidence).toEqual(['Sirius Sports Auctions: 4 completed sales, 4 submitted to analyzer, 1 current-value, 3 historical-trend.']);
-    expect(summary.marketEvidencePriceSummaries?.[0]).toContain('current-value: 1 prices');
-    expect(summary.marketEvidencePriceSummaries?.[0]).toContain('historical-trend: 3 prices');
+    expect(summary.marketEvidence).toEqual(['Sirius Sports Auctions: 4 completed sales, 4 source-stage eligible (not request receipts), 1 current-window source candidates, 3 historical source candidates.']);
+    expect(summary.marketEvidencePriceSummaries?.[0]).toContain('current-window source candidates: 1 priced observations');
+    expect(summary.marketEvidencePriceSummaries?.[0]).toContain('historical source candidates: 3 priced observations');
     expect(summary.sourceDecisions?.[0]).toMatchObject({ completed: 4, accepted: 4, currentValue: 1, historicalTrend: 3, context: 0 });
   });
 

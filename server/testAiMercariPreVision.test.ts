@@ -7,6 +7,8 @@ const routerSource = readFileSync(resolve(import.meta.dirname, './testAIRouter.t
 const pageSource = readFileSync(resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
 const sourceOutcomeSource = readFileSync(resolve(import.meta.dirname, '../client/src/components/test-ai/SourceRunOutcomeSummary.tsx'), 'utf8');
 const rankingDisplaySource = readFileSync(resolve(import.meta.dirname, '../shared/testAiRankingDisplay.ts'), 'utf8');
+const candidateLedgerSource = readFileSync(resolve(import.meta.dirname, '../shared/testAiCandidateLedger.ts'), 'utf8');
+const masterListSource = readFileSync(resolve(import.meta.dirname, '../client/src/components/TestAiCandidateMasterList.tsx'), 'utf8');
 
 describe('Mercari Video Game pre-visual filtering', () => {
   it('keeps the title gate opt-in so eBay behavior is not changed by this Mercari scope', () => {
@@ -89,17 +91,35 @@ describe('Mercari Video Game pre-visual filtering', () => {
       const scoreA = validScore(a.listing.metadataMatchScore) ?? Number.NEGATIVE_INFINITY;
       const scoreB = validScore(b.listing.metadataMatchScore) ?? Number.NEGATIVE_INFINITY;
       return scoreB - scoreA || a.index - b.index;`);
-    expect(pageSource).toContain('const auditLedger = sortAnalysisCandidates(data?.audit?.ledger ?? []);');
+    expect(pageSource).toContain("import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';");
+    expect(pageSource).toContain("from '@shared/testAiCandidateLedger'");
+    expect(pageSource).toContain('const auditLedger = mergeCandidateDisplayGroups([data?.audit?.ledger ?? [], data?.listings ?? [], data?.visualFilter?.contextListings ?? []]);');
     expect(pageSource).toContain('const rankedListings = sortAnalysisCandidates(data?.listings ?? []);');
     expect(pageSource).toContain('sortAnalysisCandidates(data?.preVisionExcludedListings ?? [])');
+    expect(pageSource).toMatch(/import \{[^}]*\bcollectEbayCandidateDisplayOccurrences\b[^}]*\} from '@shared\/testAiCandidateLedger';/);
     expect(pageSource).toContain(`  const activeMasterListings = mergeMasterCandidates(
-    collectEbayDisplayCandidates(displayData),
+    collectEbayCandidateDisplayOccurrences(displayData),
     displayData?.metadataParentDisplayListings ?? [],
   );`);
+    expect(candidateLedgerSource).toContain(`export function collectEbayCandidateDisplayOccurrences(data: CandidateDisplayRow | null | undefined): CandidateDisplayRow[] {
+  if (!data) return [];
+  const stamp = (group: any) => Array.isArray(group) ? group.map(retainCandidateDisplayOccurrence) : group;
+  return collectEbayDisplayCandidates({ ...data, listings: stamp(data.listings), visualReviewListings: stamp(data.visualReviewListings),
+    visualFilter: data.visualFilter ? { ...data.visualFilter, listings: stamp(data.visualFilter.listings), contextListings: stamp(data.visualFilter.contextListings) } : undefined,
+    preVisionFilter: data.preVisionFilter ? { ...data.preVisionFilter, excludedListings: stamp(data.preVisionFilter.excludedListings) } : undefined });
+}`);
     expect(pageSource).toContain('<CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" targetImageUrl={item.primaryPhotoUrl} />');
     expect(pageSource).toContain('<CandidateMasterList listings={auditLedger} sourceLabel="eBay Sold History" targetImageUrl={item.primaryPhotoUrl} />');
     expect(pageSource).toContain('<CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />');
-    expect(pageSource).toContain('return sortAnalysisCandidates(Array.from(merged.values()));');
+    expect(pageSource).toContain(`function mergeMasterCandidates(...groups: any[][]): any[] {
+  return mergeCandidateDisplayGroups(groups);
+}`);
+    expect(candidateLedgerSource).toContain('return sortMetadataRankedCandidates([...merged.values()]);');
+    expect(candidateLedgerSource).toContain('preserveParentDisplayRanking(knownParent, result)');
+    expect(masterListSource).toContain('const candidates = reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);');
+    expect(masterListSource).toContain('candidates.map((listing, index)');
+    expect(masterListSource).toContain('<MetadataComparisonTable listing={listing} />');
+    expect(masterListSource).toContain('<TestAiCandidateStatus listing={listing} scope={scope} reconciled />');
     expect(pageSource).toContain('{rankedListings.map((l: any, i: number) => (');
     expect(pageSource).toContain('{rankedListings.map((listing: any, index: number) => (');
   });

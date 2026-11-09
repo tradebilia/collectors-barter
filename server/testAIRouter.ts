@@ -21,7 +21,9 @@ import { lookupTcgDexCatalog } from './tcgdexMetadata';
 import { lookupIgdbGameMetadata } from './igdbMetadata';
 import { getRawgProviderStatus, lookupRawgGameMetadata } from './rawgMetadata';
 import { lookupDiscogsReleases } from './discogsMetadata';
-import { formatHistoricalTrendContext } from './historicalTrendContext';
+import { formatHistoricalTrendContext, selectHistoricalTrendRecords } from './historicalTrendContext';
+import { buildSourcePopulationReport } from './testAiSourcePopulation';
+import { createNotDispatchedVisualExecution } from '../shared/testAiVisualExecution';
 import { AUTOGRAPH_SEARCH_DESIGNATION, buildComicsOriginalArtQueries, buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
 import { extractMarketplaceLotQuantity, isExplicitMultiItemListing, normalizeMarketplaceCandidate } from '../shared/testAiMarketplaceCandidate';
@@ -1332,6 +1334,13 @@ const testAiEvidenceSummarySchema = z.object({
 /** Lossless diagnostic transport; browser fields never establish approval or sale authority. */
 const analysisMarketSaleTransportSchema = z.object({
         title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), originMarketplace: z.string().nullable().optional(), sourceLabel: z.string().nullable().optional(), sourceAdapter: z.string().nullable().optional(), recency: z.enum(['recent', 'extended', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(), completedStatusBasis: z.string().nullable().optional(), priceBasis: z.enum(['realized', 'sold', 'closed', 'unknown']).nullable().optional(), visualRequirement: z.enum(['not_required', 'required']).nullable().optional(), visualReviewStatus: z.enum(['match', 'rough_match', 'mismatch', 'unreadable', 'not_reviewed']).nullable().optional(), visualReviewRationale: z.string().nullable().optional(), visualDifferences: z.array(z.object({ field: z.string(), targetObservation: z.string(), candidateObservation: z.string(), impact: z.string() })).max(30).nullable().optional(), metadataFieldComparisons: z.array(z.object({ targetField: z.string(), targetValue: z.string(), candidateField: z.string(), candidateValue: z.string(), status: z.enum(['match', 'different', 'unknown']), titleDerivedField: z.string().optional(), titleDerivedValue: z.string().optional(), titleDerivedStatus: z.enum(['match', 'different', 'unknown']).optional(), rankingContribution: z.unknown().optional() })).max(40).nullable().optional(), evidenceDisposition: z.enum(['valuation_eligible', 'warning_review', 'context_only', 'rejected_objective_conflict', 'omitted_by_cap', 'not_visually_reviewed_window']).nullable().optional(), evidenceReasons: z.array(z.string()).max(20).nullable().optional(), buyerPremium: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), shipping: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), tax: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), saleForm: z.string().nullable().optional(), lotQuantity: z.number().int().positive().nullable().optional(), provenanceToken: z.string().max(16_000).nullable().optional(),
+  displayCorrelation: z.object({
+    version: z.literal('stage5-display-v1'), side: z.enum(['item_a', 'item_b']),
+    sourceId: z.string().max(120), runId: z.string().max(240), occurrenceKey: z.string().max(1000),
+    requestOccurrenceRef: z.string().max(240), observationId: z.string().max(240).nullish(),
+    canonicalTransactionId: z.string().max(1000).nullish(),
+  }).nullish(),
+  visualExecution: z.unknown().optional(),
   identityApproval: z.unknown().optional(),
   visualEvidence: z.record(z.string(), z.boolean()).nullish(),
   visualAudit: z.unknown().optional(),
@@ -1925,6 +1934,7 @@ export const testAIRouter = router({
         const preVisionExcludedListings = [
           ...summaries.filter((listing: any) => !filteredSummaries.includes(listing)).map((listing: any) => ({
             ...listing, visualReviewStatus: 'not_reviewed', evidenceDisposition: 'pre_vision_excluded',
+            visualExecution: createNotDispatchedVisualExecution('outer_identity_filter', { hardExclusion: true, identity: { result: 'mismatch', origin: 'deterministic' } }),
             visualReviewRationale: 'Excluded by the existing outer year, number, player, sport, grading-state or grade filter.',
             preVisionExclusionReasons: ['Existing outer identity filter conflict; not sent to visual review.'],
           })),
@@ -1932,6 +1942,7 @@ export const testAIRouter = router({
             ...listing,
             visualReviewStatus: 'not_reviewed',
             visualReviewRationale: reason,
+            visualExecution: createNotDispatchedVisualExecution('outer_replica_hold', { hardExclusion: true }),
             evidenceDisposition: 'pre_vision_excluded',
             preVisionExclusionReasons: [reason],
           })),
@@ -1939,6 +1950,7 @@ export const testAIRouter = router({
           ...entry.item,
           visualReviewStatus: 'not_reviewed',
           visualReviewRationale: entry.reasons.join('; '),
+          visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }),
           evidenceDisposition: 'pre_vision_excluded',
           preVisionExclusionReasons: entry.reasons,
           })),
@@ -2042,6 +2054,7 @@ export const testAIRouter = router({
         return {
           query,
           marketContextOnly: activeMarketContextOnly,
+          sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...displaySummaries, ...preVisionExcludedListings]),
           debug: {
             totalFetched: summaries.length,
             afterYearFilter: byYear.length,
@@ -2105,6 +2118,10 @@ export const testAIRouter = router({
             visualRequirement: s.visualRequirement ?? null,
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
+            visualExecution: s.visualExecution,
+            visualAudit: s.visualAudit,
+            visualEvidence: s.visualEvidence,
+            visualDifferences: s.visualDifferences,
             evidenceDisposition: s.evidenceDisposition ?? null,
             evidenceReasons: s.evidenceReasons ?? s.preVisualExclusionReasons ?? [],
           };
@@ -2138,6 +2155,10 @@ export const testAIRouter = router({
             visualRequirement: s.visualRequirement ?? null,
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
+            visualExecution: s.visualExecution,
+            visualAudit: s.visualAudit,
+            visualEvidence: s.visualEvidence,
+            visualDifferences: s.visualDifferences,
             evidenceDisposition: s.evidenceDisposition ?? null,
             evidenceReasons: s.evidenceReasons ?? s.preVisualExclusionReasons ?? [],
           };
@@ -2165,6 +2186,7 @@ export const testAIRouter = router({
               metadataFieldComparisons: s.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, s),
               visualReviewStatus: s.visualReviewStatus,
               visualReviewRationale: s.visualReviewRationale,
+              visualExecution: s.visualExecution,
               evidenceDisposition: s.evidenceDisposition,
             })),
           },
@@ -2889,6 +2911,7 @@ export const testAIRouter = router({
                 ? ['Autographs / Signed Item passed the signer, object-type, and 70-point valuation gate.']
                 : eligibility.reasons,
               visualRequirement: 'not_required_autograph_market_context',
+              visualExecution: createNotDispatchedVisualExecution('workflow_context_only'),
               visualReviewStatus: 'not_reviewed',
               visualReviewRationale: 'Signed objects vary physically, so this result supplies market range context rather than an exact visual match.',
               metadataRanking: item.metadataRanking,
@@ -2914,6 +2937,7 @@ export const testAIRouter = router({
               imageUrl: item.thumbnailUrl ?? item.imageUrl, endedAt: item.endedAt,
               evidenceDisposition: 'context_only', valuationEligible: false, hardException: true,
               visualRequirement: 'not_required_pre_visual', visualReviewStatus: 'not_reviewed',
+              visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }),
               visualReviewRationale: reason, evidenceReasons: [reason],
             })] : [];
           });
@@ -2922,6 +2946,7 @@ export const testAIRouter = router({
             marketContextOnly: true,
             listings: gatedMarketListings,
             contextListings: heldMarketListings,
+            sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...gatedMarketListings, ...heldMarketListings], retrievalCoverage),
             visualReviewListings: [],
             visualFilter: undefined,
             metrics,
@@ -2968,6 +2993,7 @@ export const testAIRouter = router({
             retrievalQuery: item.retrievalQuery ?? null,
             evidenceDisposition: 'context_only',
             evidenceReasons: ['Original Art market-range context only; not an exact comparable and not sent to visual analysis.'],
+            visualExecution: createNotDispatchedVisualExecution('workflow_context_only'),
             visualReviewStatus: 'not_reviewed',
             metadataRanking: item.metadataRanking,
             metadataScoreAwards: item.metadataScoreAwards,
@@ -2990,6 +3016,7 @@ export const testAIRouter = router({
             query,
             marketContextOnly: true,
             listings: gatedMarketListings,
+            sourcePopulation: buildSourcePopulationReport(rankingPopulation, gatedMarketListings, retrievalCoverage),
             visualReviewListings: [],
             visualFilter: undefined,
             metrics,
@@ -3033,6 +3060,7 @@ export const testAIRouter = router({
           metadataMatchReasons: item.metadataMatchReasons,
           evidenceDisposition: 'rejected_objective_conflict' as const,
           evidenceReasons: reasons,
+          visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }),
           visualReviewStatus: 'not_reviewed' as const,
           visualReviewRationale: 'Excluded before visual review by explicit metadata, lot/bundle, or high-value price-safety evidence.',
         }));
@@ -3058,6 +3086,7 @@ export const testAIRouter = router({
         const stageRows = [
           { rows: byYear, reason: targetYear ? `explicit stated year conflicts with target year ${targetYear}` : 'objective category field conflict' },
           { rows: byNumber, reason: targetNumber ? `explicit stated issue or catalog number conflicts with target ${targetNumber}` : 'objective category field conflict' },
+          { rows: byPlayer, reason: playerName ? `explicit stated player conflicts with target ${playerName}` : 'objective category field conflict' },
           { rows: bySport, reason: targetSport ? `explicit stated sport conflicts with target sport ${targetSport}` : 'objective category field conflict' },
           { rows: byCertification, reason: cert ? `explicit stated certification company conflicts with target ${cert}` : 'objective category field conflict' },
           { rows: filtered, reason: targetGrade !== null ? `explicit stated grade conflicts with target ${targetGrade}` : 'objective category field conflict' },
@@ -3086,6 +3115,7 @@ export const testAIRouter = router({
                 metadataMatchReasons: scoredItem.metadataMatchReasons,
                 evidenceDisposition: 'rejected_objective_conflict' as const,
                 evidenceReasons: [failedAt.reason],
+                visualExecution: createNotDispatchedVisualExecution('outer_identity_filter', { hardExclusion: true, identity: { result: 'mismatch', origin: 'deterministic' } }),
                 visualReviewStatus: 'not_reviewed' as const,
               }
             : null;
@@ -3242,12 +3272,14 @@ export const testAIRouter = router({
             visualAdmissionReason: i.visualAdmissionReason,
             visualAudit: i.visualAudit,
             visualEvidence: i.visualEvidence,
+            visualExecution: i.visualExecution,
             provenanceToken: i.provenanceToken,
             provenance: i.provenance,
             validationErrors: i.validationErrors,
           })),
           metrics,
           visualFilter: visualSoldFilter,
+          sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...canonicalListings, ...visualContextAuditLedger, ...rawAuditLedger, ...preVisionAuditLedger, ...scoreExcludedListings], retrievalCoverage),
           priceSafety: {
             applies: Number(input.statedTradeValue) > HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD,
             statedTradeValue: input.statedTradeValue ?? null,
@@ -3364,6 +3396,7 @@ export const testAIRouter = router({
           evidenceReasons: reasons,
           visualReviewStatus: 'not_reviewed' as const,
           visualReviewRationale: reasons.join('; '),
+          visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }),
           soldCompsMetadata: metadata,
           metadataFieldComparisons: buildMetadataFieldComparisons(targetMetadata, item),
         }));
@@ -3379,6 +3412,7 @@ export const testAIRouter = router({
             ...result,
             listings: universalPreFilter.contextListings ?? [],
             preVisionExcludedListings: [...excluded, ...universalExcluded],
+            sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...(universalPreFilter.contextListings ?? []), ...excluded, ...universalExcluded]),
             visualFilter: {
               ...universalPreFilter,
               note: `${reason} ${universalPreFilter.note}`,
@@ -3440,6 +3474,7 @@ export const testAIRouter = router({
           ...result,
           listings: annotatedListings,
           preVisionExcludedListings: [...excluded, ...visualContextListings],
+          sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...annotatedListings, ...excluded, ...visualContextListings]),
           visualFilter: {
             ...visualFilter,
             note: `Mercari Video Game candidates use the shared universal and item-type ranking pipeline. ${visualFilter.note}`,
@@ -4489,23 +4524,27 @@ export const testAIRouter = router({
       // comparable audit, trade-terms panel, and narrative prompt. The model
       // never receives a separate, less-auditable valuation payload.
       const analysisNow = new Date();
+      const analysisRunId = randomUUID();
       // The client only transports marketplace observations. The server owns
       // the final status, date, currency, price-basis, visual, and disposition
       // decision before any record can reach deterministic valuation.
-      const normalizedLeftSales = normalizeAnalysisMarketSales((leftHistoricalTrendSales ?? []) as MarketSale[], analysisNow, { category: analysisLeftItem.category, target: analysisLeftItem as ComparableTarget });
-      const normalizedRightSales = normalizeAnalysisMarketSales((rightHistoricalTrendSales ?? []) as MarketSale[], analysisNow, { category: analysisRightItem.category, target: analysisRightItem as ComparableTarget });
+      const normalizedLeftSales = normalizeAnalysisMarketSales((leftHistoricalTrendSales ?? []) as MarketSale[], analysisNow, { category: analysisLeftItem.category, target: analysisLeftItem as ComparableTarget, side: 'item_a', analysisRunId });
+      const normalizedRightSales = normalizeAnalysisMarketSales((rightHistoricalTrendSales ?? []) as MarketSale[], analysisNow, { category: analysisRightItem.category, target: analysisRightItem as ComparableTarget, side: 'item_b', analysisRunId });
       // Keep the narrative trend input strictly aligned with the server's
       // recency classification. In particular, PCGS rows older than one year
       // belong here; recent PCGS rows are current-value candidates instead.
       const historicalTrendSales = (sales: MarketSale[]) => sales.filter((sale) => sale.recency === 'historical' || sale.recency === 'extended');
-      const leftTrendContext = formatHistoricalTrendContext('ITEM A', historicalTrendSales(normalizedLeftSales));
-      const rightTrendContext = formatHistoricalTrendContext('ITEM B', historicalTrendSales(normalizedRightSales));
+      const leftHistoricalPromptSales = selectHistoricalTrendRecords(historicalTrendSales(normalizedLeftSales));
+      const rightHistoricalPromptSales = selectHistoricalTrendRecords(historicalTrendSales(normalizedRightSales));
+      const leftTrendContext = formatHistoricalTrendContext('ITEM A', leftHistoricalPromptSales);
+      const rightTrendContext = formatHistoricalTrendContext('ITEM B', rightHistoricalPromptSales);
       const leftAnalysisSnapshot = buildAnalysisSnapshot({
         target: analysisLeftItem as ComparableTarget,
         sales: normalizedLeftSales,
         aggregateMetrics: leftSoldCompsMetrics,
         identityGate: leftIdentityGate as ComparableIdentityGate | undefined,
         evidenceSummary: leftEvidenceSummary,
+        side: 'item_a', analysisRunId, historicalPromptSales: leftHistoricalPromptSales,
         now: analysisNow,
       });
       const rightAnalysisSnapshot = buildAnalysisSnapshot({
@@ -4514,6 +4553,7 @@ export const testAIRouter = router({
         aggregateMetrics: rightSoldCompsMetrics,
         identityGate: rightIdentityGate as ComparableIdentityGate | undefined,
         evidenceSummary: rightEvidenceSummary,
+        side: 'item_b', analysisRunId, historicalPromptSales: rightHistoricalPromptSales,
         now: analysisNow,
       });
       const leftProfile = leftAnalysisSnapshot.profile;

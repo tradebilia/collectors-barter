@@ -17,6 +17,11 @@ const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/page
 const clientMainSource = readFileSync(resolve(import.meta.dirname, "../client/src/main.tsx"), "utf8");
 const visualSource = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
 const rankingDisplaySource = readFileSync(resolve(import.meta.dirname, "../shared/testAiRankingDisplay.ts"), "utf8");
+const candidateLedgerSource = readFileSync(resolve(import.meta.dirname, "../shared/testAiCandidateLedger.ts"), "utf8");
+const candidateStatusSource = readFileSync(resolve(import.meta.dirname, "../shared/testAiCandidateStatus.ts"), "utf8");
+const masterListSource = readFileSync(resolve(import.meta.dirname, "../client/src/components/TestAiCandidateMasterList.tsx"), "utf8");
+const statusComponentSource = readFileSync(resolve(import.meta.dirname, "../client/src/components/TestAiCandidateStatus.tsx"), "utf8");
+const sourceDisplaySource = readFileSync(resolve(import.meta.dirname, "../shared/testAiSourceDisplay.ts"), "utf8");
 
 function procedureSource(name: string, nextMarker: string): string {
   const start = routerSource.indexOf(name);
@@ -147,19 +152,31 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(ebayProcedure).toContain("metadataMatchScore: s.metadataMatchScore");
     expect(ebayProcedure).toContain("metadataMatchRank: s.metadataMatchRank");
     expect(ebayProcedure).toContain("metadataFieldComparisons: s.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, s)");
+    expect(pageSource).toMatch(/import \{[^}]*\bcollectEbayCandidateDisplayOccurrences\b[^}]*\} from '@shared\/testAiCandidateLedger';/);
     expect(pageSource).toContain(`  const activeMasterListings = mergeMasterCandidates(
-    collectEbayDisplayCandidates(displayData),
+    collectEbayCandidateDisplayOccurrences(displayData),
     displayData?.metadataParentDisplayListings ?? [],
   );`);
+    expect(candidateLedgerSource).toContain(`export function collectEbayCandidateDisplayOccurrences(data: CandidateDisplayRow | null | undefined): CandidateDisplayRow[] {
+  if (!data) return [];
+  const stamp = (group: any) => Array.isArray(group) ? group.map(retainCandidateDisplayOccurrence) : group;
+  return collectEbayDisplayCandidates({ ...data, listings: stamp(data.listings), visualReviewListings: stamp(data.visualReviewListings),
+    visualFilter: data.visualFilter ? { ...data.visualFilter, listings: stamp(data.visualFilter.listings), contextListings: stamp(data.visualFilter.contextListings) } : undefined,
+    preVisionFilter: data.preVisionFilter ? { ...data.preVisionFilter, excludedListings: stamp(data.preVisionFilter.excludedListings) } : undefined });
+}`);
     expect(rankingDisplaySource).toContain(`  const groups = [data?.listings, data?.visualReviewListings, data?.visualFilter?.listings,
     data?.visualFilter?.contextListings, data?.preVisionFilter?.excludedListings];`);
     expect(pageSource).toContain('<CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" targetImageUrl={item.primaryPhotoUrl} />');
-    expect(pageSource).toContain("listing.metadataMatchScore !== undefined");
-    expect(pageSource).toContain("listing.metadataMatchRank");
+    expect(pageSource).toContain("import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';");
+    expect(masterListSource).toContain("listing.metadataMatchScore !== undefined && listing.metadataMatchScore !== null");
+    expect(masterListSource).toContain("listing.metadataMatchRank");
     expect(ebayProcedure).toContain("...entry.item,");
     expect(visualSource).toContain("scorePreVisualComparableCandidate");
-    expect(pageSource).toContain("Every retrieved candidate appears once, in rank order.");
-    expect(pageSource).toContain("No image</span>");
+    expect(masterListSource).toContain("Known retained source occurrences, once per bound occurrence in source rank order.");
+    expect(masterListSource).toContain("not every retrieved row reaches final intake");
+    expect(masterListSource).toContain("<TestAiCandidateImagePair listing={listing} targetImageUrl={targetImageUrl} />");
+    expect(statusComponentSource).toContain("{label} unavailable");
+    expect(masterListSource).toContain("<MetadataComparisonTable listing={listing} />");
   });
 
   it("renders visible marketplace candidates in ranking order", () => {
@@ -167,7 +184,9 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain(`function sortRankedCandidates<T extends Record<string, any>>(listings: T[]): T[] {
   return sortMetadataRankedCandidates(listings);
 }`);
-    expect(pageSource).toContain("const candidates = sortRankedCandidates(");
+    expect(masterListSource).toContain("const candidates = reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);");
+    expect(candidateLedgerSource).toContain("return sortMetadataRankedCandidates([...merged.values()]);");
+    expect(masterListSource).toContain("candidates.map((listing, index)");
     expect(pageSource).toContain("const rankedDisplayListings = sortRankedCandidates(");
     expect(pageSource).toContain("rankedDisplayListings.map(renderListing)");
     expect(rankingDisplaySource).toContain(`      const rankA = validDisplayRank(a.listing.metadataMatchRank) ?? Number.POSITIVE_INFINITY;
@@ -187,13 +206,18 @@ describe("Test AI eBay active-listing responsiveness", () => {
   });
 
   it("does not present deterministic pre-filter conflicts as AI image-review results", () => {
-    expect(pageSource).toContain("function hasCompletedVisualReview(listing: any): boolean");
-    expect(pageSource).toContain("hasCompletedVisualReview(listing)");
-    expect(pageSource).toContain("actually reviewed");
-    expect(pageSource).toContain("All candidates — ranked master list");
-    expect(pageSource).toContain("Hard exception — not sent to AI");
+    expect(pageSource).toContain("const rows = selectTestAiVisualDisplayRows(");
+    expect(statusComponentSource).toContain("return mergeCandidateDisplayGroups(groups, scope).filter(hasActualVisualDispatch);");
+    expect(candidateStatusSource).toContain("return Boolean(candidateExecutionReceipt(row)?.attempts.some((attempt) => attempt.stage === 'initial'));");
+    expect(candidateStatusSource).toContain("return hasActualVisualDispatch(row) && Boolean(candidateExecutionReceipt(row)?.attempts.some((attempt) => attempt.outcome === 'usable_review'));");
+    expect(masterListSource).toContain("All candidates — ranked master list");
+    expect(statusComponentSource).toContain("['Execution', candidateExecutionFact(row, scope)], ['Identity result', candidateIdentityFact(row)], ['Pricing use', candidatePricingFact(row)]");
+    expect(statusComponentSource).toContain("isHardCandidateDisplayException(row)");
+    expect(candidateStatusSource).toContain("return candidateExecutionReceipt(row)?.hardExclusion === true || row.evidenceDisposition === 'rejected_objective_conflict';");
+    expect(candidateStatusSource).toContain("label: 'Deterministic metadata conflict'");
+    expect(candidateStatusSource).toContain("label: 'Image mismatch'");
+    expect(pageSource).toContain("Legacy verdicts are not proof of image execution.");
     expect(pageSource).not.toContain("held out before AI image analysis");
-    expect(pageSource).toContain("AI mismatch");
   });
 
   it("keeps eBay Sold-Comps context candidates visible with their reasons", () => {
@@ -202,8 +226,10 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(soldSection).toContain("ledger: [...canonicalListings, ...visualContextAuditLedger");
     expect(soldSection).toContain("visualContextAuditLedger.length");
     expect(pageSource).toContain('<CandidateMasterList listings={auditLedger} sourceLabel="eBay Sold History" targetImageUrl={item.primaryPhotoUrl} />');
-    expect(pageSource).toContain("Every retrieved candidate appears once, in rank order.");
-    expect(pageSource).toContain("<MetadataComparisonTable listing={listing} />");
+    expect(pageSource).toContain("const auditLedger = mergeCandidateDisplayGroups([data?.audit?.ledger ?? [], data?.listings ?? [], data?.visualFilter?.contextListings ?? []]);");
+    expect(masterListSource).toContain("Known retained source occurrences, once per bound occurrence in source rank order.");
+    expect(masterListSource).toContain("<MetadataComparisonTable listing={listing} />");
+    expect(masterListSource).toContain("<TestAiCandidateStatus listing={listing} scope={scope} reconciled />");
     expect(pageSource).toContain("No candidates reached the main valuation/review list");
   });
 
@@ -262,7 +288,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(rankingDisplaySource).toContain("const reviewListings = Array.isArray(data?.visualReviewListings) ? data.visualReviewListings : []");
     expect(rankingDisplaySource).toContain("listing.imageUrls.filter((url: unknown) => typeof url === 'string').slice(0, 3)");
     expect(pageSource).toContain("useState(Boolean(item.primaryPhotoUrl))");
-    expect(pageSource).toContain("const effectiveVisualReviewData = visualReviewData ?? (data?.visualFilter ? data : undefined);");
+    expect(pageSource).toContain("const effectiveVisualReviewData = (visualReviewData?.candidateDisplayParentData === data ? visualReviewData : undefined) ?? (data?.visualFilter ? data : undefined);");
+    expect(pageSource).toContain("setVisualReviewData({ ...operationalBatch, candidateDisplayBatch: displayBatch, candidateDisplayParentData: data });");
     expect(pageSource).toContain("onVisualReviewData?.(effectiveVisualReviewData && !effectiveVisualReviewData.error ? effectiveVisualReviewData : null);");
     expect(pageSource).toContain("<MarketplaceVisualReview data={effectiveVisualReviewData}");
     expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");
@@ -279,6 +306,12 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("for (const batch of reviewBatchInputs)");
     expect(pageSource).toContain("const deadlineAt = Date.now() + 120_000");
     expect(pageSource).toContain("reviewDeadlineAt: deadlineAt");
+    expect(pageSource).toContain("VISUAL_REVIEW_CLIENT_TARGET_MATCHES = 3");
+    expect(pageSource).toContain("const operationalBatch = mergeVisualReviewBatches(completed);");
+    expect(pageSource).toContain("const displayBatch = mergeVisualReviewDisplayBatches(completed);");
+    expect(pageSource).toContain("if (countAcceptedVisualMatches(mergeVisualReviewBatches(completed)) >= VISUAL_REVIEW_CLIENT_TARGET_MATCHES) break;");
+    expect(pageSource).toContain("const listings = completed.flatMap((batch) => batch.listings ?? []);");
+    expect(pageSource).toContain("reviewedCount: listings.filter((listing: any) => listing.visualReviewStatus).length");
     expect(pageSource).toContain(`  const reviewBatchInputs = useMemo(() => Array.from({ length: VISUAL_REVIEW_CLIENT_MAX_BATCHES }, (_, batchIndex) => ({
     ...visualReviewInput,
     listings: visualReviewInput.listings.slice(batchIndex * VISUAL_REVIEW_CLIENT_BATCH_SIZE, (batchIndex + 1) * VISUAL_REVIEW_CLIENT_BATCH_SIZE),
@@ -329,15 +362,25 @@ describe("Test AI eBay active-listing responsiveness", () => {
   it("separates Autographs current-value evidence from context-only listings", () => {
     expect(pageSource).toContain("const autographValuationListings = autographMarketContextOnly");
     expect(pageSource).toContain("evidenceDisposition === 'valuation_eligible'");
-    expect(pageSource).toContain("Current-Value Market Evidence");
+    expect(pageSource).toContain('text-emerald-300">Source-stage Asking Context</p>');
     expect(pageSource).toContain("Context Only — Not Used in Valuation");
-    expect(pageSource).toContain("Current-value market evidence — included in valuation");
+    expect(pageSource).toContain("Source-stage asking context — final pricing use assessed separately");
+    expect(pageSource).toContain("These listings passed the Autographs source identity and score rules. Legacy source metrics are separate from final pricing use; currency-unproven aggregates are withheld.");
+    expect(pageSource).toContain("Identity-matched active asking listings; useful market context, not completed sales.");
     expect(pageSource).toContain("not included in valuation");
+    expect(pageSource).not.toContain("Current-Value Market Evidence");
+    expect(pageSource).not.toContain("Asking-price context — included in valuation");
   });
 
   it("preserves populated eBay listings when visual-review returns an empty or partial payload", () => {
     expect(pageSource).toContain("function mergeEbayVisualReviewDisplayData(base: any, review: any): any");
-    expect(pageSource).toContain("listings: mergedListings.length > 0 ? [...mergedListings, ...reviewOnlyListings] : reviewedListings");
+    expect(pageSource).toContain("return mergeEbayCandidateDisplayData(base, review?.candidateDisplayBatch ?? review);");
+    expect(candidateLedgerSource).toContain("if (!review) return base;");
+    expect(candidateLedgerSource).toContain("const reviewed = [...(review.listings ?? []), ...(review.visualFilter?.contextListings ?? [])];");
+    expect(candidateLedgerSource).toContain("const listings = mergeCandidateDisplayGroups([base?.listings ?? [], reviewed], scope);");
+    expect(candidateLedgerSource).toContain("listings, visualReviewListings: mergeCandidateDisplayGroups([parents, reviewed], scope)");
+    expect(candidateLedgerSource).toContain("error: review.error ?? base?.error");
+    expect(candidateLedgerSource).toContain("displayCoverage: batches.some((batch) => batch.error || batch.visualFilter?.status === 'provider_unavailable' || batch.visualFilter?.status === 'completed_with_timeout') ? 'partial' : 'complete'");
     expect(pageSource).toContain("const displayData = mergeEbayVisualReviewDisplayData(data, effectiveVisualReviewData)");
   });
 
@@ -379,7 +422,19 @@ describe("Test AI eBay active-listing responsiveness", () => {
   it("updates the primary asking-price cards from accepted visual matches automatically", () => {
     expect(pageSource).toContain("const showingVisualMatchMetrics = !!effectiveVisualReviewData?.visualMatchMetrics");
     expect(pageSource).toContain("const visibleMetrics = showingVisualMatchMetrics ? effectiveVisualReviewData.visualMatchMetrics : data?.metrics");
-    expect(pageSource).toContain("Full-market asking context before image filtering");
+    expect(pageSource).toMatch(/import \{[^}]*\bTestAiSourceMetricSummary\b[^}]*\} from '@\/components\/TestAiCandidateStatus';/);
+    expect(pageSource).toContain('<TestAiSourceMetricSummary metrics={visibleMetrics} sourceLabel="eBay Active" role={showingVisualMatchMetrics ? \'Legacy visual-match asking context\' : \'Full-market asking context\'} />');
+    expect(pageSource).toContain('{showingVisualMatchMetrics && <TestAiSourceMetricSummary metrics={data?.metrics} sourceLabel="eBay Active before image filtering" role="Full-market asking context" />}');
+    expect(statusComponentSource).toContain("export function TestAiSourceMetricSummary({ metrics, members, sourceLabel, role }: {");
+    expect(statusComponentSource).toContain("import { sourceCurrentWindowLabel, sourceMetricDisplay, sourceRetrievalCoverage } from '../../../shared/testAiSourceDisplay';");
+    expect(statusComponentSource).toContain("const display = sourceMetricDisplay(metrics, members);");
+    expect(statusComponentSource).toContain("['Average', display.avg], ['Median', display.median], ['Range', display.range]");
+    expect(sourceDisplaySource).toContain(`  const verified = Boolean(members && observationCount && priced.length === observationCount && currency && /^[A-Z]{3}$/.test(currency)
+    && currencies.every((value) => value === currency) && basis && !['unknown', 'unspecified', 'unverified'].includes(basis)
+    && bases.every((value) => value === basis));`);
+    expect(sourceDisplaySource).toContain("Currency/basis unresolved — aggregate not shown · unverified legacy source metrics; not final pricing use");
+    expect(sourceDisplaySource).toContain("avg: verified ? format(metrics?.avg) : 'Withheld', median: verified ? format(metrics?.median) : 'Withheld'");
+    expect(sourceDisplaySource).toContain("range: verified ? `${format(metrics?.min)}–${format(metrics?.max)}` : 'Withheld'");
     expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");
     expect(pageSource).toContain("No accepted visual matches have usable prices");
     expect(pageSource).toContain("Auction activity:");

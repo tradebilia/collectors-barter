@@ -9,7 +9,13 @@ import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { TestAiPricingSummary } from '@/components/TestAiPricingSummary';
 import { MetadataComparisonTable } from '@/components/TestAiMetadataComparisonTable';
-import { originatingRankingOccurrence, preserveParentDisplayRanking, sortMetadataRankedCandidates, collectEbayDisplayCandidates, buildEbayVisualReviewListings, mergeKnownEbayParentDisplayRows } from '@shared/testAiRankingDisplay';
+import { sortMetadataRankedCandidates, buildEbayVisualReviewListings } from '@shared/testAiRankingDisplay';
+import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';
+import { TestAiCandidateDisplayProvider, TestAiCandidateStatus, TestAiVisualReviewRow, TestAiExecutionSummary, TestAiFinalUseSummary, TestAiSourcePopulationSummary, TestAiFinalLedgerRow, TestAiProcessCompleteNotice as ProcessCompleteNotice, TestAiSourceMetricSummary, TestAiSourceCurrentWindowCount, selectTestAiVisualDisplayRows } from '@/components/TestAiCandidateStatus';
+import { candidateDisplayKey, collectEbayCandidateDisplayOccurrences, mergeCandidateDisplayGroups, mergeVisualReviewDisplayBatches, mergeEbayCandidateDisplayData, stampCandidateDisplayIntake, type CandidateFinalDisplayOutcome } from '@shared/testAiCandidateLedger';
+import { testAiAnalysisLifecycleKey, isCurrentTestAiFinalRequest } from '@shared/testAiAnalysisLifecycle';
+import { sourceRecordBucketLabel, sourceMetricDisplay } from '@shared/testAiSourceDisplay';
+import { hasActualVisualResponse, formatCandidateDisplayPrice } from '@shared/testAiCandidateStatus';
 import { toast } from 'sonner';
 import { buildComicsOriginalArtQueries, buildStructuredItemQuery, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, TEST_AI_SOURCE_APPLICABILITY, type TestAiSourceId } from '@shared/testAiSourceApplicability';
@@ -892,7 +898,7 @@ function CatalogTitleQueryBanner({ title, isLoading }: { title: string; isLoadin
 }
 
 function AnalyzerUseLine({ eligible, reason = 'Final identity, date, grade/condition, currency, duplicate, and comparable gates still apply.', statusLabel }: { eligible: boolean; reason?: string; statusLabel?: string }) {
-  return <p className={`mt-1 text-[8px] font-semibold ${eligible || statusLabel?.includes('INCLUDED') ? 'text-emerald-300' : 'text-amber-300'}`}>{statusLabel ?? (eligible ? 'Direct comparable: YES — submitted for valuation review' : 'Direct comparable: NO — not submitted as a direct valuation comparable')}{statusLabel ? ' — ' : '; '}{reason}</p>;
+  return <p className={`mt-1 text-[8px] font-semibold ${eligible ? 'text-emerald-300' : 'text-amber-300'}`}>{statusLabel ?? (eligible ? 'Source eligible — final use assessed separately' : 'Source context / review — not proof of final submission')}{statusLabel ? ' — ' : '; '}{reason}</p>;
 }
 
 function MetadataMatchLine({ listing }: { listing: any }) {
@@ -911,13 +917,13 @@ function sortAnalysisCandidates<T extends Record<string, any>>(listings: T[]): T
   return sortRankedCandidates(listings);
 }
 
-function AnalyzerRecordPanel({ records, acceptedCount, sourceLabel }: { records: AnalyzerRecordDetail[]; acceptedCount: number; sourceLabel: string }) {
+function AnalyzerRecordPanel({ records, acceptedCount, sourceLabel, sourceKind }: { records: AnalyzerRecordDetail[]; acceptedCount: number; sourceLabel: string; sourceKind?: string }) {
   const recordCount = records.length > 0 ? records.length : acceptedCount;
   return <details className="mt-2 rounded border border-emerald-700/30 bg-emerald-950/15 p-2" open={recordCount > 0}>
-    <summary className="cursor-pointer text-[9px] font-semibold uppercase tracking-wide text-emerald-200">Items sent to analyzer ({recordCount})</summary>
-    {recordCount === 0 ? <p className="mt-1 text-[9px] text-gray-500">No {sourceLabel} records are being sent to the analyzer under this run’s current treatment.</p>
-      : records.length === 0 ? <p className="mt-1 text-[9px] text-amber-200">{recordCount} record{recordCount === 1 ? '' : 's'} are classified for analyzer submission, but this adapter did not return display-level record details.</p>
-        : <div className="mt-1 max-h-56 space-y-1 overflow-y-auto pr-1">{records.map((record, index) => <div key={`${record.id}-${index}`} className="flex items-start justify-between gap-2 rounded bg-gray-950/35 px-1.5 py-1.5"><div className="min-w-0"><p className="truncate text-[9px] font-semibold text-gray-200">{record.url ? <a href={record.url} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:underline">{record.title}</a> : record.title}</p><p className="text-[8px] text-gray-400">{[record.bucket === 'current_value' ? 'Current value' : record.bucket === 'historical_trend' ? 'Historical trend' : record.bucket.replace('_', ' '), record.date].filter(Boolean).join(' · ')}</p>{record.note && <p className="text-[8px] text-amber-200/80">{record.note}</p>}</div><p className="shrink-0 text-[10px] font-semibold text-emerald-300">{record.price != null ? `${record.currency || 'USD'} ${formatWholeDollar(record.price)}` : 'Price unavailable'}</p></div>)}</div>}
+    <summary className="cursor-pointer text-[9px] font-semibold uppercase tracking-wide text-emerald-200">Source-stage eligible / contextual records ({recordCount})</summary>
+    {recordCount === 0 ? <p className="mt-1 text-[9px] text-gray-500">No {sourceLabel} source-stage records are available under this run’s current treatment.</p>
+      : records.length === 0 ? <p className="mt-1 text-[9px] text-amber-200">{recordCount} record{recordCount === 1 ? '' : 's'} are classified at source stage (not actual request receipts), but this adapter did not return display-level record details.</p>
+        : <div className="mt-1 max-h-56 space-y-1 overflow-y-auto pr-1">{records.map((record, index) => <div key={`${record.id}-${index}`} className="flex items-start justify-between gap-2 rounded bg-gray-950/35 px-1.5 py-1.5"><div className="min-w-0"><p className="truncate text-[9px] font-semibold text-gray-200">{record.url ? <a href={record.url} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:underline">{record.title}</a> : record.title}</p><p className="text-[8px] text-gray-400">{[sourceRecordBucketLabel(record.bucket, sourceKind), record.date].filter(Boolean).join(' · ')}</p>{record.note && <p className="text-[8px] text-amber-200/80">{record.note}</p>}</div><p className="shrink-0 text-[10px] font-semibold text-emerald-300">{record.price != null ? formatCandidateDisplayPrice(record) : 'Price unavailable'}</p></div>)}</div>}
   </details>;
 }
 
@@ -925,10 +931,10 @@ function toAnalyzerRecord(record: any, index: number, bucket: AnalyzerRecordDeta
   const rawPrice = record?.price ?? record?.finalPrice ?? record?.salePrice ?? record?.soldPrice ?? record?.amount;
   const numericPrice = Number(rawPrice);
   return {
-    id: String(record?.saleId ?? record?.listingId ?? record?.id ?? record?.itemUrl ?? record?.url ?? `${record?.title ?? 'record'}-${index}`),
+    id: String(record?.saleId ?? record?.listingId ?? record?.id ?? record?.itemUrl ?? record?.url ?? `local-record-occurrence-${index}`),
     title: String(record?.title ?? record?.name ?? record?.subject ?? 'Untitled analyzer record'),
     price: Number.isFinite(numericPrice) && numericPrice > 0 ? numericPrice : null,
-    currency: record?.currency ?? record?.soldCurrency ?? 'USD',
+    currency: record?.currency ?? record?.soldCurrency ?? null,
     date: record?.date ?? record?.endedAt ?? record?.soldDate ?? record?.saleDate ?? null,
     url: record?.itemUrl ?? record?.url ?? null,
     bucket,
@@ -947,17 +953,13 @@ function visualEvidenceSummary(evidence: any): string {
   ].join(' · ');
 }
 
-function ProcessCompleteNotice() {
-  return <p className="rounded border border-emerald-700/40 bg-emerald-950/25 px-2 py-1 text-[10px] font-semibold text-emerald-200">✓ Process complete — final source results are displayed below.</p>;
-}
-
 function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data?: any; isLoading?: boolean }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const [showVisualReview, setShowVisualReview] = useState(false);
-  const auditLedger = sortAnalysisCandidates(data?.audit?.ledger ?? []);
+  const auditLedger = mergeCandidateDisplayGroups([data?.audit?.ledger ?? [], data?.listings ?? [], data?.visualFilter?.contextListings ?? []]);
   const rankedListings = sortAnalysisCandidates(data?.listings ?? []);
-  const visualReviewRows = rankedListings.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
-  const visualMismatchRows = visualReviewRows.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
+  const visualReviewRows = rankedListings.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => hasActualVisualResponse(listing));
+  const visualMismatchRows = visualReviewRows.filter(({ listing }: { listing: any }) => listing.visualExecution?.identity?.origin === 'visual' && listing.visualExecution?.identity?.result === 'mismatch');
   const acceptedValuationListings = rankedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
   const statedTradeValue = Number(item.estimatedValue);
   const priceSafetyApplies = Number.isFinite(statedTradeValue) && statedTradeValue > HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD;
@@ -981,22 +983,19 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
       <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
-      <ProcessCompleteNotice />
-      <p className="text-gray-500 text-[10px]">Data type: Completed eBay sales · Up to 90 days history</p>
+      <ProcessCompleteNotice data={data} /><TestAiSourcePopulationSummary packet={data?.sourcePopulation} />
+      <p className="text-gray-500 text-[10px]">Data type: Completed eBay sale candidates · source-stage price metrics, not final selected pricing · Up to 90 days history</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {data?.marketContextOnly && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1 text-[10px] text-amber-200">{item.category === 'autographs' ? 'Autographs / Signed Item market context only' : 'Original Art market context only'} — these are broad price-range references, not exact comparables, and no candidate images are sent to visual analysis.</p>}
       {data?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
       {data?.visualFilter && <div className="flex items-center justify-between gap-2 rounded border border-cyan-700/30 bg-cyan-950/20 p-2">
-        <div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">AI image review: {visualReviewRows.length} candidate image{visualReviewRows.length === 1 ? '' : 's'} reviewed</p><p className="text-[9px] text-cyan-200/80">{visualMismatchRows.length} visual mismatch flag{visualMismatchRows.length === 1 ? '' : 's'} · flags are retained for review, not silently deleted</p></div>
+        <div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">AI image review: {visualReviewRows.length} known candidate occurrences with usable responses</p><p className="text-[9px] text-cyan-200/80">{visualMismatchRows.length} visual mismatch flag{visualMismatchRows.length === 1 ? '' : 's'} · flags are retained for review, not silently deleted</p></div>
         <button type="button" onClick={() => setShowVisualReview((visible) => !visible)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">{showVisualReview ? 'Hide image checks' : 'View image checks'}</button>
       </div>}
-      {showVisualReview && data?.visualFilter && <div className="rounded border border-cyan-700/30 bg-gray-950/50 p-2 space-y-2">
-        <p className="text-[9px] text-gray-400">The AI compares the target image with sold thumbnails. A mismatch is an advisory flag; the sold record remains visible and cannot affect valuation until identity review is resolved.</p>
-        {visualReviewRows.length === 0 ? <p className="text-[10px] text-gray-500">No candidate images received a decisive visual result. Missing or unreadable images are retained.</p> : <div className="max-h-64 space-y-1 overflow-y-auto">{visualReviewRows.map(({ listing, index }: { listing: any; index: number }) => <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-start gap-2 rounded bg-gray-900/70 p-1.5"><div className="flex shrink-0 gap-1">{item.primaryPhotoUrl && <img src={item.primaryPhotoUrl} alt="Target item" className="h-10 w-10 rounded object-contain" />} {listing.imageUrl && <img src={listing.imageUrl} alt="Sold candidate" className="h-10 w-10 rounded object-contain" />}</div><div className="min-w-0"><div className="flex items-center justify-between gap-2"><p className={`flex min-w-0 items-center gap-1 text-[9px] font-semibold ${listing.visualReviewStatus === 'mismatch' ? 'text-red-300' : listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match' ? 'text-emerald-300' : 'text-amber-300'}`}><span aria-label={listing.visualReviewStatus === 'mismatch' ? 'Not accepted due to image mismatch' : listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match' ? 'AI-reported visual similarity; not independently verified' : 'Needs image review'} className="text-sm leading-none">{listing.visualReviewStatus === 'mismatch' ? '✕' : listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match' ? '✓' : '?'}</span><span>{String(listing.visualReviewStatus).replace(/_/g, ' ')}</span></p><span className="shrink-0 text-[10px] font-semibold text-white">{formatVisualReviewPrice(listing)}</span></div><p className="text-[8px] text-gray-400">{listing.visualReviewRationale || 'No additional visual rationale supplied.'}</p>{listing.visualAudit && <p className="mt-1 rounded border border-violet-700/30 bg-violet-950/20 px-1.5 py-1 text-[8px] leading-snug text-violet-200"><strong className="text-violet-100">Review audit:</strong> {listing.visualAudit.provider ?? 'provider unavailable'} · {listing.visualAudit.initialModel ?? 'model unavailable'}{listing.visualAudit.finalModel && listing.visualAudit.finalModel !== listing.visualAudit.initialModel ? ` → ${listing.visualAudit.finalModel}` : ''} · {listing.visualAudit.imageCount} image{listing.visualAudit.imageCount === 1 ? '' : 's'} · initial {listing.visualAudit.initialVerdict} ({listing.visualAudit.initialConfidence}) · {listing.visualAudit.retryStatus === 'performed' ? 'high-resolution retry performed' : listing.visualAudit.retryStatus === 'failed' ? 'high-resolution retry failed' : 'no retry needed'} · final {listing.visualAudit.finalPass === 'high_resolution_retry' ? 'high resolution' : 'initial'}: {listing.visualReviewStatus} ({listing.visualAudit.finalPass === 'high_resolution_retry' ? 'retry result' : 'initial result'}){listing.visualAudit.retryReason ? ` · ${listing.visualAudit.retryReason}` : ''}<br /><span className="text-violet-200/80">Initial evidence: {visualEvidenceSummary(listing.visualAudit.initialEvidence)}<br />Final evidence: {visualEvidenceSummary(listing.visualAudit.finalEvidence)}</span></p>}<p className="truncate text-[9px] text-gray-300">{listing.title}</p><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><VisualDifferenceList listing={listing} /><p className="text-[8px] text-gray-500">{listing.visualReviewStatus === 'mismatch' ? 'Not accepted for valuation — flagged for manual review and retained in evidence ledger' : listing.visualReviewStatus === 'rough_match' ? 'AI-reported rough visual similarity — manual identity review remains required' : listing.visualReviewStatus === 'match' ? 'AI-reported visual similarity — exact identity still requires deterministic review' : 'Needs image review — retained candidate'}</p></div></div>)}</div>}
-      </div>}
+      {showVisualReview && <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay sold history" open />}
       {data?.audit && <div className="rounded border border-violet-700/30 bg-violet-950/20 p-2 text-[10px] text-violet-100">
-        <p className="font-semibold">Evidence coverage — {data.audit.rawReceived} unique candidates across {data.audit.retrievalCoverage?.length ?? 0} query tier{data.audit.retrievalCoverage?.length === 1 ? '' : 's'}</p>
-        <p className="mt-0.5 text-violet-200/90">{data.audit.valuationEligible} valuation-eligible · {data.audit.warningReview} retained for review · {data.audit.objectiveConflicts} objective conflicts retained in the audit ledger · {data.audit.notVisuallyReviewed} not visually reviewed</p>
+        <p className="font-semibold">Retained source ingress after retrieval union — {data.audit.rawReceived ?? 'unmeasured'} occurrences across {data.audit.retrievalCoverage?.length ?? 'unmeasured'} query tiers (query-return observations may overlap)</p>
+        <p className="mt-0.5 text-violet-200/90">{data.audit.valuationEligible} valuation-eligible · {data.audit.warningReview} retained for review · {data.audit.objectiveConflicts} objective conflicts retained in the audit ledger · {data.audit.notVisuallyReviewed} legacy not-reviewed status rows (not dispatch counts)</p>
       </div>}
       <div className="rounded border border-amber-700/35 bg-amber-950/20 p-2 text-[10px] text-amber-100" aria-label="High-value Sold-Comps price safety gate">
         <p className="font-semibold">High-value price safety check</p>
@@ -1004,25 +1003,11 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
           ? <p className="mt-0.5 text-amber-200/90">Active because the stated trade value is {formatWholeDollar(statedTradeValue)} (above {formatWholeDollar(HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD)}). Sold comps below {formatWholeDollar(priceSafetyMinimum!)} or above {formatWholeDollar(priceSafetyMaximum!)} are excluded from valuation and retained as context only{priceSafetyExcludedCount > 0 ? ` · ${priceSafetyExcludedCount} excluded by this gate` : ''}.</p>
           : <p className="mt-0.5 text-amber-200/90">Inactive until the stated trade value is above {formatWholeDollar(HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD)}. When active, only sold comps from 25% to 250% of the stated trade value can enter valuation; outliers remain context only.</p>}
       </div>
-      {data && <div className="rounded border border-emerald-700/35 bg-emerald-950/20 p-2" aria-label="Accepted for valuation candidates">
-        <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Accepted for valuation candidates</p><p className="mt-0.5 text-[9px] text-emerald-100/70">Completed sales that passed the Sold-Comps evidence gate. Final analyzer comparable-selection rules still apply.</p></div><span className="shrink-0 rounded bg-emerald-900/50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-200">{acceptedValuationListings.length}</span></div>
-        {acceptedValuationListings.length > 0 ? <div className="mt-2 max-h-48 space-y-1 overflow-y-auto pr-1">{acceptedValuationListings.map((listing: any, index: number) => <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-start justify-between gap-2 rounded bg-gray-950/35 px-1.5 py-1.5"><div className="flex min-w-0 items-start gap-2"><div className="grid w-20 shrink-0 grid-cols-2 gap-1">{item.primaryPhotoUrl ? <img src={item.primaryPhotoUrl} alt="Target item" className="h-8 w-full rounded border border-cyan-700/50 object-contain" /> : <span className="text-center text-[7px] text-gray-500">Target unavailable</span>}{listing.imageUrl ? <img src={listing.imageUrl} alt="Candidate item" className="h-8 w-full rounded border border-emerald-700/50 object-contain" /> : <span className="text-center text-[7px] text-gray-500">No image</span>}</div><div className="min-w-0"><a href={listing.itemUrl} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-300 hover:underline">{listing.title}</a><p className="text-[9px] text-gray-400">{listing.condition}{listing.endedAt ? ` · Sold ${listing.endedAt}` : ''}</p><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><VisualDifferenceList listing={listing} /><AnalyzerUseLine eligible reason="completed sale passed the source evidence gate; final comparable selection still applies." /></div></div><p className="shrink-0 text-sm font-semibold text-emerald-300">{formatWholeDollar(listing.price)}</p></div>)}</div> : <p className="mt-2 text-[10px] text-gray-500">No candidates have passed the evidence gate yet.</p>}
+      {data && <div className="rounded border border-emerald-700/35 bg-emerald-950/20 p-2" aria-label="Source-eligible candidates">
+        <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Source-eligible candidates</p><p className="mt-0.5 text-[9px] text-emerald-100/70">Completed sales that passed the Sold-Comps evidence gate. Final analyzer comparable-selection rules still apply.</p></div><span className="shrink-0 rounded bg-emerald-900/50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-200">{acceptedValuationListings.length}</span></div>
+        {acceptedValuationListings.length > 0 ? <div className="mt-2 max-h-48 space-y-1 overflow-y-auto pr-1">{acceptedValuationListings.map((listing: any, index: number) => <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-start justify-between gap-2 rounded bg-gray-950/35 px-1.5 py-1.5"><div className="flex min-w-0 items-start gap-2"><div className="grid w-20 shrink-0 grid-cols-2 gap-1">{item.primaryPhotoUrl ? <img src={item.primaryPhotoUrl} alt="Target item" className="h-8 w-full rounded border border-cyan-700/50 object-contain" /> : <span className="text-center text-[7px] text-gray-500">Target unavailable</span>}{listing.imageUrl ? <img src={listing.imageUrl} alt="Candidate item" className="h-8 w-full rounded border border-emerald-700/50 object-contain" /> : <span className="text-center text-[7px] text-gray-500">No image</span>}</div><div className="min-w-0"><a href={listing.itemUrl} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-300 hover:underline">{listing.title}</a><p className="text-[9px] text-gray-400">{listing.condition}{listing.endedAt ? ` · Sold ${listing.endedAt}` : ''}</p><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><TestAiCandidateStatus listing={listing} /><VisualDifferenceList listing={listing} /><AnalyzerUseLine eligible reason="completed sale passed the source evidence gate; final comparable selection still applies." /></div></div><p className="shrink-0 text-sm font-semibold text-emerald-300">{formatCandidateDisplayPrice(listing)}</p></div>)}</div> : <p className="mt-2 text-[10px] text-gray-500">No candidates have passed the evidence gate yet.</p>}
       </div>}
-      {data?.metrics && (
-        <div className="grid grid-cols-4 gap-2 text-[11px]">
-          {[
-            { label: 'Avg Sold', value: formatWholeDollar(data.metrics.avg) },
-            { label: 'Median', value: formatWholeDollar(data.metrics.median) },
-            { label: 'Range', value: `${formatWholeDollar(data.metrics.min)}–${formatWholeDollar(data.metrics.max)}` },
-            { label: 'Confidence', value: data.metrics.confidence.toUpperCase() },
-          ].map(m => (
-            <div key={m.label} className="bg-gray-900/40 rounded p-1.5 text-center">
-              <p className="text-gray-500 text-[9px] uppercase mb-0.5">{m.label}</p>
-              <p className={`font-semibold ${m.label === 'Confidence' ? (data.metrics!.confidence === 'high' ? 'text-green-400' : data.metrics!.confidence === 'medium' ? 'text-yellow-400' : 'text-red-400') : 'text-white'}`}>{m.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      <TestAiSourceMetricSummary metrics={data?.metrics} sourceLabel="Sold-Comps" role="Completed-sale source context" />
       {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} retained candidates</p>}
       {rankedListings.length > 0 && (
         <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -1034,11 +1019,11 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
                   <a href={l.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{l.title}</a>
                   <p className="text-[10px] text-gray-500">{l.condition} · {l.endedAt ? `Sold ${l.endedAt}` : ''}</p>
                   <MetadataMatchLine listing={l} />
-                  <MetadataComparisonTable listing={l} /><VisualDifferenceList listing={l} />
+                  <MetadataComparisonTable listing={l} /><TestAiCandidateStatus listing={l} /><VisualDifferenceList listing={l} />
                   <AnalyzerUseLine eligible={l.evidenceDisposition === 'valuation_eligible'} reason={l.evidenceDisposition === 'valuation_eligible' ? 'completed sale passed the source evidence gate; final comparable selection still applies.' : (l.evidenceReasons ?? ['identity evidence incomplete']).join('; ')} />
                 </div>
               </div>
-              <p className="text-green-400 font-semibold text-sm flex-shrink-0">{formatWholeDollar(l.price)}</p>
+              <p className="text-green-400 font-semibold text-sm flex-shrink-0">{formatCandidateDisplayPrice(l)}</p>
             </div>
           ))}
         </div>
@@ -1059,7 +1044,7 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
   const strictVisualReview = (item.category === 'disney_pins' || item.category === 'coins') && marketplace === 'Mercari';
   const rankedListings = sortAnalysisCandidates(listings);
   const acceptedListings = rankedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
-  const reviewedListings = rankedListings.filter((listing: any) => hasCompletedVisualReview(listing));
+  const reviewedListings = rankedListings.filter((listing: any) => hasActualVisualResponse(listing));
   const currentValueListings = acceptedListings.filter((listing: any) => {
     const endedAt = Date.parse(String(listing.endedAt ?? ''));
     return Number.isFinite(endedAt) && Date.now() >= endedAt && Date.now() - endedAt <= 365 * 86_400_000;
@@ -1081,18 +1066,18 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
       </div>
       <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
       {data && <div className="rounded border border-violet-700/30 bg-violet-950/15 px-2 py-1 text-[9px] text-violet-200" aria-label={`${sourceLabel} fallback search coverage`}><p className="font-semibold uppercase tracking-wide">Executed search ladder</p>{executedQueries.length > 1 ? <p className="mt-0.5">The primary query returned no usable provider records, so {executedQueries.length - 1} broader fallback search{executedQueries.length - 1 === 1 ? '' : 'es'} ran.</p> : executedQueries.length === 1 ? <p className="mt-0.5">Only the primary query ran because it returned provider records; no fallback search was needed.</p> : <p className="mt-0.5">No provider query execution was recorded.</p>}{(retrievalCoverage.length > 0 ? retrievalCoverage : executedQueries.map((query: string) => ({ query, received: null, status: 'unknown' }))).map((tier: any, index: number) => <p key={`${tier.query}-${index}`} className="break-words font-mono text-violet-200/80">{index === 0 ? 'Primary' : `Fallback ${index}`}: &quot;{tier.query}&quot; · {tier.received == null ? 'count unavailable' : `${tier.received} provider record${tier.received === 1 ? '' : 's'}`} · {tier.status}</p>)}</div>}
-      <ProcessCompleteNotice />
+      <ProcessCompleteNotice data={data} /><TestAiSourcePopulationSummary packet={data?.sourcePopulation} />
       <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">{strictVisualReview ? `Data type: Completed Mercari sales · ${item.category === 'coins' ? 'Coins' : 'Disney Pins'} use strict two-pass visual identity admission. Only exact visual matches can affect valuation.` : marketplace === 'Mercari' ? 'Data type: Completed Mercari sales · records can affect valuation after the shared sold-evidence and identity gates.' : `Data type: Completed ${marketplace} sales · context-only during provider-specific testing. These records do not affect valuation yet.`}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
-      {data && <p className="text-gray-400 text-[10px]">{listings.length} completed record{listings.length === 1 ? '' : 's'} returned.</p>}
+      {data && <p className="text-gray-400 text-[10px]">{listings.length} retained provider record{listings.length === 1 ? '' : 's'} returned.</p>}
       {data && <div className="rounded border border-indigo-700/30 bg-indigo-950/15 p-2 text-[9px]" aria-label={`${sourceLabel} valuation destination summary`}>
-        <p className="font-semibold uppercase tracking-wide text-indigo-200">Where this pricing evidence is going</p>
-        <p className="mt-0.5 text-gray-400">Sent to valuation is the accepted comparable count; current-value and historical trend show the time bucket for that evidence. These counts use the same server-approved records shown below.</p>
+        <p className="font-semibold uppercase tracking-wide text-indigo-200">Source-stage eligibility and context</p>
+        <p className="mt-0.5 text-gray-400">These are source-stage classifications, not actual request receipts or final pricing-use counts. Current and historical buckets overlap source eligibility.</p>
         <div className="mt-1 grid gap-1 sm:grid-cols-3 lg:grid-cols-6">
           <p className="text-sky-200"><strong>{listings.length}</strong><br />returned</p>
-          <p className="text-emerald-200"><strong>{acceptedListings.length}</strong><br />sent to valuation</p>
-          <p className="text-cyan-200"><strong>{currentValueListings.length}</strong><br />current-value</p>
-          <p className="text-violet-200"><strong>{historicalTrendListings.length}</strong><br />historical trend</p>
+          <p className="text-emerald-200"><strong>{acceptedListings.length}</strong><br />source eligible</p>
+          <p className="text-cyan-200"><strong>{currentValueListings.length}</strong><br />current-window source eligible</p>
+          <p className="text-violet-200"><strong>{historicalTrendListings.length}</strong><br />historical source eligible</p>
           <p className="text-gray-300"><strong>{contextListings}</strong><br />context only</p>
           <p className="text-orange-200"><strong>{preVisionExcludedListings.length}</strong><br />held out</p>
         </div>
@@ -1100,14 +1085,14 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
       <CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />
       {data?.visualFilter?.note && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1 text-[10px] text-cyan-200"><p>{data.visualFilter.note}</p><p className="mt-0.5 text-cyan-100/80">{reviewedListings.length} candidate image{reviewedListings.length === 1 ? '' : 's'} reviewed · {acceptedListings.length} valuation-eligible</p></div>}
       <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={sourceLabel} />
-      {acceptedListings.length > 0 && <div className="rounded border border-emerald-700/35 bg-emerald-950/20 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Accepted for analyzer valuation ({acceptedListings.length})</p><div className="mt-1 space-y-1">{acceptedListings.map((listing: any, index: number) => <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-center justify-between gap-2"><div className="min-w-0"><a href={listing.itemUrl || undefined} target="_blank" rel="noopener noreferrer" className="truncate text-[10px] text-blue-300 hover:underline">{listing.title}</a><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><VisualDifferenceList listing={listing} /></div><span className="shrink-0 text-[10px] font-semibold text-emerald-300">{formatWholeDollar(listing.price)}</span></div>)}</div></div>}
+      {acceptedListings.length > 0 && <div className="rounded border border-emerald-700/35 bg-emerald-950/20 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Source eligible for final review ({acceptedListings.length})</p><div className="mt-1 space-y-1">{acceptedListings.map((listing: any, index: number) => <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-center justify-between gap-2"><div className="min-w-0"><a href={listing.itemUrl || undefined} target="_blank" rel="noopener noreferrer" className="truncate text-[10px] text-blue-300 hover:underline">{listing.title}</a><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><TestAiCandidateStatus listing={listing} /><VisualDifferenceList listing={listing} /></div><span className="shrink-0 text-[10px] font-semibold text-emerald-300">{formatCandidateDisplayPrice(listing)}</span></div>)}</div></div>}
       {rankedListings.length > 0 && <div className="space-y-1 max-h-64 overflow-y-auto">{rankedListings.map((listing: any, index: number) => (
         <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
           <div className="flex items-center gap-2 min-w-0">
             {listing.imageUrl && <img src={listing.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />}
-            <div className="min-w-0"><a href={listing.itemUrl || undefined} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{listing.title}</a><p className="text-[10px] text-gray-500">{listing.condition || 'Condition unavailable'} · {listing.endedAt ? `Sold ${listing.endedAt}` : 'Date unavailable'}</p><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><VisualDifferenceList listing={listing} /><AnalyzerUseLine eligible={listing.evidenceDisposition === 'valuation_eligible'} reason={(listing.evidenceReasons ?? (listing.evidenceDisposition === 'valuation_eligible' ? ['Strict visual identity gate passed; final comparable selection still applies.'] : ['Context-only provider result'])).join('; ')} /></div>
+            <div className="min-w-0"><a href={listing.itemUrl || undefined} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{listing.title}</a><p className="text-[10px] text-gray-500">{listing.condition || 'Condition unavailable'} · {listing.endedAt ? `Sold ${listing.endedAt}` : 'Date unavailable'}</p><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><TestAiCandidateStatus listing={listing} /><VisualDifferenceList listing={listing} /><AnalyzerUseLine eligible={listing.evidenceDisposition === 'valuation_eligible'} reason={(listing.evidenceReasons ?? (listing.evidenceDisposition === 'valuation_eligible' ? ['Strict visual identity gate passed; final comparable selection still applies.'] : ['Context-only provider result'])).join('; ')} /></div>
           </div>
-          <p className="text-amber-300 font-semibold text-sm flex-shrink-0">{formatWholeDollar(listing.price)}</p>
+          <p className="text-amber-300 font-semibold text-sm flex-shrink-0">{formatCandidateDisplayPrice(listing)}</p>
         </div>
       ))}</div>}
       {data && !data.error && listings.length === 0 && <p className="text-gray-500 text-xs">No completed {marketplace} records found.</p>}
@@ -1120,67 +1105,20 @@ function formatVisualReviewPrice(listing: any): string {
   const price = typeof rawPrice === 'object' ? rawPrice?.value : rawPrice;
   const numericPrice = Number(price);
   if (!Number.isFinite(numericPrice) || numericPrice <= 0) return 'Price unavailable';
-  const currency = String(listing?.currency ?? listing?.soldCurrency ?? rawPrice?.currency ?? 'USD').toUpperCase();
+  const currency = String(listing?.currency ?? listing?.soldCurrency ?? rawPrice?.currency ?? 'Currency unknown').toUpperCase();
   return currency === 'USD' ? formatWholeDollar(numericPrice) : `${currency} ${numericPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
 function hasCompletedVisualReview(listing: any): boolean {
   const status = String(listing?.visualReviewStatus ?? '').trim().toLowerCase();
-  // An explicit verdict can only be produced by the visual-review pipeline.
-  // It must override stale provenance metadata such as a pre-visual marker;
-  // otherwise reviewed matches appear in the “held out before AI analysis”
-  // bucket and are excluded from the valuation-facing presentation.
+  // Legacy operational predicate: deliberately unchanged. Display claims use
+  // explicit execution receipts instead, never this gate.
   return ['match', 'rough_match', 'mismatch', 'unreadable'].includes(status);
 }
 
-function candidateMasterKey(listing: any): string {
-  return listing?.metadataRanking?.occurrenceKey ?? String(listing?.saleId ?? listing?.id ?? listing?.itemId ?? listing?.itemUrl ?? listing?.url ?? listing?.title ?? 'candidate');
-}
-
+// Display-only merge. Operational hasCompletedVisualReview and client gates above/below remain unchanged.
 function mergeMasterCandidates(...groups: any[][]): any[] {
-  const merged = new Map<string, any>();
-  for (const group of groups) {
-    for (const listing of group ?? []) {
-      const key = candidateMasterKey(listing);
-      const existing = merged.get(key);
-      // Prefer the richer/reviewed projection when the same provider record is
-      // present in both the main list and a pre-vision/audit list.
-      if (!existing || hasCompletedVisualReview(listing) || (!existing.metadataFieldComparisons && listing.metadataFieldComparisons)) {
-        merged.set(key, existing ? { ...existing, ...listing } : listing);
-      }
-    }
-  }
-  return sortAnalysisCandidates(Array.from(merged.values()));
-}
-
-function isHardCandidateException(listing: any): boolean {
-  if (String(listing?.evidenceDisposition ?? '') === 'rejected_objective_conflict') return true;
-  const reason = [...(listing?.evidenceReasons ?? []), listing?.visualReviewRationale].filter(Boolean).join(' ');
-  return /objective conflict|hard conflict|wrong (?:platform|item|product|form|game)|explicitly (?:different|incompatible)|lot\/bundle|collection\/lot|replacement or spare component|not the target item/i.test(reason);
-}
-
-function candidateMasterStatus(listing: any): { label: string; className: string; reason: string } {
-  const visualStatus = String(listing?.visualReviewStatus ?? '').trim().toLowerCase();
-  const reason = (listing?.evidenceReasons ?? []).filter(Boolean).join('; ') || listing?.visualReviewRationale || '';
-  if (hasCompletedVisualReview(listing)) {
-    const label = visualStatus === 'match' || visualStatus === 'rough_match' ? 'AI result: visual match' : visualStatus === 'mismatch' ? 'AI result: visual mismatch' : 'AI result: unreadable / manual review';
-    return { label, className: visualStatus === 'mismatch' ? 'text-red-300' : visualStatus === 'unreadable' ? 'text-amber-300' : 'text-emerald-300', reason };
-  }
-  if (isHardCandidateException(listing)) return { label: 'Hard exception — not sent to AI', className: 'text-red-300', reason: reason || 'An objective identity conflict prevented image comparison.' };
-  if (listing?.visualRequirement === 'required' || listing?.visualRequirement === 'required_visual_review') return { label: 'Sent to AI — result pending', className: 'text-cyan-300', reason: reason || 'Passed the pre-image hard-exception checks.' };
-  return { label: 'Not sent to AI — operational reason', className: 'text-amber-300', reason: reason || 'No usable image, score/review capacity, or another operational safeguard prevented image comparison.' };
-}
-
-function CandidateMasterList({ listings, sourceLabel, targetImageUrl }: { listings: any[]; sourceLabel: string; targetImageUrl?: string | null }) {
-  const candidates = mergeMasterCandidates(listings);
-  if (candidates.length === 0) return null;
-  return <section className="rounded border border-violet-700/35 bg-violet-950/15 p-2" aria-label={`${sourceLabel} ranked candidate master list`}>
-    <div className="flex items-start justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-wide text-violet-200">All candidates — ranked master list ({candidates.length})</p><p className="mt-0.5 text-[9px] text-violet-100/70">Every retrieved candidate appears once, in rank order. The status beside each item explains whether it reached AI image comparison.</p></div><span className="shrink-0 text-[8px] text-violet-200/70">{sourceLabel}</span></div>
-    <div className="mt-1 max-h-96 space-y-1 overflow-y-auto pr-1">{candidates.map((listing: any, index: number) => { const status = candidateMasterStatus(listing); const imageUrl = listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0] || null; return <div key={`${candidateMasterKey(listing)}-${index}`} className="rounded bg-gray-950/40 p-1.5">
-      <div className="flex items-start gap-2"><div className="grid w-24 shrink-0 grid-cols-2 gap-1">{targetImageUrl ? <figure><img src={targetImageUrl} alt="Target item" loading="lazy" referrerPolicy="no-referrer" className="h-12 w-full rounded border border-cyan-700/50 bg-gray-950 object-contain" /><figcaption className="text-center text-[7px] uppercase text-cyan-200">Target</figcaption></figure> : <div className="flex h-12 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">Target unavailable</div>}{imageUrl ? <figure><img src={imageUrl} alt="Marketplace candidate" loading="lazy" referrerPolicy="no-referrer" className="h-12 w-full rounded border border-emerald-700/50 bg-gray-950 object-contain" /><figcaption className="text-center text-[7px] uppercase text-emerald-200">Candidate</figcaption></figure> : <div className="flex h-12 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">No image</div>}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><p className="break-words text-[9px] font-semibold text-gray-100">{listing.itemUrl || listing.url ? <a href={listing.itemUrl || listing.url} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:underline">{listing.title || 'Untitled candidate'}</a> : (listing.title || 'Untitled candidate')}</p><span className={`shrink-0 text-[8px] font-bold uppercase ${status.className}`}>{status.label}</span></div><p className="text-[8px] text-cyan-200">{listing.metadataMatchRank ? `Rank #${listing.metadataMatchRank}` : 'Unranked'} · {listing.metadataMatchScore !== undefined && listing.metadataMatchScore !== null ? `${listing.metadataMatchScore}/100` : 'Score unavailable'}</p><p className={`text-[8px] leading-snug ${status.className}`}>{status.reason}</p></div></div>
-      <MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><VisualDifferenceList listing={listing} />
-    </div>; })}</div>
-  </section>;
+  return mergeCandidateDisplayGroups(groups);
 }
 
 function VisualDifferenceList({ listing }: { listing: any }) {
@@ -1194,28 +1132,15 @@ function VisualDifferenceList({ listing }: { listing: any }) {
 function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: controlledOpen, onOpenChange }: { data: any; targetImageUrl?: string | null; sourceLabel: string; open?: boolean; onOpenChange?: (open: boolean) => void }) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = controlledOpen ?? uncontrolledOpen;
-  const setOpen = (nextOpen: boolean) => {
-    if (controlledOpen === undefined) setUncontrolledOpen(nextOpen);
-    onOpenChange?.(nextOpen);
-  };
-  const candidates = sortRankedCandidates(data?.visualReviewListings ?? data?.listings ?? data?.sales ?? data?.data?.items ?? []);
-  // An explicit model verdict is authoritative evidence that the candidate was
-  // reviewed. The requirement marker is provenance, but it must not erase a
-  // real verdict when an adapter omits that optional field.
-  const reviewed = candidates.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => hasCompletedVisualReview(listing));
-  const mismatches = reviewed.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
-  const matches = reviewed.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match');
-  useEffect(() => {
-    if (controlledOpen === undefined && reviewed.length > 0 && data?.visualFilter?.status !== 'provider_unavailable') {
-      setUncontrolledOpen(true);
-    }
-  }, [controlledOpen, data?.visualFilter?.status, reviewed.length]);
-  if (!data?.visualFilter) return null;
+  const displayData = data?.candidateDisplayBatch ?? data;
+  const rows = selectTestAiVisualDisplayRows([displayData?.visualReviewListings ?? [], displayData?.listings ?? [], displayData?.sales ?? [], displayData?.visualFilter?.contextListings ?? [], displayData?.data?.items ?? []]);
+  useEffect(() => { if (controlledOpen === undefined && rows.length > 0) setUncontrolledOpen(true); }, [controlledOpen, rows.length]);
+  if (!data?.visualFilter && !data?.visualExecutionCounts && !rows.length) return null;
   return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2 space-y-2">
-    <div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">AI image review — {sourceLabel}</p><p className="text-[9px] text-cyan-200/80">{reviewed.length} actually reviewed · {matches.length} visual match{matches.length === 1 ? '' : 'es'} · {mismatches.length} AI mismatch{mismatches.length === 1 ? '' : 'es'} · {Math.max(0, reviewed.length - matches.length - mismatches.length)} unresolved</p></div><button type="button" onClick={() => setOpen(!open)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">{open ? 'Hide image checks' : 'View image checks'}</button></div>
-    {data.visualFilter.note && <p className="text-[9px] text-cyan-200/80">{data.visualFilter.note}</p>}
-    {data.visualFilter.status === 'completed_with_timeout' && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1 text-[9px] text-amber-200">Image review reached its time limit before every candidate was checked. Reviewed matches remain visible; unchecked or timed-out candidates stay manual-review/context only and cannot enter the analyzer implicitly.</p>}
-      {open && <div className="space-y-1.5">{reviewed.length === 0 ? <p className="text-[10px] text-gray-500">No decisive image result was returned. Candidates remain retained.</p> : <div className="max-h-72 space-y-1 overflow-y-auto pr-1">{reviewed.map(({ listing, index }: { listing: any; index: number }) => { const accepted = listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match'; const mismatch = listing.visualReviewStatus === 'mismatch'; const valuationEligible = listing.evidenceDisposition === 'valuation_eligible'; const currentValueEvidence = accepted && sourceLabel.toLowerCase().includes('active') && Number(listing.price) > 0; const rationale = listing.visualReviewRationale || 'No additional visual rationale supplied.'; const candidateImageUrl = listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0] || null; return <div key={`${listing.id || listing.saleId || listing.url || listing.title}-${index}`} className="flex items-start gap-2 rounded bg-gray-900/70 p-1.5"><div className="grid w-24 shrink-0 grid-cols-2 gap-1">{targetImageUrl ? <figure className="min-w-0"><img src={targetImageUrl} alt="Target item" className="h-10 w-full rounded border border-cyan-700/50 bg-gray-950 object-contain" /><figcaption className="mt-0.5 truncate text-center text-[7px] uppercase text-cyan-200">Target</figcaption></figure> : <div className="flex h-10 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">Target unavailable</div>}{candidateImageUrl ? <figure className="min-w-0"><img src={candidateImageUrl} alt="Marketplace candidate" className="h-10 w-full rounded border border-emerald-700/50 bg-gray-950 object-contain" /><figcaption className="mt-0.5 truncate text-center text-[7px] uppercase text-emerald-200">Candidate</figcaption></figure> : <div className="flex h-10 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">Candidate unavailable</div>}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><p className={`flex min-w-0 items-center gap-1 text-[9px] font-semibold ${mismatch ? 'text-red-300' : accepted ? 'text-emerald-300' : 'text-amber-300'}`}><span aria-label={mismatch ? 'Not accepted due to image mismatch' : accepted ? 'AI-reported visual similarity; not independently verified' : 'Needs image review'} className="text-sm leading-none">{mismatch ? '✕' : accepted ? '✓' : '?'}</span><span>{String(listing.visualReviewStatus).replace(/_/g, ' ')}</span></p><span className="shrink-0 text-[10px] font-semibold text-white">{formatVisualReviewPrice(listing)}</span></div><p className="break-words whitespace-normal text-[8px] leading-snug text-gray-400">{rationale}</p><details className="mt-1"><summary className="cursor-pointer text-[8px] text-cyan-200/80">View full explanation</summary><p className="mt-0.5 break-words whitespace-normal text-[8px] leading-snug text-gray-300">{rationale}</p></details><MetadataComparisonTable listing={listing} /><VisualDifferenceList listing={listing} /><p className="break-words text-[9px] text-gray-300">{listing.title || 'Untitled marketplace candidate'}</p>{listing.metadataMatchScore !== undefined && <p className="text-[8px] text-cyan-200">Metadata rank #{listing.metadataMatchRank} · {listing.metadataMatchScore}/100 · {(listing.metadataMatchReasons ?? []).join(', ') || 'No additional metadata match stated'}</p>}<AnalyzerUseLine eligible={valuationEligible} statusLabel={currentValueEvidence ? 'Current-value evidence: INCLUDED' : undefined} reason={currentValueEvidence ? 'The visual match is retained in current-value market evidence; it is not a completed-sale comparable.' : valuationEligible ? 'Accepted for valuation; current-value versus historical-trend classification is shown in the source outcome summary.' : mismatch ? 'The visual result did not establish an accepted comparable.' : accepted ? 'The visual match was retained for review but was not approved as valuation evidence.' : 'The visual result is unresolved.'} /></div></div>; })}</div>}</div>}
+    <div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">AI image review — {sourceLabel}</p><TestAiExecutionSummary rows={rows} sourceLabel={sourceLabel} counts={data?.visualExecutionCounts ?? data?.visualFilter?.visualExecutionCounts} /></div><button type="button" onClick={() => { if (controlledOpen === undefined) setUncontrolledOpen(!open); onOpenChange?.(!open); }} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">{open ? 'Hide image checks' : 'View image checks'}</button></div>
+    {data?.visualFilter?.note && <p className="text-[9px] text-cyan-200/80">{data.visualFilter.note}</p>}
+    {data?.error && <p className="text-[9px] text-amber-200">Partial/error source response — known completed observations are retained. {data.error}</p>}
+    {open && <div className="space-y-1.5">{rows.length === 0 ? <p className="text-[10px] text-gray-500">No actual dispatch receipts are available. Legacy verdicts are not proof of image execution.</p> : <div className="max-h-72 space-y-1 overflow-y-auto pr-1">{rows.map((listing, index) => <TestAiVisualReviewRow key={candidateDisplayKey(listing, {}, String(index))} listing={listing} targetImageUrl={targetImageUrl} />)}</div>}</div>}
   </div>;
 }
 
@@ -1296,32 +1221,8 @@ function mergeVisualReviewBatches(completed: any[]): any | undefined {
   };
 }
 
-function ebayListingKey(listing: any): string {
-  return originatingRankingOccurrence(listing) ?? String(listing?.id ?? listing?.itemId ?? listing?.itemUrl ?? listing?.title ?? '');
-}
-
 function mergeEbayVisualReviewDisplayData(base: any, review: any): any {
-  if (!review || review.error) return base;
-  const baseListings = Array.isArray(base?.listings) ? base.listings : [];
-  const reviewedListings = mergeKnownEbayParentDisplayRows(base, Array.isArray(review.listings) ? review.listings : []);
-  const reviewedByKey = new Map(reviewedListings.map((listing: any) => [ebayListingKey(listing), listing]));
-  const mergedListings = baseListings.map((listing: any) => {
-    const reviewed = reviewedByKey.get(ebayListingKey(listing));
-    return reviewed ? preserveParentDisplayRanking(listing, reviewed) : listing;
-  });
-  const baseKeys = new Set(baseListings.map(ebayListingKey));
-  const reviewOnlyListings = reviewedListings.filter((listing: any) => !baseKeys.has(ebayListingKey(listing)));
-  const reviewedDisplayListings = reviewedListings;
-  return {
-    ...base,
-    ...review,
-    query: review.query ?? base?.query,
-    debug: review.debug ?? base?.debug,
-    listings: mergedListings.length > 0 ? [...mergedListings, ...reviewOnlyListings] : reviewedListings,
-    visualReviewListings: reviewedDisplayListings.length > 0 ? reviewedDisplayListings : base?.visualReviewListings ?? [],
-    preVisionFilter: review.preVisionFilter ?? base?.preVisionFilter,
-    metadataParentDisplayListings: collectEbayDisplayCandidates(base),
-  };
+  return mergeEbayCandidateDisplayData(base, review?.candidateDisplayBatch ?? review);
 }
 
 function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean; onVisualReviewData?: (data: any | null) => void }) {
@@ -1393,7 +1294,9 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
           const result = await visualReviewMutateAsyncRef.current({ ...batch, reviewDeadlineAt: deadlineAt });
           if (cancelled || runId !== reviewRunId.current) return;
           completed.push(result);
-          setVisualReviewData(mergeVisualReviewBatches(completed));
+          const operationalBatch = mergeVisualReviewBatches(completed);
+          const displayBatch = mergeVisualReviewDisplayBatches(completed);
+          setVisualReviewData({ ...operationalBatch, candidateDisplayBatch: displayBatch, candidateDisplayParentData: data });
           if (countAcceptedVisualMatches(mergeVisualReviewBatches(completed)) >= VISUAL_REVIEW_CLIENT_TARGET_MATCHES) break;
         } catch (error) {
           if (cancelled || runId !== reviewRunId.current) return;
@@ -1413,7 +1316,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   // Newer eBay requests complete the bounded visual pass server-side. Treat
   // that response as first-class review evidence instead of waiting for the
   // legacy client mutation (which is intentionally suppressed in this mode).
-  const effectiveVisualReviewData = visualReviewData ?? (data?.visualFilter ? data : undefined);
+  const effectiveVisualReviewData = (visualReviewData?.candidateDisplayParentData === data ? visualReviewData : undefined) ?? (data?.visualFilter ? data : undefined);
   useEffect(() => {
     onVisualReviewData?.(effectiveVisualReviewData && !effectiveVisualReviewData.error ? effectiveVisualReviewData : null);
   }, [effectiveVisualReviewData, onVisualReviewData]);
@@ -1433,7 +1336,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   const autographMarketContextOnly = Boolean(displayData?.marketContextOnly);
   const rankedDisplayListings = sortRankedCandidates(displayData?.listings ?? []);
   const activeMasterListings = mergeMasterCandidates(
-    collectEbayDisplayCandidates(displayData),
+    collectEbayCandidateDisplayOccurrences(displayData),
     displayData?.metadataParentDisplayListings ?? [],
   );
   const autographValuationListings = autographMarketContextOnly
@@ -1459,10 +1362,10 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
           <p className="text-[10px] text-gray-500">{[l.listingType === 'AUCTION' ? 'Auction' : 'Fixed price', l.condition, l.seller, l.bidCount != null ? `${l.bidCount} bids` : null, l.uniqueBidderCount != null ? `${l.uniqueBidderCount} unique bidders` : null].filter(Boolean).join(' · ')}</p>
           {l.metadataMatchScore !== undefined && <p className="text-[9px] text-cyan-200">{l.metadataMatchLabel ?? 'Ranking'} rank #{l.metadataMatchRank} · {l.metadataMatchScore}/100 · {(l.metadataMatchReasons ?? []).join(', ') || 'No additional metadata match stated'}{l.metadataMatchLabel === 'Market Relevance Score' ? ' · not an exact comparable' : ''}</p>}
           {l.visualRequirement === 'not_required_no_target_image' && <p className="text-[8px] font-semibold text-amber-300">Context only — not visually analyzed because the target item image was unavailable.</p>}
-          {autographMarketContextOnly && <p className={`text-[8px] font-semibold ${l.evidenceDisposition === 'valuation_eligible' ? 'text-emerald-300' : 'text-amber-300'}`}>{l.evidenceDisposition === 'valuation_eligible' ? 'Current-value market evidence — included in valuation' : `Context only — ${l.evidenceReasons?.[0] || 'not included in valuation'}`}</p>}
+          {autographMarketContextOnly && <p className={`text-[8px] font-semibold ${l.evidenceDisposition === 'valuation_eligible' ? 'text-emerald-300' : 'text-amber-300'}`}>{l.evidenceDisposition === 'valuation_eligible' ? 'Source-stage asking context — final pricing use assessed separately' : `Context only — ${l.evidenceReasons?.[0] || 'not included in valuation'}`}</p>}
         </div>
       </div>
-      <p className="shrink-0 pl-1 text-right text-green-400 font-semibold text-sm">{formatWholeDollar(l.price)}</p>
+      <p className="shrink-0 pl-1 text-right text-green-400 font-semibold text-sm">{formatCandidateDisplayPrice(l)}</p>
     </div>
   );
 
@@ -1477,7 +1380,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
         <p className="mt-0.5 break-words font-mono text-[10px] text-gray-200">"{visibleSearchQuery}"</p>
         {displayData?.debug?.executedQueries?.length > 1 && <div className="mt-1 space-y-0.5 text-[9px] text-cyan-200/70"><p className="font-semibold uppercase tracking-wide">Executed query tiers</p>{displayData.debug.executedQueries.map((executedQuery: string, index: number) => <p key={`${executedQuery}-${index}`} className="break-words font-mono">{index + 1}. "{executedQuery}"</p>)}</div>}
       </div>
-      <ProcessCompleteNotice />
+      <ProcessCompleteNotice data={data} /><TestAiSourcePopulationSummary packet={data?.sourcePopulation} />
       <p className="text-gray-500 text-[10px]">Data type: Current fixed-price and auction listings · {showingVisualMatchMetrics ? 'Visual-match-only current-market metrics' : 'Full-market current-market context'}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {data?.marketContextOnly && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[10px] text-amber-200">Autographs / Signed Item market context only — ranked by relevance, with no visual cap because these candidates are never sent to visual analysis.</p>}
@@ -1487,25 +1390,13 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       {effectiveVisualReviewData?.visualFilter && !effectiveVisualReviewData?.marketContextOnly && !effectiveVisualReviewData?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
       {visibleMetrics && (
         <div className="space-y-1.5">
-          <div className="grid grid-cols-4 gap-2 text-[11px]">
-            {[
-              { label: showingVisualMatchMetrics ? 'Avg Match' : 'Avg', value: formatWholeDollar(visibleMetrics.avg) },
-              { label: showingVisualMatchMetrics ? 'Median Match' : 'Median', value: formatWholeDollar(visibleMetrics.median) },
-              { label: showingVisualMatchMetrics ? 'Match Range' : 'Range', value: `${formatWholeDollar(visibleMetrics.min)}–${formatWholeDollar(visibleMetrics.max)}` },
-              { label: 'Confidence', value: visibleMetrics.confidence.toUpperCase() },
-            ].map(m => (
-              <div key={m.label} className="bg-gray-900/40 rounded p-1.5 text-center">
-                <p className="text-gray-500 text-[9px] uppercase mb-0.5">{m.label}</p>
-                <p className={`font-semibold ${m.label === 'Confidence' ? (visibleMetrics.confidence === 'high' ? 'text-green-400' : visibleMetrics.confidence === 'medium' ? 'text-yellow-400' : 'text-red-400') : 'text-white'}`}>{m.value}</p>
-              </div>
-            ))}
-          </div>
+          <TestAiSourceMetricSummary metrics={visibleMetrics} sourceLabel="eBay Active" role={showingVisualMatchMetrics ? 'Legacy visual-match asking context' : 'Full-market asking context'} />
           {visibleMetrics.confidenceReason && <p className="rounded border border-slate-700/50 bg-slate-950/35 px-2 py-1.5 text-[9px] leading-snug text-slate-300"><strong className="text-slate-100">Confidence reason:</strong> {visibleMetrics.confidenceReason}</p>}
           {(visibleMetrics.auctionCount > 0 || visibleMetrics.bidCountKnown > 0 || visibleMetrics.uniqueBidderCountKnown > 0) && <p className="rounded border border-violet-700/30 bg-violet-950/20 px-2 py-1.5 text-[9px] leading-snug text-violet-200"><strong className="text-violet-100">Auction activity:</strong> {visibleMetrics.auctionCount ?? 0} auction listing{visibleMetrics.auctionCount === 1 ? '' : 's'} · {visibleMetrics.bidCountKnown ? `${visibleMetrics.totalBidCount} total reported bids across ${visibleMetrics.bidCountKnown} listing${visibleMetrics.bidCountKnown === 1 ? '' : 's'}` : 'bid totals unavailable'} · {visibleMetrics.uniqueBidderCountKnown ? `${visibleMetrics.totalUniqueBidderCount} reported unique bidders across ${visibleMetrics.uniqueBidderCountKnown} listing${visibleMetrics.uniqueBidderCountKnown === 1 ? '' : 's'}` : 'unique-bidder totals unavailable'} (per-auction counts; not de-duplicated across listings).</p>}
         </div>
       )}
-      {showingVisualMatchMetrics && <p className="text-[9px] text-emerald-300">✓ Using {visualMatchCount} visually accepted, priced listing{visualMatchCount === 1 ? '' : 's'} only. Red-X mismatches and unresolved images are excluded from these figures.</p>}
-      {showingVisualMatchMetrics && data?.metrics && <p className="text-[9px] text-slate-400">Full-market asking context before image filtering: Avg {formatWholeDollar(data.metrics.avg)} · Median {formatWholeDollar(data.metrics.median)} · Range {formatWholeDollar(data.metrics.min)}–{formatWholeDollar(data.metrics.max)}.</p>}
+      {showingVisualMatchMetrics && <p className="text-[9px] text-emerald-300">{visualMatchCount} legacy visually accepted, priced listings in the source metric population; final pricing use is reported separately.</p>}
+      {showingVisualMatchMetrics && <TestAiSourceMetricSummary metrics={data?.metrics} sourceLabel="eBay Active before image filtering" role="Full-market asking context" />}
       {data && !data.error && !reviewRequested && !item.primaryPhotoUrl && <div className="rounded border border-amber-700/30 bg-amber-950/20 p-2"><p className="text-[10px] font-semibold text-amber-100">Visual confirmation unavailable</p><p className="text-[9px] text-amber-200/80">No target image is available, so eBay Active listings remain asking-price context only and cannot enter current-value analyzer evidence.</p></div>}
       {reviewRequested && visualReviewLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are required before visually supported eBay Active listings can enter current-value evidence. Asking-price context remains available below while the bounded review runs in batches of 10 (maximum 30 candidates; maximum 2 minutes overall).</p>}
       {effectiveVisualReviewData?.visualFilter?.status === 'completed_with_timeout' && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] text-amber-200">The AI image review stopped at its safety time limit. Only candidates with a completed visual result can support current-value evidence; the rest remain asking-price context.</p>}
@@ -1516,7 +1407,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       {displayData?.debug && !displayData.debug.targetIsGraded && (displayData.debug.rawTargetExcludedGradedCount ?? 0) > 0 && <p className="text-cyan-200/70 text-[9px]">Raw/ungraded target rule: {displayData.debug.rawTargetExcludedGradedCount} listing{displayData.debug.rawTargetExcludedGradedCount === 1 ? '' : 's'} with an explicit grading/slab signal were excluded before display and image review.</p>}
       {displayData?.marketContextOnly && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[9px] text-amber-200">Signed Item candidates are ranked by market relevance only. No visual cap applies because these results are never sent to visual analysis.</p>}
       {autographMarketContextOnly ? <>
-        {autographValuationListings.length > 0 && <section className="rounded border border-emerald-700/40 bg-emerald-950/15 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Current-Value Market Evidence</p><p className="mt-0.5 text-[9px] text-emerald-100/70">These listings passed the Autographs identity and score rules and are included in the valuation metrics above.</p><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1">{autographValuationListings.map(renderListing)}</div></section>}
+        {autographValuationListings.length > 0 && <section className="rounded border border-emerald-700/40 bg-emerald-950/15 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Source-stage Asking Context</p><p className="mt-0.5 text-[9px] text-emerald-100/70">These listings passed the Autographs source identity and score rules. Legacy source metrics are separate from final pricing use; currency-unproven aggregates are withheld.</p><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1">{autographValuationListings.map(renderListing)}</div></section>}
         {autographContextListings.length > 0 && <section className="rounded border border-amber-700/40 bg-amber-950/15 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-amber-300">Context Only — Not Used in Valuation</p><p className="mt-0.5 text-[9px] text-amber-100/70">These listings remain visible for transparency but do not affect the current-value metrics.</p><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1">{autographContextListings.map(renderListing)}</div></section>}
       </> : rankedDisplayListings.length > 0 && <div className="space-y-1 max-h-72 overflow-y-auto pr-1">{rankedDisplayListings.map(renderListing)}</div>}
       {displayData && !displayData.listings.length && !displayData.error && <p className="text-gray-500 text-xs">No listings found.</p>}
@@ -1551,21 +1442,7 @@ function HipstampSection({ item, side }: { item: SelectedItem; side: 'left' | 'r
       <p className="text-gray-500 text-[10px]">Authorized read-only current asking prices and supply context · USD metrics only · never completed-sale evidence</p>
       {data?.error && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.error}</p>}
       {data?.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/30 p-2 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
-      {data?.metrics && (
-        <div className="grid grid-cols-4 gap-2 text-[11px]">
-          {[
-            { label: 'Avg Ask', value: formatHipstampPrice(data.metrics.avg) },
-            { label: 'Median', value: formatHipstampPrice(data.metrics.median) },
-            { label: 'Range', value: `${formatHipstampPrice(data.metrics.min)}–${formatHipstampPrice(data.metrics.max)}` },
-            { label: 'Confidence', value: data.metrics.confidence.toUpperCase() },
-          ].map((metric) => (
-            <div key={metric.label} className="bg-gray-900/40 rounded p-1.5 text-center">
-              <p className="text-gray-500 text-[9px] uppercase mb-0.5">{metric.label}</p>
-              <p className={`font-semibold ${metric.label === 'Confidence' ? (data.metrics!.confidence === 'high' ? 'text-green-400' : data.metrics!.confidence === 'medium' ? 'text-yellow-400' : 'text-red-400') : 'text-white'}`}>{metric.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      <TestAiSourceMetricSummary metrics={data?.metrics} sourceLabel="HIPStamp Active" role="Asking-price context" />
       <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel="HIPStamp active listings" />
       {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} shown · {data.debug?.totalFetched ?? 0} fetched</p>}
       {data?.debug?.targetFormat && <p className="text-cyan-200 text-[10px]">Comparable format: <strong>{data.debug.targetFormat.label}</strong>{(data.debug.formatExcluded ?? 0) > 0 ? ` · ${data.debug.formatExcluded} format-mismatched listing${data.debug.formatExcluded === 1 ? '' : 's'} excluded` : ''}</p>}
@@ -1617,16 +1494,7 @@ function HipstampSoldSection({ item, side }: { item: SelectedItem; side: 'left' 
       <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
       <p className="text-gray-500 text-[10px]">Closed listings marked sold · store-scoped discovery · not a marketplace-wide sales history</p>
       {data?.error && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.error}</p>}
-      {data?.metrics && (
-        <div className="grid grid-cols-4 gap-2 text-[11px]">
-          {[
-            { label: 'Avg Sold', value: formatPrice(data.metrics.avg) },
-            { label: 'Median', value: formatPrice(data.metrics.median) },
-            { label: 'Range', value: `${formatPrice(data.metrics.min)}–${formatPrice(data.metrics.max)}` },
-            { label: 'Confidence', value: data.metrics.confidence.toUpperCase() },
-          ].map((metric) => <div key={metric.label} className="bg-gray-900/40 rounded p-1.5 text-center"><p className="text-gray-500 text-[9px] uppercase mb-0.5">{metric.label}</p><p className="font-semibold text-white">{metric.value}</p></div>)}
-        </div>
-      )}
+      <TestAiSourceMetricSummary metrics={data?.metrics} sourceLabel="HIPStamp Sold / Closed" role="Store-scoped completed-sale context" />
       <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel="HIPStamp sold / closed listings" />
       {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} shown · {data.debug?.totalFetched ?? 0} fetched · {data.debug?.storesQueried ?? 0} stores queried</p>}
       {data?.debug?.targetFormat && <p className="text-cyan-200 text-[10px]">Comparable format: <strong>{data.debug.targetFormat.label}</strong>{(data.debug.formatExcluded ?? 0) > 0 ? ` · ${data.debug.formatExcluded} format-mismatched sold listing${data.debug.formatExcluded === 1 ? '' : 's'} excluded` : ''}</p>}
@@ -2039,7 +1907,7 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
       )}
       <div id={`pcgs-history-${side}`} className="space-y-2 rounded bg-gray-900/40 p-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[10px] font-semibold uppercase text-emerald-300">Auction Prices Realized — current value and historical trend</p>
+          <p className="text-[10px] font-semibold uppercase text-emerald-300">Auction Prices Realized — current value and historical source eligible</p>
           {auctions.length > 0 && <a href={`#pcgs-history-rows-${side}`} className="text-[9px] font-semibold text-cyan-300 underline underline-offset-2">Jump to loaded rows</a>}
         </div>
         <p className="text-[9px] text-gray-500">PCGS first confirms the CoinFacts target, then the server signs each certificate or target-scoped auction row before the browser displays it. Server-approved rows dated within the last 365 days are current-value candidates; older approved rows are historical trend only. A scoped PCGS row without a repeated grade can inherit the confirmed CoinFacts grade on the server; an explicit different grade remains context-only. PCGS buyer-premium treatment is not disclosed, so the reported amount is labeled as realized-price-as-reported.</p>
@@ -2280,7 +2148,7 @@ function TheCardApiSection({ item, side, data, isLoading }: { item: SelectedItem
 
   const SaleRows = ({ rows, contextOnly }: { rows: any[]; contextOnly?: boolean }) => <div className="max-h-56 space-y-1 overflow-y-auto">
     {rows.map((sale: any) => <div key={sale.saleId || `${sale.title}-${sale.date}-${sale.price}`} className="rounded border border-gray-700/25 bg-gray-950/25 p-2 text-[10px]">
-      <div className="flex items-start justify-between gap-2"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate font-semibold text-blue-300 hover:underline">{sale.title}</a><p className="mt-0.5 text-[9px] text-gray-500">{[sale.marketplace, sale.listing_type, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><div className="shrink-0 text-right"><p className="font-semibold text-emerald-300">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price unavailable'}</p><p className={`text-[8px] ${sale.confirmed ? 'text-emerald-400' : 'text-amber-300'}`}>{sale.confirmed ? 'Confirmed final price' : 'Fast-settle estimate — context only'}</p></div></div>
+      <div className="flex items-start justify-between gap-2"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate font-semibold text-blue-300 hover:underline">{sale.title}</a><p className="mt-0.5 text-[9px] text-gray-500">{[sale.marketplace, sale.listing_type, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><div className="shrink-0 text-right"><p className="font-semibold text-emerald-300">{sale.price != null ? formatCandidateDisplayPrice(sale) : 'Price unavailable'}</p><p className={`text-[8px] ${sale.confirmed ? 'text-emerald-400' : 'text-amber-300'}`}>{sale.confirmed ? 'Confirmed final price' : 'Fast-settle estimate — context only'}</p></div></div>
       <p className="mt-1 text-[9px] text-gray-400">{[sale.grader && sale.grade ? `${sale.grader} ${sale.grade}${sale.grade_qualifier ? ` ${sale.grade_qualifier}` : ''}` : null, sale.player, sale.manufacturer, sale.card_set, sale.card_number ? `#${sale.card_number}` : null, sale.year, sale.print_run ? `/${sale.print_run}` : null].filter(Boolean).join(' · ') || 'No structured card identity was returned for this sale.'}</p>
       <p className={`mt-1 text-[8px] font-semibold ${analyzerComment(sale).className}`}>{analyzerComment(sale).text}</p>
       <p className="mt-1 text-[8px] text-gray-500">{sale.priceSemantics}</p>
@@ -2345,7 +2213,7 @@ function ParseAuctionSection({ item, side, data, isLoading, source }: { item: Se
   const label = isLelands ? 'Parse.bot Lelands Auctions' : isCollect ? 'Parse.bot Collect Auctions' : isSirius ? 'Sirius Sports Auctions' : 'Parse.bot Pristine Auction';
   const sales = data?.sales ?? [];
   const context = data?.context ?? [];
-  const rows = (items: any[], eligible: boolean) => <div className="max-h-56 space-y-1 overflow-y-auto">{items.map((sale: any, index: number) => <div key={`${sale.url || sale.title}-${sale.date}-${index}`} className="rounded border border-gray-700/25 bg-gray-950/25 p-2 text-[10px]"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate font-semibold text-blue-300 hover:underline">{sale.title || 'Untitled auction lot'}</a><p className="mt-0.5 text-[9px] text-gray-500">{[sale.auctionName, sale.category, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><div className="shrink-0 text-right"><p className="font-semibold text-emerald-300">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price unavailable'}</p><p className={`text-[8px] ${eligible ? 'text-emerald-400' : 'text-amber-300'}`}>{eligible ? 'Sold candidate — comparable gate required' : 'Context only — not admitted'}</p></div></div><p className="mt-1 text-[9px] text-gray-400">{[sale.grader && sale.grade ? `${sale.grader} ${sale.grade}` : null, sale.priceBasis, sale.identityMatched ? 'Identity matched' : 'Identity review failed'].filter(Boolean).join(' · ')}</p>{!eligible && sale.exclusionReason && <p className="mt-1 text-[9px] text-amber-200">Exclusion reason: {sale.exclusionReason}</p>}<AnalyzerUseLine eligible={eligible} reason={eligible ? 'explicit sold status and price passed the archive gate; final identity and comparable gates still apply.' : 'the record was not admitted as a completed, identity-compatible sale.'} /><p className="mt-1 text-[8px] text-gray-500">{sale.priceSemantics}</p><details className="mt-1"><summary className="cursor-pointer text-[9px] text-sky-200">All returned lot fields</summary><pre className="mt-1 max-h-44 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-900/70 p-1.5 text-[8px] text-gray-400">{JSON.stringify(sale.raw ?? sale, null, 2)}</pre></details></div>)}</div>;
+  const rows = (items: any[], eligible: boolean) => <div className="max-h-56 space-y-1 overflow-y-auto">{items.map((sale: any, index: number) => <div key={`${sale.url || sale.title}-${sale.date}-${index}`} className="rounded border border-gray-700/25 bg-gray-950/25 p-2 text-[10px]"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate font-semibold text-blue-300 hover:underline">{sale.title || 'Untitled auction lot'}</a><p className="mt-0.5 text-[9px] text-gray-500">{[sale.auctionName, sale.category, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><div className="shrink-0 text-right"><p className="font-semibold text-emerald-300">{sale.price != null ? formatCandidateDisplayPrice(sale) : 'Price unavailable'}</p><p className={`text-[8px] ${eligible ? 'text-emerald-400' : 'text-amber-300'}`}>{eligible ? 'Sold candidate — comparable gate required' : 'Context only — not admitted'}</p></div></div><p className="mt-1 text-[9px] text-gray-400">{[sale.grader && sale.grade ? `${sale.grader} ${sale.grade}` : null, sale.priceBasis, sale.identityMatched ? 'Identity matched' : 'Identity review failed'].filter(Boolean).join(' · ')}</p>{!eligible && sale.exclusionReason && <p className="mt-1 text-[9px] text-amber-200">Exclusion reason: {sale.exclusionReason}</p>}<TestAiCandidateStatus listing={sale} /><AnalyzerUseLine eligible={eligible} reason={eligible ? 'explicit sold status and price passed the archive gate; final identity and comparable gates still apply.' : 'the record was not admitted as a completed, identity-compatible sale.'} /><p className="mt-1 text-[8px] text-gray-500">{sale.priceSemantics}</p><details className="mt-1"><summary className="cursor-pointer text-[9px] text-sky-200">All returned lot fields</summary><pre className="mt-1 max-h-44 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-900/70 p-1.5 text-[8px] text-gray-400">{JSON.stringify(sale.raw ?? sale, null, 2)}</pre></details></div>)}</div>;
   if (!['sports_cards', 'autographs'].includes(item.category) || ((source === 'pristine_auction' || source === 'collect_auction' || source === 'sirius_sports_auctions') && item.category !== 'sports_cards')) return <div className="rounded-lg border border-dashed border-gray-700/40 bg-gray-800/30 p-3 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>{isLelands ? '🏟️' : isCollect ? '🧢' : isSirius ? '⚾' : '🏆'} {label}</p><p className="text-[10px] text-gray-500">This read-only sandbox source is not applicable to the selected category.</p></div>;
   return <div className="rounded-lg border border-gray-700/20 bg-gray-800/30 p-3 space-y-3"><div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>{isLelands ? '🏟️' : isCollect ? '🧢' : isSirius ? '⚾' : '🏆'} {label}</p>{isLoading && <Spinner className="h-3 w-3" />}</div><MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} /><p className="text-[10px] text-gray-500">Read-only auction archive. Search results only discover candidates; detail-level explicit sold status, dated evidence, identity/grade compatibility, duplicate checks, and visual review are required before any record can influence the sandbox valuation. Premium-inclusive and hammer prices are kept source-attributed.</p>{data?.messages?.map((message: string) => <p key={message} className="rounded border border-sky-700/30 bg-sky-950/25 p-2 text-[10px] text-sky-100">{message}</p>)}{data?.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/25 p-2 text-[10px] text-cyan-100">{data.visualFilter.note}</p>}<MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={label} />{sales.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-emerald-300">Explicit sold detail records — candidate review</p>{rows(sales, true)}</div>}{context.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-amber-300">Ended, unsold, ambiguous, or identity-mismatched records — context only</p>{rows(context, false)}</div>}{!sales.length && !context.length && data?.status === 'success' && <p className="text-[10px] text-gray-500">No auction records were returned for this bounded query.</p>}<details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">Full provider payload — all returned fields</summary><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[9px] text-gray-400">{JSON.stringify(data?.raw, null, 2)}</pre></details></div>;
 }
@@ -2373,7 +2241,7 @@ function CardsightAiSection({ item, side, data, isLoading }: { item: SelectedIte
 
   const RecordRows = ({ rows, active }: { rows: any[]; active?: boolean }) => <div className="max-h-56 space-y-1 overflow-y-auto">
     {rows.map((record: any, index: number) => <div key={`${record.url || record.title}-${record.date || record.endDate}-${record.price}-${index}`} className="rounded border border-gray-700/25 bg-gray-950/25 p-2 text-[10px]">
-      <div className="flex items-start justify-between gap-2"><div className="min-w-0"><a href={record.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate font-semibold text-blue-300 hover:underline">{record.title}</a><p className="mt-0.5 text-[9px] text-gray-500">{[record.marketplace, record.listingType, active ? (record.endDate || 'End unavailable') : (record.date || 'Date unavailable')].filter(Boolean).join(' · ')}</p></div><div className="shrink-0 text-right"><p className="font-semibold text-emerald-300">{record.price != null ? `${record.currency || 'USD'} ${formatWholeDollar(record.price)}` : 'Price unavailable'}</p><p className={`text-[8px] ${record.completed ? 'text-emerald-400' : 'text-amber-300'}`}>{record.completed ? 'Completed auction — gate required' : active ? 'Current market listing — context only' : 'Fixed-price ask — context only'}</p></div></div>
+      <div className="flex items-start justify-between gap-2"><div className="min-w-0"><a href={record.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate font-semibold text-blue-300 hover:underline">{record.title}</a><p className="mt-0.5 text-[9px] text-gray-500">{[record.marketplace, record.listingType, active ? (record.endDate || 'End unavailable') : (record.date || 'Date unavailable')].filter(Boolean).join(' · ')}</p></div><div className="shrink-0 text-right"><p className="font-semibold text-emerald-300">{record.price != null ? formatCandidateDisplayPrice(record) : 'Price unavailable'}</p><p className={`text-[8px] ${record.completed ? 'text-emerald-400' : 'text-amber-300'}`}>{record.completed ? 'Completed auction — gate required' : active ? 'Current market listing — context only' : 'Fixed-price ask — context only'}</p></div></div>
       <p className="mt-1 text-[9px] text-gray-400">{[record.certificationCompany && record.grade ? `${record.certificationCompany} ${record.grade}` : null, record.parallelName ? `Parallel: ${record.parallelName}` : 'Base', record.bidCount != null ? `${record.bidCount} bids` : null].filter(Boolean).join(' · ')}</p>
       <AnalyzerUseLine eligible={!active && Boolean(record.completed)} reason={!active && record.completed ? 'dated completed auction candidate; final identity, grade, duplicate, and comparable gates still apply.' : 'active or fixed-price data cannot establish completed-sale valuation.'} />
       {record.priceSemantics && <p className="mt-1 text-[8px] text-gray-500">{record.priceSemantics}</p>}
@@ -2401,7 +2269,7 @@ function CardsightAiSection({ item, side, data, isLoading }: { item: SelectedIte
         ['All provider populations', population?.data?.totalPopulation], ['Selected base / parallel population', population?.data?.variantPopulation], ['Selected grading company', population?.data?.gradingCompany?.name], ['Selected company population', population?.data?.gradingCompany?.totalPopulation], ['Last synced', population?.data?.gradingCompany?.lastSyncedAt], ['Grade population breakdown', population?.data?.gradingCompany?.gradingTypes],
       ]} />}</div>
       <details className="rounded border border-emerald-700/25 bg-emerald-950/10 p-2"><summary className="cursor-pointer text-[9px] font-semibold uppercase text-emerald-200">Full pricing details — {sales.length} returned records</summary><div className="mt-2 space-y-2"><p className="text-[9px] text-gray-400">Readable completed-sale and fixed-price history. Each row retains its title, source, date, listing type, price, and link.</p>{sales.length ? <RecordRows rows={sales} /> : <p className="text-[9px] text-gray-500">No pricing records were returned.</p>}<details><summary className="cursor-pointer text-[9px] text-gray-500">Developer payload for pricing</summary><pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-950/70 p-1.5 text-[8px] text-gray-500">{JSON.stringify(data?.pricingDetails, null, 2)}</pre></details></div></details>
-      <details className="rounded border border-cyan-700/25 bg-cyan-950/10 p-2"><summary className="cursor-pointer text-[9px] font-semibold uppercase text-cyan-200">Pricing time series — {data?.diagnostics?.pricingPeriods ?? 12} monthly periods</summary><div className="mt-2 space-y-1.5">{timeSeriesRows.length ? timeSeriesRows.map((row: any, index: number) => { const period = row.period ?? row.month ?? row.date ?? row.label ?? `Period ${index + 1}`; const average = row.average ?? row.avg ?? row.mean ?? row.median; const low = row.min ?? row.low; const high = row.max ?? row.high; return <div key={`${period}-${index}`} className="grid grid-cols-4 gap-2 rounded bg-gray-950/40 p-1.5 text-[9px]"><span className="font-semibold text-gray-200">{period}</span><span className="text-gray-400">Avg {average != null ? formatWholeDollar(average) : 'N/A'}</span><span className="text-gray-400">Low {low != null ? formatWholeDollar(low) : 'N/A'}</span><span className="text-gray-400">High {high != null ? formatWholeDollar(high) : 'N/A'}</span></div>; }) : <p className="text-[9px] text-gray-500">No monthly trend rows were returned.</p>}<details><summary className="cursor-pointer text-[9px] text-gray-500">Developer payload for time series</summary><pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-950/70 p-1.5 text-[8px] text-gray-500">{JSON.stringify(data?.pricingTimeseriesDetails, null, 2)}</pre></details></div></details>
+      <details className="rounded border border-cyan-700/25 bg-cyan-950/10 p-2"><summary className="cursor-pointer text-[9px] font-semibold uppercase text-cyan-200">Pricing time series — {data?.diagnostics?.pricingPeriods ?? 12} monthly periods</summary><div className="mt-2 space-y-1.5">{timeSeriesRows.length ? timeSeriesRows.map((row: any, index: number) => { const period = row.period ?? row.month ?? row.date ?? row.label ?? `Period ${index + 1}`; return <div key={`${period}-${index}`} className="grid grid-cols-4 gap-2 rounded bg-gray-950/40 p-1.5 text-[9px]"><span className="font-semibold text-gray-200">{period}</span><span className="text-gray-400">Observations: {sourceMetricDisplay(row).observationCount ?? 'unmeasured'}</span><span className="text-gray-400">Currency/basis unresolved</span><span className="text-gray-400">Aggregate withheld; source context only</span></div>; }) : <p className="text-[9px] text-gray-500">No monthly trend rows were returned.</p>}<details><summary className="cursor-pointer text-[9px] text-gray-500">Developer payload for time series</summary><pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-950/70 p-1.5 text-[8px] text-gray-500">{JSON.stringify(data?.pricingTimeseriesDetails, null, 2)}</pre></details></div></details>
       <details className="rounded border border-sky-700/25 bg-sky-950/10 p-2"><summary className="cursor-pointer text-[9px] font-semibold uppercase text-sky-200">Full population details — readable breakdown</summary><div className="mt-2 space-y-2"><PokemonProviderFieldGrid fields={[["Card population", populationDetails?.total_population ?? populationDetails?.totalPopulation], ["Card ID", populationDetails?.card_id ?? populationDetails?.cardId], ["Selected grade", item.grade || 'Raw / ungraded'], ["Selected company", item.gradingCompany || 'Not specified']]} />{populationRows.length ? <div className="space-y-1">{populationRows.map((row: any, index: number) => <div key={row.id || row.name || row.grade || index} className="flex items-center justify-between rounded bg-gray-950/40 p-1.5 text-[9px]"><span className="text-gray-300">{row.name || row.grade || row.label || `Population row ${index + 1}`}</span><span className="font-semibold text-sky-200">{row.population ?? row.totalPopulation ?? row.count ?? row.value ?? 'N/A'}</span></div>)}</div> : <p className="text-[9px] text-gray-500">No provider grade or parallel breakdown rows were returned.</p>}<details><summary className="cursor-pointer text-[9px] text-gray-500">Developer payload for population</summary><pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-950/70 p-1.5 text-[8px] text-gray-500">{JSON.stringify(data?.populationDetails, null, 2)}</pre></details></div></details>
       <details className="rounded border border-amber-700/25 bg-amber-950/10 p-2"><summary className="cursor-pointer text-[9px] font-semibold uppercase text-amber-200">Full marketplace details — {activeListings.length} returned listings</summary><div className="mt-2 space-y-2"><p className="text-[9px] text-gray-400">Readable current listings with marketplace, listing type, end date, price, grade, and source link.</p>{activeListings.length ? <RecordRows rows={activeListings} active /> : <p className="text-[9px] text-gray-500">No active marketplace listings were returned.</p>}<details><summary className="cursor-pointer text-[9px] text-gray-500">Developer payload for marketplace</summary><pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-950/70 p-1.5 text-[8px] text-gray-500">{JSON.stringify(data?.marketplaceDetails, null, 2)}</pre></details></div></details>
     </div>}
@@ -2427,8 +2295,8 @@ function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left
   const undatedSales = items.filter((sale: any) => sale.recency === 'undated');
   const SaleRows = ({ sales }: { sales: any[] }) => <div className="max-h-48 space-y-1 overflow-y-auto">{sales.map((sale: any) => (
     <div key={sale.id || `${sale.title}-${sale.date}`} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0">
-      <div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.saleType, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p><AnalyzerUseLine eligible={sale.recency === 'recent' && Boolean(sale.date) && sale.price != null} reason={sale.recency === 'recent' ? 'recent dated sale candidate; final identity, grade, duplicate, and comparable gates still apply.' : 'historical or undated data is retained for context and cannot directly establish current valuation.'} /></div>
-      <p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price N/A'}</p>
+      <div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.saleType, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p><TestAiCandidateStatus listing={sale} /><AnalyzerUseLine eligible={sale.recency === 'recent' && Boolean(sale.date) && sale.price != null} reason={sale.recency === 'recent' ? 'recent dated sale candidate; final identity, grade, duplicate, and comparable gates still apply.' : 'historical or undated data is retained for context and cannot directly establish current valuation.'} /></div>
+      <p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? formatCandidateDisplayPrice(sale) : 'Price N/A'}</p>
     </div>
   ))}</div>;
 
@@ -2773,7 +2641,7 @@ function PwccSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
     {data && 'visualFilter' in data && data.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/30 p-2 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
     <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel="PWCC / Fanatics Collect sales" />
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
-    {data?.status === 'success' && <div className="space-y-3">{buckets.map(([label, bucket, color]) => bucket.length > 0 && <div key={label}><p className={`mb-1 text-[10px] font-semibold uppercase ${color}`}>{label}</p>{bucket.map((sale: any) => <div key={sale.id || sale.title} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.grade ? `${sale.certificationCompany || ''} ${formatGrade(sale.grade)}`.trim() : null, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p><AnalyzerUseLine eligible={sale.recency === 'recent' && sale.price != null && Boolean(sale.date)} reason={sale.recency === 'recent' ? 'recent dated sale candidate; final identity, grade, duplicate, and comparable gates still apply.' : 'historical or undated data is retained for context and cannot directly establish current valuation.'} /></div><p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price N/A'}</p></div>)}</div>)}{!sales.length && <p className="text-[10px] text-gray-500">No sold PWCC / Fanatics Collect listings were returned for this query.</p>}</div>}
+    {data?.status === 'success' && <div className="space-y-3">{buckets.map(([label, bucket, color]) => bucket.length > 0 && <div key={label}><p className={`mb-1 text-[10px] font-semibold uppercase ${color}`}>{label}</p>{bucket.map((sale: any) => <div key={sale.id || sale.title} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.grade ? `${sale.certificationCompany || ''} ${formatGrade(sale.grade)}`.trim() : null, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p><TestAiCandidateStatus listing={sale} /><AnalyzerUseLine eligible={sale.recency === 'recent' && sale.price != null && Boolean(sale.date)} reason={sale.recency === 'recent' ? 'recent dated sale candidate; final identity, grade, duplicate, and comparable gates still apply.' : 'historical or undated data is retained for context and cannot directly establish current valuation.'} /></div><p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? formatCandidateDisplayPrice(sale) : 'Price N/A'}</p></div>)}</div>)}{!sales.length && <p className="text-[10px] text-gray-500">No sold PWCC / Fanatics Collect listings were returned for this query.</p>}</div>}
   </div>;
 }
 
@@ -3322,17 +3190,17 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     </div>}
     {summary.alignedSources.length > 0 && <div className="rounded bg-emerald-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-emerald-300">Aligned specialist fields</p>{summary.alignedSources.map((source) => <p key={source.id} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-emerald-200">{source.label}:</span> {source.fields.join(', ')}</p>)}</div>}
     <div className="rounded-lg border border-sky-700/30 bg-sky-950/15 p-2.5 space-y-2">
-      <div><p className="text-[10px] font-semibold uppercase tracking-wide text-sky-200">How the analyzer uses the selected sources</p><p className="mt-0.5 text-[9px] text-gray-400">Each source appears once. Counts are separated by decision: valuation, historical trend, or context only.</p></div>
-      <div className="grid gap-1 text-[9px] sm:grid-cols-2 lg:grid-cols-4"><p className="rounded border border-emerald-700/30 bg-emerald-950/20 px-2 py-1 text-emerald-200"><strong>Accepted for valuation</strong><br />Completed, identity-checked sales sent as valuation comparables.</p><p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1 text-cyan-200"><strong>Current-value market evidence</strong><br />Identity-matched active asking listings; useful market context, not completed sales.</p><p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-amber-200"><strong>Historical trend</strong><br />Matching older sales used to understand movement, not current value.</p><p className="rounded border border-gray-700/40 bg-gray-950/30 px-2 py-1 text-gray-300"><strong>Context only</strong><br />Asking prices, references, unavailable data, mismatches, and excluded records.</p></div>
+      <div><p className="text-[10px] font-semibold uppercase tracking-wide text-sky-200">Source-stage treatment of selected sources</p><p className="mt-0.5 text-[9px] text-gray-400">Each source appears once. These overlapping source classifications are not final request or pricing-use counts.</p></div>
+      <div className="grid gap-1 text-[9px] sm:grid-cols-2 lg:grid-cols-4"><p className="rounded border border-emerald-700/30 bg-emerald-950/20 px-2 py-1 text-emerald-200"><strong>Source eligible</strong><br />Sale candidates eligible at source; actual final intake and use are assessed separately.</p><p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1 text-cyan-200"><strong>Asking-price context</strong><br />Identity-matched active asking listings; useful market context, not completed sales.</p><p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-amber-200"><strong>Historical trend</strong><br />Older sale context; actual historical prompt inclusion is reported after analysis.</p><p className="rounded border border-gray-700/40 bg-gray-950/30 px-2 py-1 text-gray-300"><strong>Context only</strong><br />Asking prices, references, unavailable data, mismatches, and excluded records.</p></div>
       <div className="space-y-1.5">
         {sourceDecisions.map((decision) => {
           const unavailable = decision.status === 'error' || decision.status === 'not_found';
           const nonMarket = !decision.completed && !decision.accepted && !decision.currentValue && !decision.historicalTrend && !decision.context;
           return <div key={decision.id} className="rounded border border-slate-700/50 bg-gray-950/35 p-2">
             <div className="flex flex-wrap items-center justify-between gap-1"><p className="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold text-gray-200">{decision.label}{decision.id === 'lcg' && <span className="rounded border border-red-500/60 bg-red-950/50 px-1.5 py-0.5 text-[8px] font-semibold tracking-wide text-red-200">403 error</span>}</p><span className={`rounded px-1.5 py-0.5 text-[8px] uppercase ${unavailable ? 'bg-red-950/50 text-red-300' : nonMarket ? 'bg-gray-800 text-gray-400' : 'bg-sky-950/50 text-sky-200'}`}>{unavailable ? decision.status.replace('_', ' ') : nonMarket ? 'context source' : 'market source'}</span></div>
-            {unavailable ? <p className="mt-1 text-[9px] text-red-200/80">{decision.message || 'No usable result was returned. This is a coverage issue, not proof the item is wrong.'}</p> : <><p className={`mt-1 text-[9px] ${decision.treatment === 'valuation_guide' || decision.treatment === 'valuation_candidate' ? 'text-emerald-200' : 'text-gray-400'}`}><strong>Analyzer treatment: {decision.treatment.replace(/_/g, ' ')}</strong>{decision.analyzerWeightPct !== null ? ` · configured guide weight ${decision.analyzerWeightPct}%` : ' · 0% direct guide weight'} · {decision.treatmentReason}</p>{nonMarket ? <p className="mt-1 text-[9px] text-gray-400">No market-record count is created by this source classification.</p> : <div className="mt-1 grid gap-1 text-[9px] sm:grid-cols-5"><p className="text-emerald-200"><strong>{decision.accepted}</strong> accepted for valuation</p><p className="text-cyan-200"><strong>{decision.currentValue}</strong> current-value market evidence</p><p className="text-amber-200"><strong>{decision.historicalTrend}</strong> historical trend</p><p className="text-gray-300"><strong>{decision.context}</strong> context only</p><p className="text-slate-300"><strong>{decision.completed}</strong> completed sales returned</p></div>}</>}
-            {decision.acceptedPrices.length > 0 && <p className="mt-1 text-[9px] text-emerald-100/80">Submitted prices: {decision.acceptedPrices.map((price) => `$${Math.round(price).toLocaleString()}`).join(' · ')}</p>}
-            <AnalyzerRecordPanel records={decision.analyzerRecords} acceptedCount={decision.accepted} sourceLabel={decision.label} />
+            {unavailable ? <p className="mt-1 text-[9px] text-red-200/80">{decision.message || 'No usable result was returned. This is a coverage issue, not proof the item is wrong.'}</p> : <><p className={`mt-1 text-[9px] ${decision.treatment === 'valuation_guide' || decision.treatment === 'valuation_candidate' ? 'text-emerald-200' : 'text-gray-400'}`}><strong>Analyzer treatment: {decision.treatment.replace(/_/g, ' ')}</strong>{decision.analyzerWeightPct !== null ? ` · configured guide weight ${decision.analyzerWeightPct}%` : ' · 0% direct guide weight'} · {decision.treatmentReason}</p>{nonMarket ? <p className="mt-1 text-[9px] text-gray-400">No market-record count is created by this source classification.</p> : <div className="mt-1 grid gap-1 text-[9px] sm:grid-cols-5"><p className="text-emerald-200"><strong>{decision.accepted}</strong> source eligible</p><TestAiSourceCurrentWindowCount count={decision.currentValue} kind={decision.kind} /><p className="text-amber-200"><strong>{decision.historicalTrend}</strong> historical source eligible</p><p className="text-gray-300"><strong>{decision.context}</strong> context only</p><p className="text-slate-300"><strong>{decision.completed}</strong> completed sales returned</p></div>}</>}
+            {decision.acceptedPrices.length > 0 && <p className="mt-1 text-[9px] text-emerald-100/80">Source-stage price observations (currency unspecified; not final prices): {decision.acceptedPrices.map((price) => Math.round(price).toLocaleString()).join(' · ')}</p>}
+            <AnalyzerRecordPanel records={decision.analyzerRecords} acceptedCount={decision.accepted} sourceLabel={decision.label} sourceKind={decision.kind} />
           </div>;
         })}
       </div>
@@ -3611,7 +3479,7 @@ function SandboxSpecialistSection({ source, item, side, visualProvider, onEviden
       {source.id === 'goldin' && (data as any)?.visualFilter && <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel="Goldin specialist records" />}
       {records.length > 0 && <div className="space-y-1.5">
         <p className="text-[9px] text-gray-400">✓ {data?.sales?.length ?? 0} identity-matched completed context record{(data?.sales?.length ?? 0) === 1 ? '' : 's'} · ✕ {data?.context?.length ?? 0} retained mismatch/incomplete record{(data?.context?.length ?? 0) === 1 ? '' : 's'}</p>
-        {records.map((record: any, index: number) => <div key={`${record.lotId ?? record.url ?? record.title}-${index}`} className="rounded border border-slate-700/50 bg-slate-950/40 p-2"><div className="flex items-start justify-between gap-2"><div className="flex min-w-0 items-start gap-2">{record.imageUrl && <img src={record.imageUrl} alt="" className="h-8 w-8 shrink-0 rounded object-contain" />}<div className="min-w-0"><p className="truncate text-[10px] font-medium text-slate-100">{record.title}</p><MetadataMatchLine listing={record} /><MetadataComparisonTable listing={record} /><VisualDifferenceList listing={record} /></div></div><span className="shrink-0 text-[10px] text-emerald-300">{formatPrice(record.price)}</span></div><p className="mt-0.5 text-[9px] text-slate-500">{record.lotId ? `Lot ${record.lotId} · ` : ''}{record.date ? new Date(record.date).toLocaleDateString() : 'Date unavailable'} · {record.priceBasis.replace(/_/g, ' ')}</p>{record.winningBid != null && <p className="mt-0.5 text-[9px] text-slate-400">Winning bid {formatPrice(record.winningBid)}{record.buyerPremiumPercentage != null ? ` + ${record.buyerPremiumPercentage}% buyer premium = all-in context` : ''}</p>}<p className={`mt-0.5 text-[9px] ${record.identityMatched ? 'text-emerald-300/80' : 'text-rose-300/90'}`}>{record.identityMatched && record.completed ? '✓ Identity matched — retained for admission review' : `✕ ${record.exclusionReason ?? 'Identity or completed-sale state not confirmed'}`}</p>{record.url && <a className="mt-1 inline-block text-[9px] text-sky-400 underline" href={record.url} target="_blank" rel="noreferrer">Open public record</a>}</div>)}
+        {records.map((record: any, index: number) => <div key={`${record.lotId ?? record.url ?? record.title}-${index}`} className="rounded border border-slate-700/50 bg-slate-950/40 p-2"><div className="flex items-start justify-between gap-2"><div className="flex min-w-0 items-start gap-2">{record.imageUrl && <img src={record.imageUrl} alt="" className="h-8 w-8 shrink-0 rounded object-contain" />}<div className="min-w-0"><p className="truncate text-[10px] font-medium text-slate-100">{record.title}</p><MetadataMatchLine listing={record} /><MetadataComparisonTable listing={record} /><TestAiCandidateStatus listing={record} /><VisualDifferenceList listing={record} /></div></div><span className="shrink-0 text-[10px] text-emerald-300">{formatPrice(record.price)}</span></div><p className="mt-0.5 text-[9px] text-slate-500">{record.lotId ? `Lot ${record.lotId} · ` : ''}{record.date ? new Date(record.date).toLocaleDateString() : 'Date unavailable'} · {record.priceBasis.replace(/_/g, ' ')}</p>{record.winningBid != null && <p className="mt-0.5 text-[9px] text-slate-400">Winning bid {formatPrice(record.winningBid)}{record.buyerPremiumPercentage != null ? ` + ${record.buyerPremiumPercentage}% buyer premium = all-in context` : ''}</p>}<p className={`mt-0.5 text-[9px] ${record.identityMatched ? 'text-emerald-300/80' : 'text-rose-300/90'}`}>{record.identityMatched && record.completed ? '✓ Identity matched — retained for admission review' : `✕ ${record.exclusionReason ?? 'Identity or completed-sale state not confirmed'}`}</p>{record.url && <a className="mt-1 inline-block text-[9px] text-sky-400 underline" href={record.url} target="_blank" rel="noreferrer">Open public record</a>}</div>)}
       </div>}
       <p className="text-[9px] text-amber-200/80">{source.id === 'goldin' ? 'Only records marked as valuation candidates affect valuation, recommended trade terms, or the final AI conclusion; mismatches and incomplete records remain context-only.' : 'No specialist record from this panel affects valuation, recommended trade terms, or the final AI conclusion.'}</p>
     </div>
@@ -3628,7 +3496,6 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
   const currentPriceMetrics = data?.currentPriceMetrics;
   const currentConfidence = data?.currentConfidence;
   const priceTrend = data?.priceTrend ?? [];
-  const trendMax = Math.max(...priceTrend.map((point: any) => Number(point.metrics?.avg) || 0), 1);
   const confidenceStyle: Record<string, string> = { high: 'bg-emerald-900/60 text-emerald-200 border-emerald-700/50', medium: 'bg-sky-900/60 text-sky-200 border-sky-700/50', low: 'bg-amber-900/60 text-amber-200 border-amber-700/50', insufficient: 'bg-rose-900/60 text-rose-200 border-rose-700/50' };
   const formatPrice = (value: number | null | undefined) => value == null ? '—' : `$${Math.round(value).toLocaleString()}`;
   return <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
@@ -3642,41 +3509,28 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
       {data.winningQuery && <p className="rounded border border-emerald-700/30 bg-emerald-950/20 p-1.5 text-[9px] text-emerald-200">Winning query: “{data.winningQuery}” · this variant returned identity-matched completed sales and was recorded for future ranking.</p>}
       {priceMetrics?.count > 0 && <div className="space-y-1.5">
         <p className="text-[10px] font-semibold text-sky-100">Matched-record price context · {priceMetrics.count} priced identity match{priceMetrics.count === 1 ? '' : 'es'}</p>
-        <div className="grid grid-cols-3 gap-2 text-[10px]">
-          {[['Avg', formatPrice(priceMetrics.avg)], ['Median', formatPrice(priceMetrics.median)], ['Range', `${formatPrice(priceMetrics.min)}–${formatPrice(priceMetrics.max)}`]].map(([label, value]) => <div key={label} className="rounded bg-gray-900/50 p-1.5 text-center"><p className="text-[9px] uppercase text-gray-500">{label}</p><p className="font-semibold text-white">{value}</p></div>)}
-        </div>
+        <TestAiSourceMetricSummary metrics={priceMetrics} sourceLabel="ComicConnect matched records" role="Completed-sale source context" />
         <p className="text-[9px] text-amber-200/80">Context only—not a current trade valuation. Older matched sales are included for trend visibility.</p>
-        {currentPriceMetrics?.count > 0 ? <p className="text-[9px] text-emerald-300">Current 12-month context: {currentPriceMetrics.count} sale{currentPriceMetrics.count === 1 ? '' : 's'} · Avg {formatPrice(currentPriceMetrics.avg)} · Median {formatPrice(currentPriceMetrics.median)} · Range {formatPrice(currentPriceMetrics.min)}–{formatPrice(currentPriceMetrics.max)}.</p> : <p className="text-[9px] text-amber-300">No identity-matched priced sales were found in the current 12-month window; displayed prices are older context.</p>}
+        {currentPriceMetrics?.count > 0 ? <TestAiSourceMetricSummary metrics={currentPriceMetrics} sourceLabel="ComicConnect current 12-month window" role="Current-window completed-sale source context" /> : <p className="text-[9px] text-amber-300">No identity-matched priced sales were found in the current 12-month window; displayed prices are older context.</p>}
       </div>}
       {currentConfidence && <div className={`rounded border p-2 ${confidenceStyle[currentConfidence.level] ?? confidenceStyle.insufficient}`}>
         <div className="flex items-center justify-between gap-2"><p className="text-[10px] font-semibold uppercase">Current-market confidence</p><span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase">{currentConfidence.level}</span></div>
         <p className="mt-1 text-[9px] opacity-90">{currentConfidence.reason}</p>
         <p className="mt-1 text-[9px] opacity-70">Based only on identity-matched, priced sales in the last 12 months—not historical records or mismatches.</p>
       </div>}
-      {priceTrend.length > 0 && <div className="rounded border border-violet-700/30 bg-violet-950/20 p-2">
-        <div className="flex items-center justify-between gap-2"><p className="text-[10px] font-semibold text-violet-100">Price trend by sale window</p><span className="text-[9px] text-violet-300/70">matched priced sales · context only</span></div>
-        <div className="mt-2 space-y-1.5">{priceTrend.map((point: any) => {
-          const average = Number(point.metrics?.avg) || 0;
-          const width = average > 0 ? Math.max(4, Math.round((average / trendMax) * 100)) : 0;
-          return <div key={point.window} className="grid grid-cols-[7.5rem_1fr_4.5rem] items-center gap-2 text-[9px]">
-            <span className="truncate text-gray-300">{point.label}</span>
-            <div className="h-2 overflow-hidden rounded-full bg-gray-800"><div className={`h-full rounded-full ${point.window === 'current_12_months' ? 'bg-emerald-400' : point.window === 'extended_12_to_36_months' ? 'bg-sky-400' : 'bg-amber-400'}`} style={{ width: `${width}%` }} /></div>
-            <span className="text-right text-gray-300">{point.metrics?.count ? `${formatPrice(point.metrics.avg)} avg · ${point.metrics.count}` : 'No priced sales'}</span>
-          </div>;
-        })}</div>
-        <p className="mt-1.5 text-[9px] text-violet-200/70">Bars compare average prices within each window. A missing bar means no identity-matched priced sale was available.</p>
-      </div>}
+      {priceTrend.length > 0 && <div className="rounded border border-violet-700/30 bg-violet-950/20 p-2"><p className="text-[10px] font-semibold text-violet-100">Price trend by sale window — observation counts only</p>{priceTrend.map((point: any) => <p key={point.window} className="text-[9px] text-gray-300">{point.label} · {point.metrics?.count ?? "unmeasured"} priced observations · currency/basis unresolved — aggregate not shown; not final pricing use.</p>)}</div>}
       <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2">
         <p className="text-[10px] font-semibold text-cyan-100">Identity review — what would be eligible for further analyzer review</p>
-        <p className="mt-0.5 text-[9px] text-cyan-200/80"><span className="text-emerald-300">✓ {matches.length} identity match{matches.length === 1 ? '' : 'es'}</span> · <span className="text-red-300">✕ {mismatches.length} AI mismatch{mismatches.length === 1 ? '' : 'es'}</span> · dated current/extended matches are sent to the analyzer; older matches remain historical context.</p>
+        <p className="mt-0.5 text-[9px] text-cyan-200/80"><span className="text-emerald-300">✓ {matches.length} identity match{matches.length === 1 ? '' : 'es'}</span> · <span className="text-red-300">✕ {mismatches.length} identity mismatch{mismatches.length === 1 ? '' : 'es'}</span> · dated current/extended matches are source-stage candidates; actual request submission is reported separately; older matches remain historical context.</p>
       </div>
       <div className="space-y-1.5">
         {records.map((record: any, index: number) => <div key={`${record.lotId ?? record.url ?? record.title}-${index}`} className="rounded border border-gray-700/50 bg-gray-950/40 p-2">
-          <div className="flex items-start justify-between gap-2"><p className="text-gray-200 text-[10px] font-medium">{record.title || item.title}</p><span className="shrink-0 text-emerald-300 text-[10px]">{record.price != null ? `$${Number(record.price).toLocaleString()}` : 'No price'}</span></div>
+          <div className="flex items-start justify-between gap-2"><p className="text-gray-200 text-[10px] font-medium">{record.title || item.title}</p><span className="shrink-0 text-emerald-300 text-[10px]">{formatCandidateDisplayPrice(record)}</span></div>
           <p className="text-gray-500 text-[9px] mt-0.5">{record.grade ?? 'Grade unavailable'} · {record.date ?? 'Date unavailable'} · {record.saleStatus}</p>
           <p className="text-gray-400 text-[9px] mt-0.5">Publication year: target {record.targetPublicationYear ?? 'not recorded'} · candidate {record.publicationYears?.length ? record.publicationYears.join(', ') : 'not stated'}</p>
           <p className={`text-[9px] mt-0.5 ${timeWindowStyle[record.timeWindow] ?? 'text-gray-400'}`}>{timeWindowLabel[record.timeWindow] ?? 'Time window unavailable'}</p>
           <p className={`text-[9px] mt-0.5 ${record.identityMatched ? 'text-emerald-300/80' : 'text-red-300/90'}`}>{record.identityMatched ? '✓ Identity matched — retained for admission review' : `✕ Mismatch — ${record.exclusionReason ?? 'identity not confirmed'}`}</p>
+          <MetadataMatchLine listing={record} /><MetadataComparisonTable listing={record} /><TestAiCandidateStatus listing={record} /><VisualDifferenceList listing={record} />
           <AnalyzerUseLine eligible={Boolean(record.identityMatched && record.completed && ['current_12_months', 'extended_12_to_36_months'].includes(record.timeWindow))} reason={record.identityMatched && record.completed && ['current_12_months', 'extended_12_to_36_months'].includes(record.timeWindow) ? 'dated identity-matched sale in the current or extended window; final comparable gates still apply.' : record.identityMatched ? 'historical, undated, or incomplete admission state keeps this record as context only.' : record.exclusionReason ?? 'identity mismatch prevents direct valuation.'} />
           {record.url && <a className="text-sky-400 text-[9px] underline" href={record.url} target="_blank" rel="noreferrer">Open ComicConnect record</a>}
         </div>)}
@@ -3833,7 +3687,7 @@ function SimpleValuationSummary({ items }: { items: Array<{ label: string; item:
   return <TestAiPricingSummary items={items} />;
 }
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
-function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysisItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftMercariSoldCompsData, rightMercariSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftCollectAuctionData, rightCollectAuctionData, leftSiriusSportsAuctionData, rightSiriusSportsAuctionData, leftPcgsAuctionData, rightPcgsAuctionData, leftComicConnectData, rightComicConnectData, leftGoldinSales, rightGoldinSales, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
+function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysisItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftMercariSoldCompsData, rightMercariSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftCollectAuctionData, rightCollectAuctionData, leftSiriusSportsAuctionData, rightSiriusSportsAuctionData, leftPcgsAuctionData, rightPcgsAuctionData, leftComicConnectData, rightComicConnectData, leftGoldinSales, rightGoldinSales, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary, onFinalDisplayOutcome }: {
   leftItem: SelectedItem;
   rightItem: SelectedItem;
   leftAnalysisItem?: SelectedItem | null;
@@ -3870,12 +3724,16 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
   rightHistoricalTrendData?: any;
   leftEvidenceSummary?: NormalizedEvidenceSummary | null;
   rightEvidenceSummary?: NormalizedEvidenceSummary | null;
+  onFinalDisplayOutcome?: (outcome: { left: CandidateFinalDisplayOutcome; right: CandidateFinalDisplayOutcome } | null) => void;
 }) {
   const [result, setResult] = useState<any>(null);
   const [useImageAnalyzer, setUseImageAnalyzer] = useState(true);
   const [useVisualFieldCompletion, setUseVisualFieldCompletion] = useState(true);
   const [cashAmount, setCashAmount] = useState('');
   const [cashPaidBy, setCashPaidBy] = useState<'item_a' | 'item_b'>('item_a');
+  const finalRequestCounter = useRef(0);
+  const currentFinalRequest = useRef<{ runId: string; left: any[]; right: any[]; lifecycleKey: string } | null>(null);
+  const issuedFinalRequests = useRef(new WeakMap<object, string>());
   // Certificate-mode items start with only a certification number. When
   // CoinFacts has provided the coin identity, the analyzer must score against
   // that verified identity rather than the temporary certificate placeholder.
@@ -3888,10 +3746,41 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
     },
     { enabled: false, retry: false },
   );
+  // Synthesized PCGS targets and source/summary projections are recreated by
+  // parent receipt publication. Values, not their object references, cancel work.
+  const lifecycleKey = testAiAnalysisLifecycleKey({
+    leftTarget: { selected: leftItem, effective: effectiveLeftItem },
+    rightTarget: { selected: rightItem, effective: effectiveRightItem },
+    leftSources, rightSources,
+    leftSourceInputs: { ebay_active: leftEbayData, hipstamp: leftHipstampData, sold_comps: leftSoldCompsData, mercari_sold_comps: leftMercariSoldCompsData, the_card_api: leftTheCardApiData, cardsight_ai: leftCardsightAiData, lelands: leftLelandsData, pristine_auction: leftPristineAuctionData, collect_auction: leftCollectAuctionData, sirius_sports_auctions: leftSiriusSportsAuctionData, pcgs: leftPcgsAuctionData, comicconnect: leftComicConnectData, goldin: leftGoldinSales, one_thirty_point: leftHistoricalTrendData },
+    rightSourceInputs: { ebay_active: rightEbayData, hipstamp: rightHipstampData, sold_comps: rightSoldCompsData, mercari_sold_comps: rightMercariSoldCompsData, the_card_api: rightTheCardApiData, cardsight_ai: rightCardsightAiData, lelands: rightLelandsData, pristine_auction: rightPristineAuctionData, collect_auction: rightCollectAuctionData, sirius_sports_auctions: rightSiriusSportsAuctionData, pcgs: rightPcgsAuctionData, comicconnect: rightComicConnectData, goldin: rightGoldinSales, one_thirty_point: rightHistoricalTrendData },
+    leftEvidenceSummary, rightEvidenceSummary, useImageAnalyzer, useVisualFieldCompletion, cashAmount, cashPaidBy,
+    marketNews: marketNewsQuery.data ? { itemA: marketNewsQuery.data.itemA, itemB: marketNewsQuery.data.itemB, categorySummaries: marketNewsQuery.data.categorySummaries } : null,
+  });
+  const currentLifecycleKey = useRef(lifecycleKey);
+  currentLifecycleKey.current = lifecycleKey; // reject changed inputs even before the reset effect runs
+  const finalDisplayPublisher = useRef(onFinalDisplayOutcome);
+  finalDisplayPublisher.current = onFinalDisplayOutcome;
   const analyzeMutation = trpc.testAI.analyzeTrade.useMutation({
-    onSuccess: (data) => setResult(data),
+    onSuccess: (data, variables) => {
+      const receipt = currentFinalRequest.current;
+      if (!receipt || !isCurrentTestAiFinalRequest(receipt, issuedFinalRequests.current.get(variables), currentLifecycleKey.current)) return;
+      setResult(data);
+      const leftProfile = data.leftMarketProfile;
+      const rightProfile = data.rightMarketProfile;
+      onFinalDisplayOutcome?.({
+        left: { side: 'item_a', requestRunId: receipt.runId, submitted: receipt.left, finalRows: leftProfile?.comparables ?? [], analysisRunId: leftProfile?.finalUseReport?.analysisRunId ?? null },
+        right: { side: 'item_b', requestRunId: receipt.runId, submitted: receipt.right, finalRows: rightProfile?.comparables ?? [], analysisRunId: rightProfile?.finalUseReport?.analysisRunId ?? null },
+      });
+    },
     onError: (err) => toast.error(err.message),
   });
+
+  useEffect(() => {
+    currentFinalRequest.current = null;
+    setResult(null);
+    finalDisplayPublisher.current?.(null);
+  }, [lifecycleKey]);
 
   const leftHasEbay = leftSources.has('ebay_active');
   const rightHasEbay = rightSources.has('ebay_active');
@@ -3996,8 +3885,14 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
       buildSoldCompsAnalysisSales(rightSoldCompsData, rightHasSoldComps),
       rightHasMercari ? (rightMercariSoldCompsData?.listings ?? []).map((sale: any) => normalizeComparableSale({ ...sale, date: sale.endedAt, marketplace: 'Mercari', originMarketplace: 'Mercari', saleStatus: 'completed', completedStatusBasis: 'Mercari completed-sale endpoint', priceBasis: 'sold' }, { sourceId: 'mercari_sold_comps', sourceLabel: 'Mercari Sold-Comps', marketplace: 'Mercari', priceBasis: 'sold' })) : [],
     ]);
+    const requestRunId = `client-analysis-${++finalRequestCounter.current}`;
+    const leftSubmitted = stampCandidateDisplayIntake(leftSales, 'item_a', requestRunId);
+    const rightSubmitted = stampCandidateDisplayIntake(rightSales, 'item_b', requestRunId);
+    currentFinalRequest.current = { runId: requestRunId, left: leftSubmitted, right: rightSubmitted, lifecycleKey };
+    setResult(null);
+    onFinalDisplayOutcome?.(null);
     const parsedCashAmount = Number(cashAmount);
-    analyzeMutation.mutate({
+    const finalRequest: Parameters<typeof analyzeMutation.mutate>[0] = {
       leftItem: { title: effectiveLeftItem.title, category: effectiveLeftItem.category, itemType: effectiveLeftItem.itemType, grade: effectiveLeftItem.grade, condition: effectiveLeftItem.condition, estimatedValue: effectiveLeftItem.estimatedValue, certificationCompany: effectiveLeftItem.certificationCompany ?? undefined, itemDetails: effectiveLeftItem.itemDetails, ...buildApprovalTargetImageInput(effectiveLeftItem, useImageAnalyzer) },
       rightItem: { title: effectiveRightItem.title, category: effectiveRightItem.category, itemType: effectiveRightItem.itemType, grade: effectiveRightItem.grade, condition: effectiveRightItem.condition, estimatedValue: effectiveRightItem.estimatedValue, certificationCompany: effectiveRightItem.certificationCompany ?? undefined, itemDetails: effectiveRightItem.itemDetails, ...buildApprovalTargetImageInput(effectiveRightItem, useImageAnalyzer) },
       useImageAnalyzer,
@@ -4008,8 +3903,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
       rightHipstampMetrics: rightHasHipstamp ? (rightHipstampData?.metrics ?? null) : null,
       leftSoldCompsMetrics: leftHasSoldComps ? (leftSoldCompsData?.metrics ?? null) : null,
       rightSoldCompsMetrics: rightHasSoldComps ? (rightSoldCompsData?.metrics ?? null) : null,
-      leftHistoricalTrendSales: leftSales,
-      rightHistoricalTrendSales: rightSales,
+      leftHistoricalTrendSales: leftSubmitted,
+      rightHistoricalTrendSales: rightSubmitted,
       leftEvidenceSummary: leftEvidenceSummary ?? undefined,
       rightEvidenceSummary: rightEvidenceSummary ?? undefined,
       leftIdentityGate: leftEvidenceSummary ? { materialReviewRequired: leftEvidenceSummary.reviewFlags.some((flag) => flag.kind === 'material'), materialFlags: leftEvidenceSummary.reviewFlags.filter((flag) => flag.kind === 'material').map((flag) => flag.message).slice(0, 20), sourceAlignmentStatus: leftEvidenceSummary.reviewFlags.some((flag) => flag.kind === 'material') ? 'conflicted' : leftEvidenceSummary.alignedSources.length ? 'aligned' : 'unavailable' } : undefined,
@@ -4020,7 +3915,9 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
         itemB: marketNewsQuery.data.itemB,
         categorySummaries: marketNewsQuery.data.categorySummaries,
       } : undefined,
-    });
+    };
+    issuedFinalRequests.current.set(finalRequest, requestRunId);
+    analyzeMutation.mutate(finalRequest);
   };
 
   const activeSourcesNote = [
@@ -4150,7 +4047,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
                     <details className="rounded border border-slate-800/70 bg-slate-950/40 px-2 py-1"><summary className="cursor-pointer select-none text-[9px] font-semibold text-slate-300">Adapter reliability history · {profile.adapterReliabilityHistory.length} adapter{profile.adapterReliabilityHistory.length === 1 ? '' : 's'}</summary><div className="mt-1 space-y-1">{profile.adapterReliabilityHistory.map((adapter: any) => <p key={adapter.adapterId} className="text-[8px] text-slate-500">{adapter.adapterId}: <span className="capitalize text-slate-300">{adapter.reliability}</span> · {adapter.selectedCount}/{adapter.receivedCount} selected · {adapter.currentWindowCount} current-window · {adapter.duplicateCount} duplicate{adapter.duplicateCount === 1 ? '' : 's'}</p>)}</div></details>
                     <p className="text-slate-500 text-[9px]">Outlier policy: {profile.outlierPolicy === 'iqr_applied' ? `IQR applied to ${profile.outlierEligibleSampleCount} selected completed sales` : profile.outlierPolicy === 'flagged_small_sample' ? `${profile.outlierFlaggedCount} suspicious price tail${profile.outlierFlaggedCount === 1 ? '' : 's'} flagged but retained at N=${profile.outlierEligibleSampleCount}` : profile.outlierPolicy === 'not_applied_insufficient_sample' ? `not applied — only ${profile.outlierEligibleSampleCount} selected completed sales` : 'not applied — no selected completed sales'}.</p>
                     <p className="text-slate-500 text-[9px]">Marketplace independence: {profile.independentMarketplaceCount} independent marketplace{profile.independentMarketplaceCount === 1 ? '' : 's'}{profile.unknownMarketplaceCount ? ` · ${profile.unknownMarketplaceCount} unknown-marketplace record${profile.unknownMarketplaceCount === 1 ? '' : 's'} excluded from independence` : ''} · {profile.marketplaceConcentration.replace(/_/g, ' ')}{profile.largestMarketplaceShare !== null ? ` · largest share ${Math.round(profile.largestMarketplaceShare * 100)}%` : ''}.</p>
-                    <p className="text-gray-500 text-[10px]">Sales: {profile.salesVelocity.sevenDay} / {profile.salesVelocity.thirtyDay} / {profile.salesVelocity.ninetyDay} in 7 / 30 / 90 days · {profile.directComparableCount} direct used ({profile.exactMatchCount} exact + {profile.nearMatchCount} near) · {profile.gradeAdjacentComparableCount} grade/certification-adjacent secondary · {profile.contextualComparableCount} context only · {profile.duplicateSaleCount} duplicate{profile.duplicateSaleCount === 1 ? '' : 's'} suppressed</p>
+                    <p className="text-gray-500 text-[10px]">Sales: {profile.salesVelocity.sevenDay} / {profile.salesVelocity.thirtyDay} / {profile.salesVelocity.ninetyDay} in 7 / 30 / 90 days · {profile.directComparableCount} direct sale diagnostics ({profile.exactMatchCount} exact + {profile.nearMatchCount} near) · {profile.gradeAdjacentComparableCount} grade/certification-adjacent secondary · {profile.contextualComparableCount} context only · {profile.duplicateSaleCount} duplicate{profile.duplicateSaleCount === 1 ? '' : 's'} suppressed</p>
                   </div>
                 ))}
               </div>
@@ -4198,9 +4095,9 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
                       const visual = snapshot.evidence.visualReview;
                       return <div key={label} className="rounded bg-gray-900/70 p-2 space-y-1">
                         <p className={`text-${color}-300 text-xs font-semibold`}>{label} intake</p>
-                        <p className="text-gray-400 text-[9px]">Sales: {diagnostics.received} received · {diagnostics.deduplicated} unique · {diagnostics.eligibleCompleted} dated completed · {diagnostics.acceptedIdentity} identity accepted · {diagnostics.selectedForValuation} used</p>
+                        <p className="text-gray-400 text-[9px]">Sales: {diagnostics.received} received · {diagnostics.deduplicated} unique · {diagnostics.eligibleCompleted} dated completed · {diagnostics.acceptedIdentity} identity accepted · {diagnostics.selectedForValuation} selected before outliers</p>
                         {diagnostics.omittedByCap > 0 && <p className="text-amber-200 text-[9px]">{diagnostics.omittedByCap} matched record{diagnostics.omittedByCap === 1 ? '' : 's'} retained in audit but omitted by the source-balanced cap.</p>}
-                        <p className="text-gray-500 text-[9px]">Visual comp reviews: {visual.match} match · {visual.roughMatch} rough · {visual.mismatch} mismatch · {visual.unreadable} unreadable · {visual.notReviewed} not reviewed</p>
+                        <TestAiFinalUseSummary report={snapshot.finalUseReport} /><p className="text-gray-500 text-[9px]">Legacy attached visual-status observations (not dispatch or verified identity): {visual.match} match · {visual.roughMatch} rough · {visual.mismatch} mismatch · {visual.unreadable} unreadable · {visual.notReviewed} not reviewed</p>
                         <div className="flex flex-wrap gap-1 pt-1">{snapshot.evidence.sourceStatuses.map((source: any) => <span key={source.id} title={source.message || undefined} className={`rounded px-1 py-0.5 text-[8px] ${source.status === 'success' ? 'bg-emerald-950/60 text-emerald-200' : source.status === 'error' ? 'bg-rose-950/60 text-rose-200' : 'bg-slate-800 text-slate-300'}`}>{source.label}: {source.status.replace('_', ' ')}</span>)}</div>
                         {snapshot.evidence.reviewFlags.length > 0 && <p className="text-amber-200 text-[9px]">Review: {snapshot.evidence.reviewFlags[0]}</p>}
                       </div>;
@@ -4210,8 +4107,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
               )}
               <div className="rounded border border-slate-700/60 bg-slate-950/50 p-2 space-y-2">
                 <div>
-                  <p className="text-slate-200 text-[10px] font-bold uppercase tracking-wide">Comparable audit · why each sale counted</p>
-                  <p className="text-gray-500 text-[9px] mt-0.5">Only deduplicated completed sales with exact or near identity matches influence the deterministic value. Historical, undated, non-completed, or incomplete-identity records remain context only.</p>
+                  <p className="text-slate-200 text-[10px] font-bold uppercase tracking-wide">Comparable audit · final identity and pricing use</p>
+                  <p className="text-gray-500 text-[9px] mt-0.5">Final submitted rows retain independent identity, selection, statistical and primary-use facts. Only the server terminal primary-sales code establishes contribution; guide fallback and global holds can leave current-sales diagnostics without primary contribution.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -4241,23 +4138,23 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
                           ))}
                         </div>
                         {accepted.slice(0, 3).map((comparable: any) => (
-                          <div key={`accepted-${comparable.title}-${comparable.date}`} className="rounded border border-emerald-900/50 bg-emerald-950/20 px-2 py-1.5 text-[9px]">
-                            <p className="text-gray-200 truncate">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
-                            <p className="text-emerald-300/80 mt-0.5">{comparable.classification} match · score {comparable.score} · {(comparable.reasons ?? []).join(' · ')}</p>
+                          <div key={comparable.valuationUse?.auditRef?.intakeRef ?? candidateDisplayKey(comparable)} className="rounded border border-emerald-900/50 bg-emerald-950/20 px-2 py-1.5 text-[9px]">
+                            <p className="text-gray-200 truncate">{formatCandidateDisplayPrice(comparable)} · {comparable.title}</p>
+                            <TestAiCandidateStatus listing={comparable} reconciled /><p className="text-emerald-300/80 mt-0.5">{comparable.classification} match · score {comparable.score} · {(comparable.reasons ?? []).join(' · ')}</p>
                             <p className="text-gray-500 mt-0.5">{comparable.sourceLabel ?? comparable.sourceId ?? 'source unavailable'} · {comparable.priceBasis ?? 'price basis unavailable'} · visual {String(comparable.visualReviewStatus ?? 'not_reviewed').replace(/_/g, ' ')}</p>
                           </div>
                         ))}
                         {contextual.slice(0, 2).map((comparable: any) => (
-                          <div key={`context-${comparable.title}-${comparable.date}`} className="rounded border border-sky-900/50 bg-sky-950/20 px-2 py-1.5 text-[9px]">
-                            <p className="text-gray-300 truncate">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
-                            <p className="text-sky-300/80 mt-0.5">{comparable.valuationRelationship === 'grade_adjacent_comparable' ? 'Secondary evidence · ' : 'Context only · '}{comparable.exclusionReason ?? 'not eligible for valuation'}</p>
+                          <div key={comparable.valuationUse?.auditRef?.intakeRef ?? candidateDisplayKey(comparable)} className="rounded border border-sky-900/50 bg-sky-950/20 px-2 py-1.5 text-[9px]">
+                            <p className="text-gray-300 truncate">{formatCandidateDisplayPrice(comparable)} · {comparable.title}</p>
+                            <TestAiCandidateStatus listing={comparable} reconciled /><p className="text-sky-300/80 mt-0.5">{comparable.valuationRelationship === 'grade_adjacent_comparable' ? 'Secondary evidence · ' : 'Context only · '}{comparable.exclusionReason ?? 'not eligible for valuation'}</p>
                             <p className="text-gray-500 mt-0.5">{comparable.sourceLabel ?? comparable.sourceId ?? 'source unavailable'} · visual {String(comparable.visualReviewStatus ?? 'not_reviewed').replace(/_/g, ' ')}</p>
                           </div>
                         ))}
                         {rejected.slice(0, 3).map((comparable: any) => (
-                          <div key={`rejected-${comparable.title}-${comparable.date}`} className="rounded border border-orange-900/50 bg-orange-950/20 px-2 py-1.5 text-[9px]">
-                            <p className="text-gray-300 truncate">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
-                            <p className="text-orange-300/80 mt-0.5">Excluded · {comparable.exclusionReason ?? 'insufficient comparable evidence'}</p>
+                          <div key={comparable.valuationUse?.auditRef?.intakeRef ?? candidateDisplayKey(comparable)} className="rounded border border-orange-900/50 bg-orange-950/20 px-2 py-1.5 text-[9px]">
+                            <p className="text-gray-300 truncate">{formatCandidateDisplayPrice(comparable)} · {comparable.title}</p>
+                            <TestAiCandidateStatus listing={comparable} reconciled /><p className="text-orange-300/80 mt-0.5">Legacy exclusion diagnostic · {comparable.exclusionReason ?? 'insufficient comparable evidence'}</p>
                             <p className="text-gray-500 mt-0.5">{comparable.sourceLabel ?? comparable.sourceId ?? 'source unavailable'} · visual {String(comparable.visualReviewStatus ?? 'not_reviewed').replace(/_/g, ' ')}</p>
                           </div>
                         ))}
@@ -4265,37 +4162,9 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
                         {(profile.comparables ?? []).length > 0 && (
                           <details className="rounded border border-slate-700/60 bg-slate-950/70 px-2 py-1.5">
                             <summary className="cursor-pointer select-none text-[9px] font-semibold text-slate-200">Full valuation-use ledger · {(profile.comparables ?? []).length} returned records</summary>
-                            <p className="mt-1 text-[8px] text-gray-500">Every returned record is retained here. “Used” means it met completed-sale, identity, and source-balanced selection rules; all other labels state the exact reason it did not enter the direct value.</p>
+                            <p className="mt-1 text-[8px] text-gray-500">Actual submitted final intake only, not every retrieved source row. Primary-sales use comes from the server terminal code; selected, current diagnostics, historical context and primary contribution are separate facts.</p>
                             <div className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
-                              {(profile.comparables ?? []).map((comparable: any, index: number) => {
-                                const used = Boolean(comparable.accepted);
-                                const secondary = comparable.valuationRelationship === 'grade_adjacent_comparable';
-                                const useLabel = used
-                                  ? 'Used in direct valuation'
-                                  : secondary
-                                    ? 'Secondary evidence only'
-                                    : comparable.exclusionReason === 'omitted from the bounded valuation set after source-balanced selection'
-                                      ? 'Matched but omitted by source-balanced cap'
-                                      : comparable.classification === 'rejected'
-                                        ? 'Excluded from direct valuation'
-                                        : 'Context / review only';
-                                const useTone = used
-                                  ? 'text-emerald-300'
-                                  : secondary
-                                    ? 'text-violet-300'
-                                    : comparable.classification === 'rejected'
-                                      ? 'text-orange-300'
-                                      : 'text-sky-300';
-                                const gate = comparable.categoryIdentity;
-                                return <div key={`ledger-${comparable.saleId ?? comparable.url ?? comparable.title}-${index}`} className="rounded border border-slate-800 bg-slate-900/60 px-1.5 py-1 text-[8px]">
-                                  <p className="truncate text-gray-200">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
-                                  <p className={`mt-0.5 font-semibold ${useTone}`}>{useLabel} · {comparable.admissionCode ?? 'ADMISSION_REVIEW'}</p>
-                                  <p className="mt-0.5 text-gray-400">Reason: {used ? `Completed sale selected with ${comparable.classification} identity match (score ${comparable.score}).` : comparable.exclusionReason ?? 'No direct valuation eligibility was established.'}</p>
-                                  {gate && <p className="mt-0.5 text-gray-500">Category gate: {String(gate.status).replace(/_/g, ' ')}{gate.confirmedFields?.length ? ` · confirmed ${gate.confirmedFields.join(', ')}` : ''}{gate.unconfirmedFields?.length ? ` · review ${gate.unconfirmedFields.join(', ')}` : ''}{gate.conflicts?.length ? ` · conflict ${gate.conflicts.join(', ')}` : ''}</p>}
-                                  <p className="mt-0.5 text-gray-600">{comparable.sourceLabel ?? comparable.sourceId ?? 'source unavailable'} · adapter {comparable.sourceAdapter ?? 'unverified'} · {comparable.saleStatus ?? 'status unavailable'} · {comparable.priceBasis ?? 'price basis unavailable'} · premium {comparable.buyerPremium ?? 'unknown'} · duplicate {String(comparable.duplicateStatus ?? 'unique').replace(/_/g, ' ')} · visual {String(comparable.visualReviewStatus ?? 'not_reviewed').replace(/_/g, ' ')}</p>
-                                  <p className="mt-0.5 break-all text-gray-700">{comparable.canonicalTransactionId ? `Canonical transaction: ${comparable.canonicalTransactionId}` : 'Canonical transaction: unavailable / context only'}</p>
-                                </div>;
-                              })}
+                              {(profile.comparables ?? []).map((comparable: any, index: number) => <TestAiFinalLedgerRow key={comparable.valuationUse?.auditRef?.intakeRef ?? `ledger-${index}`} comparable={comparable} index={index} />) }
                             </div>
                           </details>
                         )}
@@ -4352,7 +4221,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
                   <div key={label} className="rounded bg-gray-950/50 p-2 space-y-1">
                     <p className={`text-${color}-300 text-xs font-semibold`}>{label}</p>
                     <p className="text-gray-200 text-[10px] break-words"><span className="text-gray-500">Query:</span> {query.query}</p>
-                    <p className="text-gray-400 text-[10px]">{metrics ? `${metrics.count} active matches · median $${metrics.median.toLocaleString()} · range $${metrics.min.toLocaleString()}–$${metrics.max.toLocaleString()} · ${metrics.confidence} confidence` : 'No refined active matches returned.'}</p>
+                    <p className="text-gray-400 text-[10px]">{metrics ? `${metrics.count} active-match observations · currency/basis unresolved — aggregate not shown; source asking context, not final pricing use` : 'No refined active matches returned.'}</p>
                     <p className="text-gray-600 text-[9px]">Temporary identity refinement only; not completed-sale evidence.</p>
                   </div>
                 ))}
@@ -4495,7 +4364,7 @@ function normalizeNgcGradeForDisplay(value: string): string {
   return match ? String(Number(match[1])) : value.trim();
 }
 
-function DataColumn({ item, searchItem, side, visualProvider, enabledSources, ebayData, ebayEvidenceData, ebayLoading, onEbayVisualReview, soldCompsData, soldCompsLoading, mercariSoldCompsData, mercariSoldCompsLoading, tcgplayerSoldCompsData, tcgplayerSoldCompsLoading, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary, onSpecialistSales }: {
+function DataColumn({ item, searchItem, side, visualProvider, enabledSources, ebayData, ebayEvidenceData, ebayLoading, onEbayVisualReview, soldCompsData, soldCompsLoading, mercariSoldCompsData, mercariSoldCompsLoading, tcgplayerSoldCompsData, tcgplayerSoldCompsLoading, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary, onSpecialistSales, finalDisplayOutcome }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
@@ -4536,6 +4405,7 @@ function DataColumn({ item, searchItem, side, visualProvider, enabledSources, eb
   oneThirtyPointData: any;
   onEvidenceSummary?: (summary: NormalizedEvidenceSummary) => void;
   onSpecialistSales?: (sourceId: string, sales: any[]) => void;
+  finalDisplayOutcome?: CandidateFinalDisplayOutcome | null;
 }) {
   const [specialistObservations, setSpecialistObservations] = useState<Record<string, EvidenceSourceObservation>>({});
   const onSpecialistObservation = useCallback((observation: EvidenceSourceObservation) => {
@@ -4564,7 +4434,7 @@ function DataColumn({ item, searchItem, side, visualProvider, enabledSources, eb
     'a grading data source';
 
   return (
-    <div className="space-y-3">
+    <TestAiCandidateDisplayProvider side={side === 'left' ? 'item_a' : 'item_b'} outcome={finalDisplayOutcome}><div className="space-y-3">
       <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayEvidenceData ?? ebayData} soldCompsData={soldCompsData} mercariSoldCompsData={mercariSoldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={specialistObservationList} onSummaryChange={onEvidenceSummary} />
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'
@@ -4616,7 +4486,7 @@ function DataColumn({ item, searchItem, side, visualProvider, enabledSources, eb
       {enabledSources.has('pwcc') && <PwccSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('gocollect') && <PlaceholderSection sourceId="gocollect" side={side} />}
       {SANDBOX_SPECIALIST_SOURCES.filter((source) => source.id !== 'comicconnect' && source.id !== 'comic_book_realm' && enabledSources.has(source.id)).map((source) => <SandboxSpecialistSection key={source.id} source={source} item={queryItem} side={side} visualProvider={visualProvider} onEvidenceObservation={onSpecialistObservation} onSales={(sales) => onSpecialistSales?.(source.id, sales)} />)}
-    </div>
+    </div></TestAiCandidateDisplayProvider>
   );
 }
 
@@ -4635,6 +4505,7 @@ export default function TestAI() {
   const [rightEvidenceSummary, setRightEvidenceSummary] = useState<NormalizedEvidenceSummary | null>(null);
   const [rightEbayVisualReview, setRightEbayVisualReview] = useState<any | null>(null);
   const [visualProvider, setVisualProvider] = useState<'manus_forge' | 'openai'>('manus_forge');
+  const [finalDisplayOutcomes, setFinalDisplayOutcomes] = useState<{ left: CandidateFinalDisplayOutcome; right: CandidateFinalDisplayOutcome } | null>(null);
   const leftIsCollectionLot = isCollectionLotItemType(leftItem?.itemType);
   const rightIsCollectionLot = isCollectionLotItemType(rightItem?.itemType);
   const leftSourcesEnabled = leftIsCollectionLot ? new Set<SourceId>() : leftSources;
@@ -4644,11 +4515,13 @@ export default function TestAI() {
 
   useEffect(() => {
     setLeftEvidenceSummary(null);
+    setFinalDisplayOutcomes(null);
     setLeftEbayVisualReview(null);
   }, [leftItem?.id, leftItem?.title, leftItem?.category, leftSourceKey]);
 
   useEffect(() => {
     setRightEvidenceSummary(null);
+    setFinalDisplayOutcomes(null);
     setRightEbayVisualReview(null);
   }, [rightItem?.id, rightItem?.title, rightItem?.category, rightSourceKey]);
   useEffect(() => {
@@ -4997,8 +4870,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {leftItem && !leftIsCollectionLot && <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" visualProvider={visualProvider} enabledSources={leftSourcesEnabled} ebayData={leftEbayQuery.data} ebayEvidenceData={leftEbayVisualReview ? { ...leftEbayQuery.data, ...leftEbayVisualReview } : leftEbayQuery.data} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isFetching} soldCompsData={leftSoldCompsQuery.data} soldCompsLoading={leftSoldCompsQuery.isFetching} mercariSoldCompsData={leftMercariSoldCompsQuery.data} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={leftTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isFetching} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isFetching} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isFetching} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isFetching} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isFetching} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isFetching} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isFetching} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isFetching} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isFetching} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isFetching} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isFetching} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />}
-            {rightItem && !rightIsCollectionLot && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" visualProvider={visualProvider} enabledSources={rightSourcesEnabled} ebayData={rightEbayQuery.data} ebayEvidenceData={rightEbayVisualReview ? { ...rightEbayQuery.data, ...rightEbayVisualReview } : rightEbayQuery.data} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isFetching} soldCompsData={rightSoldCompsQuery.data} soldCompsLoading={rightSoldCompsQuery.isFetching} mercariSoldCompsData={rightMercariSoldCompsQuery.data} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={rightTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isFetching} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isFetching} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isFetching} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isFetching} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isFetching} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isFetching} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isFetching} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isFetching} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isFetching} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isFetching} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isFetching} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
+            {leftItem && !leftIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.left} item={leftItem} searchItem={leftSearchItem} side="left" visualProvider={visualProvider} enabledSources={leftSourcesEnabled} ebayData={leftEbayQuery.data} ebayEvidenceData={leftEbayVisualReview ? { ...leftEbayQuery.data, ...leftEbayVisualReview } : leftEbayQuery.data} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isFetching} soldCompsData={leftSoldCompsQuery.data} soldCompsLoading={leftSoldCompsQuery.isFetching} mercariSoldCompsData={leftMercariSoldCompsQuery.data} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={leftTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isFetching} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isFetching} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isFetching} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isFetching} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isFetching} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isFetching} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isFetching} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isFetching} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isFetching} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isFetching} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isFetching} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />}
+            {rightItem && !rightIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.right} item={rightItem} searchItem={rightSearchItem} side="right" visualProvider={visualProvider} enabledSources={rightSourcesEnabled} ebayData={rightEbayQuery.data} ebayEvidenceData={rightEbayVisualReview ? { ...rightEbayQuery.data, ...rightEbayVisualReview } : rightEbayQuery.data} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isFetching} soldCompsData={rightSoldCompsQuery.data} soldCompsLoading={rightSoldCompsQuery.isFetching} mercariSoldCompsData={rightMercariSoldCompsQuery.data} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={rightTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isFetching} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isFetching} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isFetching} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isFetching} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isFetching} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isFetching} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isFetching} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isFetching} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isFetching} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isFetching} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isFetching} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
           </div>
         )}
 
@@ -5008,6 +4881,7 @@ export default function TestAI() {
         {!bothSelected && (leftItem || rightItem) && <MarketNewsSection item={leftItem ?? rightItem!} />}
         {bothSelected && (
           <AIAnalysisSection
+            onFinalDisplayOutcome={setFinalDisplayOutcomes}
             leftItem={leftItem}
             rightItem={rightItem}
             leftAnalysisItem={leftSearchItem}

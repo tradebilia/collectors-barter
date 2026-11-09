@@ -470,10 +470,10 @@ function compactMarketSummary(source: EvidenceSourceObservation): string | null 
   const parts: string[] = [];
   if (market.currentListingCount) parts.push(`${market.currentListingCount} current asking listing${market.currentListingCount === 1 ? '' : 's'}`);
   if (market.completedSaleCount) parts.push(`${market.completedSaleCount} completed sale${market.completedSaleCount === 1 ? '' : 's'}`);
-  if (market.analyzerSubmittedSaleCount != null) parts.push(`${market.analyzerSubmittedSaleCount} submitted to analyzer`);
+  if (market.analyzerSubmittedSaleCount != null) parts.push(`${market.analyzerSubmittedSaleCount} source-stage eligible (not request receipts)`);
   const currentValueCount = market.currentValueSaleCount ?? market.recentSaleCount;
   const historicalTrendCount = market.historicalTrendSaleCount ?? market.historicalSaleCount;
-  if (currentValueCount != null || historicalTrendCount != null) parts.push(`${currentValueCount ?? 0} current-value, ${historicalTrendCount ?? 0} historical-trend`);
+  if (currentValueCount != null || historicalTrendCount != null) parts.push(`${currentValueCount ?? 0} ${source.kind === 'market_current' ? 'asking-price context' : 'current-window source candidates'}, ${historicalTrendCount ?? 0} historical source candidates`);
   if (market.recentSaleCount) parts.push(`${market.recentSaleCount} recent sale${market.recentSaleCount === 1 ? '' : 's'}`);
   if (market.historicalSaleCount) parts.push(`${market.historicalSaleCount} historical record${market.historicalSaleCount === 1 ? '' : 's'}`);
   if (market.undatedSaleCount) parts.push(`${market.undatedSaleCount} undated record${market.undatedSaleCount === 1 ? '' : 's'}`);
@@ -483,33 +483,20 @@ function compactMarketSummary(source: EvidenceSourceObservation): string | null 
 function compactSubmittedPriceSummary(source: EvidenceSourceObservation): string | null {
   const currentPrices = source.market?.currentValuePrices;
   const historicalPrices = source.market?.historicalTrendPrices;
+  const withholding = 'currency/basis unresolved — aggregate not shown; anonymous source observations, not final-price statistics';
+  const observationCount = (values: number[]) => values.filter((price) => Number.isFinite(price) && price > 0).length;
   if (currentPrices || historicalPrices) {
-    const formatGroup = (label: string, values: number[]) => {
-      const prices = values.filter((price) => Number.isFinite(price) && price > 0).sort((a, b) => a - b);
-      if (!prices.length) return `${label}: 0 prices`;
-      const total = prices.reduce((sum, price) => sum + price, 0);
-      const median = prices.length % 2 === 1 ? prices[Math.floor(prices.length / 2)] : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2;
-      const money = (value: number) => `$${Math.round(value).toLocaleString()}`;
-      return `${label}: ${prices.length} prices · average ${money(total / prices.length)} · median ${money(median)} · range ${money(prices[0])}–${money(prices[prices.length - 1])}`;
-    };
-    return `${source.label}: submitted-price summary — ${formatGroup('current-value', currentPrices ?? [])}; ${formatGroup('historical-trend', historicalPrices ?? [])}.`;
+    return `${source.label}: source-stage price observations — ${source.kind === 'market_current' ? 'asking context' : 'current-window source candidates'}: ${observationCount(currentPrices ?? [])} priced observations; historical source candidates: ${observationCount(historicalPrices ?? [])} priced observations · ${withholding}.`;
   }
-  const prices = (source.market?.analyzerSubmittedPrices ?? []).filter((price) => Number.isFinite(price) && price > 0).sort((a, b) => a - b);
-  if (!prices.length && source.market?.analyzerSubmittedSaleCount == null) {
-    return source.market ? `${source.label}: submitted-price summary — 0 sales · no prices submitted to analyzer.` : null;
-  }
-  if (!prices.length) return `${source.label}: submitted-price summary — 0 sales · no prices submitted to analyzer.`;
-  const total = prices.reduce((sum, price) => sum + price, 0);
-  const median = prices.length % 2 === 1 ? prices[Math.floor(prices.length / 2)] : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2;
-  const money = (value: number) => `$${Math.round(value).toLocaleString()}`;
-  return `${source.label}: submitted-price summary — ${prices.length} sale${prices.length === 1 ? '' : 's'} · average ${money(total / prices.length)} · median ${money(median)} · range ${money(prices[0])}–${money(prices[prices.length - 1])}.`;
+  if (!source.market) return null;
+  return `${source.label}: source-stage price observations — ${observationCount(source.market.analyzerSubmittedPrices ?? [])} priced observations · ${withholding}.`;
 }
 
 function compactSelectedSourceSummary(source: EvidenceSourceObservation): string {
   if (source.status === 'error') return `${source.label}: unavailable${source.message ? ` — ${source.message}` : '.'}`;
-  if (source.status === 'not_found') return `${source.label}: no record returned; 0 completed sales and 0 submitted to analyzer.`;
+  if (source.status === 'not_found') return `${source.label}: no record returned; returned no record; source/final populations not measured.`;
   if (source.market) {
-    return compactMarketSummary(source) ?? `${source.label}: 0 completed sales, 0 submitted to analyzer.`;
+    return compactMarketSummary(source) ?? `${source.label}: source-stage completed/eligible counts not reported.`;
   }
   return `${source.label}: selected ${source.kind.replace(/_/g, ' ')} source; completed-sales and analyzer-price summary not applicable.`;
 }
@@ -551,9 +538,11 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
       ? 'PriceCharting coin guide is a fallback candidate only after server provenance and exact-grade applicability verification; sufficient recent completed sales use sale-only value.'
       : 'Numista USD catalogue guide is a fallback candidate only after server provenance and documented grade applicability verification; it is not a completed sale.'
     : treatment === 'valuation_candidate'
-      ? 'Completed, identity-compatible sale candidates are sent to the analyzer; final comparable gates determine inclusion and sale-level weight.'
+      ? 'Completed, identity-compatible candidates are eligible at source stage; actual request receipts and final comparable use are reported separately.'
     : treatment === 'current_value'
-      ? 'Visually identity-matched active listings are sent as current-value market evidence; they are not completed-sale records and remain confidence-limited by listing count and asking-price behavior.'
+      ? source.kind === 'market_current'
+        ? 'Source-stage active listings remain asking-price context; they are not completed-sale records or primary-sales contributors.'
+        : 'Current-window completed-sale source candidates; actual submission and final pricing use are reported separately.'
       : treatment === 'historical_trend'
         ? 'Retained for historical movement only; excluded from current valuation.'
         : treatment === 'certification_context'

@@ -7,6 +7,12 @@ describe('manual Test AI selector boundary', () => {
   const outcomeSource = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/components/test-ai/SourceRunOutcomeSummary.tsx'), 'utf8');
   const routerSource = fs.readFileSync(path.resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
   const rankingDisplaySource = fs.readFileSync(path.resolve(import.meta.dirname, '../shared/testAiRankingDisplay.ts'), 'utf8');
+  const candidateLedgerSource = fs.readFileSync(path.resolve(import.meta.dirname, '../shared/testAiCandidateLedger.ts'), 'utf8');
+  const candidateStatusSource = fs.readFileSync(path.resolve(import.meta.dirname, '../shared/testAiCandidateStatus.ts'), 'utf8');
+  const masterListSource = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/components/TestAiCandidateMasterList.tsx'), 'utf8');
+  const statusComponentSource = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/components/TestAiCandidateStatus.tsx'), 'utf8');
+  const metadataTableSource = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/components/TestAiMetadataComparisonTable.tsx'), 'utf8');
+  const sourceDisplaySource = fs.readFileSync(path.resolve(import.meta.dirname, '../shared/testAiSourceDisplay.ts'), 'utf8');
 
   it('retains manual source state while highlighting sources applicable to the loaded item', () => {
     expect(source).toContain('const [leftSources, setLeftSources] = useState<Set<SourceId>>');
@@ -253,8 +259,16 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('identity mismatch prevents direct valuation');
     expect(source).toContain('Exclusion reason:');
     expect(source).toContain("const acceptedValuationListings = rankedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);");
-    expect(source).toContain('Accepted for valuation candidates');
+    expect(source).toContain('Source-eligible candidates');
     expect(source).toContain('Completed sales that passed the Sold-Comps evidence gate. Final analyzer comparable-selection rules still apply.');
+    expect(source).toContain('Source eligible — final use assessed separately');
+    expect(source).toContain('Source context / review — not proof of final submission');
+    expect(source).toContain('<TestAiCandidateStatus listing={listing} />');
+    expect(statusComponentSource).toContain("['Execution', candidateExecutionFact(row, scope)], ['Identity result', candidateIdentityFact(row)], ['Pricing use', candidatePricingFact(row)]");
+    expect(candidateStatusSource).toContain("label: 'Source eligible — final analysis not run'");
+    expect(candidateStatusSource).toContain('const use = row.valuationUse?.use;');
+    expect(candidateStatusSource).toContain('finalPricingUseLabels[use.code]');
+    expect(source).not.toContain('Accepted for valuation candidates');
   });
 
   it('keeps Goldin valuation sales on the shared evidence disposition gate', () => {
@@ -279,7 +293,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('high-value price safety gate:');
   });
 
-  it('shows completed-sale totals alongside analyzer-submitted totals in market evidence classification', () => {
+  it('keeps completed-sale and source-eligible classifications separate from actual final submission and use', () => {
     expect(source).toContain('analyzerSubmittedSaleCount');
     expect(source).toContain('market: { returnedRecordCount: sales.length, completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: analyzerSubmittedSales.length');
     expect(source).toContain('returnedRecordCount: listings.length');
@@ -290,19 +304,30 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('analyzerSubmittedSaleCount: accepted.length');
     expect(source).toContain('Do not trust a separately carried audit counter here; it can be');
     expect(source).not.toContain('Number(soldCompsData?.audit?.valuationEligible ?? accepted.length)');
-    expect(source).toContain('How the analyzer uses the selected sources');
+    expect(source).toContain('Source-stage treatment of selected sources');
+    expect(source).toContain('These overlapping source classifications are not final request or pricing-use counts.');
     expect(source).toContain('sourceDecisions');
-    expect(source).toContain('Accepted for valuation');
+    expect(source).toContain('<strong>{decision.accepted}</strong> source eligible');
+    expect(source).toContain('Sale candidates eligible at source; actual final intake and use are assessed separately.');
+    expect(source).toContain('Source-stage price observations (currency unspecified; not final prices):');
     expect(source).toContain('Historical trend');
     expect(source).toContain('Context only');
   });
 
-  it('shows the exact records sent to the analyzer for every source decision', () => {
+  it('shows source-stage records for every source decision without claiming actual final request receipts', () => {
     expect(source).toContain('function AnalyzerRecordPanel');
-    expect(source).toContain('Items sent to analyzer');
+    expect(source).toContain('Source-stage eligible / contextual records ({recordCount})');
     expect(source).toContain('adapter did not return display-level record details');
-    expect(source).toContain('No {sourceLabel} records are being sent to the analyzer');
-    expect(source).toContain('<AnalyzerRecordPanel records={decision.analyzerRecords} acceptedCount={decision.accepted} sourceLabel={decision.label} />');
+    expect(source).toContain('classified at source stage (not actual request receipts)');
+    expect(source).toContain('No {sourceLabel} source-stage records are available under this run’s current treatment.');
+    expect(source).toContain('<AnalyzerRecordPanel records={decision.analyzerRecords} acceptedCount={decision.accepted} sourceLabel={decision.label} sourceKind={decision.kind} />');
+    expect(source).toContain('function AnalyzerRecordPanel({ records, acceptedCount, sourceLabel, sourceKind }: { records: AnalyzerRecordDetail[]; acceptedCount: number; sourceLabel: string; sourceKind?: string })');
+    expect(source).toContain('sourceRecordBucketLabel(record.bucket, sourceKind)');
+    expect(source).toContain("import { sourceRecordBucketLabel, sourceMetricDisplay } from '@shared/testAiSourceDisplay';");
+    expect(sourceDisplaySource).toContain(`export function sourceRecordBucketLabel(bucket: string, kind?: string): string {
+  return bucket === 'current_value' ? (kind === 'market_current' ? 'Source-stage asking context' : 'Source-stage current window')
+    : bucket === 'historical_trend' ? 'Historical source context' : bucket.replace(/_/g, ' ');
+}`);
     expect(source).toContain('analyzerRecords: accepted.map');
     expect(source).toContain('analyzerRecords: currentValue.map');
     expect(source).toContain('function visualReviewAcceptedRecords');
@@ -316,6 +341,17 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Identity-matched active asking price; not a completed sale.');
     expect(source).toContain('AI image checks are required before visually supported eBay Active listings can enter current-value evidence');
     expect(source).toContain('const recordCount = records.length > 0 ? records.length : acceptedCount;');
+    expect(source).toContain("currency: record?.currency ?? record?.soldCurrency ?? null");
+    expect(source).toContain('record.price != null ? formatCandidateDisplayPrice(record)');
+    expect(source).toContain("<TestAiCandidateDisplayProvider side={side === 'left' ? 'item_a' : 'item_b'} outcome={finalDisplayOutcome}>");
+    expect(source).toContain('for (let index = 0; balanced.length < 120; index += 1)');
+    expect(source).toContain('for (const group of groups)');
+    expect(source).toContain('if (candidate && balanced.length < 120)');
+    expect(source).toContain('Actual submitted final intake only, not every retrieved source row.');
+    expect(source).toContain('<TestAiFinalLedgerRow key={comparable.valuationUse?.auditRef?.intakeRef');
+    expect(statusComponentSource).toContain("Final use code: {use?.code ?? 'Legacy / final use unavailable'}");
+    expect(statusComponentSource).toContain('Legacy pre-selection admission diagnostic');
+    expect(source).not.toContain('Items sent to analyzer');
   });
 
   it('uses one shared Sold-Comps response for Evidence Review and the provider panel', () => {
@@ -327,12 +363,22 @@ describe('manual Test AI selector boundary', () => {
     expect(source).not.toContain('trpc.testAI.getSoldCompsData.useQuery(\n    { title: item.title');
   });
 
-  it('shows process complete only after final marketplace results are ready', () => {
-    expect(source).toContain('function ProcessCompleteNotice()');
-    expect(source).toContain('✓ Process complete — final source results are displayed below.');
+  it('reports terminal source coverage only when marketplace results are ready, retaining partial results honestly', () => {
+    expect(source).toMatch(/import \{[^}]*\bTestAiProcessCompleteNotice as ProcessCompleteNotice\b[^}]*\} from '@\/components\/TestAiCandidateStatus';/);
+    expect(statusComponentSource).toContain(`export function TestAiProcessCompleteNotice({ data }: { data?: any }) {
+  const retrieval = sourceRetrievalCoverage(data);`);
+    expect(statusComponentSource).toContain("import { sourceCurrentWindowLabel, sourceMetricDisplay, sourceRetrievalCoverage } from '../../../shared/testAiSourceDisplay';");
+    expect(sourceDisplaySource).toContain("const partialRetrieval = Boolean((failedQueryCount ?? 0) > 0 || audit.some((row: any) => row.status === 'error') || data?.status === 'error' || data?.error);");
+    expect(sourceDisplaySource).toContain(`  const partial = partialRetrieval || data?.displayCoverage === 'partial'
+    || ['provider_unavailable', 'completed_with_timeout'].includes(data?.visualFilter?.status);`);
+    expect(statusComponentSource).toContain("aria-label=\"Source request end coverage\">{retrieval.partial ? 'Source request ended with partial/error coverage — known returned rows retained below.' : 'Source request ended — returned source results are displayed below.'}");
+    expect(statusComponentSource).toContain('Selected but undispatched rows are not background jobs.');
+    expect(source).not.toContain('function ProcessCompleteNotice(');
     expect(source).toContain('const resultsReady = !isLoading;');
     expect(source).toContain('const resultsReady = !isLoading && !(reviewBaseEnabled && visualReviewLoading);');
-    expect(source.match(/<ProcessCompleteNotice \/>/g)?.length).toBe(3);
+    expect(source.match(/<ProcessCompleteNotice data=\{data\} \/>/g)?.length).toBe(3);
+    expect(source.match(/<TestAiSourcePopulationSummary packet=\{data\?\.sourcePopulation\} \/>/g)?.length).toBe(3);
+    expect(source).not.toContain('✓ Process complete — final source results are displayed below.');
   });
 
   it('keeps the redundant current-run source-outcome panel out of the primary result', () => {
@@ -367,17 +413,21 @@ describe('manual Test AI selector boundary', () => {
   it('uses the shared collapsible image checks for additional Sold-Comps sources', () => {
     expect(source).toContain('<MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={sourceLabel} />');
     expect(source).toContain("{reviewedListings.length} candidate image{reviewedListings.length === 1 ? '' : 's'} reviewed · {acceptedListings.length} valuation-eligible");
-    expect(source).toContain("listing.visualReviewStatus !== 'not_reviewed'");
-    expect(source).toContain('Where this pricing evidence is going');
-    expect(source).toContain('same server-approved records shown below');
-    expect(source).toContain('<strong>{acceptedListings.length}</strong><br />sent to valuation');
-    expect(source).toContain('<strong>{currentValueListings.length}</strong><br />current-value');
-    expect(source).toContain('<strong>{historicalTrendListings.length}</strong><br />historical trend');
+    expect(source).toContain('const reviewedListings = rankedListings.filter((listing: any) => hasActualVisualResponse(listing));');
+    expect(source).toContain('const rows = selectTestAiVisualDisplayRows(');
+    expect(statusComponentSource).toContain('return mergeCandidateDisplayGroups(groups, scope).filter(hasActualVisualDispatch);');
+    expect(source).toContain('Source-stage eligibility and context');
+    expect(source).toContain('These are source-stage classifications, not actual request receipts or final pricing-use counts. Current and historical buckets overlap source eligibility.');
+    expect(source).toContain('<strong>{acceptedListings.length}</strong><br />source eligible');
+    expect(source).toContain('<strong>{currentValueListings.length}</strong><br />current-window source eligible');
+    expect(source).toContain('<strong>{historicalTrendListings.length}</strong><br />historical source eligible');
     expect(source).toContain('<strong>{preVisionExcludedListings.length}</strong><br />held out');
-    expect(source).toContain("<AnalyzerUseLine eligible={valuationEligible}");
-    expect(source).toContain('Accepted for valuation; current-value versus historical-trend classification is shown in the source outcome summary.');
+    expect(source).toContain("<AnalyzerUseLine eligible={listing.evidenceDisposition === 'valuation_eligible'}");
+    expect(source).toContain('Source eligible for final review ({acceptedListings.length})');
+    expect(source).toContain('<TestAiCandidateStatus listing={listing} />');
     expect(source).toContain("{open ? 'Hide image checks' : 'View image checks'}");
-    expect(source).toContain('View full explanation');
+    expect(source).toContain('<TestAiVisualReviewRow key={candidateDisplayKey(listing, {}, String(index))} listing={listing} targetImageUrl={targetImageUrl} />');
+    expect(statusComponentSource).toContain('View full explanation');
     expect(source).toContain('const searchMetrics = data?.searchMetrics ?? data?.metrics;');
     expect(source).toContain('Executed search ladder');
     expect(source).toContain('Only the primary query ran because it returned provider records; no fallback search was needed.');
@@ -401,16 +451,20 @@ describe('manual Test AI selector boundary', () => {
       const rankB = validDisplayRank(b.listing.metadataMatchRank) ?? Number.POSITIVE_INFINITY;
       if (rankA !== rankB) return rankA - rankB;`);
     expect(source).toContain('<CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />');
-    expect(source).toContain(`function CandidateMasterList({ listings, sourceLabel, targetImageUrl }: { listings: any[]; sourceLabel: string; targetImageUrl?: string | null }) {
-  const candidates = mergeMasterCandidates(listings);`);
-    expect(source).toContain('All candidates — ranked master list');
-    expect(source).toContain('Hard exception — not sent to AI');
-    expect(source).toContain('const imageUrl = listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0] || null;');
-    expect(source).toContain('<div className="grid w-24 shrink-0 grid-cols-2 gap-1">{targetImageUrl ? <figure>');
-    expect(source).toContain('<img src={targetImageUrl} alt="Target item" loading="lazy" referrerPolicy="no-referrer" className="h-12 w-full rounded border border-cyan-700/50 bg-gray-950 object-contain" />');
-    expect(source).toContain('<img src={imageUrl} alt="Marketplace candidate" loading="lazy" referrerPolicy="no-referrer" className="h-12 w-full rounded border border-emerald-700/50 bg-gray-950 object-contain" />');
-    expect(source).toContain('<div className="flex h-12 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">Target unavailable</div>');
-    expect(source).toContain('<div className="flex h-12 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">No image</div>');
+    expect(source).toContain("import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';");
+    expect(masterListSource).toContain('export function TestAiCandidateMasterList({ listings, sourceLabel, targetImageUrl, scope: suppliedScope }');
+    expect(masterListSource).toContain('const candidates = reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);');
+    expect(masterListSource).toContain('All candidates — ranked master list');
+    expect(masterListSource).toContain('<TestAiCandidateStatus listing={listing} scope={scope} reconciled />');
+    expect(statusComponentSource).toContain('isHardCandidateDisplayException(row)');
+    expect(statusComponentSource).toContain('<strong>Hard exclusion:</strong>');
+    expect(candidateStatusSource).toContain("return candidateExecutionReceipt(row)?.hardExclusion === true || row.evidenceDisposition === 'rejected_objective_conflict';");
+    expect(masterListSource).toContain('<TestAiCandidateImagePair listing={listing} targetImageUrl={targetImageUrl} />');
+    expect(statusComponentSource).toContain('const image = listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0];');
+    expect(statusComponentSource).toContain('<div className="grid w-24 shrink-0 grid-cols-2 gap-1">');
+    expect(statusComponentSource).toContain("[[targetImageUrl, 'Target', 'border-cyan-700/50', 'text-cyan-200'], [image, 'Candidate', 'border-emerald-700/50', 'text-emerald-200']]");
+    expect(statusComponentSource).toContain("alt={label === 'Target' ? 'Target item' : 'Marketplace candidate'} loading=\"lazy\" referrerPolicy=\"no-referrer\"");
+    expect(statusComponentSource).toContain('className="flex h-12 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">{label} unavailable</div>');
   });
 
   it('keeps the full metadata breakdown on Mercari candidates excluded before visual review', () => {
@@ -423,23 +477,37 @@ describe('manual Test AI selector boundary', () => {
   });
 
   it('distinguishes direct comparables from current-value evidence in visual-match wording', () => {
-    expect(source).toContain("statusLabel={currentValueEvidence ? 'Current-value evidence: INCLUDED' : undefined}");
-    expect(source).toContain('The visual match is retained in current-value market evidence; it is not a completed-sale comparable.');
+    expect(source).toContain('Identity-matched active asking price; not a completed sale.');
+    expect(source).toContain('Identity-matched active asking listings; useful market context, not completed sales.');
+    expect(source).toContain('Source eligible — final use assessed separately');
+    expect(source).toContain('<TestAiCandidateStatus listing={listing} />');
+    expect(candidateStatusSource).toContain("CURRENT_SALES_PRIMARY: 'Used to support primary sales valuation'");
+    expect(candidateStatusSource).toContain("CURRENT_SALES_DIAGNOSTIC_ONLY: 'Current-sales diagnostics only'");
+    expect(candidateStatusSource).toContain("if (row.evidenceDisposition === 'valuation_eligible') return { label: 'Source eligible — final analysis not run'");
+    expect(candidateLedgerSource).toContain("candidatePricingLink: matches.length > 1 || !origin ? 'unresolved' : 'not_submitted'");
     expect(source).not.toContain(['Context / review only; the visual match did not receive a valuation-', 'eligible disposition.'].join(''));
-    expect(source).toContain('Direct comparable: NO — not submitted as a direct valuation comparable');
+    expect(candidateStatusSource).toContain("NOT_SUBMITTED_NOT_ASSESSED: 'Not submitted / not assessed'");
   });
-  it('keeps an explicit visual verdict in the reviewed count even if an adapter omits the requirement marker', () => {
+  it('requires actual response receipts for reviewed display counts while preserving the legacy operational verdict predicate', () => {
     expect(source).toContain('function hasCompletedVisualReview(listing: any): boolean');
     expect(source).toContain("['match', 'rough_match', 'mismatch', 'unreadable'].includes(status)");
-    expect(source).toContain('filter(({ listing }: { listing: any }) => hasCompletedVisualReview(listing))');
+    expect(source).toContain('filter(({ listing }: { listing: any }) => hasActualVisualResponse(listing))');
+    expect(candidateStatusSource).toContain("return hasActualVisualDispatch(row) && Boolean(candidateExecutionReceipt(row)?.attempts.some((attempt) => attempt.outcome === 'usable_review'));");
+    expect(statusComponentSource).toContain('const dispatched = rows.filter(hasActualVisualDispatch), responses = rows.filter(hasActualVisualResponse);');
+    expect(source).toContain('No actual dispatch receipts are available. Legacy verdicts are not proof of image execution.');
     expect(source).toContain('<CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" targetImageUrl={item.primaryPhotoUrl} />');
     expect(source).not.toContain('held out before AI image analysis');
   });
   it('renders ranking score and rank through the shared candidate-row component', () => {
     expect(source).toContain('function MetadataMatchLine');
-    expect(source).toContain('Metadata rank #');
+    expect(source).toContain("{listing.metadataMatchLabel ?? 'Ranking'} rank #{listing.metadataMatchRank ?? '—'} · {listing.metadataMatchScore}/100");
     expect(source).toContain('<MetadataMatchLine listing={listing} />');
     expect(source).toContain('<MetadataMatchLine listing={l} />');
+    expect(masterListSource).toContain("{listing.metadataMatchLabel ?? 'Metadata ranking'}");
+    expect(masterListSource).toContain('<MetadataComparisonTable listing={listing} />');
+    expect(metadataTableSource.match(/<th className="p-1">/g)?.length).toBe(6);
+    expect(metadataTableSource).toContain('Highlighted field names contributed to the ranking score.');
+    expect(metadataTableSource).toContain('Title-derived scored field');
   });
 
   it('separates PCGS current-value candidates from historical trend rows', () => {
