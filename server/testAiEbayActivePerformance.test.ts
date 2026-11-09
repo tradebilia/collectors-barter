@@ -16,6 +16,7 @@ const adapterSource = readFileSync(resolve(import.meta.dirname, "./ebayMarketpla
 const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
 const clientMainSource = readFileSync(resolve(import.meta.dirname, "../client/src/main.tsx"), "utf8");
 const visualSource = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+const rankingDisplaySource = readFileSync(resolve(import.meta.dirname, "../shared/testAiRankingDisplay.ts"), "utf8");
 
 function procedureSource(name: string, nextMarker: string): string {
   const start = routerSource.indexOf(name);
@@ -146,8 +147,13 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(ebayProcedure).toContain("metadataMatchScore: s.metadataMatchScore");
     expect(ebayProcedure).toContain("metadataMatchRank: s.metadataMatchRank");
     expect(ebayProcedure).toContain("metadataFieldComparisons: s.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, s)");
-    expect(pageSource).toContain("const activeMasterListings = mergeMasterCandidates(");
-    expect(pageSource).toContain("<CandidateMasterList listings={activeMasterListings} sourceLabel=\"eBay Active Listings\" />");
+    expect(pageSource).toContain(`  const activeMasterListings = mergeMasterCandidates(
+    collectEbayDisplayCandidates(displayData),
+    displayData?.metadataParentDisplayListings ?? [],
+  );`);
+    expect(rankingDisplaySource).toContain(`  const groups = [data?.listings, data?.visualReviewListings, data?.visualFilter?.listings,
+    data?.visualFilter?.contextListings, data?.preVisionFilter?.excludedListings];`);
+    expect(pageSource).toContain('<CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" targetImageUrl={item.primaryPhotoUrl} />');
     expect(pageSource).toContain("listing.metadataMatchScore !== undefined");
     expect(pageSource).toContain("listing.metadataMatchRank");
     expect(ebayProcedure).toContain("...entry.item,");
@@ -157,11 +163,19 @@ describe("Test AI eBay active-listing responsiveness", () => {
   });
 
   it("renders visible marketplace candidates in ranking order", () => {
-    expect(pageSource).toContain("function sortRankedCandidates");
+    expect(pageSource).toContain("from '@shared/testAiRankingDisplay'");
+    expect(pageSource).toContain(`function sortRankedCandidates<T extends Record<string, any>>(listings: T[]): T[] {
+  return sortMetadataRankedCandidates(listings);
+}`);
     expect(pageSource).toContain("const candidates = sortRankedCandidates(");
     expect(pageSource).toContain("const rankedDisplayListings = sortRankedCandidates(");
     expect(pageSource).toContain("rankedDisplayListings.map(renderListing)");
-    expect(pageSource).toContain("return scoreB - scoreA || a.index - b.index");
+    expect(rankingDisplaySource).toContain(`      const rankA = validDisplayRank(a.listing.metadataMatchRank) ?? Number.POSITIVE_INFINITY;
+      const rankB = validDisplayRank(b.listing.metadataMatchRank) ?? Number.POSITIVE_INFINITY;
+      if (rankA !== rankB) return rankA - rankB;
+      const scoreA = validScore(a.listing.metadataMatchScore) ?? Number.NEGATIVE_INFINITY;
+      const scoreB = validScore(b.listing.metadataMatchScore) ?? Number.NEGATIVE_INFINITY;
+      return scoreB - scoreA || a.index - b.index;`);
     expect(pageSource).not.toContain("displayData.listings.map(renderListing)");
   });
 
@@ -187,7 +201,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(soldSection).toContain("const visualContextAuditLedger = (sharedVisualFilter.contextListings ?? []).map");
     expect(soldSection).toContain("ledger: [...canonicalListings, ...visualContextAuditLedger");
     expect(soldSection).toContain("visualContextAuditLedger.length");
-    expect(pageSource).toContain("<CandidateMasterList listings={auditLedger} sourceLabel=\"eBay Sold History\" />");
+    expect(pageSource).toContain('<CandidateMasterList listings={auditLedger} sourceLabel="eBay Sold History" targetImageUrl={item.primaryPhotoUrl} />');
     expect(pageSource).toContain("Every retrieved candidate appears once, in rank order.");
     expect(pageSource).toContain("<MetadataComparisonTable listing={listing} />");
     expect(pageSource).toContain("No candidates reached the main valuation/review list");
@@ -238,8 +252,15 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("trpc.testAI.reviewEbayVisualData.useMutation");
     expect(pageSource).toContain("visualReviewMutation.mutateAsync");
     expect(pageSource).toContain("data?.visualReviewListings");
-    expect(pageSource).toContain("const reviewListings = Array.isArray(data?.visualReviewListings) ? data.visualReviewListings : []");
-    expect(pageSource).toContain("listing.imageUrls.filter((url: unknown) => typeof url === 'string').slice(0, 3)");
+    expect(pageSource).toContain(`  const visualReviewInput = useMemo(() => ({
+    targetImageUrl: item.primaryPhotoUrl || 'https://invalid.local/target-image-placeholder',
+    targetMetadata: data?.visualReviewTargetMetadata || requestQueryPreview,
+    // A visual-review mutation uses POST, but retain a small explicit candidate
+    // DTO so external eBay payload fields cannot expand the review contract.
+    listings: buildEbayVisualReviewListings(data),
+  }), [data?.visualReviewListings, data?.listings, data?.visualReviewTargetMetadata, item.primaryPhotoUrl, requestQueryPreview]);`);
+    expect(rankingDisplaySource).toContain("const reviewListings = Array.isArray(data?.visualReviewListings) ? data.visualReviewListings : []");
+    expect(rankingDisplaySource).toContain("listing.imageUrls.filter((url: unknown) => typeof url === 'string').slice(0, 3)");
     expect(pageSource).toContain("useState(Boolean(item.primaryPhotoUrl))");
     expect(pageSource).toContain("const effectiveVisualReviewData = visualReviewData ?? (data?.visualFilter ? data : undefined);");
     expect(pageSource).toContain("onVisualReviewData?.(effectiveVisualReviewData && !effectiveVisualReviewData.error ? effectiveVisualReviewData : null);");
@@ -248,7 +269,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("const displayData = mergeEbayVisualReviewDisplayData(data, effectiveVisualReviewData)");
     expect(pageSource).toContain("AI image checks could not start");
     expect(pageSource).toContain("AI image checks stopped after returning partial results");
-    expect(pageSource).toContain("<CandidateMasterList listings={activeMasterListings} sourceLabel=\"eBay Active Listings\" />");
+    expect(pageSource).toContain('<CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" targetImageUrl={item.primaryPhotoUrl} />');
     expect(pageSource).toContain("data={ebayData} isLoading={ebayLoading}");
   });
 
@@ -258,7 +279,19 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("for (const batch of reviewBatchInputs)");
     expect(pageSource).toContain("const deadlineAt = Date.now() + 120_000");
     expect(pageSource).toContain("reviewDeadlineAt: deadlineAt");
-    expect(pageSource).toContain("id: String(listing.id ?? listing.itemId ?? listing.itemUrl ?? '')");
+    expect(pageSource).toContain(`  const reviewBatchInputs = useMemo(() => Array.from({ length: VISUAL_REVIEW_CLIENT_MAX_BATCHES }, (_, batchIndex) => ({
+    ...visualReviewInput,
+    listings: visualReviewInput.listings.slice(batchIndex * VISUAL_REVIEW_CLIENT_BATCH_SIZE, (batchIndex + 1) * VISUAL_REVIEW_CLIENT_BATCH_SIZE),
+  })), [visualReviewInput]);`);
+    expect(rankingDisplaySource).toContain(`    return {
+      id: String(listing.id ?? listing.itemId ?? listing.itemUrl ?? ''),
+      title: String(listing.title ?? ''), price: Number(listing.price?.value ?? listing.price) || null,
+      currency: String(listing.currency ?? listing.price?.currency ?? 'USD'),`);
+    expect(rankingDisplaySource).toContain("return sourceListings.slice(0, 30).map((listing: Record<string, any>) => {");
+    expect(rankingDisplaySource).toContain(`      auctionEndDate: listing.auctionEndDate ? String(listing.auctionEndDate) : null,
+      metadataRanking: listing.metadataRanking,
+    };`);
+    expect(rankingDisplaySource).not.toContain('...listing,');
     expect(pageSource).toContain("// DTO so external eBay payload fields cannot expand the review contract.");
     expect(procedureSource("reviewEbayVisualData: protectedProcedure", "// Fetch HIPStamp active listings")).toContain("reviewDeadlineAt: z.number().int().optional()");
     expect(visualSource).toContain("args.reviewDeadlineAt");
@@ -309,9 +342,14 @@ describe("Test AI eBay active-listing responsiveness", () => {
   });
 
   it("sends eBay candidates to visual review from either bounded list and promotes gallery images", () => {
-    expect(pageSource).toContain("const sourceListings = reviewListings.some(hasImage) ? reviewListings : listingRows");
-    expect(pageSource).toContain("const listingRows = Array.isArray(data?.listings) ? data.listings : []");
-    expect(pageSource).toContain("imageUrl: typeof listing.imageUrl === 'string' ? listing.imageUrl : imageUrls[0] ?? null");
+    expect(pageSource).toContain("listings: buildEbayVisualReviewListings(data),");
+    expect(rankingDisplaySource).toContain(`  const reviewListings = Array.isArray(data?.visualReviewListings) ? data.visualReviewListings : [];
+  const listingRows = Array.isArray(data?.listings) ? data.listings : [];
+  const hasImage = (row: Record<string, any>) => typeof row?.imageUrl === 'string'
+    || (Array.isArray(row?.imageUrls) && row.imageUrls.some((url: unknown) => typeof url === 'string' && url.length > 0));
+  const sourceListings = reviewListings.some(hasImage) ? reviewListings : listingRows;`);
+    expect(rankingDisplaySource).toContain(`      imageUrl: typeof listing.imageUrl === 'string' ? listing.imageUrl : imageUrls[0] ?? null,
+      imageUrls,`);
   });
 
   it("keeps the query visible across searchable marketplace panels", () => {
@@ -353,10 +391,29 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(visualSource).toContain("outside the bounded adaptive review window");
   });
 
+  it("uses exact-tier priority when pre-vision identity signals are equal", () => {
+    const candidates = [1, 0, 1].map((tier, index) => ({
+      candidateIndex: index,
+      imageUrl: `https://images.example/tier-${index}.jpg`,
+      imageUrls: [`https://images.example/tier-${index}.jpg`],
+      item: { title: "Transformers Megatron G1 AFA 60", __tradebiliaQueryTier: tier },
+    }));
+    const prioritized = prioritizeVisualSourceCandidates(
+      candidates,
+      "title=Transformers Megatron G1; grade=60.00; certificationCompany=AFA; category=vintage_toys",
+      [],
+    );
+    expect(prioritized.map((candidate) => candidate.candidateIndex)).toEqual([1, 0, 2]);
+  });
+
   it("prioritizes all exact-tier candidates before relaxed listings", () => {
+    // Keep the AFA Q60 regression visible: category is already present, but the
+    // current title-grade parser cannot recognize Q60 and loses grade priority.
+    // Do not change the expected first position to the observed position 20.
     const candidates = Array.from({ length: 21 }, (_, index) => ({
       candidateIndex: index,
       imageUrl: `https://images.example/${index}.jpg`,
+      imageUrls: [`https://images.example/${index}.jpg`],
       item: {
         title: index === 20
           ? "Rare 1984 Hasbro Transformer G1 Megatron AFA Graded Q60 MIB"
@@ -379,11 +436,13 @@ describe("Test AI eBay active-listing responsiveness", () => {
       {
         candidateIndex: 0,
         imageUrl: "https://images.example/weak.jpg",
+        imageUrls: ["https://images.example/weak.jpg"],
         item: { title: "Pokemon Silver Version Nintendo Game Boy Color", __tradebiliaQueryTier: 0 },
       },
       {
         candidateIndex: 1,
         imageUrl: "https://images.example/graded.jpg",
+        imageUrls: ["https://images.example/graded.jpg"],
         item: { title: "Pokemon Silver Version Graded PSA 8.0 CIB Complete In Box Nintendo Game Boy Color", __tradebiliaQueryTier: 1 },
       },
     ];

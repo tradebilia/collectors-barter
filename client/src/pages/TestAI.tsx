@@ -8,6 +8,8 @@ import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { TestAiPricingSummary } from '@/components/TestAiPricingSummary';
+import { MetadataComparisonTable } from '@/components/TestAiMetadataComparisonTable';
+import { originatingRankingOccurrence, preserveParentDisplayRanking, sortMetadataRankedCandidates, collectEbayDisplayCandidates, buildEbayVisualReviewListings, mergeKnownEbayParentDisplayRows } from '@shared/testAiRankingDisplay';
 import { toast } from 'sonner';
 import { buildComicsOriginalArtQueries, buildStructuredItemQuery, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, TEST_AI_SOURCE_APPLICABILITY, type TestAiSourceId } from '@shared/testAiSourceApplicability';
@@ -899,17 +901,7 @@ function MetadataMatchLine({ listing }: { listing: any }) {
 }
 
 function sortRankedCandidates<T extends Record<string, any>>(listings: T[]): T[] {
-  return listings
-    .map((listing, index) => ({ listing, index }))
-    .sort((a, b) => {
-      const rankA = Number.isFinite(Number(a.listing.metadataMatchRank)) ? Number(a.listing.metadataMatchRank) : Number.POSITIVE_INFINITY;
-      const rankB = Number.isFinite(Number(b.listing.metadataMatchRank)) ? Number(b.listing.metadataMatchRank) : Number.POSITIVE_INFINITY;
-      if (rankA !== rankB) return rankA - rankB;
-      const scoreA = Number.isFinite(Number(a.listing.metadataMatchScore)) ? Number(a.listing.metadataMatchScore) : Number.NEGATIVE_INFINITY;
-      const scoreB = Number.isFinite(Number(b.listing.metadataMatchScore)) ? Number(b.listing.metadataMatchScore) : Number.NEGATIVE_INFINITY;
-      return scoreB - scoreA || a.index - b.index;
-    })
-    .map(({ listing }) => listing);
+  return sortMetadataRankedCandidates(listings);
 }
 
 // Candidate analysis must never fall back to provider retrieval order. This
@@ -1142,7 +1134,7 @@ function hasCompletedVisualReview(listing: any): boolean {
 }
 
 function candidateMasterKey(listing: any): string {
-  return String(listing?.saleId ?? listing?.id ?? listing?.itemId ?? listing?.itemUrl ?? listing?.url ?? listing?.title ?? 'candidate');
+  return listing?.metadataRanking?.occurrenceKey ?? String(listing?.saleId ?? listing?.id ?? listing?.itemId ?? listing?.itemUrl ?? listing?.url ?? listing?.title ?? 'candidate');
 }
 
 function mergeMasterCandidates(...groups: any[][]): any[] {
@@ -1198,30 +1190,6 @@ function VisualDifferenceList({ listing }: { listing: any }) {
     <p className="text-[8px] font-bold uppercase tracking-wide text-red-200">Why mismatch — all detected differences</p>
     <ul className="mt-1 space-y-1">{differences.map((difference: any, differenceIndex: number) => <li key={`${difference.field}-${differenceIndex}`} className="text-[8px] leading-snug text-gray-300"><span className="font-semibold text-red-200">{difference.field}:</span> target “{difference.targetObservation}” vs candidate “{difference.candidateObservation}”<span className="text-gray-500"> — {difference.impact}</span></li>)}</ul>
   </div>;
-}
-function MetadataComparisonTable({ listing }: { listing: any }) {
-  const comparisons = Array.isArray(listing?.metadataFieldComparisons) ? listing.metadataFieldComparisons : [];
-  if (comparisons.length === 0) return null;
-  const statusClass: Record<string, string> = { match: 'text-emerald-300', different: 'text-red-300', unknown: 'text-amber-200' };
-  const contributionFieldClass = (contribution: any, titleDerived = false) => {
-    if (!contribution?.matched) return 'text-gray-300';
-    if (titleDerived && contribution.titleDerived) return 'rounded bg-violet-900/60 px-1 text-violet-100 ring-1 ring-violet-400/60';
-    if (!titleDerived && contribution.structured) return 'rounded bg-cyan-900/60 px-1 text-cyan-100 ring-1 ring-cyan-400/60';
-    return 'rounded bg-sky-900/50 px-1 text-sky-100 ring-1 ring-sky-400/50';
-  };
-  const contributionLabel = (contribution: any) => contribution?.titleDerived && !contribution?.structured ? 'title-derived score field' : contribution?.matched ? 'ranking score field' : undefined;
-  return <details className="mt-1 rounded border border-cyan-700/30 bg-cyan-950/20 p-1.5" open>
-    <summary className="cursor-pointer text-[8px] font-bold uppercase tracking-wide text-cyan-200">Target vs candidate fields</summary>
-    <div className="mt-1 flex flex-wrap items-center gap-1 text-[8px] text-gray-400" aria-label="Ranking highlight legend">
-      <span className="rounded bg-cyan-900/60 px-1 text-cyan-100 ring-1 ring-cyan-400/60">Scored field</span>
-      <span className="rounded bg-violet-900/60 px-1 text-violet-100 ring-1 ring-violet-400/60">Title-derived scored field</span>
-      <span>Highlighted field names contributed to the ranking score.</span>
-    </div>
-    <div className="mt-1 overflow-x-auto"><table className="w-full min-w-[520px] border-collapse text-[8px] leading-snug">
-      <thead><tr className="border-b border-cyan-800/50 text-left text-cyan-200/80"><th className="p-1">Target field</th><th className="p-1">Target value</th><th className="p-1">Candidate field</th><th className="p-1">Candidate value</th><th className="p-1">Candidate title-derived value</th><th className="p-1">Result</th></tr></thead>
-      <tbody>{comparisons.map((comparison: any, comparisonIndex: number) => { const contribution = comparison.rankingContribution; const label = contributionLabel(contribution); return <tr key={`${comparison.targetField}-${comparisonIndex}`} className="border-b border-gray-800/60 align-top"><td className="p-1 font-semibold"><span className={contributionFieldClass(contribution)} title={label}>{comparison.targetField || 'Unknown field'}</span></td><td className="max-w-[150px] break-words p-1 text-gray-200">{comparison.targetValue || 'Unknown'}</td><td className="p-1 font-semibold"><span className={contributionFieldClass(contribution)} title={label}>{comparison.candidateField || 'Unknown field'}</span></td><td className="max-w-[150px] break-words p-1 text-gray-200">{comparison.candidateValue || 'Unknown'}</td><td className="max-w-[190px] break-words p-1 text-gray-200"><span className={contributionFieldClass(contribution, true)} title={contribution?.titleDerived ? 'Title-derived value contributed to the ranking score' : undefined}>{comparison.titleDerivedValue || 'Unknown'}</span>{comparison.titleDerivedStatus && <span className={`ml-1 font-semibold uppercase ${statusClass[comparison.titleDerivedStatus] ?? statusClass.unknown}`}>({comparison.titleDerivedStatus})</span>}</td><td className={`p-1 font-semibold uppercase ${statusClass[comparison.status] ?? statusClass.unknown}`}>{comparison.status || 'unknown'}</td></tr>; })}</tbody>
-    </table></div>
-  </details>;
 }
 function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: controlledOpen, onOpenChange }: { data: any; targetImageUrl?: string | null; sourceLabel: string; open?: boolean; onOpenChange?: (open: boolean) => void }) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
@@ -1329,28 +1297,30 @@ function mergeVisualReviewBatches(completed: any[]): any | undefined {
 }
 
 function ebayListingKey(listing: any): string {
-  return String(listing?.id ?? listing?.itemId ?? listing?.itemUrl ?? listing?.title ?? '');
+  return originatingRankingOccurrence(listing) ?? String(listing?.id ?? listing?.itemId ?? listing?.itemUrl ?? listing?.title ?? '');
 }
 
 function mergeEbayVisualReviewDisplayData(base: any, review: any): any {
   if (!review || review.error) return base;
   const baseListings = Array.isArray(base?.listings) ? base.listings : [];
-  const reviewedListings = Array.isArray(review.listings) ? review.listings : [];
+  const reviewedListings = mergeKnownEbayParentDisplayRows(base, Array.isArray(review.listings) ? review.listings : []);
   const reviewedByKey = new Map(reviewedListings.map((listing: any) => [ebayListingKey(listing), listing]));
   const mergedListings = baseListings.map((listing: any) => {
     const reviewed = reviewedByKey.get(ebayListingKey(listing));
-    return reviewed ? { ...listing, ...reviewed } : listing;
+    return reviewed ? preserveParentDisplayRanking(listing, reviewed) : listing;
   });
   const baseKeys = new Set(baseListings.map(ebayListingKey));
   const reviewOnlyListings = reviewedListings.filter((listing: any) => !baseKeys.has(ebayListingKey(listing)));
+  const reviewedDisplayListings = reviewedListings;
   return {
     ...base,
     ...review,
     query: review.query ?? base?.query,
     debug: review.debug ?? base?.debug,
     listings: mergedListings.length > 0 ? [...mergedListings, ...reviewOnlyListings] : reviewedListings,
-    visualReviewListings: reviewedListings.length > 0 ? reviewedListings : base?.visualReviewListings ?? [],
+    visualReviewListings: reviewedDisplayListings.length > 0 ? reviewedDisplayListings : base?.visualReviewListings ?? [],
     preVisionFilter: review.preVisionFilter ?? base?.preVisionFilter,
+    metadataParentDisplayListings: collectEbayDisplayCandidates(base),
   };
 }
 
@@ -1397,35 +1367,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     targetMetadata: data?.visualReviewTargetMetadata || requestQueryPreview,
     // A visual-review mutation uses POST, but retain a small explicit candidate
     // DTO so external eBay payload fields cannot expand the review contract.
-    listings: (() => {
-      const reviewListings = Array.isArray(data?.visualReviewListings) ? data.visualReviewListings : [];
-      const listingRows = Array.isArray(data?.listings) ? data.listings : [];
-      const hasImage = (listing: any) => typeof listing?.imageUrl === 'string'
-        || (Array.isArray(listing?.imageUrls) && listing.imageUrls.some((url: unknown) => typeof url === 'string' && url.length > 0));
-      const sourceListings = reviewListings.some(hasImage) ? reviewListings : listingRows;
-      return sourceListings.slice(0, 30).map((listing: any) => {
-        const imageUrls = Array.isArray(listing.imageUrls)
-          ? listing.imageUrls.filter((url: unknown) => typeof url === 'string').slice(0, 3)
-          : [];
-        return {
-          id: String(listing.id ?? listing.itemId ?? listing.itemUrl ?? ''),
-          title: String(listing.title ?? ''),
-          price: Number(listing.price?.value ?? listing.price) || null,
-          currency: String(listing.currency ?? listing.price?.currency ?? 'USD'),
-          condition: listing.condition ? String(listing.condition) : null,
-          seller: listing.seller ? String(listing.seller) : null,
-          itemUrl: listing.itemUrl ? String(listing.itemUrl) : null,
-          imageUrl: typeof listing.imageUrl === 'string' ? listing.imageUrl : imageUrls[0] ?? null,
-          // Preserve primary plus two additional images for progressive review.
-          imageUrls,
-          listingType: listing.listingType ? String(listing.listingType) : null,
-          bidCount: Number.isFinite(Number(listing.bidCount)) ? Number(listing.bidCount) : null,
-          uniqueBidderCount: Number.isFinite(Number(listing.uniqueBidderCount)) ? Number(listing.uniqueBidderCount) : null,
-          currentBidPrice: Number.isFinite(Number(listing.currentBidPrice?.value ?? listing.currentBidPrice)) ? Number(listing.currentBidPrice?.value ?? listing.currentBidPrice) : null,
-          auctionEndDate: listing.auctionEndDate ? String(listing.auctionEndDate) : null,
-        };
-      });
-    })(),
+    listings: buildEbayVisualReviewListings(data),
   }), [data?.visualReviewListings, data?.listings, data?.visualReviewTargetMetadata, item.primaryPhotoUrl, requestQueryPreview]);
   const reviewBaseEnabled = reviewRequested && !!item.primaryPhotoUrl && !!data?.visualReviewTargetMetadata && !data?.visualFilter;
   const reviewBatchInputs = useMemo(() => Array.from({ length: VISUAL_REVIEW_CLIENT_MAX_BATCHES }, (_, batchIndex) => ({
@@ -1491,9 +1433,8 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   const autographMarketContextOnly = Boolean(displayData?.marketContextOnly);
   const rankedDisplayListings = sortRankedCandidates(displayData?.listings ?? []);
   const activeMasterListings = mergeMasterCandidates(
-    displayData?.listings ?? [],
-    displayData?.visualReviewListings ?? [],
-    displayData?.preVisionFilter?.excludedListings ?? [],
+    collectEbayDisplayCandidates(displayData),
+    displayData?.metadataParentDisplayListings ?? [],
   );
   const autographValuationListings = autographMarketContextOnly
     ? (displayData?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible')

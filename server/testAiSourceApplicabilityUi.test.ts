@@ -6,6 +6,7 @@ describe('manual Test AI selector boundary', () => {
   const source = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
   const outcomeSource = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/components/test-ai/SourceRunOutcomeSummary.tsx'), 'utf8');
   const routerSource = fs.readFileSync(path.resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
+  const rankingDisplaySource = fs.readFileSync(path.resolve(import.meta.dirname, '../shared/testAiRankingDisplay.ts'), 'utf8');
 
   it('retains manual source state while highlighting sources applicable to the loaded item', () => {
     expect(source).toContain('const [leftSources, setLeftSources] = useState<Set<SourceId>>');
@@ -389,12 +390,27 @@ describe('manual Test AI selector boundary', () => {
     expect(routerSource).toContain('searchMetrics: result.metrics');
     expect(routerSource).toContain('imageUrl: listing.imageUrl ?? listing.thumbnailUrl ?? listing.imageUrls?.[0] ?? listing.images?.[0] ?? null');
     expect(source).toContain('const preVisionExcludedListings = sortAnalysisCandidates(data?.preVisionExcludedListings ?? []);');
-    expect(source).toContain('<CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)}');
+    expect(source).toContain("from '@shared/testAiRankingDisplay'");
+    expect(source).toContain(`function sortRankedCandidates<T extends Record<string, any>>(listings: T[]): T[] {
+  return sortMetadataRankedCandidates(listings);
+}`);
+    expect(source).toContain(`function sortAnalysisCandidates<T extends Record<string, any>>(listings: T[]): T[] {
+  return sortRankedCandidates(listings);
+}`);
+    expect(rankingDisplaySource).toContain(`      const rankA = validDisplayRank(a.listing.metadataMatchRank) ?? Number.POSITIVE_INFINITY;
+      const rankB = validDisplayRank(b.listing.metadataMatchRank) ?? Number.POSITIVE_INFINITY;
+      if (rankA !== rankB) return rankA - rankB;`);
+    expect(source).toContain('<CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />');
+    expect(source).toContain(`function CandidateMasterList({ listings, sourceLabel, targetImageUrl }: { listings: any[]; sourceLabel: string; targetImageUrl?: string | null }) {
+  const candidates = mergeMasterCandidates(listings);`);
     expect(source).toContain('All candidates — ranked master list');
     expect(source).toContain('Hard exception — not sent to AI');
     expect(source).toContain('const imageUrl = listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0] || null;');
-    expect(source).toContain('No image</span>');
-    expect(source).toContain('className="h-full w-full object-contain"');
+    expect(source).toContain('<div className="grid w-24 shrink-0 grid-cols-2 gap-1">{targetImageUrl ? <figure>');
+    expect(source).toContain('<img src={targetImageUrl} alt="Target item" loading="lazy" referrerPolicy="no-referrer" className="h-12 w-full rounded border border-cyan-700/50 bg-gray-950 object-contain" />');
+    expect(source).toContain('<img src={imageUrl} alt="Marketplace candidate" loading="lazy" referrerPolicy="no-referrer" className="h-12 w-full rounded border border-emerald-700/50 bg-gray-950 object-contain" />');
+    expect(source).toContain('<div className="flex h-12 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">Target unavailable</div>');
+    expect(source).toContain('<div className="flex h-12 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">No image</div>');
   });
 
   it('keeps the full metadata breakdown on Mercari candidates excluded before visual review', () => {
@@ -416,7 +432,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('function hasCompletedVisualReview(listing: any): boolean');
     expect(source).toContain("['match', 'rough_match', 'mismatch', 'unreadable'].includes(status)");
     expect(source).toContain('filter(({ listing }: { listing: any }) => hasCompletedVisualReview(listing))');
-    expect(source).toContain("<CandidateMasterList listings={activeMasterListings} sourceLabel=\"eBay Active Listings\" />");
+    expect(source).toContain('<CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" targetImageUrl={item.primaryPhotoUrl} />');
     expect(source).not.toContain('held out before AI image analysis');
   });
   it('renders ranking score and rank through the shared candidate-row component', () => {
@@ -439,11 +455,16 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('id={`pcgs-history-rows-${side}`');
   });
 
-  it('shows Numista catalogue estimates as a weighted guide input while preserving sale classification', () => {
+  it('shows Numista catalogue estimates as a verified-guide fallback while preserving sale classification', () => {
     expect(source).toContain("id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: numistaQuery.data?.data?.guideValue ? 'valuation_guide' : 'reference_context'");
-    expect(source).toContain('enters the analyzer as a secondary guide anchor at a maximum 25% weight');
-    expect(source).toContain('Catalogue estimate · analyzer guide · max 25%');
-    expect(source).toContain('does not count toward completed-sale totals');
+    expect(source).toContain('guideRecordedSales: 0, guideTotalRecordedSales: 0, ...guideAnchorFields(numistaQuery.data?.guideAnchor)');
+    expect(source).toContain('A server-verified applicable estimate may be used alone as a guide fallback when current market evidence is insufficient; sufficient comparable sales are used alone, with no blend or added sale counts.');
+    expect(source).toContain('Guide fallback not verified: {data?.guideWarnings?.join(\' \')}');
+    expect(source).toContain('<p className="font-semibold uppercase text-sky-300">Catalogue reference · verified-guide fallback candidate</p>');
+    expect(source).toContain('This is a documented coarse-grade association, not an exact certified-grade value.');
+    expect(source).toContain('It is not a sale and does not count toward completed-sale totals. If no accepted market baseline exists, Tradebilia labels the result provisional and not market-supported.');
+    expect(source).not.toContain('enters the analyzer as a secondary guide anchor at a maximum 25% weight');
+    expect(source).not.toContain('Catalogue estimate · analyzer guide · max 25%');
     expect(source).toContain('configured guide weight');
     expect(source).toContain('treatmentReason');
     expect(source).toContain('Visual identity fallback');

@@ -364,7 +364,9 @@ describe("visual source filter", () => {
       targetMetadata: target,
       listings: [replica, structuredReplica, unknown],
     });
-    expect(result.contextListings?.map((listing) => listing.title)).toEqual([unknown.title]);
+    expect(result.contextListings?.filter((listing) => !listing.hardException).map((listing) => listing.title)).toEqual([unknown.title]);
+    expect(result.contextListings?.filter((listing) => listing.hardException)).toHaveLength(2);
+    expect(result.contextListings?.filter((listing) => listing.hardException).every((listing) => listing.valuationEligible === false)).toBe(true);
     expect(result.removedCount).toBe(2);
     expect(result.preVisualExcludedCount).toBe(2);
     expect(mockedInvokeLLM).not.toHaveBeenCalled();
@@ -426,7 +428,9 @@ describe("visual source filter", () => {
       targetMetadata: target,
       listings: [photo, card, baseball, unknown],
     });
-    expect(result.contextListings?.map((listing) => listing.title)).toEqual([baseball.title, unknown.title]);
+    expect(result.contextListings?.filter((listing) => !listing.hardException).map((listing) => listing.title)).toEqual([baseball.title, unknown.title]);
+    expect(result.contextListings?.filter((listing) => listing.hardException)).toHaveLength(2);
+    expect(result.contextListings?.filter((listing) => listing.hardException).every((listing) => listing.valuationEligible === false)).toBe(true);
     expect(result.removedCount).toBe(2);
     expect(result.preVisualExcludedCount).toBe(2);
     expect(mockedInvokeLLM).not.toHaveBeenCalled();
@@ -814,9 +818,9 @@ describe("visual source filter", () => {
       "Provider fallback name",
     ]);
     expect(candidate.details).toEqual({
-      AccessoryType: "Controller",
-      Platform: "NES",
-      Brand: "Nintendo",
+      accessoryType: "Controller",
+      platform: "NES",
+      brand: "Nintendo",
     });
   });
 
@@ -2912,7 +2916,7 @@ describe("visual source filter", () => {
       },
     });
     expect(buildDeclaredIdentityReviews([
-      { title: "MOTU MAN AT ARMS Mint Sealed MOC Vintage 1983 AFA 75+ Masters of the Universe", imageUrl: "https://example.com/man-at-arms.jpg" },
+      { title: "MOTU MAN AT ARMS Mint Sealed MOC Vintage 1983 AFA 75.0 Masters of the Universe", imageUrl: "https://example.com/man-at-arms.jpg" },
     ], target)).toEqual([]);
   });
 
@@ -3086,12 +3090,12 @@ describe("visual source filter", () => {
       itemType: "board_game___puzzle",
       fullItemDetails: { gamePuzzleName: "Monopoly: Manhattan Beach", publisherBrand: "Hasbro" },
     });
-    const rows = buildMetadataFieldComparisons(target, {
+    const [scored] = annotatePreVisualComparableScores([{
       title: "Monopoly Manhattan Beach Board Game",
       fullItemDetails: { gamePuzzleName: "Monopoly: Manhattan Beach", publisherBrand: "Hasbro" },
-      metadataMatchReasons: ["gamePuzzleName", "publisherBrand"],
-    });
-    expect(rows.find((row) => row.targetField === "Game or puzzle name")?.rankingContribution).toMatchObject({ matched: true, structured: true, titleDerived: false, reasons: ["gamePuzzleName"] });
+    }], target);
+    const rows = buildMetadataFieldComparisons(target, scored);
+    expect(rows.find((row) => row.targetField === "Game or puzzle name")?.rankingContribution).toMatchObject({ matched: true, structured: true, titleDerived: false, reasons: [expect.stringMatching(/^gamePuzzleName: \d+ points \(structured\)$/)] });
     expect(rows.find((row) => row.targetField === "Publisher or brand")?.rankingContribution).toMatchObject({ matched: true, structured: true });
   });
 
@@ -3104,11 +3108,11 @@ describe("visual source filter", () => {
       certificationCompany: "PSA",
       fullItemDetails: { gameTitle: "Call of Duty World at War", platform: "Xbox 360", isGraded: "Yes" },
     });
-    const rows = buildMetadataFieldComparisons(target, {
+    const [scored] = annotatePreVisualComparableScores([{
       title: "Call of Duty World at War Xbox 360 Sealed WATA 9.8",
       fullItemDetails: { gameTitle: "Call of Duty World at War", platform: "Xbox 360" },
-      metadataMatchReasons: ["grade (title-derived)", "grading company (title-derived)"],
-    });
+    }], target);
+    const rows = buildMetadataFieldComparisons(target, scored);
     expect(rows.find((row) => row.targetField === "Grade")?.rankingContribution).toMatchObject({ matched: true, structured: false, titleDerived: true });
     expect(rows.find((row) => row.targetField === "Certification company")?.rankingContribution).toMatchObject({ matched: true, structured: false, titleDerived: true });
   });
@@ -4181,13 +4185,15 @@ describe("visual source filter", () => {
   it("requires the vision prompt and Test AI UI to expose complete differences", () => {
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
     const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
+    const tableSource = readFileSync(resolve(import.meta.dirname, "../client/src/components/TestAiMetadataComparisonTable.tsx"), "utf8");
     expect(source).toContain("list every detected material difference in visualDifferences");
     expect(source).toContain("targetObservation");
     expect(pageSource).toContain("Why mismatch — all detected differences");
     expect(pageSource).toContain("VisualDifferenceList");
     expect(source).toContain("rankingContribution?:");
-    expect(pageSource).toContain("Highlighted field names contributed to the ranking score.");
-    expect(pageSource).toContain("Title-derived scored field");
+    expect(pageSource).toContain("import { MetadataComparisonTable }");
+    expect(tableSource).toContain("Highlighted field names contributed to the ranking score.");
+    expect(tableSource).toContain("Title-derived scored field");
   });
   it("shows each reviewed candidate price beside its match or mismatch verdict", () => {
     const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");

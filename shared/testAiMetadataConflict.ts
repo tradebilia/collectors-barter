@@ -1,5 +1,6 @@
 import { titleContainsValue } from "./testAiTitleEvidence";
-import { normalizeTestAiOtherDetails } from "./testAiCriteria";
+import { extractCandidateStructuredMetadata, meaningfulMetadataText, readMetadataValue, metadataBooleanState, STRUCTURED_GRADE_ALIASES } from './testAiMetadataValues';
+import { compareComparableGrades, findStructuredGradeConflict, parseSourceGradeFromTitle } from './testAiGradeComparison';
 
 export type MetadataConflict = {
   field: string;
@@ -11,6 +12,7 @@ export type MetadataConflict = {
 type MetadataRecord = Record<string, unknown>;
 
 const FIELD_ALIASES: Record<string, string[]> = {
+  grade: [...STRUCTURED_GRADE_ALIASES],
   manufacturer: ['manufacturer', 'brand', 'maker'],
   brand: ['brand', 'manufacturer', 'maker'],
   series: ['series', 'setName', 'set', 'toyLine'],
@@ -62,6 +64,17 @@ function compact(value: unknown): string {
   return key(value).replace(/[^a-z0-9]+/g, '');
 }
 
+function fieldComparable(field: string, value: string): string {
+  if (/^(?:sealed|factorySealed|sealedStatus|sealStatus|complete|isComplete|completeness|completeInBox|originalPackaging|originalBoxIncluded|isGraded|graded)$/i.test(field)) {
+    const state = metadataBooleanState(value);
+    if (state) return state;
+  }
+  // Grade qualifiers carry punctuation facts (A+ is not A++ outside games).
+  return /^(?:gradeQualifier|qualifier|gradeDesignation|labelDesignation|designation|coinDesignation)$/i.test(field)
+    ? key(value).replace(/[^a-z0-9+]+/g, '')
+    : compact(value);
+}
+
 function parseDetails(value: unknown): MetadataRecord {
   if (!value) return {};
   if (typeof value === 'object' && !Array.isArray(value)) return value as MetadataRecord;
@@ -83,11 +96,7 @@ function targetDetails(metadata: string): MetadataRecord {
 }
 
 function firstValue(record: MetadataRecord, field: string): string {
-  for (const alias of FIELD_ALIASES[field] ?? [field]) {
-    const value = record[alias];
-    if (value !== null && value !== undefined && String(value).trim()) return String(value).trim();
-  }
-  return '';
+  return readMetadataValue(record, FIELD_ALIASES[field] ?? [field]);
 }
 
 function normalizeCategory(value: string): string {
@@ -98,24 +107,19 @@ function canonicalFields(metadata: string): MetadataRecord {
   const details = targetDetails(metadata);
   const fields: MetadataRecord = { ...details };
   for (const field of new Set(Object.values(FIELD_ALIASES).flat())) {
-    const direct = metadataValue(metadata, field);
+    const direct = meaningfulMetadataText(metadataValue(metadata, field));
     if (direct) fields[field] = direct;
   }
   fields.title = metadataValue(metadata, 'title');
   fields.category = metadataValue(metadata, 'category');
   fields.itemType = metadataValue(metadata, 'itemType');
-  fields.grade = metadataValue(metadata, 'grade') || fields.grade;
-  fields.certificationCompany = metadataValue(metadata, 'certificationCompany') || fields.certificationCompany;
-  return fields;
+  fields.grade = meaningfulMetadataText(metadataValue(metadata, 'grade')) || fields.grade;
+  fields.certificationCompany = meaningfulMetadataText(metadataValue(metadata, 'certificationCompany')) || fields.certificationCompany;
+  return { ...extractCandidateStructuredMetadata({ itemDetails: fields }), title: fields.title };
 }
 
 function candidateFields(candidate: MetadataRecord): MetadataRecord {
-  const details = parseDetails(candidate.itemDetails ?? candidate.fullItemDetails ?? candidate.details);
-  // Normalize after merging so a raw adapter field cannot overwrite the
-  // resolved custom value from itemDetails (for example brand=Other with
-  // customBrand=Nintendo). The same generic rule covers every
-  // custom<FieldName> pair.
-  return normalizeTestAiOtherDetails({ ...details, ...candidate });
+  return extractCandidateStructuredMetadata(candidate);
 }
 
 function valueMatchesEvidence(value: string, evidence: string): boolean {
@@ -133,20 +137,10 @@ function explicitNumberEvidence(field: string, value: string, title: string): bo
   return false;
 }
 
-function explicitGradeConflict(target: string, candidateTitle: string): string | null {
-  const targetGrade = String(target).match(/[0-9]+(?:\.[0-9]+)?/)?.[0];
-  if (!targetGrade) return null;
-  const candidateGrade = candidateTitle.match(/\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*(?:graded\s*)?([0-9]+(?:\.[0-9]+)?)/i)?.[1]
-    ?? candidateTitle.match(/\b(?:grade|graded|score|rating)\s*(?:is|of|:)?\s*([0-9]+(?:\.[0-9]+)?)/i)?.[1];
-  if (candidateGrade && Number(candidateGrade) !== Number(targetGrade)) return candidateGrade;
-  return null;
-}
-
-function explicitStructuredGradeConflict(target: string, candidate: string): string | null {
-  const targetGrade = String(target).match(/[0-9]+(?:\.[0-9]+)?/)?.[0];
-  const candidateGrade = String(candidate).match(/[0-9]+(?:\.[0-9]+)?/)?.[0];
-  if (!targetGrade || !candidateGrade || Number(candidateGrade) === Number(targetGrade)) return null;
-  return candidateGrade;
+function explicitGradeConflict(target: string, candidateTitle: string, category: string): string | null {
+  const observed = parseSourceGradeFromTitle(candidateTitle, { category });
+  return observed && compareComparableGrades(target, observed.comparable, { allowBareNumeric: true, category }) === 'different'
+    ? observed.grade : null;
 }
 
 function isTitleEchoForIdentityField(field: string, candidateValue: string, candidateTitle: string): boolean {
@@ -190,10 +184,10 @@ export function findMaterialMetadataConflicts(
   const targetIsGraded = /^(?:yes|true|graded)$/i.test(String(target.isGraded ?? '').trim())
     || (Boolean(firstValue(target, 'grade')) && !/^(?:unknown|n ?a|none|raw|ungraded|0(?:\.0+)?)$/i.test(firstValue(target, 'grade')) && Boolean(firstValue(target, 'gradingCompany')));
   const targetHasMaterialCondition = /\b(?:sealed|factory\s+sealed|for\s+parts|parts\s+only|unopened)\b/i.test(targetCondition);
-  const targetHasExplicitSealedState = Boolean(target.sealedStatus || target.packageStatus || targetHasMaterialCondition);
+  const targetHasExplicitSealedState = Boolean(firstValue(target, 'sealedStatus')) || targetHasMaterialCondition;
   const fields = [...new Set([
     ...(CATEGORY_FIELDS[category] ?? []),
-    ...Object.keys(target),
+    ...Object.keys(target).map(field => STRUCTURED_GRADE_ALIASES.some(alias => alias === field) ? 'grade' : field),
   ])].filter(field => ![
     'title',
     'category',
@@ -236,11 +230,13 @@ export function findMaterialMetadataConflicts(
     const directCandidateValue = isTitleEchoForIdentityField(field, rawCandidateValue, candidateTitle)
       ? ''
       : rawCandidateValue;
+    if (category === 'video_games' && /^(?:gradeQualifier|qualifier|gradeDesignation|labelDesignation)$/i.test(field)
+      && /^A\+{0,3}$/i.test(targetValue) && (!directCandidateValue || /^A\+{0,3}$/i.test(directCandidateValue))) continue;
     if (field === 'grade') {
-      const structuredGrade = explicitStructuredGradeConflict(targetValue, directCandidateValue);
-      const titleGrade = explicitGradeConflict(targetValue, candidateTitle);
+      const structuredGrade = findStructuredGradeConflict(targetValue, candidateRecord, { category });
+      const titleGrade = explicitGradeConflict(targetValue, candidateTitle, category);
       const differentGrade = structuredGrade ?? titleGrade;
-      if (differentGrade) conflicts.push({ field, targetValue, candidateValue: differentGrade, reason: 'candidate declares a different numeric grade' });
+      if (differentGrade) conflicts.push({ field, targetValue, candidateValue: differentGrade, reason: 'candidate declares a different numeric grade, plus, designation or qualifier' });
       continue;
     }
     if (field === 'serialNumber') {
@@ -251,7 +247,7 @@ export function findMaterialMetadataConflicts(
       }
       continue;
     }
-    if (directCandidateValue && compact(directCandidateValue) !== compact(targetValue)) {
+    if (directCandidateValue && fieldComparable(field, directCandidateValue) !== fieldComparable(field, targetValue)) {
       const videoGameSpecializedStateField = category === 'video_games'
         && ['workingCondition', 'originalPackaging', 'originalBoxIncluded'].includes(field);
       // Video Game identity logic understands equivalent provider wording such

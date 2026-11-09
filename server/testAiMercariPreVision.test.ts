@@ -6,6 +6,7 @@ import { annotateSoldComparableCandidate, assessSoldCompsPreVisionCandidates, me
 const routerSource = readFileSync(resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
 const pageSource = readFileSync(resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
 const sourceOutcomeSource = readFileSync(resolve(import.meta.dirname, '../client/src/components/test-ai/SourceRunOutcomeSummary.tsx'), 'utf8');
+const rankingDisplaySource = readFileSync(resolve(import.meta.dirname, '../shared/testAiRankingDisplay.ts'), 'utf8');
 
 describe('Mercari Video Game pre-visual filtering', () => {
   it('keeps the title gate opt-in so eBay behavior is not changed by this Mercari scope', () => {
@@ -75,13 +76,30 @@ describe('Mercari Video Game pre-visual filtering', () => {
   });
 
   it('orders every ranked candidate-analysis surface by rank before rendering', () => {
-    expect(pageSource).toContain('function sortAnalysisCandidates');
+    expect(pageSource).toContain("from '@shared/testAiRankingDisplay'");
+    expect(pageSource).toContain(`function sortRankedCandidates<T extends Record<string, any>>(listings: T[]): T[] {
+  return sortMetadataRankedCandidates(listings);
+}`);
+    expect(pageSource).toContain(`function sortAnalysisCandidates<T extends Record<string, any>>(listings: T[]): T[] {
+  return sortRankedCandidates(listings);
+}`);
+    expect(rankingDisplaySource).toContain(`      const rankA = validDisplayRank(a.listing.metadataMatchRank) ?? Number.POSITIVE_INFINITY;
+      const rankB = validDisplayRank(b.listing.metadataMatchRank) ?? Number.POSITIVE_INFINITY;
+      if (rankA !== rankB) return rankA - rankB;
+      const scoreA = validScore(a.listing.metadataMatchScore) ?? Number.NEGATIVE_INFINITY;
+      const scoreB = validScore(b.listing.metadataMatchScore) ?? Number.NEGATIVE_INFINITY;
+      return scoreB - scoreA || a.index - b.index;`);
     expect(pageSource).toContain('const auditLedger = sortAnalysisCandidates(data?.audit?.ledger ?? []);');
     expect(pageSource).toContain('const rankedListings = sortAnalysisCandidates(data?.listings ?? []);');
     expect(pageSource).toContain('sortAnalysisCandidates(data?.preVisionExcludedListings ?? [])');
-    expect(pageSource).toContain('const activeMasterListings = mergeMasterCandidates(');
-    expect(pageSource).toContain('<CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" />');
-    expect(pageSource).toContain('<CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)}');
+    expect(pageSource).toContain(`  const activeMasterListings = mergeMasterCandidates(
+    collectEbayDisplayCandidates(displayData),
+    displayData?.metadataParentDisplayListings ?? [],
+  );`);
+    expect(pageSource).toContain('<CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" targetImageUrl={item.primaryPhotoUrl} />');
+    expect(pageSource).toContain('<CandidateMasterList listings={auditLedger} sourceLabel="eBay Sold History" targetImageUrl={item.primaryPhotoUrl} />');
+    expect(pageSource).toContain('<CandidateMasterList listings={mergeMasterCandidates(rankedListings, preVisionExcludedListings)} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />');
+    expect(pageSource).toContain('return sortAnalysisCandidates(Array.from(merged.values()));');
     expect(pageSource).toContain('{rankedListings.map((l: any, i: number) => (');
     expect(pageSource).toContain('{rankedListings.map((listing: any, index: number) => (');
   });

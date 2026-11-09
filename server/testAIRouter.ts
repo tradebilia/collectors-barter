@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { randomUUID } from 'node:crypto';
 import { protectedProcedure, router } from "./_core/trpc";
 import { requireDb } from "./db";
 import { listings, listingPhotos, userProfiles } from "../drizzle/schema";
@@ -55,6 +56,7 @@ import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityR
 import { setProviderOauthStateCookie } from './_core/providerOauthState';
 import { lookupMercariSoldComps, lookupTcgplayerSoldComps } from './soldCompsAdditionalMarketData';
 import { collectionLotGuard, collectionLotNotComparable, isCollectionLotItemType } from '../shared/testAiItemType';
+import { bindMetadataRankingPopulation, freezeMetadataRankingPopulation, overlayMetadataRankingPopulation, type MetadataRankingPopulation, type MetadataScorerRole } from '../shared/testAiRankingPopulation';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 // eBay can take several seconds to return a Browse response even for a bounded
@@ -534,10 +536,31 @@ function isMovieBoxSetTarget(category: unknown, itemTypeOrMetadata: unknown): bo
   return /(?:^|_)(?:box_set|boxset|complete_series|collection_set)(?:$|_)/i.test(itemType);
 }
 
+/** One display population before source partitions; never a visual cap/order input. */
+function sourceMetadataRankingPopulation(listings: any[], sourceId: string, targetMetadata: string,
+  scorerRole: MetadataScorerRole = isAutographSignedItemTarget(targetMetadata) ? 'signed_item_relevance'
+    : /(?:^|;\s*)category=comics(?:;|$)/i.test(targetMetadata) && /(?:^|;\s*)itemType=original_art(?:;|$)/i.test(targetMetadata)
+      ? 'original_art_relevance' : 'exact_comparable'): MetadataRankingPopulation<any> {
+  const population = freezeMetadataRankingPopulation(listings, { populationId: randomUUID(), sourceId, scorerRole });
+  const scored = scorerRole === 'signed_item_relevance' || scorerRole === 'original_art_relevance'
+    ? population.listings.map((item: any) => {
+      const score = scorerRole === 'signed_item_relevance'
+        ? autographMarketRelevanceScore(item, targetMetadata)
+        : originalArtMarketRelevanceScore(item, targetMetadata);
+      return { ...item, metadataMatchScore: score.score, metadataMatchReasons: score.matched,
+        metadataUnknownFields: score.unknown, metadataMatchLabel: 'Market Relevance Score',
+        metadataScoreAwards: (score as { awards?: unknown }).awards };
+    })
+    : annotatePreVisualComparableScores(population.listings, targetMetadata);
+  return bindMetadataRankingPopulation(population,
+    scored.map((item: any) => withMetadataFieldComparisons(targetMetadata, item)));
+}
+
 export function assessSoldCompsPreVisionCandidates(args: {
   listings: any[];
   category: string;
   targetMetadata: string;
+  rankingPopulation?: MetadataRankingPopulation;
   targetPlatform?: string | null;
   targetIsGraded?: boolean;
   statedTradeValue?: number | null;
@@ -586,8 +609,10 @@ export function assessSoldCompsPreVisionCandidates(args: {
     if (priceSafety.reason) reasons.push(priceSafety.reason);
     return { item: { ...item, soldCompsMetadata: metadata }, metadata, reasons, excluded: reasons.length > 0 };
   });
-	  const scoredItems = annotatePreVisualComparableScores(assessments.map((assessment) => assessment.item), args.targetMetadata)
-	    .map((item) => withMetadataFieldComparisons(args.targetMetadata, item));
+  const scoredItems = args.rankingPopulation
+    ? overlayMetadataRankingPopulation(assessments.map((assessment) => assessment.item), args.rankingPopulation)
+    : annotatePreVisualComparableScores(assessments.map((assessment) => assessment.item), args.targetMetadata)
+      .map((item) => withMetadataFieldComparisons(args.targetMetadata, item));
   const scoredAssessments = assessments.map((assessment, index) => ({ ...assessment, item: scoredItems[index] }));
   return {
     eligible: scoredAssessments.filter((assessment) => !assessment.excluded).map((assessment) => assessment.item),
@@ -1317,6 +1342,9 @@ const analysisMarketSaleTransportSchema = z.object({
   metadataMatchScore: z.number().finite().nullish(),
   metadataMatchRank: z.number().int().positive().nullish(),
   metadataMatchReasons: z.array(z.string().max(600)).max(40).nullish(),
+  metadataRanking: z.unknown().optional(),
+  metadataScoreAwards: z.unknown().optional(),
+  metadataUnknownFields: z.array(z.string().max(600)).max(40).nullish(),
 }).passthrough();
 
 const uspsScreenshotReviewSchema = z.object({
@@ -1839,17 +1867,6 @@ export const testAIRouter = router({
         // Query tiers are complementary: a non-empty precise page does not
         // establish retrieval completeness. Union every bounded tier before
         // objective identity filtering and label the resulting coverage.
-        const summaries = exactSummaries;
-        console.log(`[eBay Search] Fetch Query: "${boundedSearchQueries.join(' | ')}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
-        const { byYear, byNumber, bySport, byTargetGradingState, filteredSummaries } = eligibility;
-        console.log(`[eBay Search] After year filter: ${byYear.length} results (target year: ${targetYear || 'none'})`);
-        console.log(`[eBay Search] After number filter: ${byNumber.length} results (target: ${targetNumber})`);
-        console.log(`[eBay Search] After sport filter: ${bySport.length} results (target sport: ${targetSport || 'none'})`);
-        console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
-        // Log first 5 filtered results for debugging
-        filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
-          console.log(`  [${i}] ${s.title} - Grade: ${extractGradeFromTitle(s.title)}`);
-        });
         const targetMetadata = buildVisualTargetMetadata({
           title: input.title,
           category: input.category,
@@ -1859,6 +1876,31 @@ export const testAIRouter = router({
           certificationCompany: cert,
           isGraded: targetIsGraded ? 'Yes' : undefined,
           itemDetails: input.itemDetails,
+        });
+        const rankingPopulation = sourceMetadataRankingPopulation(exactSummaries.map((item: any) => {
+          const imageUrls = collectEbayImageUrls(item);
+          const marketplaceCandidate = normalizeEbayMarketplaceCandidate({ ...item, sourceId: 'ebay_active',
+            imageUrl: imageUrls[0] ?? visualSourceCandidateImage(item), imageUrls });
+          return { ...item, marketplaceCandidate, normalizedListingTitle: marketplaceCandidate.title,
+            normalizedListingTitleSource: marketplaceCandidate.titleSource,
+            normalizedListingTitleCandidates: marketplaceCandidate.titleCandidates,
+            titleEvidence: marketplaceCandidate.titleEvidence, titleEvidenceSources: marketplaceCandidate.titleEvidenceSources,
+            normalizedStructuredMetadata: marketplaceCandidate.structuredMetadata,
+            soldCompsMetadata: normalizeSoldCompsMetadata(item),
+            imageUrl: marketplaceCandidate.imageUrl, imageUrls: marketplaceCandidate.imageUrls };
+        }), 'ebay_active', targetMetadata, isAutographSignedItemTarget(targetMetadata)
+          ? 'signed_item_relevance' : isComicsOriginalArt(input.itemType) ? 'original_art_relevance' : 'exact_comparable');
+        const summaries = rankingPopulation.listings;
+        eligibility = filterEbayCandidates(summaries);
+        console.log(`[eBay Search] Fetch Query: "${boundedSearchQueries.join(' | ')}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
+        const { byYear, byNumber, bySport, byTargetGradingState, filteredSummaries } = eligibility;
+        console.log(`[eBay Search] After year filter: ${byYear.length} results (target year: ${targetYear || 'none'})`);
+        console.log(`[eBay Search] After number filter: ${byNumber.length} results (target: ${targetNumber})`);
+        console.log(`[eBay Search] After sport filter: ${bySport.length} results (target sport: ${targetSport || 'none'})`);
+        console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
+        // Log first 5 filtered results for debugging
+        filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
+          console.log(`  [${i}] ${s.title} - Grade: ${extractGradeFromTitle(s.title)}`);
         });
         const rawAutographReplicaListings = input.category === 'autographs'
           ? filteredSummaries
@@ -1870,6 +1912,7 @@ export const testAIRouter = router({
         const preVisionAssessment = assessSoldCompsPreVisionCandidates({
           category: input.category,
           targetMetadata,
+          rankingPopulation,
           targetPlatform,
           targetIsGraded,
           statedTradeValue: input.statedTradeValue,
@@ -1880,6 +1923,11 @@ export const testAIRouter = router({
           listings: preVisionEligibleSummaries,
         });
         const preVisionExcludedListings = [
+          ...summaries.filter((listing: any) => !filteredSummaries.includes(listing)).map((listing: any) => ({
+            ...listing, visualReviewStatus: 'not_reviewed', evidenceDisposition: 'pre_vision_excluded',
+            visualReviewRationale: 'Excluded by the existing outer year, number, player, sport, grading-state or grade filter.',
+            preVisionExclusionReasons: ['Existing outer identity filter conflict; not sent to visual review.'],
+          })),
           ...rawAutographReplicaListings.map(({ listing, reason }) => withMetadataFieldComparisons(targetMetadata, {
             ...listing,
             visualReviewStatus: 'not_reviewed',
@@ -1933,6 +1981,7 @@ export const testAIRouter = router({
               sourceLabel: 'eBay active listings',
               targetImageUrl: input.imageUrl,
               targetMetadata,
+              rankingPopulation,
               listings: visualInputListings,
               visualProvider: input.visualProvider,
               ignoreSubjectiveConditionDifferences: true,
@@ -1942,10 +1991,13 @@ export const testAIRouter = router({
               sourceLabel: 'eBay active listings',
               targetImageUrl: null,
               targetMetadata,
+              rankingPopulation,
               listings: visualInputListings,
               visualProvider: input.visualProvider,
               ignoreSubjectiveConditionDifferences: true,
             });
+        visualActiveFilter.listings = overlayMetadataRankingPopulation(visualActiveFilter.listings, rankingPopulation);
+        visualActiveFilter.contextListings = overlayMetadataRankingPopulation(visualActiveFilter.contextListings ?? [], rankingPopulation);
         const combinedVisualFilter = visualActiveFilter
           ? {
               ...visualActiveFilter,
@@ -2039,6 +2091,9 @@ export const testAIRouter = router({
             uniqueBidderCount: s.uniqueBidderCount ?? null,
             currentBidPrice: s.currentBidPrice ?? null,
             auctionEndDate: s.itemEndDate ?? null,
+            metadataRanking: s.metadataRanking,
+            metadataScoreAwards: s.metadataScoreAwards,
+            metadataUnknownFields: s.metadataUnknownFields,
             metadataMatchScore: s.metadataMatchScore,
             metadataMatchRank: s.metadataMatchRank,
             metadataMatchReasons: s.metadataMatchReasons,
@@ -2072,6 +2127,9 @@ export const testAIRouter = router({
             uniqueBidderCount: s.uniqueBidderCount ?? null,
             currentBidPrice: s.currentBidPrice ?? null,
             auctionEndDate: s.itemEndDate ?? null,
+            metadataRanking: s.metadataRanking,
+            metadataScoreAwards: s.metadataScoreAwards,
+            metadataUnknownFields: s.metadataUnknownFields,
             metadataMatchScore: s.metadataMatchScore,
             metadataMatchRank: s.metadataMatchRank,
             metadataMatchReasons: s.metadataMatchReasons,
@@ -2097,6 +2155,9 @@ export const testAIRouter = router({
               itemUrl: s.itemWebUrl,
               imageUrl: s.imageUrl ?? collectEbayImageUrls(s)[0] ?? null,
               imageUrls: Array.isArray(s.imageUrls) && s.imageUrls.length > 0 ? s.imageUrls : collectEbayImageUrls(s),
+              metadataRanking: s.metadataRanking,
+              metadataScoreAwards: s.metadataScoreAwards,
+              metadataUnknownFields: s.metadataUnknownFields,
               metadataMatchScore: s.metadataMatchScore,
               metadataMatchRank: s.metadataMatchRank,
               metadataMatchReasons: s.metadataMatchReasons,
@@ -2126,19 +2187,27 @@ export const testAIRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      // Original occurrence is only a client parent-display join hint. Browser
+      // ranks/scores/awards are cleared and cannot influence subset selection.
+      const rankingPopulation = sourceMetadataRankingPopulation(input.listings.map((listing) => ({
+        ...listing,
+        metadataOriginOccurrenceKey: typeof listing.metadataRanking?.occurrenceKey === 'string'
+          ? listing.metadataRanking.occurrenceKey : undefined,
+        imageUrl: typeof listing.imageUrl === 'string' ? listing.imageUrl : null,
+        imageUrls: Array.isArray(listing.imageUrls) ? listing.imageUrls : [],
+      })), 'ebay_active_subset', input.targetMetadata);
       const visualFilter = await filterVisualSourceCandidates({
               sourceRole: 'ebay',
         sourceLabel: 'eBay active listings',
         targetImageUrl: input.targetImageUrl,
         targetMetadata: input.targetMetadata,
+        rankingPopulation,
         visualProvider: input.visualProvider,
-        listings: input.listings.map((listing) => ({
-          ...listing,
-          imageUrl: typeof listing.imageUrl === 'string' ? listing.imageUrl : null,
-          imageUrls: Array.isArray(listing.imageUrls) ? listing.imageUrls : [],
-        })),
+        listings: rankingPopulation.listings,
         reviewDeadlineAt: input.reviewDeadlineAt,
       });
+      visualFilter.listings = overlayMetadataRankingPopulation(visualFilter.listings, rankingPopulation);
+      visualFilter.contextListings = overlayMetadataRankingPopulation(visualFilter.contextListings ?? [], rankingPopulation);
       const listings = visualFilter.listings as any[];
       const visualMatchMetrics = computeVisualMatchMetrics(listings);
       return {
@@ -2749,6 +2818,26 @@ export const testAIRouter = router({
 
         console.log(`[Sold-Comps] Fetch Queries: ${queryCandidates.join(' | ')}, Filter: ${cert || 'any provider'} ${targetGrade ?? ''}, Total Results: ${rawItems.length}`);
 
+        const soldCompsTargetMetadata = buildVisualTargetMetadata({
+          title: input.title, category: input.category, condition: input.condition, itemType: input.itemType,
+          grade: input.grade, certificationCompany: input.certificationCompany,
+          isGraded: targetGrade !== null || Boolean(cert && grade) ? 'Yes' : undefined,
+          itemDetails: input.itemDetails,
+        });
+        const rankingPopulation = sourceMetadataRankingPopulation(rawItems.map((item: any) => {
+          const candidate = normalizeEbayMarketplaceCandidate({ ...item, imageUrls: collectEbayImageUrls(item),
+            sourceId: 'ebay_sold_comps', saleStatus: 'completed', priceBasis: 'sold' });
+          return { ...item,
+            normalizedListingTitle: candidate.title, normalizedListingTitleSource: candidate.titleSource,
+            normalizedListingTitleCandidates: candidate.titleCandidates,
+            titleEvidence: candidate.titleEvidence, titleEvidenceSources: candidate.titleEvidenceSources,
+            normalizedStructuredMetadata: normalizeSoldCompsMetadata(item),
+            soldCompsMetadata: normalizeSoldCompsMetadata(item), imageUrls: collectEbayImageUrls(item) };
+        }), 'ebay_sold_comps', soldCompsTargetMetadata,
+        isAutographSignedItemTarget(soldCompsTargetMetadata) ? 'signed_item_relevance'
+          : isComicsOriginalArt(input.itemType) ? 'original_art_relevance' : 'exact_comparable');
+        rawItems.splice(0, rawItems.length, ...rankingPopulation.listings);
+
         // Apply same grade filtering as eBay active
         const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
         const byYear = filterTestAiListingsByYear(rawItems.map((i: any) => ({ title: i.title, ...i })), targetYear);
@@ -2802,9 +2891,13 @@ export const testAIRouter = router({
               visualRequirement: 'not_required_autograph_market_context',
               visualReviewStatus: 'not_reviewed',
               visualReviewRationale: 'Signed objects vary physically, so this result supplies market range context rather than an exact visual match.',
-              metadataMatchScore: Number(item.score ?? 0),
-              metadataMatchReasons: item.matched ?? [],
-              metadataMatchRank: index + 1,
+              metadataRanking: item.metadataRanking,
+              metadataScoreAwards: item.metadataScoreAwards,
+              metadataUnknownFields: item.metadataUnknownFields,
+              metadataFieldComparisons: item.metadataFieldComparisons,
+              metadataMatchScore: item.metadataMatchScore,
+              metadataMatchReasons: item.metadataMatchReasons,
+              metadataMatchRank: item.metadataMatchRank,
               metadataMatchLabel: 'Market Relevance Score',
             };
           });
@@ -2813,17 +2906,29 @@ export const testAIRouter = router({
             ...item,
             price: { value: item.price, currency: item.currency ?? 'USD' },
           })));
+          const heldMarketListings = rawItems.flatMap((item: any) => {
+            const reason = autographMarketExclusionReason(autographTargetMetadata, item);
+            return reason ? [withMetadataFieldComparisons(autographTargetMetadata, { ...item,
+              title: item.title, price: Number(item.soldPrice ?? item.price?.value ?? item.price ?? 0),
+              currency: item.soldCurrency ?? item.currency ?? null, itemUrl: item.url,
+              imageUrl: item.thumbnailUrl ?? item.imageUrl, endedAt: item.endedAt,
+              evidenceDisposition: 'context_only', valuationEligible: false, hardException: true,
+              visualRequirement: 'not_required_pre_visual', visualReviewStatus: 'not_reviewed',
+              visualReviewRationale: reason, evidenceReasons: [reason],
+            })] : [];
+          });
           return {
             query,
             marketContextOnly: true,
             listings: gatedMarketListings,
+            contextListings: heldMarketListings,
             visualReviewListings: [],
             visualFilter: undefined,
             metrics,
             audit: {
               rawReceived: rawItems.length,
               retrievalCoverage,
-              valuationEligible: gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').length,
+              ledger: [...gatedMarketListings, ...heldMarketListings],              valuationEligible: gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').length,
               warningReview: gatedMarketListings.filter((item: any) => item.evidenceDisposition !== 'valuation_eligible').length,
               objectiveConflicts: 0,
               notVisuallyReviewed: gatedMarketListings.length,
@@ -2864,9 +2969,13 @@ export const testAIRouter = router({
             evidenceDisposition: 'context_only',
             evidenceReasons: ['Original Art market-range context only; not an exact comparable and not sent to visual analysis.'],
             visualReviewStatus: 'not_reviewed',
-            metadataMatchScore: Number(item.score ?? 0),
-            metadataMatchReasons: item.matched ?? [],
-            metadataMatchRank: index + 1,
+            metadataRanking: item.metadataRanking,
+            metadataScoreAwards: item.metadataScoreAwards,
+            metadataUnknownFields: item.metadataUnknownFields,
+            metadataFieldComparisons: item.metadataFieldComparisons,
+            metadataMatchScore: item.metadataMatchScore,
+            metadataMatchReasons: item.metadataMatchReasons,
+            metadataMatchRank: item.metadataMatchRank,
             metadataMatchLabel: 'Market Relevance Score',
           }));
           const gatedMarketListings = applyIsolatedMarketPriceTailGate(marketListings, {
@@ -2895,20 +3004,11 @@ export const testAIRouter = router({
             note: 'Original Art market context only: the results provide a broad price range and are not used as exact comparables or sent to visual analysis.',
           };
         }
-        const soldCompsTargetMetadata = buildVisualTargetMetadata({
-          title: input.title,
-          category: input.category,
-          condition: input.condition,
-          itemType: input.itemType,
-          grade: input.grade,
-          certificationCompany: input.certificationCompany,
-          isGraded: targetGrade !== null || Boolean(cert && grade) ? 'Yes' : undefined,
-          itemDetails: input.itemDetails,
-        });
         const preVisionAssessment = assessSoldCompsPreVisionCandidates({
           listings: filtered,
           category: input.category,
           targetMetadata: soldCompsTargetMetadata,
+          rankingPopulation,
           targetPlatform: input.category === 'video_games' ? resolveTestAiDetailValue(details, 'platform') : null,
           targetIsGraded: targetGrade !== null || Boolean(cert && grade),
           statedTradeValue: input.statedTradeValue,
@@ -2924,6 +3024,10 @@ export const testAIRouter = router({
           currency: item.soldCurrency ?? null,
           endedAt: item.endedAt ?? null,
           soldCompsMetadata: metadata,
+          metadataRanking: item.metadataRanking,
+          metadataScoreAwards: item.metadataScoreAwards,
+          metadataUnknownFields: item.metadataUnknownFields,
+          metadataFieldComparisons: item.metadataFieldComparisons,
           metadataMatchScore: item.metadataMatchScore,
           metadataMatchRank: item.metadataMatchRank,
           metadataMatchReasons: item.metadataMatchReasons,
@@ -2958,12 +3062,10 @@ export const testAIRouter = router({
           { rows: byCertification, reason: cert ? `explicit stated certification company conflicts with target ${cert}` : 'objective category field conflict' },
           { rows: filtered, reason: targetGrade !== null ? `explicit stated grade conflicts with target ${targetGrade}` : 'objective category field conflict' },
         ];
-        const rawScoredItems = annotatePreVisualComparableScores(rawItems, soldCompsTargetMetadata);
-        const rawScoreByKey = new Map(rawScoredItems.map((item: any) => [soldComparableKey(item), item]));
         const rawAuditLedger = rawItems.map((item) => {
-          const key = soldComparableKey(item);
-          const failedAt = stageRows.find((stage) => !stage.rows.some((candidate: any) => soldComparableKey(candidate) === key));
-          const scoredItem: any = rawScoreByKey.get(key) ?? item;
+          const key = item.metadataRanking.occurrenceKey;
+          const failedAt = stageRows.find((stage) => !stage.rows.some((candidate: any) => candidate.metadataRanking?.occurrenceKey === key));
+          const scoredItem: any = item;
           return failedAt
             ? {
                 title: item.title,
@@ -2975,6 +3077,10 @@ export const testAIRouter = router({
                 price: Number(item.soldPrice ?? 0),
                 currency: item.soldCurrency ?? null,
                 endedAt: item.endedAt ?? null,
+                metadataRanking: scoredItem.metadataRanking,
+                metadataScoreAwards: scoredItem.metadataScoreAwards,
+                metadataUnknownFields: scoredItem.metadataUnknownFields,
+                metadataFieldComparisons: scoredItem.metadataFieldComparisons,
                 metadataMatchScore: scoredItem.metadataMatchScore,
                 metadataMatchRank: scoredItem.metadataMatchRank,
                 metadataMatchReasons: scoredItem.metadataMatchReasons,
@@ -3003,6 +3109,7 @@ export const testAIRouter = router({
           sourceLabel: 'eBay Sold-Comps',
           targetImageUrl: safeTargetImage,
           targetMetadata: soldCompsTargetMetadata,
+          rankingPopulation,
           // eBay's Pre-Owned/Used condition is cosmetic marketplace metadata,
           // not proof that a movie is damaged or incomplete. Let visual review
           // make the final identity decision for these candidates.
@@ -3012,6 +3119,8 @@ export const testAIRouter = router({
             return { ...item, imageUrl: imageUrls[0] ?? null, imageUrls };
           }),
         });
+        sharedVisualFilter.listings = overlayMetadataRankingPopulation(sharedVisualFilter.listings, rankingPopulation);
+        sharedVisualFilter.contextListings = overlayMetadataRankingPopulation(sharedVisualFilter.contextListings ?? [], rankingPopulation);
         const visuallyFiltered = sharedVisualFilter.listings;
         const visualSoldFilter: any = {
           ...sharedVisualFilter,
@@ -3118,6 +3227,10 @@ export const testAIRouter = router({
             retrievalQuery: i.retrievalQuery ?? null,
             evidenceDisposition: i.evidenceDisposition,
             evidenceReasons: i.evidenceReasons,
+            metadataRanking: i.metadataRanking,
+            metadataScoreAwards: i.metadataScoreAwards,
+            metadataUnknownFields: i.metadataUnknownFields,
+            metadataMatchLabel: i.metadataMatchLabel,
             metadataMatchScore: i.metadataMatchScore,
             metadataMatchRank: i.metadataMatchRank,
             metadataMatchReasons: i.metadataMatchReasons,
@@ -3203,18 +3316,21 @@ export const testAIRouter = router({
           evidenceDisposition: undefined,
           evidenceReasons: [],
         });
+        const rankingPopulation = sourceMetadataRankingPopulation(result.listings.map((listing) => ({
+          ...(listing.canonicalCandidate ?? {}),
+          ...listing,
+          url: listing.itemUrl,
+          soldPrice: listing.price,
+          soldCurrency: listing.currency,
+          thumbnailUrl: listing.imageUrl,
+          imageUrls: listing.imageUrls ?? listing.canonicalCandidate?.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []),
+          soldCompsMetadata: normalizeSoldCompsMetadata(listing),
+        })), 'mercari_sold_comps', targetMetadata);
         const assessment = assessSoldCompsPreVisionCandidates({
-          listings: result.listings.map((listing) => ({
-            ...(listing.canonicalCandidate ?? {}),
-            ...listing,
-            url: listing.itemUrl,
-            soldPrice: listing.price,
-            soldCurrency: listing.currency,
-            thumbnailUrl: listing.imageUrl,
-            imageUrls: listing.imageUrls ?? listing.canonicalCandidate?.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []),
-          })),
+          listings: rankingPopulation.listings,
           category: normalizedCategory,
           targetMetadata,
+          rankingPopulation,
           targetPlatform: resolveTestAiDetailValue(details, 'platform'),
           targetIsGraded: Boolean(normalizeTestAiGrade(input.grade, input.certificationCompany ?? '', normalizedCategory)),
           enforceVideoGameTitleMatch: true,
@@ -3234,10 +3350,13 @@ export const testAIRouter = router({
           sourceLabel: visualSourceLabel,
           targetImageUrl: safeTargetImage,
           targetMetadata,
+          rankingPopulation,
           visualProvider: input.visualProvider,
           ignoreSubjectiveConditionDifferences: true,
           listings: assessment.eligible.map(toVisualCandidate),
         });
+        universalPreFilter.listings = overlayMetadataRankingPopulation(universalPreFilter.listings, rankingPopulation);
+        universalPreFilter.contextListings = overlayMetadataRankingPopulation(universalPreFilter.contextListings ?? [], rankingPopulation);
         const excluded = assessment.excluded.map(({ item, metadata, reasons }) => ({
           ...item,
           itemUrl: item.itemUrl ?? item.url ?? null,

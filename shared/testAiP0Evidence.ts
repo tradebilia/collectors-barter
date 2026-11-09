@@ -1,3 +1,5 @@
+import { extractCandidateStructuredMetadata, meaningfulMetadataText, readMetadataValue } from './testAiMetadataValues';
+
 export type TestAiP0IdentityInput = {
   title: string;
   category: string;
@@ -55,7 +57,7 @@ const IDENTITY_RULES: Record<string, IdentityRule> = {
     fields: [
       { key: 'player', label: 'Player', aliases: ['player', 'athlete', 'subject'], material: true },
       { key: 'year', label: 'Year', aliases: ['year', 'manufactureYear'], material: true },
-      { key: 'manufacturer', label: 'Manufacturer', aliases: ['customManufacturer', 'manufacturer', 'brand'], material: true },
+      { key: 'manufacturer', label: 'Manufacturer', aliases: ['manufacturer', 'brand'], material: true },
       { key: 'setName', label: 'Set', aliases: ['setName', 'set', 'cardSet'] },
       { key: 'cardNumber', label: 'Card #', aliases: ['cardNumber', 'cardNo', 'number'], material: true },
       { key: 'parallelVariation', label: 'Parallel / variation', aliases: ['parallelVariation', 'parallel', 'variation', 'variant'] },
@@ -148,7 +150,7 @@ const IDENTITY_RULES: Record<string, IdentityRule> = {
   movies: {
     fields: [
       { key: 'title', label: 'Title', aliases: ['title', 'movieTitle'], material: true },
-      { key: 'format', label: 'Format', aliases: ['customFormat', 'format', 'mediaFormat'], material: true },
+      { key: 'format', label: 'Format', aliases: ['format', 'mediaFormat'], material: true },
       { key: 'releaseYear', label: 'Release year', aliases: ['releaseYear', 'year'] },
       { key: 'edition', label: 'Edition', aliases: ['edition', 'version', 'releaseType'], material: true },
       { key: 'region', label: 'Region', aliases: ['region'] },
@@ -167,7 +169,7 @@ const IDENTITY_RULES: Record<string, IdentityRule> = {
     fields: [
       { key: 'signer', label: 'Signer', aliases: ['signer'], material: true },
       { key: 'signedItemType', label: 'Signed item', aliases: ['signedItemType', 'itemType'], material: true },
-      { key: 'authenticationCompany', label: 'Authentication company', aliases: ['customAuthenticationCompany', 'authenticationCompany'], material: true },
+      { key: 'authenticationCompany', label: 'Authentication company', aliases: ['authenticationCompany'], material: true },
       { key: 'certificateNumber', label: 'Certificate', aliases: ['certificateNumber', 'certNumber', 'authenticationNumber'], material: true },
       { key: 'inscriptionPresent', label: 'Inscription', aliases: ['inscription', 'inscriptionText', 'inscriptionPresent', 'personalization'] },
     ],
@@ -206,29 +208,25 @@ function normalizeCategory(category: string): string {
 }
 
 function text(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  if (Array.isArray(value)) return value.map(text).filter(Boolean).join(', ');
-  return String(value).trim();
+  return meaningfulMetadataText(value);
 }
 
 function parseDetails(value: TestAiP0IdentityInput['itemDetails']): DetailRecord {
-  if (!value) return {};
-  if (typeof value === 'object' && !Array.isArray(value)) return value;
-  if (typeof value !== 'string') return {};
-  try {
-    const parsed = JSON.parse(value);
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as DetailRecord : {};
-  } catch {
-    return {};
+  // Keep explicitly supplied detail titles for the established readiness
+  // title fallback, but never infer field values from listing-title text.
+  let record: DetailRecord = {};
+  if (value && typeof value === 'object' && !Array.isArray(value)) record = value;
+  else if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) record = parsed as DetailRecord;
+    } catch { /* absent malformed details */ }
   }
+  return { ...record, ...extractCandidateStructuredMetadata({ itemDetails: record }) };
 }
 
 function firstText(details: DetailRecord, aliases: string[]): string {
-  for (const key of aliases) {
-    const value = text(details[key]);
-    if (value) return value;
-  }
-  return '';
+  return readMetadataValue(details, aliases);
 }
 
 function normalizeCompany(value: string): string {
@@ -250,7 +248,7 @@ export function buildTestAiP0Identity(input: TestAiP0IdentityInput): TestAiP0Ide
     let value = field.aliases.length ? firstText(details, field.aliases) : '';
     if (field.key === 'title') value = value || text(input.title);
     if (field.key === 'gameTitle') value = value || text(input.title);
-    if (field.key === 'certificationCompany') value = text(input.certificationCompany) || firstText(details, ['certificationCompany', 'gradingCompany', 'customGradingCompany']);
+    if (field.key === 'certificationCompany') value = meaningfulMetadataText(input.certificationCompany) || readMetadataValue(details, ['certificationCompany', 'gradingCompany', 'grader']);
     if (field.key === 'grade') value = text(input.grade) || firstText(details, ['grade']);
     if (field.key === 'certificateNumber') value = firstText(details, ['certificateNumber', 'certificationNumber', 'certNumber', 'authenticationNumber']);
     if (field.key === 'comicTitle' && !value) value = text(input.title);

@@ -6,7 +6,8 @@ import {
   type P0EvidenceSufficiency,
   type TestAiP0Identity,
 } from './testAiP0Evidence';
-import { normalizeTestAiOtherDetails, resolveTestAiGradingCompany } from './testAiCriteria';
+import { extractCandidateStructuredMetadata, meaningfulMetadataText, readMetadataValue } from './testAiMetadataValues';
+import { compareComparableGrades } from './testAiGradeComparison';
 
 export type EvidenceSourceStatus = 'success' | 'not_found' | 'error' | 'idle';
 
@@ -259,12 +260,12 @@ function normalizeCategory(category: string): string {
 
 function parseDetails(value: EvidenceListingInput['itemDetails']): DetailRecord {
   if (!value) return {};
-  if (typeof value === 'object' && !Array.isArray(value)) return normalizeTestAiOtherDetails(value as DetailRecord);
+  if (typeof value === 'object' && !Array.isArray(value)) return { ...value, ...extractCandidateStructuredMetadata({ itemDetails: value }) };
   if (typeof value !== 'string') return {};
   try {
     const parsed = JSON.parse(value);
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? normalizeTestAiOtherDetails(parsed as DetailRecord)
+      ? { ...parsed, ...extractCandidateStructuredMetadata({ itemDetails: parsed }) }
       : {};
   } catch {
     return {};
@@ -278,11 +279,7 @@ function text(value: unknown): string {
 }
 
 function firstText(details: DetailRecord, keys: string[]): string {
-  for (const key of keys) {
-    const candidate = text(details[key]);
-    if (candidate) return candidate;
-  }
-  return '';
+  return readMetadataValue(details, keys);
 }
 
 function normalized(value: string): string {
@@ -340,6 +337,9 @@ function coinYearIncludes(sourceYear: string, listingYear: string): boolean {
 }
 
 function fieldEquivalent(category: string, key: string, listingValue: string, sourceValue: string): boolean {
+  if (key === 'grade') {
+    return compareComparableGrades(listingValue, sourceValue, { allowBareNumeric: true, category }) === 'match';
+  }
   if (category === 'coins' && key === 'denomination') {
     const left = normalizeCoinDenomination(listingValue);
     const right = normalizeCoinDenomination(sourceValue);
@@ -383,9 +383,9 @@ function getListingValues(input: EvidenceListingInput): Record<string, string> {
   const details = parseDetails(input.itemDetails);
   const category = normalizeCategory(input.category);
   const base: Record<string, string> = {
-    title: text(input.title),
-    grade: text(input.grade),
-    certificationCompany: resolveTestAiGradingCompany(details, text(input.certificationCompany)),
+    title: meaningfulMetadataText(input.title),
+    grade: meaningfulMetadataText(input.grade) || firstText(details, ['grade']),
+    certificationCompany: meaningfulMetadataText(input.certificationCompany) || readMetadataValue(details, ['certificationCompany', 'gradingCompany', 'grader']),
   };
 
   const mappings: Record<string, string[]> = {
@@ -458,13 +458,6 @@ function getListingValues(input: EvidenceListingInput): Record<string, string> {
       ? firstText(details, ['customAuthenticationCompany'])
       : listedAuthenticationCompany;
   }
-  const listedCertificationCompany = text(input.certificationCompany);
-  if (listedCertificationCompany) {
-    base.certificationCompany = normalized(listedCertificationCompany) === 'other'
-      ? firstText(details, ['customGradingCompany'])
-      : listedCertificationCompany;
-  }
-
   if (category === 'pokemon' && !base.cardName) base.cardName = base.title;
   if (category === 'video_games' && !base.title) base.title = firstText(details, ['gameTitle', 'videoGameTitle', 'title']);
   if (category === 'music' && !base.releaseTitle) base.releaseTitle = base.title;
@@ -733,7 +726,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
     const alignedFields: string[] = [];
     for (const key of materialFields) {
       const listingValue = listingValues[key];
-      const sourceValue = text(source.fields[key]);
+      const sourceValue = readMetadataValue(source.fields, [key]);
       if (!listingValue || !sourceValue) continue;
       if (key === 'platform') {
         if (platformIncludes(sourceValue, listingValue)) alignedFields.push(FIELD_LABELS[key]);
@@ -745,7 +738,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
       }
     }
 
-    const globalReleaseYear = text(source.fields.globalReleaseYear);
+    const globalReleaseYear = readMetadataValue(source.fields, ['globalReleaseYear']);
     if (globalReleaseYear && listingValues.releaseYear && !equivalent(globalReleaseYear, listingValues.releaseYear)) {
       reviewFlags.push({ kind: 'context', sourceId: source.id, sourceLabel: source.label, field: 'Release year', message: `${source.label} records a global first-release year of ${globalReleaseYear}; the listing records ${listingValues.releaseYear}. This may be a regional-release difference and is not resolved automatically.` });
     }
