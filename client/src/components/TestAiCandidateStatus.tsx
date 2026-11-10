@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import React, { createContext, useContext, type ReactNode } from 'react';
 import { candidateExecutionFact, candidateIdentityFact, candidatePricingFact, formatCandidateDisplayPrice, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException } from '../../../shared/testAiCandidateStatus';
 import { candidateDisplayKey, mergeCandidateDisplayGroups, reconcileCandidateFinalUse, type CandidateDisplayRow, type CandidateDisplayScope, type CandidateFinalDisplayOutcome } from '../../../shared/testAiCandidateLedger';
 import { MetadataComparisonTable } from './TestAiMetadataComparisonTable';

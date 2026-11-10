@@ -154,7 +154,7 @@ class EbayBrowseResponseError extends Error {
  * Honor Browse's omitted-field empty contract only without contrary evidence.
  * Retain valid mixed-page siblings, but measure every rejected array member.
  */
-function readEbayBrowsePage(data: unknown) {
+export function readEbayBrowsePage(data: unknown) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     throw new EbayBrowseResponseError('body');
   }

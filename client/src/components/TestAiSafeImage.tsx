@@ -1,4 +1,4 @@
-import { useState, type ImgHTMLAttributes } from 'react';
+import React, { useState, type ImgHTMLAttributes } from 'react';
 
 type SafeImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'onError'> & {
   src?: string | null;

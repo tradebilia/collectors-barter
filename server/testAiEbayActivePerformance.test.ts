@@ -7,6 +7,7 @@ import {
   EBAY_ACTIVE_EXACT_PAGE_LIMIT,
   EBAY_ACTIVE_DISPLAY_TARGET,
   computeMetrics,
+  readEbayBrowsePage,
 } from "./testAIRouter";
 import { buildDeclaredIdentityReviews, prioritizeVisualSourceCandidates } from "./testAiVisualSourceFilter";
 import { assessSoldCompsPreVisionCandidates } from "./testAIRouter";
@@ -32,6 +33,28 @@ function procedureSource(name: string, nextMarker: string): string {
 }
 
 describe("Test AI eBay active-listing responsiveness", () => {
+  it("distinguishes empty Browse responses from unreadable bodies", () => {
+    expect(readEbayBrowsePage({ total: 0 })).toMatchObject({ items: [], providerEmpty: true });
+    expect(readEbayBrowsePage({})).toMatchObject({ items: [], providerEmpty: true });
+    expect(() => readEbayBrowsePage({ total: 1 })).toThrow(/results missing/);
+    expect(() => readEbayBrowsePage(null)).toThrow(/no JSON object/);
+  });
+
+  it("retains valid Browse siblings while measuring malformed members", () => {
+    const page = readEbayBrowsePage({
+      total: 2,
+      itemSummaries: [{ itemId: "valid-1" }, null, "malformed"],
+    });
+    expect(page.items).toEqual([{ itemId: "valid-1" }]);
+    expect(page.received).toBe(3);
+    expect(page.rejected).toBe(2);
+    expect(page.providerEmpty).toBe(false);
+  });
+
+  it("rejects an all-malformed Browse array instead of reporting a clean empty page", () => {
+    expect(() => readEbayBrowsePage({ total: 2, itemSummaries: [null, "bad"] })).toThrow(/members/);
+  });
+
   it("reports auction bid fields without treating them as completed-sale evidence", () => {
     const metrics = computeMetrics([
       { id: 'fixed-1', price: { value: '100' }, buyingOptions: ['FIXED_PRICE'] },
