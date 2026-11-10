@@ -195,8 +195,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(masterListSource).toContain("listing.metadataMatchRank");
     expect(ebayProcedure).toContain("...entry.item,");
     expect(visualSource).toContain("scorePreVisualComparableCandidate");
-    expect(masterListSource).toContain("Known retained source occurrences, once per bound occurrence in source rank order.");
-    expect(masterListSource).toContain("not every retrieved row reaches final intake");
+    expect(masterListSource).toContain("Every retained candidate appears once.");
+    expect(masterListSource).toContain("final user-facing outcome");
     expect(masterListSource).toContain("<TestAiCandidateImagePair listing={listing} targetImageUrl={targetImageUrl} />");
     expect(statusComponentSource).toContain("{label} unavailable");
     expect(masterListSource).toContain("<MetadataComparisonTable listing={listing} />");
@@ -233,7 +233,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(statusComponentSource).toContain("return mergeCandidateDisplayGroups(groups, scope).filter(hasActualVisualDispatch);");
     expect(candidateStatusSource).toContain("return Boolean(candidateExecutionReceipt(row)?.attempts.some((attempt) => attempt.stage === 'initial'));");
     expect(candidateStatusSource).toContain("return hasActualVisualDispatch(row) && Boolean(candidateExecutionReceipt(row)?.attempts.some((attempt) => attempt.outcome === 'usable_review'));");
-    expect(masterListSource).toContain("All candidates — ranked master list");
+    expect(masterListSource).toContain("Final decisions — ranked candidates");
     expect(statusComponentSource).toContain("['Execution', candidateExecutionFact(row, scope)], ['Identity result', candidateIdentityFact(row)], ['Pricing use', candidatePricingFact(row)]");
     expect(statusComponentSource).toContain("isHardCandidateDisplayException(row)");
     expect(candidateStatusSource).toContain("return candidateExecutionReceipt(row)?.hardExclusion === true || row.evidenceDisposition === 'rejected_objective_conflict';");
@@ -250,9 +250,9 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(soldSection).toContain("visualContextAuditLedger.length");
     expect(pageSource).toContain('<CandidateMasterList listings={auditLedger} sourceLabel="eBay Sold History" targetImageUrl={item.primaryPhotoUrl} />');
     expect(pageSource).toContain("const auditLedger = mergeCandidateDisplayGroups([data?.audit?.ledger ?? [], data?.listings ?? [], data?.visualFilter?.contextListings ?? []]);");
-    expect(masterListSource).toContain("Known retained source occurrences, once per bound occurrence in source rank order.");
+    expect(masterListSource).toContain("Every retained candidate appears once.");
     expect(masterListSource).toContain("<MetadataComparisonTable listing={listing} />");
-    expect(masterListSource).toContain("<TestAiCandidateStatus listing={listing} scope={scope} reconciled />");
+    expect(masterListSource).toContain("ACCEPTED FOR VALUATION");
     expect(pageSource).toContain("No candidates reached the main valuation/review list");
   });
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { candidateExecutionReceipt, hasActualVisualResponse } from '../../../shared/testAiCandidateStatus';
 
 type ScoringEvidence = {
   awardField: string;
@@ -55,8 +56,11 @@ export function MetadataComparisonTable({ listing }: { listing: any }) {
     ? 'rounded bg-cyan-900/60 px-1 text-cyan-100 ring-1 ring-cyan-400/60' : 'text-gray-300';
   const titleClass = (contribution?: RankingContribution) => contribution?.matched && contribution.titleDerived
     ? 'rounded bg-violet-900/60 px-1 text-violet-100 ring-1 ring-violet-400/60' : 'text-gray-200';
-  return <details className="mt-2 rounded border border-cyan-700/30 bg-cyan-950/20 p-1.5">
-    <summary className="cursor-pointer text-[9px] font-bold uppercase tracking-wide text-cyan-200">Full metadata comparison</summary>
+  const visualDifferences = Array.isArray(listing.visualDifferences) ? listing.visualDifferences : [];
+  const receipt = candidateExecutionReceipt(listing);
+  const visualMismatch = hasActualVisualResponse(listing) && receipt?.identity?.origin === 'visual' && receipt.identity.result === 'mismatch';
+  return <details className="mt-1 rounded border border-cyan-700/30 bg-cyan-950/20 p-1.5">
+    <summary className="cursor-pointer text-[8px] font-bold uppercase tracking-wide text-cyan-200">Full metadata comparison</summary>
     <div className="mt-1 flex flex-wrap items-center gap-1 text-[8px] text-gray-400" aria-label="Ranking highlight legend">
       <span className="rounded bg-cyan-900/60 px-1 text-cyan-100 ring-1 ring-cyan-400/60">Scored field</span>
       <span className="rounded bg-violet-900/60 px-1 text-violet-100 ring-1 ring-violet-400/60">Title-derived scored field</span>
@@ -85,7 +89,11 @@ export function MetadataComparisonTable({ listing }: { listing: any }) {
           </td>
           <td className={`p-1 font-semibold uppercase ${statusClass[comparison.status] ?? statusClass.unknown}`}>{comparison.status || 'unknown'}</td>
         </tr>;
-      })}</tbody>
-    </table></div>
+      })}</tbody></table></div>
+    {visualDifferences.length > 0 && <div className={`mt-2 rounded border p-1.5 ${visualMismatch ? 'border-red-700/40 bg-red-950/20' : 'border-amber-700/30 bg-slate-900/30'}`} aria-label="Visual comparison differences">
+      <p className={`text-[8px] font-bold uppercase tracking-wide ${visualMismatch ? 'text-red-200' : 'text-amber-200'}`}>Visual comparison — observed differences</p>
+      <p className="mt-0.5 text-[8px] text-gray-400">Only differences recorded by the visual review are shown here. Metadata similarities and ranking points are not visual proof.</p>
+      <ul className="mt-1 space-y-1">{visualDifferences.map((difference: any, differenceIndex: number) => <li key={`${difference.field}-${differenceIndex}`} className="text-[8px] leading-snug text-gray-300"><strong className={visualMismatch ? 'text-red-200' : 'text-slate-200'}>{difference.field}:</strong> target “{difference.targetObservation}” vs candidate “{difference.candidateObservation}”<span className="text-gray-500"> — {difference.impact}</span></li>)}</ul>
+    </div>}
   </details>;
 }

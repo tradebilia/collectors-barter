@@ -5074,8 +5074,6 @@ export default function TestAI() {
           </div>
         )}
 
-        <FieldCompletionPanel leftItem={leftItem} rightItem={rightItem} />
-
         {/* AI Analysis */}
         {!bothSelected && (leftItem || rightItem) && <MarketNewsSection item={leftItem ?? rightItem!} />}
         {bothSelected && (

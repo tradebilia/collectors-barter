@@ -1,7 +1,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { candidateExecutionFact, candidateFinalDecision, candidateIdentityFact, candidatePricingFact, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException, formatCandidateDisplayPrice } from '../shared/testAiCandidateStatus';
+import { candidateExecutionFact, candidateIdentityFact, candidatePricingFact, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException, formatCandidateDisplayPrice } from '../shared/testAiCandidateStatus';
 import { mergeCandidateDisplayGroups, stampCandidateDisplayIntake } from '../shared/testAiCandidateLedger';
 import { freezeMetadataRankingPopulation, bindMetadataRankingPopulation } from '../shared/testAiRankingPopulation';
 import type { VisualExecution } from '../shared/testAiVisualExecution';
@@ -17,13 +17,6 @@ const sales = (count: number): MarketSale[] => Array.from({ length: count }, (_,
   currency: 'USD', date: `2026-10-${String(index + 1).padStart(2, '0')}T00:00:00Z`, marketplace: 'Fixture Market', sourceId: 'fixture', sourceLabel: 'Fixture', originMarketplace: 'ebay', saleStatus: 'completed', priceBasis: 'sold', recency: 'recent', visualReviewStatus: 'match' }));
 
 describe('Stage 5 actual status render component', () => {
-  it('projects one final decision without confusing review inclusion with valuation use', () => {
-    expect(candidateFinalDecision({ valuationUse: { use: { code: 'CURRENT_SALES_PRIMARY' } } }).label).toBe('USED IN VALUATION');
-    expect(candidateFinalDecision({ visualExecution: receipt({ identity: { origin: 'visual', result: 'mismatch', reviewVerdict: 'mismatch' } }) }).label).toBe('NOT USED — VISUAL MISMATCH');
-    expect(candidateFinalDecision({ visualExecution: receipt({ identity: { origin: 'visual', result: 'manual_unknown', reviewVerdict: 'rough_match' } }) }).label).toBe('NOT USED — VISUAL REVIEW UNRESOLVED');
-    expect(candidateFinalDecision({ visualExecution: receipt({ identity: { origin: 'visual', result: 'match', reviewVerdict: 'match' } }), valuationUse: { use: { code: 'CONTEXT_ONLY' } } }).label).toBe('NOT USED — CONTEXT ONLY');
-    expect(candidateFinalDecision({ visualExecution: receipt({ state: 'not_dispatched', selectedForReview: false, hardExclusion: false, attempts: [] }) }).label).toBe('NOT USED — PRE-REVIEW EXCLUSION');
-  });
   it('does not infer hard exclusion, dispatch or response from prose, requirement, verdict or audit shape', () => {
     const legacy = { title: 'Legacy', visualRequirement: 'required', visualReviewStatus: 'match', visualReviewRationale: 'No hard conflict; no wrong platform', visualAudit: { initialModel: 'model' } };
     expect(isHardCandidateDisplayException(legacy)).toBe(false); expect(hasActualVisualDispatch(legacy)).toBe(false); expect(hasActualVisualResponse(legacy)).toBe(false);
@@ -73,8 +66,8 @@ describe('Stage 5 actual status render component', () => {
     const [ranked] = bindMetadataRankingPopulation(frozen, [row]).listings;
     const html = renderToStaticMarkup(<TestAiCandidateMasterList listings={mergeCandidateDisplayGroups([[ranked], [{ ...ranked, visualExecution: receipt() }]])} sourceLabel="Fixture" targetImageUrl="https://example.test/target.jpg" scope={{ side: 'item_a' }} />);
     expect((html.match(/<th /g) ?? []).length).toBe(6); expect((html.match(/<img /g) ?? []).length).toBe(2);
-    expect(html).toContain('20 awarded points'); expect(html).toContain('Candidate title-derived value'); expect(html).toContain('Final decisions — Fixture (1)');
-    expect(html).toContain('Final decisions — Fixture'); expect(html).toContain('NOT USED — CONTEXT ONLY'); expect(html).toContain('Full metadata comparison'); expect(html).not.toContain('Hard exception — not sent to AI');
+    expect(html).toContain('20 awarded points'); expect(html).toContain('Candidate title-derived value'); expect(html).toContain('Final decisions — ranked candidates (1)');
+    expect(html).toContain('NOT ACCEPTED'); expect(html).toContain('Full metadata comparison'); expect(html).not.toContain('Hard exception — not sent to AI');
   });
   it('currency-unknown records and source aggregate summaries never assume dollars or add overlapping populations', () => {
     expect(formatCandidateDisplayPrice({ price: 12 })).toBe('Currency unknown 12');

@@ -586,9 +586,8 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';");
     expect(masterListSource).toContain('export function TestAiCandidateMasterList({ listings, sourceLabel, targetImageUrl, scope: suppliedScope }');
     expect(masterListSource).toContain('const candidates = reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);');
-    expect(masterListSource).toContain('Final decisions — {sourceLabel}');
-    expect(masterListSource).toContain('One card per retained candidate');
-    expect(masterListSource).toContain('candidateFinalDecision(listing)');
+    expect(masterListSource).toContain('Final decisions — ranked candidates');
+    expect(masterListSource).toContain('ACCEPTED FOR VALUATION');
     expect(statusComponentSource).toContain('isHardCandidateDisplayException(row)');
     expect(statusComponentSource).toContain('<strong>Hard exclusion:</strong>');
     expect(candidateStatusSource).toContain("return candidateExecutionReceipt(row)?.hardExclusion === true || row.evidenceDisposition === 'rejected_objective_conflict';");
@@ -636,7 +635,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("{listing.metadataMatchLabel ?? 'Ranking'} rank #{listing.metadataMatchRank ?? '—'} · {listing.metadataMatchScore}/100");
     expect(source).toContain('<MetadataMatchLine listing={listing} />');
     expect(source).toContain('<MetadataMatchLine listing={l} />');
-    expect(masterListSource).toContain('Rank {listing.metadataMatchRank ?? \'unranked\'}');
+    expect(masterListSource).toContain("{listing.metadataMatchLabel ?? 'Metadata ranking'}");
     expect(masterListSource).toContain('<MetadataComparisonTable listing={listing} />');
     expect(metadataTableSource.match(/<th className="p-1">/g)?.length).toBe(6);
     expect(metadataTableSource).toContain('Highlighted field names contributed to the ranking score.');
