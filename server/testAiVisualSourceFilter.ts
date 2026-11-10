@@ -2786,6 +2786,10 @@ function videoGameItemTypeLabel(value: string): string {
   if (/collection|lot/.test(value)) return "collection/lot";
   return "";
 }
+/** Canonical Video Games target type ("game" | "console" | "accessory" | "collection/lot" | ""). */
+export function videoGameTargetTypeLabel(targetMetadata: string): string {
+  return videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata));
+}
 function videoGameCandidateItemType(listing: VisualSourceCandidate): string {
   const details = candidateStructuredDetails(listing);
   const structured = videoGameItemTypeLabel(normalizedChoice(listing.itemType ?? listing.productType ?? listing.form ?? listing.saleForm ?? details.itemType ?? details.productType ?? details.form ?? ""));
@@ -6483,54 +6487,65 @@ function annotateSportsCardScoresWithoutImages<T extends VisualSourceCandidate>(
 // Pre-vision conflicts stay excluded from visual review and valuation, but they
 // still receive the same single item-type score for transparent auditing.
 // Collection/Lot remains intentionally non-comparable and receives no score.
-function scorePreVisualComparableCandidate<T extends VisualSourceCandidate>(listing: T, targetMetadata: string): T {
+function isExactComparableVisualTarget(targetMetadata: string): boolean {
+  const category = normalizedChoice(metadataValue(targetMetadata, 'category'));
+  const itemType = targetItemTypeValue(targetMetadata);
+  const supportedCategory = ['sports_cards', 'comics', 'coins', 'stamps', 'video_games', 'movies', 'disney_pins', 'music', 'vintage_toys', 'pokemon', 'autographs'].includes(category);
+  return supportedCategory && Boolean(meaningfulMetadataText(itemType)) && !/collection|lot/.test(itemType)
+    && category !== 'autographs' && !(category === 'comics' && itemType === 'original_art');
+}
+
+function exactComparableVisualScorer(targetMetadata: string): ((listing: VisualSourceCandidate) => MetadataScoreResult) | null {
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   const itemType = targetItemTypeValue(targetMetadata);
-  const unranked = () => ({ ...listing, metadataMatchScore: undefined, metadataMatchRank: undefined,
-    metadataMatchReasons: [], metadataUnknownFields: [], metadataScoreAwards: [], metadataMatchLabel: undefined } as T);
-  const supportedCategory = ['sports_cards', 'comics', 'coins', 'stamps', 'video_games', 'movies', 'disney_pins', 'music', 'vintage_toys', 'pokemon', 'autographs'].includes(category);
-  if (!supportedCategory || !meaningfulMetadataText(itemType) || /collection|lot/.test(itemType)) return unranked();
   // These separate relevance paths are scored by their existing outer caller,
   // never relabeled exact-comparable by this annotation helper.
-  if (category === 'autographs' || category === 'comics' && itemType === 'original_art') return unranked();
+  if (!isExactComparableVisualTarget(targetMetadata)) return null;
 
-  let scoring: MetadataScoreResult | null = null;
+  let scorer: ((listing: VisualSourceCandidate, metadata: string) => MetadataScoreResult) | null = null;
   const videoGameType = category === "video_games" ? videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata)) : "";
   const movieType = category === "movies" ? movieTargetItemType(targetMetadata) : "";
   const musicType = musicItemTypeLabel(itemType);
   const vintageToyType = vintageToyScoreType(targetMetadata);
   const pokemonType = pokemonTargetItemType(targetMetadata);
-  if (sportsCardUnopenedTarget(targetMetadata)) scoring = sportsCardUnopenedVisualScore(listing, targetMetadata);
-  else if (sportsCardSetTarget(targetMetadata)) scoring = sportsCardSetVisualScore(listing, targetMetadata);
-  else if (sportsCardSingleTarget(targetMetadata)) scoring = sportsCardSingleVisualScore(listing, targetMetadata);
-  else if (comicsSingleTarget(targetMetadata)) scoring = comicsSingleVisualScore(listing, targetMetadata);
-  else if (isSingleStampTarget(targetMetadata)) scoring = stampsSingleVisualScore(listing, targetMetadata);
-  else if (isStampSetTarget(targetMetadata)) scoring = stampsSetVisualScore(listing, targetMetadata);
-  else if (isSingleCoinTarget(targetMetadata)) scoring = coinsSingleVisualScore(listing, targetMetadata);
-  else if (isCoinSetTarget(targetMetadata)) scoring = coinsSetVisualScore(listing, targetMetadata);
-  else if (isPaperMoneyTarget(targetMetadata)) scoring = paperMoneyVisualScore(listing, targetMetadata);
-  else if (videoGameType === "game") scoring = videoGameGameVisualScore(listing, targetMetadata);
-  else if (videoGameType === "console") scoring = videoGameConsoleVisualScore(listing, targetMetadata);
-  else if (videoGameType === "accessory") scoring = videoGameAccessoryVisualScore(listing, targetMetadata);
-  else if (movieType === "individual_movie") scoring = moviesIndividualVisualScore(listing, targetMetadata);
-  else if (movieType === "box_set") scoring = moviesBoxSetVisualScore(listing, targetMetadata);
-  else if (category === "disney_pins" && itemType === "individual_pin") scoring = disneyPinsIndividualVisualScore(listing, targetMetadata);
-  else if (category === "disney_pins" && itemType === "pin_set") scoring = disneyPinsSetVisualScore(listing, targetMetadata);
-  else if (category === "music" && musicType && musicType !== "collection/lot") scoring = musicVisualScore(listing, targetMetadata);
-  else if (category === "vintage_toys" && vintageToyType && vintageToyType !== "collection/lot") scoring = vintageToyVisualScore(listing, targetMetadata);
-  else if (category === "pokemon" && pokemonType) scoring = pokemonVisualScore(listing, targetMetadata);
+  if (sportsCardUnopenedTarget(targetMetadata)) scorer = sportsCardUnopenedVisualScore;
+  else if (sportsCardSetTarget(targetMetadata)) scorer = sportsCardSetVisualScore;
+  else if (sportsCardSingleTarget(targetMetadata)) scorer = sportsCardSingleVisualScore;
+  else if (comicsSingleTarget(targetMetadata)) scorer = comicsSingleVisualScore;
+  else if (isSingleStampTarget(targetMetadata)) scorer = stampsSingleVisualScore;
+  else if (isStampSetTarget(targetMetadata)) scorer = stampsSetVisualScore;
+  else if (isSingleCoinTarget(targetMetadata)) scorer = coinsSingleVisualScore;
+  else if (isCoinSetTarget(targetMetadata)) scorer = coinsSetVisualScore;
+  else if (isPaperMoneyTarget(targetMetadata)) scorer = paperMoneyVisualScore;
+  else if (videoGameType === "game") scorer = videoGameGameVisualScore;
+  else if (videoGameType === "console") scorer = videoGameConsoleVisualScore;
+  else if (videoGameType === "accessory") scorer = videoGameAccessoryVisualScore;
+  else if (movieType === "individual_movie") scorer = moviesIndividualVisualScore;
+  else if (movieType === "box_set") scorer = moviesBoxSetVisualScore;
+  // The inventory form stores an individual pin as `single_pin`; use the same
+  // Disney type reader as the scorer and selector instead of one literal key.
+  else if (category === "disney_pins" && disneyPinsTargetItemType(targetMetadata) === "individual_pin") scorer = disneyPinsIndividualVisualScore;
+  else if (category === "disney_pins" && disneyPinsTargetItemType(targetMetadata) === "pin_set") scorer = disneyPinsSetVisualScore;
+  else if (category === "music" && musicType && musicType !== "collection/lot") scorer = musicVisualScore;
+  else if (category === "vintage_toys" && vintageToyType && vintageToyType !== "collection/lot") scorer = vintageToyVisualScore;
+  else if (category === "pokemon" && pokemonType) scorer = pokemonVisualScore;
   // The existing inner pipeline already invokes this genuine universal model
   // when no category item-type handler applies (for example, Stamp Block).
   // Bind it before the final display overlay; do not fabricate a new model.
-  else if (category === 'stamps' && itemType === 'stamp_block') scoring = universalMetadataScore(listing, targetMetadata);
+  else if (category === 'stamps' && itemType === 'stamp_block') scorer = universalMetadataScore;
+  return scorer ? (listing) => scorer!(listing, targetMetadata) : null;
+}
 
+function scorePreVisualComparableCandidate<T extends VisualSourceCandidate>(listing: T, targetMetadata: string): T {
+  const scoring = exactComparableVisualScorer(targetMetadata)?.(listing);
   return scoring ? {
     ...listing,
     metadataMatchScore: scoring.score,
     metadataMatchReasons: scoring.matched,
     metadataUnknownFields: scoring.unknown ?? [],
     metadataScoreAwards: scoring.awards,
-	} as T : unranked();
+	} as T : { ...listing, metadataMatchScore: undefined, metadataMatchRank: undefined,
+    metadataMatchReasons: [], metadataUnknownFields: [], metadataScoreAwards: [], metadataMatchLabel: undefined } as T;
 }
 
 /**
@@ -6548,9 +6563,243 @@ export function annotatePreVisualComparableScores<T extends VisualSourceCandidat
   } as T));
 }
 
+export type VisualSourceReviewOpportunityArguments<T extends VisualSourceCandidate> = {
+  listings: T[];
+  targetMetadata: string;
+  ignoreSubjectiveConditionDifferences?: boolean;
+};
+
+export type PreparedVisualSourceReviewCandidate<T extends VisualSourceCandidate> = {
+  item: T;
+  /** Original ingress occurrence, not provider ID or audit rank. */
+  candidateIndex: number;
+  imageUrl: string | null;
+  imageUrls: string[];
+};
+
+export type VisualSourceReviewOpportunity<T extends VisualSourceCandidate> = {
+  /** Only an existing exact-comparable category selector establishes support. */
+  supported: boolean;
+  unsupportedReason?: 'context_or_relevance_workflow' | 'no_category_selector';
+  /** Selected image-bearing opportunity count, with no pricing meaning. */
+  eligibleCount: number;
+  targetMetadata: string;
+  /** Real image-bearing category-selected rows; never sale or visual approval. */
+  selectedCandidates: PreparedVisualSourceReviewCandidate<T>[];
+  /** Every retained occurrence in ingress order, including hard holds. */
+  preparedListings: T[];
+  heldCandidates: Array<{ candidateIndex: number; item: T; reason: string; reasonCode: VisualExecutionReasonCode }>;
+  declaredReviews: VisualSourceReview[];
+  cap: number | null;
+  minimumMetadataScore: number | null;
+};
+
+function prepareVisualSourceReviewPopulation<T extends VisualSourceCandidate>(args: VisualSourceReviewOpportunityArguments<T>) {
+  const targetMetadata = canonicalVisualTargetMetadata(args.targetMetadata);
+  const comparisonListings = args.listings.map((listing) => ({
+    ...listing,
+    metadataFieldComparisons: buildMetadataFieldComparisons(targetMetadata, listing),
+  } as T));
+  const universalPreparation = prepareUniversalVisualCandidates(comparisonListings, targetMetadata);
+  return { targetMetadata, universalPreparation, preparedListings: universalPreparation.listings };
+}
+
+type PreparedVisualSourceCategorySelection<T extends VisualSourceCandidate> = {
+  selected: PreparedVisualSourceReviewCandidate<T>[];
+  excluded: T[];
+  cap: number;
+  ranked: PreparedVisualSourceReviewCandidate<T>[];
+};
+
+/** The actual pre-dispatch gates and selector policy, shared with final vision. */
+function prepareVisualSourceReviewSelection<T extends VisualSourceCandidate>(args: {
+  targetMetadata: string;
+  universalPreparation: UniversalPreparation<T>;
+  ignoreSubjectiveConditionDifferences?: boolean;
+}) {
+  const { targetMetadata, universalPreparation } = args;
+  const preparedListings = universalPreparation.listings;
+  const preVisualUniversalReasons = universalPreparation.contextReasons;
+  const preVisualLotReasons = new Map<number, string>();
+  preparedListings.forEach((listing, index) => {
+    const reason = multiItemLotReason(listing, targetMetadata);
+    if (reason) preVisualLotReasons.set(index, reason);
+  });
+  const declaredReviews = buildDeclaredIdentityReviews(preparedListings, targetMetadata, {
+    ignoreSubjectiveConditionDifferences: args.ignoreSubjectiveConditionDifferences,
+  });
+  const declaredReviewByIndex = new Map(declaredReviews.map((review) => [review.candidateIndex, review]));
+  const preVisualExcludedIndexes = new Set([
+    ...preVisualUniversalReasons.keys(),
+    ...preVisualLotReasons.keys(),
+    ...declaredReviewByIndex.keys(),
+  ]);
+  const preVisualContextItems = new Map<number, T>();
+  const preVisualContextListings: T[] = preparedListings.flatMap<T>((listing, originalIndex) => {
+    if (!preVisualExcludedIndexes.has(originalIndex)) return [] as T[];
+    const declaredReview = declaredReviewByIndex.get(originalIndex);
+    const reason = preVisualUniversalReasons.get(originalIndex)
+      ?? preVisualLotReasons.get(originalIndex)
+      ?? declaredReview?.rationale
+      ?? 'Pre-visual identity filter excluded this listing from visual review.';
+    const scoredListing = scorePreVisualComparableCandidate(listing, targetMetadata);
+    const item = {
+      ...scoredListing,
+      visualRequirement: 'not_required_pre_visual',
+      visualReviewStatus: declaredReview?.verdict ?? 'not_reviewed',
+      visualReviewRationale: reason,
+      evidenceDisposition: 'context_only',
+    } as T;
+    preVisualContextItems.set(originalIndex, item);
+    return item;
+  });
+  const eligibleListings = preparedListings.filter((_, index) => !preVisualExcludedIndexes.has(index));
+  let allCandidates: PreparedVisualSourceReviewCandidate<T>[] = preparedListings
+    .map((item, candidateIndex) => {
+      const imageUrls = normalizeVisualSourceCandidate(item).imageUrls;
+      return { item, candidateIndex, imageUrl: imageUrls[0] ?? null, imageUrls };
+    })
+    .filter((entry) => !preVisualExcludedIndexes.has(entry.candidateIndex));
+  allCandidates = annotateUniversalScores(allCandidates, targetMetadata);
+  const rankedItems = new Map<number, T>(allCandidates.map((candidate) => [candidate.candidateIndex, candidate.item]));
+  const pokemonType = pokemonTargetItemType(targetMetadata);
+  const pokemonSelection = pokemonType === 'single_card' || pokemonType === 'set' || pokemonType === 'unopened_product'
+    ? selectPokemonVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  const sportsCardSelection = sportsCardUnopenedTarget(targetMetadata)
+    ? selectSportsCardUnopenedVisualCandidates(allCandidates, targetMetadata)
+    : sportsCardSingleTarget(targetMetadata)
+    ? selectSportsCardSingleVisualCandidates(allCandidates, targetMetadata)
+    : sportsCardSetTarget(targetMetadata)
+      ? selectSportsCardSetVisualCandidates(allCandidates, targetMetadata)
+      : null;
+  const comicsSelection = comicsSingleTarget(targetMetadata)
+    ? selectComicsSingleVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  const stampsSelection = isSingleStampTarget(targetMetadata)
+    ? selectStampsVisualCandidates(allCandidates, targetMetadata, false)
+    : isStampSetTarget(targetMetadata)
+      ? selectStampsVisualCandidates(allCandidates, targetMetadata, true)
+      : null;
+  const coinsSelection = isSingleCoinTarget(targetMetadata)
+    ? selectCoinsSingleVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  const coinSetSelection = isCoinSetTarget(targetMetadata)
+    ? selectCoinsSetVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  const paperMoneySelection = isPaperMoneyTarget(targetMetadata)
+    ? selectPaperMoneyVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  const videoGameType = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'video_games'
+    ? videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata))
+    : '';
+  const videoGameSelection = videoGameType === 'game' || videoGameType === 'console' || videoGameType === 'accessory'
+    ? selectVideoGameVisualCandidates(allCandidates, targetMetadata, videoGameType)
+    : null;
+  // Category-guarded like exactComparableVisualScorer: an unguarded item-type
+  // regex sent Disney `individual_pin` targets through the Movies selector.
+  const movieType = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'movies'
+    ? movieTargetItemType(targetMetadata)
+    : '';
+  const moviesSelection = movieType === 'individual_movie' || movieType === 'box_set'
+    ? selectMoviesVisualCandidates(allCandidates, targetMetadata, movieType === 'box_set')
+    : null;
+  const disneyPinsType = disneyPinsTargetItemType(targetMetadata);
+  const disneyPinsSelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'disney_pins' && (disneyPinsType === 'individual_pin' || disneyPinsType === 'pin_set')
+    ? selectDisneyPinsVisualCandidates(allCandidates, targetMetadata, disneyPinsType === 'pin_set')
+    : null;
+  const musicType = musicItemTypeLabel(targetItemTypeValue(targetMetadata));
+  const musicSelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'music'
+    && musicType !== '' && musicType !== 'collection/lot'
+    ? selectMusicVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  const vintageToyType = vintageToyScoreType(targetMetadata);
+  const vintageToySelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'vintage_toys' && vintageToyType && vintageToyType !== 'collection/lot'
+    ? selectVintageToyVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  const rankedSelection: PreparedVisualSourceCategorySelection<T> | null = pokemonSelection ?? sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection ?? disneyPinsSelection ?? musicSelection ?? vintageToySelection;
+  // Reporting/budget minimum comes from the same dispatch, not a second policy.
+  const minimumMetadataScore = !rankedSelection ? null
+    : rankedSelection === videoGameSelection || rankedSelection === comicsSelection ? 50
+    : rankedSelection === sportsCardSelection ? sportsCardUnopenedTarget(targetMetadata) ? 55 : 50
+    : rankedSelection === disneyPinsSelection ? 40 : 60;
+  return { preVisualUniversalReasons, preVisualLotReasons, declaredReviews, declaredReviewByIndex,
+    preVisualExcludedIndexes, preVisualContextListings, preVisualContextItems, eligibleListings,
+    allCandidates, rankedItems, rankedSelection, minimumMetadataScore };
+}
+
+/**
+ * Synchronous deterministic preparation only: no target image, model dispatch,
+ * sale-fact inference, signing, or cross-request state. Caller owns factual
+ * sold-candidate checks and the retained provider-ID union before calling this.
+ */
+export function prepareVisualSourceReviewOpportunity<T extends VisualSourceCandidate>(
+  args: VisualSourceReviewOpportunityArguments<T>,
+): VisualSourceReviewOpportunity<T> {
+  // An empty local display population clears direct/known-wrapper foreign
+  // diagnostics without issuing an invocation binding or trusting inbound ranks.
+  const emptyDisplayPopulation = freezeMetadataRankingPopulation([], {
+    populationId: 'preparation_only', sourceId: 'visual_review_opportunity', scorerRole: 'unranked',
+  });
+  const cleanListings = overlayMetadataRankingPopulation(args.listings, emptyDisplayPopulation) as T[];
+  const population = prepareVisualSourceReviewPopulation({ ...args, listings: cleanListings });
+  const { targetMetadata, universalPreparation } = population;
+  const isOriginalArt = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'comics'
+    && targetItemTypeValue(targetMetadata) === 'original_art';
+  const contextWorkflow = isOriginalArt || isAutographSignedItemTarget(targetMetadata)
+    || /collection|lot/.test(targetItemTypeValue(targetMetadata));
+  if (contextWorkflow) {
+    return { supported: false, unsupportedReason: 'context_or_relevance_workflow', targetMetadata,
+      eligibleCount: 0, selectedCandidates: [], preparedListings: population.preparedListings,
+      heldCandidates: population.preparedListings.map((item, candidateIndex) => ({ item, candidateIndex,
+        reason: universalPreparation.contextReasons.get(candidateIndex) ?? 'Intentionally context-only or relevance-only workflow; no exact-comparable review opportunity.',
+        reasonCode: universalPreparation.contextCodes.get(candidateIndex) ?? 'workflow_context_only' })),
+      declaredReviews: [], cap: null, minimumMetadataScore: null };
+  }
+  const selection = prepareVisualSourceReviewSelection({ ...args, targetMetadata, universalPreparation });
+  const itemType = targetItemTypeValue(targetMetadata);
+  const supported = exactComparableVisualScorer(targetMetadata) !== null && selection.rankedSelection !== null
+    && (normalizedChoice(metadataValue(targetMetadata, 'category')) !== 'sports_cards' || sportsCardProductForm(itemType) !== null);
+  const categoryItems = new Map<number, T>(supported
+    ? selection.rankedSelection!.ranked.map(candidate => [candidate.candidateIndex, candidate.item] as const) : []);
+  const selectedIndexes = new Set(supported ? selection.rankedSelection!.selected.map(candidate => candidate.candidateIndex) : []);
+  const selectionExcluded = new Map<number, T>(supported
+    ? selection.rankedSelection!.ranked.filter(candidate => !selectedIndexes.has(candidate.candidateIndex))
+      .map((candidate, index) => [candidate.candidateIndex, selection.rankedSelection!.excluded[index]] as const) : []);
+  const preparedListings = population.preparedListings.map((listing, index) =>
+    selection.preVisualContextItems.get(index) ?? selectionExcluded.get(index) ?? categoryItems.get(index) ?? listing);
+  // Full-population audit ranks are an output overlay only, never cap drivers.
+  const auditOrder = preparedListings.map((item, index) => ({ item, index }))
+    .filter(entry => typeof entry.item.metadataMatchScore === 'number')
+    .sort((a, b) => Number(b.item.metadataMatchScore) - Number(a.item.metadataMatchScore) || a.index - b.index);
+  const auditRanks = new Map(auditOrder.map((entry, index) => [entry.index, index + 1]));
+  const auditedListings = preparedListings.map((item, index) => withMetadataFieldComparisons(targetMetadata,
+    { ...item, metadataMatchRank: auditRanks.get(index) } as T));
+  const selectedCandidates = (supported ? selection.rankedSelection!.selected : [])
+    .filter(candidate => candidate.imageUrls.length > 0)
+    .map(candidate => ({ ...candidate, item: auditedListings[candidate.candidateIndex] }));
+  const heldCandidates = auditedListings.flatMap((item, candidateIndex) => {
+    const universalCode = universalPreparation.contextCodes.get(candidateIndex);
+    const declaredReview = selection.declaredReviewByIndex.get(candidateIndex);
+    const reason = selection.preVisualUniversalReasons.get(candidateIndex)
+      ?? selection.preVisualLotReasons.get(candidateIndex) ?? declaredReview?.rationale
+      ?? selectionExcluded.get(candidateIndex)?.visualReviewRationale;
+    if (typeof reason !== 'string') return [];
+    const reasonCode: VisualExecutionReasonCode = universalCode
+      ?? (selection.preVisualLotReasons.has(candidateIndex) ? 'multi_item_hold'
+        : declaredReview ? 'declared_identity_conflict' : 'selection_excluded');
+    return [{ candidateIndex, item, reason, reasonCode }];
+  });
+  return { supported, ...(!supported ? { unsupportedReason: 'no_category_selector' as const } : {}),
+    eligibleCount: selectedCandidates.length, targetMetadata, selectedCandidates,
+    preparedListings: auditedListings, heldCandidates, declaredReviews: selection.declaredReviews,
+    cap: supported ? selection.rankedSelection!.cap : null,
+    minimumMetadataScore: supported ? selection.minimumMetadataScore : null };
+}
+
 type VisualSourceFilterArguments<T extends VisualSourceCandidate> = {
-	  /** Marketplace/eBay candidates only. Grading and reference sources use separate evidence contracts. */
-		  sourceRole: 'marketplace' | 'ebay';
+		  /** Marketplace/eBay candidates only. Grading and reference sources use separate evidence contracts. */
+			  sourceRole: 'marketplace' | 'ebay';
 		  sourceLabel: string;
   /** Owned route literal only; do not accept from browser DTOs or infer from labels. */
   reviewBudgetRole?: 'sold_source' | 'context';
@@ -6590,13 +6839,7 @@ export async function filterVisualSourceCandidates<T extends VisualSourceCandida
 }
 
 async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandidate>(args: VisualSourceFilterArguments<T>): Promise<VisualSourceFilterResult<T>> {
-		  const targetMetadata = canonicalVisualTargetMetadata(args.targetMetadata);
-	  const comparisonListings = args.listings.map((listing) => ({
-	    ...listing,
-	    metadataFieldComparisons: buildMetadataFieldComparisons(targetMetadata, listing),
-		  } as T));
-			  const universalPreparation = prepareUniversalVisualCandidates(comparisonListings, targetMetadata);
-			  const preparedListings = universalPreparation.listings;
+  const { targetMetadata, universalPreparation, preparedListings } = prepareVisualSourceReviewPopulation(args);
   let reviewBudget: VisualSourceFilterResult<T>['reviewBudget'];
   // Invocation-owned reporting lives outside the provider try/catch. No receipt
   // is inferred from required/status/audit or inherited from another invocation.
@@ -6702,114 +6945,27 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
 	      removedCount: autographExcludedCount,
 		      retainedUnreviewedCount: contextListings.length,
 		      reviews: [],
-		      note: 'Autographs / Signed Item market range only: candidates are ranked as similar market evidence and are not sent to visual analysis.',
-		    });
-		  }
-		  const preVisualUniversalReasons = universalPreparation.contextReasons;
-  const preVisualLotReasons = new Map<number, string>();
-	  preparedListings.forEach((listing, index) => {
-    const reason = multiItemLotReason(listing, targetMetadata);
-    if (reason) preVisualLotReasons.set(index, reason);
-  });
-		  const declaredReviews = buildDeclaredIdentityReviews(preparedListings, targetMetadata, {
-    ignoreSubjectiveConditionDifferences: args.ignoreSubjectiveConditionDifferences,
-  });
-  const declaredReviewByIndex = new Map(declaredReviews.map((review) => [review.candidateIndex, review]));
+			      note: 'Autographs / Signed Item market range only: candidates are ranked as similar market evidence and are not sent to visual analysis.',
+			    });
+			  }
+  const selectionPreparation = prepareVisualSourceReviewSelection({ targetMetadata, universalPreparation,
+    ignoreSubjectiveConditionDifferences: args.ignoreSubjectiveConditionDifferences });
+  const { preVisualUniversalReasons, preVisualLotReasons, declaredReviews, declaredReviewByIndex, preVisualExcludedIndexes,
+    preVisualContextListings, rankedItems } = selectionPreparation;
   preparedListings.forEach((_, index) => {
     const universalCode = universalPreparation.contextCodes.get(index);
     if (universalCode) holdAt(index, universalCode, true, universalCode !== "universal_duplicate_hold" && declaredReviewByIndex.has(index));
     else if (preVisualLotReasons.has(index)) holdAt(index, "multi_item_hold", true);
     else if (declaredReviewByIndex.has(index)) holdAt(index, "declared_identity_conflict", true, true);
   });
-  const preVisualExcludedIndexes = new Set([
-		    ...preVisualUniversalReasons.keys(),
-    ...preVisualLotReasons.keys(),
-    ...declaredReviewByIndex.keys(),
-  ]);
-	  const preVisualContextListings: T[] = preparedListings.flatMap<T>((listing, originalIndex) => {
-    if (!preVisualExcludedIndexes.has(originalIndex)) return [] as T[];
-    const declaredReview = declaredReviewByIndex.get(originalIndex);
-	    const reason = preVisualUniversalReasons.get(originalIndex)
-	      ?? preVisualLotReasons.get(originalIndex)
-      ?? declaredReview?.rationale
-      ?? "Pre-visual identity filter excluded this listing from visual review.";
-      const scoredListing = scorePreVisualComparableCandidate(listing, targetMetadata);
-      return {
-        ...scoredListing,
-        visualRequirement: "not_required_pre_visual",
-        visualReviewStatus: declaredReview?.verdict ?? "not_reviewed",
-        visualReviewRationale: reason,
-        evidenceDisposition: "context_only",
-      } as T;
-  });
-  let eligibleListings = preparedListings.filter((_, index) => !preVisualExcludedIndexes.has(index));
+  let eligibleListings = selectionPreparation.eligibleListings;
   let preVisualScoreExcludedListings: T[] = [];
   let preVisualScoreExcludedIndexes = new Set<number>();
   let itemTypeRankedItems = new Map<number, T>();
-  let allCandidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }> = preparedListings
-    .map((item, candidateIndex) => {
-      const imageUrls = normalizeVisualSourceCandidate(item).imageUrls;
-      return { item, candidateIndex, imageUrl: imageUrls[0] ?? null, imageUrls };
-    })
-    .filter((entry) => !preVisualExcludedIndexes.has(entry.candidateIndex));
-  allCandidates = annotateUniversalScores(allCandidates, targetMetadata);
-  const rankedItems = new Map<number, T>(allCandidates.map((candidate) => [candidate.candidateIndex, candidate.item]));
-  const pokemonType = pokemonTargetItemType(targetMetadata);
-  const pokemonSelection = pokemonType === 'single_card' || pokemonType === 'set' || pokemonType === 'unopened_product'
-    ? selectPokemonVisualCandidates(allCandidates, targetMetadata)
-    : null;
-  const sportsCardSelection = sportsCardUnopenedTarget(targetMetadata)
-    ? selectSportsCardUnopenedVisualCandidates(allCandidates, targetMetadata)
-    : sportsCardSingleTarget(targetMetadata)
-    ? selectSportsCardSingleVisualCandidates(allCandidates, targetMetadata)
-    : sportsCardSetTarget(targetMetadata)
-      ? selectSportsCardSetVisualCandidates(allCandidates, targetMetadata)
-      : null;
-  const comicsSelection = comicsSingleTarget(targetMetadata)
-    ? selectComicsSingleVisualCandidates(allCandidates, targetMetadata)
-    : null;
-  const stampsSelection = isSingleStampTarget(targetMetadata)
-    ? selectStampsVisualCandidates(allCandidates, targetMetadata, false)
-    : isStampSetTarget(targetMetadata)
-      ? selectStampsVisualCandidates(allCandidates, targetMetadata, true)
-      : null;
-  const coinsSelection = isSingleCoinTarget(targetMetadata)
-    ? selectCoinsSingleVisualCandidates(allCandidates, targetMetadata)
-    : null;
-  const coinSetSelection = isCoinSetTarget(targetMetadata)
-    ? selectCoinsSetVisualCandidates(allCandidates, targetMetadata)
-    : null;
-  const paperMoneySelection = isPaperMoneyTarget(targetMetadata)
-    ? selectPaperMoneyVisualCandidates(allCandidates, targetMetadata)
-    : null;
-  const videoGameType = normalizedChoice(metadataValue(targetMetadata, "category")) === "video_games"
-    ? videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata))
-    : "";
-  const videoGameSelection = videoGameType === 'game' || videoGameType === 'console' || videoGameType === 'accessory'
-    ? selectVideoGameVisualCandidates(allCandidates, targetMetadata, videoGameType)
-    : null;
-  const movieType = movieTargetItemType(targetMetadata);
-  const moviesSelection = movieType === 'individual_movie' || movieType === 'box_set'
-    ? selectMoviesVisualCandidates(allCandidates, targetMetadata, movieType === 'box_set')
-    : null;
-  const disneyPinsType = disneyPinsTargetItemType(targetMetadata);
-  const disneyPinsSelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'disney_pins' && (disneyPinsType === 'individual_pin' || disneyPinsType === 'pin_set')
-    ? selectDisneyPinsVisualCandidates(allCandidates, targetMetadata, disneyPinsType === 'pin_set')
-    : null;
-  const musicType = musicItemTypeLabel(targetItemTypeValue(targetMetadata));
-  const musicSelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'music'
-    && musicType !== '' && musicType !== 'collection/lot'
-    ? selectMusicVisualCandidates(allCandidates, targetMetadata)
-    : null;
-  const vintageToyType = vintageToyScoreType(targetMetadata);
-  const vintageToySelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'vintage_toys' && vintageToyType && vintageToyType !== 'collection/lot'
-    ? selectVintageToyVisualCandidates(allCandidates, targetMetadata)
-    : null;
-  let rankedSelection = pokemonSelection ?? sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection ?? disneyPinsSelection ?? musicSelection ?? vintageToySelection;
+  const allCandidates = selectionPreparation.allCandidates;
+  let rankedSelection = selectionPreparation.rankedSelection;
   if (args.reviewBudgetRole === 'sold_source' && rankedSelection) {
-    const minimum = rankedSelection === videoGameSelection || rankedSelection === comicsSelection ? 50
-      : rankedSelection === sportsCardSelection ? sportsCardUnopenedTarget(targetMetadata) ? 55 : 50
-      : rankedSelection === disneyPinsSelection ? 40 : 60;
+    const minimum = selectionPreparation.minimumMetadataScore!;
     const eligible = rankedSelection.ranked.filter(candidate => candidate.imageUrls.length > 0
       && Number(candidate.item.metadataMatchScore ?? 0) >= minimum)
       .sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex);

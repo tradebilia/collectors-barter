@@ -295,7 +295,7 @@ describe('Stage 6 actual ordinary eBay route retrieval union', () => {
 describe('Stage 6 actual Mercari adapter -> actual source route handoff', () => {
   it.each([MOVIE, GAME])('retains earlier query issues through actual no-image $category route', async (target) => {
     fixtures = [() => json({ message: 'RAW_PROVIDER_SECRET_SENTINEL' }, 401), () => json({ items: [{ itemId: 'stage6-mercari-route',
-      title: target.title, price: '100', currency: 'USD', soldAt: '2026-11-08', url: 'https://www.mercari.com/us/item/stage6-mercari-route/',
+      title: target.title, status: 'sold', price: '100', currency: 'USD', soldAt: '2026-11-08', url: 'https://www.mercari.com/us/item/stage6-mercari-route/',
       imageUrl: 'https://example.test/stage6/mercari.jpg' }] })];
     const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
     expect(requests.map(({ url }) => url.pathname)).toEqual(['/v1/mercari', '/v1/mercari']);
@@ -340,16 +340,20 @@ describe('Stage 6 actual Mercari adapter -> actual source route handoff', () => 
     expect(html).toContain('partial/error retrieval');
   });
 
-  it('first valid provider row later held by real target metadata/no-image gates never triggers more Mercari queries', async () => {
+  it('a wrong-number primary advances to an eligible sold-labeled fallback and retains both real route rows', async () => {
     fixtures = [() => json({ items: [{ itemId: 'held-target', title: '1996 Topps Kobe Bryant #139 PSA 10',
-      price: '100', currency: 'USD', soldAt: '2026-11-08' }] })];
+      status: 'sold', price: '100', currency: 'USD', soldAt: '2026-11-08', imageUrl: 'https://example.test/stage6/wrong.jpg' }] }),
+      () => json({ items: [{ itemId: 'eligible-target', title: TARGET.title, status: 'sold', price: '100',
+        currency: 'USD', soldAt: '2026-11-08', imageUrl: 'https://example.test/stage6/match.jpg' }] })];
     const result = await caller().getMercariSoldCompsData(TARGET) as unknown as Row;
-    expect(requests).toHaveLength(1); expect(result.error).toBeNull();
+    expect(requests).toHaveLength(2); expect(result.error).toBeNull();
     expect(coverage(result)[0]).toMatchObject({ outcome: 'success_records', accepted: 1 });
     expect(retained(result).some((row) => row.saleId === 'mercari:held-target')).toBe(true);
+    expect(retained(result).some((row) => row.saleId === 'mercari:eligible-target')).toBe(true);
     expect(retained(result).every((row) => !row.identityApproval)).toBe(true);
+    expect(boundaries.llm).not.toHaveBeenCalled();
     const html = rendered(result, 'Mercari');
-    expect(html).toContain('success_records'); expect(html).not.toContain('Fallback 1');
+    expect(html).toContain('success_records'); expect(html).toContain('Fallback 1');
     expect(html).toContain('before metadata ranking, image review or pricing eligibility');
   });
 
@@ -375,5 +379,193 @@ describe('Stage 6 actual Mercari adapter -> actual source route handoff', () => 
   it('non-admin actual Mercari route rejects before the actual adapter makes a request', async () => {
     await expect(caller('user').getMercariSoldCompsData(MOVIE)).rejects.toMatchObject({ code: 'FORBIDDEN' });
     expect(requests).toHaveLength(0);
+  });
+});
+
+// Follow-up Step 6: actual owned route/adapter/shared preparation, not mocked ranking.
+describe('Step 6 bounded ranking-aware Mercari full chain', () => {
+  const movie = { title: 'Hercules Blu-ray 1997', category: 'movies', itemType: 'individual_movie',
+    itemDetails: JSON.stringify({ movieTitle: 'Hercules', format: 'Blu-ray', releaseYear: '1997', isGraded: 'No' }) };
+  // With a release year, an exact title-only Mercari row scores 60 (>= the 50
+  // minimum). Without one, "Metroid NES CIB" scores 45 and is correctly held.
+  const game = { title: 'Metroid NES 1987 CIB', category: 'video_games', itemType: 'game',
+    itemDetails: JSON.stringify({ gameTitle: 'Metroid', platform: 'NES', releaseYear: '1987', completeInBox: 'Yes', sealed: 'No', isGraded: 'No' }) };
+  const sold = (target: typeof movie | typeof game, id = 'good', extra: Row = {}): Row => ({ itemId: id,
+    title: target.title, status: 'sold', price: '42', currency: 'USD',
+    url: `https://www.mercari.com/us/item/${id}/`, imageUrl: 'https://example.test/followup6/front.jpg', ...extra });
+  // Exact multiplicity: every retained occurrence appears once in the audit ledger.
+  const ledgerIds = (result: Row) => {
+    const ids = retained(result).map(row => row.saleId);
+    expect(ids.length).toBe(new Set(ids).size);
+    return new Set(ids);
+  };
+  const noAuthority = (result: Row) => {
+    expect(retained(result).every(row => !row.identityApproval && !row.provenanceToken)).toBe(true);
+    expect(boundaries.llm).not.toHaveBeenCalled();
+  };
+
+  it.each([movie, game])('wrong-primary then exact sold fallback uses one real $category selector and retains all metadata', async target => {
+    fixtures = [() => json({ items: [sold(target, 'wrong', { title: 'Completely Different Item' })] }),
+      () => json({ items: [sold(target)] })];
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    expect(requests).toHaveLength(2); expect(result.error).toBeNull();
+    expect(ledgerIds(result)).toEqual(new Set(['mercari:wrong', 'mercari:good']));
+    expect(coverage(result).map(row => row.outcome)).toEqual(['success_records', 'success_records']);
+    for (const row of retained(result)) {
+      expect(row.metadataMatchScore).toBeTypeOf('number');
+      expect(row.metadataFieldComparisons?.length).toBeGreaterThan(0);
+    }
+    noAuthority(result);
+  });
+
+  it.each(['active', undefined, 'available', 'sold out'])('provider status %s cannot stop even with forged completed/rank claims', async status => {
+    fixtures = [() => json({ items: [sold(game, 'forged', { status, saleStatus: 'completed', priceBasis: 'sold',
+      metadataMatchScore: 1000000, metadataMatchRank: 1, observedFacts: { status: 'sold' },
+      providerMetadata: { status: 'sold' }, canonicalCandidate: { saleStatus: 'completed' } })] }),
+      () => json({ items: [sold(game)] })];
+    const result = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    expect(requests).toHaveLength(2);
+    expect(ledgerIds(result).size).toBe(2);
+    const rejected = retained(result).find(row => row.saleId === 'mercari:forged');
+    expect(rejected.evidenceDisposition).toBe('context_only');
+    expect(rejected.valuationEligible).toBe(false);
+    expect(rejected.evidenceReasons.join(' ')).toMatch(/active|unknown|unverified/);
+    expect(rejected.metadataMatchScore).toBeLessThanOrEqual(100);
+    noAuthority(result);
+  });
+
+  it('a mixed primary stops for a real candidate without throwing away active, wrong or invalid siblings', async () => {
+    fixtures = [() => json({ items: [sold(game, 'active', { status: 'active' }),
+      sold(game, 'wrong', { title: 'Other Game NES CIB' }), { title: {}, itemId: 'invalid', price: true }, sold(game)] })];
+    const result = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    expect(requests).toHaveLength(1); expect(ledgerIds(result).size).toBe(3);
+    expect(coverage(result)[0]).toMatchObject({ received: 4, accepted: 3, rejected: 1, normalized: 3 });
+    expect(result.partial).toBe(true);
+    noAuthority(result);
+  });
+
+  it('missing candidate image advances, missing target image does not create another tier after opportunity', async () => {
+    fixtures = [() => json({ items: [sold(game, 'no-photo', { imageUrl: null })] }),
+      () => json({ items: [sold(game)] })];
+    const result = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    expect(requests).toHaveLength(2); expect(ledgerIds(result).size).toBe(2);
+    noAuthority(result);
+  });
+
+  it('exact matching undated row stops for review but missing currency/date never becomes pricing proof', async () => {
+    fixtures = [() => json({ items: [sold(game, 'undated', { currency: undefined, soldAt: undefined })] })];
+    const result = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    expect(requests).toHaveLength(1);
+    expect(retained(result).find(row => row.saleId === 'mercari:undated').endedAt).toBeNull();
+    noAuthority(result);
+  });
+
+  it.each([
+    ['HTTP', () => json({}, 503), 'http_error'],
+    ['JSON', () => new Response('{invalid', { status: 200 }), 'invalid_json'],
+    ['shape', () => json({ items: {} }), 'unexpected_shape'],
+    ['network', () => { throw new Error('RAW_PROVIDER_SECRET_SENTINEL'); }, 'network_error'],
+    ['timeout', () => { const error = new Error('RAW_PROVIDER_SECRET_SENTINEL'); error.name = 'TimeoutError'; throw error; }, 'timeout'],
+  ] as const)('ineligible prior progress survives later %s with original transport counts and no invented zero', async (_name, failure, outcome) => {
+    fixtures = [() => json({ items: [sold(game, 'prior', { status: 'active' })] }), failure, empty, empty];
+    const result = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    expect(requests.length).toBeGreaterThan(1); expect(requests.length).toBeLessThanOrEqual(4);
+    expect(ledgerIds(result)).toEqual(new Set(['mercari:prior']));
+    expect(coverage(result)[1]).toMatchObject({ outcome, received: null, accepted: null });
+    expect(result.partial).toBe(true); expect(result.error).toBeNull();
+    expect(JSON.stringify(result)).not.toContain('RAW_PROVIDER_SECRET_SENTINEL');
+    noAuthority(result);
+  });
+
+  it('same ID with later better title cannot replace the first returned wrong record; a different real row stops', async () => {
+    fixtures = [() => json({ items: [sold(game, 'same', { title: 'Other Game NES CIB' })] }),
+      () => json({ items: [sold(game, 'same'), sold(game, 'different')] })];
+    const result = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    expect(requests).toHaveLength(2);
+    expect(ledgerIds(result)).toEqual(new Set(['mercari:same', 'mercari:different']));
+    expect(retained(result).find(row => row.saleId === 'mercari:same').title).toContain('Other Game');
+    noAuthority(result);
+  });
+
+  it('same ID with later better title alone does not stop: the ladder is exhausted with the wrong first record kept', async () => {
+    fixtures = [() => json({ items: [sold(game, 'same', { title: 'Other Game NES CIB' })] }),
+      () => json({ items: [sold(game, 'same')] }), empty, empty];
+    const result = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    expect(requests).toHaveLength(2);
+    expect(retained(result)).toHaveLength(1);
+    expect(retained(result)[0].title).toContain('Other Game');
+    noAuthority(result);
+  });
+
+  it('no-target-image early return lists one eligible row exactly once and does not count it as excluded', async () => {
+    fixtures = [() => json({ items: [sold(game)] })];
+    const result = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    expect(requests).toHaveLength(1);
+    expect(result.audit.rawReceived).toBe(1);
+    expect(retained(result).map(row => row.saleId)).toEqual(['mercari:good']);
+    expect(result.audit.preVisionExcluded).toBe(0);
+    expect(result.preVisionExcludedListings).toHaveLength(0);
+    noAuthority(result);
+  });
+
+  it('no-target-image early return keeps wrong/active siblings and the eligible row once each', async () => {
+    fixtures = [() => json({ items: [sold(game, 'active', { status: 'active' }), sold(game, 'wrong', { title: 'Other Game NES CIB' }), sold(game)] })];
+    const result = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    expect(requests).toHaveLength(1);
+    expect(retained(result).map(row => row.saleId).sort()).toEqual(['mercari:active', 'mercari:good', 'mercari:wrong']);
+    expect(result.audit.preVisionExcluded).toBe(2);
+    noAuthority(result);
+  });
+
+  it('all shared-held rows with a target image are each retained once after the bounded ladder', async () => {
+    // Title-only rows without the year score 45 < 50 and are held by the shared filter.
+    fixtures = [() => json({ items: [sold(game, 'below-1', { title: 'Metroid NES CIB' })] }),
+      () => json({ items: [sold(game, 'below-2', { title: 'Metroid NES CIB' })] }), empty, empty];
+    const result = await caller().getMercariSoldCompsData({ ...game, imageUrl: 'https://example.test/followup6/target.jpg' }) as unknown as Row;
+    expect(requests).toHaveLength(2);
+    expect(retained(result).map(row => row.saleId).sort()).toEqual(['mercari:below-1', 'mercari:below-2']);
+    expect(result.audit.preVisionExcluded).toBe(2);
+    expect(boundaries.llm).not.toHaveBeenCalled();
+    noAuthority(result);
+  });
+
+  it('the complete-game title/manual-only gate applies to game targets but not to accessory targets', async () => {
+    const accessory = { title: 'Metroid NES Instruction Manual', category: 'video_games', itemType: 'accessory',
+      itemDetails: JSON.stringify({ accessoryName: 'Metroid Instruction Manual', platform: 'NES', isGraded: 'No' }) };
+    const gateReason = /Mercari Video Game title mismatch|manual\/accessory-only/;
+    fixtures = [() => json({ items: [sold(game, 'manual', { title: 'Metroid NES Manual Only' })] }), empty, empty, empty];
+    const gameResult = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    expect(retained(gameResult).find(row => row.saleId === 'mercari:manual').evidenceReasons.join(' ')).toMatch(gateReason);
+    requests = [];
+    fixtures = [() => json({ items: [sold(game, 'manual', { title: 'Metroid NES Manual Only' })] }), empty, empty, empty];
+    const accessoryResult = await caller().getMercariSoldCompsData(accessory) as unknown as Row;
+    const row = retained(accessoryResult).find(candidate => candidate.saleId === 'mercari:manual');
+    expect(row).toBeDefined();
+    expect((row.evidenceReasons ?? []).join(' ')).not.toMatch(gateReason);
+    noAuthority(accessoryResult);
+  });
+
+  it('all ineligible tiers stay bounded, sequential, unpaginated and fully retained', async () => {
+    fixtures = Array.from({ length: 4 }, (_, index) => () => json({ items: [sold(game, `active-${index}`, { status: 'active' })], hasNextPage: true }));
+    const result = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    expect(requests.length).toBeGreaterThan(1); expect(requests.length).toBeLessThanOrEqual(4);
+    expect(new Set(requests.map(({ url }) => url.searchParams.get('keyword'))).size).toBe(requests.length);
+    expect(ledgerIds(result).size).toBe(requests.length);
+    expect(coverage(result)).toHaveLength(requests.length);
+    expect(result.hasNextPage).toBe(true);
+    for (const { url, init } of requests) {
+      expect(url.searchParams.get('page')).toBe('1'); expect(url.searchParams.get('count')).toBe('100');
+      expect(url.searchParams.get('sold')).toBe('true'); expect(init?.signal).toBeInstanceOf(AbortSignal);
+    }
+    noAuthority(result);
+  });
+
+  it('model outage after an eligible primary never restarts or expands retrieval', async () => {
+    fixtures = [() => json({ items: [sold(game)] })];
+    boundaries.llm.mockRejectedValue(new Error('Synthetic model unavailable'));
+    const result = await caller().getMercariSoldCompsData({ ...game, imageUrl: 'https://example.test/followup6/target.jpg' }) as unknown as Row;
+    expect(requests).toHaveLength(1); expect(boundaries.llm).toHaveBeenCalled();
+    expect(ledgerIds(result)).toEqual(new Set(['mercari:good']));
+    expect(retained(result).every(row => !row.identityApproval && !row.provenanceToken)).toBe(true);
   });
 });

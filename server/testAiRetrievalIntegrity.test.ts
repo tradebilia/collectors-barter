@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { lookupMercariSoldComps, lookupTcgplayerSoldComps, normalizeMercariSoldCandidate } from './soldCompsAdditionalMarketData';
+import { getMercariObservedFacts, lookupMercariSoldComps, lookupTcgplayerSoldComps, normalizeMercariSoldCandidate,
+  type AdditionalSoldCompsListing, type MercariSoldCompsReviewOptions } from './soldCompsAdditionalMarketData';
 import { retrieveItemsAttempt, validateRetrievalRow } from '../shared/testAiRetrievalAttempt';
 
 // Dedicated reviewed isolated importer required. Actual adapter/helper, synthetic HTTP only.
@@ -37,6 +38,12 @@ function httpFixtures(fixtures: Fixture[]) {
 }
 const empty = () => json({ items: [] });
 const filled = () => json({ items: [MERCARI] });
+
+const SOLD = { ...MERCARI, status: 'sold' };
+// Synthetic stop-policy stand-in only. Actual shared category preparation is parent-owned.
+const factualReview = (rows: readonly AdditionalSoldCompsListing[]) => ({ supported: true,
+  eligibleCount: rows.filter((row) => row.title === MERCARI.title && getMercariObservedFacts(row)?.status === 'sold').length });
+const ineligibleReview = () => ({ supported: true, eligibleCount: 0 });
 
 function assertSafe(value: unknown) {
   const wire = JSON.stringify(value);
@@ -236,6 +243,304 @@ describe('Stage 6 actual Mercari adapter bounded fallback and retention', () => 
     const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY);
     expect(result.retrievalCoverage[0]).toMatchObject({ received: 3, accepted: 3 });
     expect(result.received).toBe(2); expect(result.hasNextPage).toBe(true);
+  });
+});
+
+describe('Step 6 Mercari server-owned review-opportunity adapter mode', () => {
+  it.each([
+    ['wrong target', { ...SOLD, itemId: 'wrong', title: 'Different damaged lot of 50' }, 1],
+    ['active matching row', { ...MERCARI, itemId: 'active', status: 'active' }, 1],
+    ['all normalization failed', { ...SOLD, itemId: 'bad', currency: { toString: null } }, 0],
+  ] as const)('continues after %s and stops on an eligible fallback, retaining normalization counts', async (_label, primary, normalized) => {
+    const populations: string[][] = [];
+    const reviewOpportunity = vi.fn((rows: readonly AdditionalSoldCompsListing[]) => {
+      populations.push(rows.map((row) => row.saleId));
+      return factualReview(rows);
+    });
+    const http = httpFixtures([() => json({ items: [primary] }), () => json({ items: [SOLD] })]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { reviewOpportunity });
+    expect(http.calls.map((call) => call.url.searchParams.get('keyword'))).toEqual(TOY_QUERIES.slice(0, 2));
+    expect(populations[0]).toHaveLength(normalized);
+    expect(populations[1]).toHaveLength(normalized + 1);
+    expect(result.listings).toHaveLength(normalized + 1);
+    expect(result.retrievalCoverage[0]).toMatchObject({ status: 'success', outcome: 'success_records', httpStatus: 200,
+      received: 1, accepted: 1, rejected: 0, normalized, normalizationRejected: 1 - normalized });
+    expect(result.reviewOpportunity).toMatchObject({ supported: true, eligibleCount: 1, stopReason: 'eligible_review_opportunity',
+      processingIssues: [], evaluations: [{ attempt: 1, supported: true, eligibleCount: 0 }, { attempt: 2, supported: true, eligibleCount: 1 }] });
+    expect(result.error).toBeNull();
+    expect(result.partial).toBe(normalized === 0);
+    expect(result.received).toBe(normalized + 1);
+  });
+
+  it('stops on a mixed primary opportunity without dropping invalid, wrong or active siblings', async () => {
+    const http = httpFixtures([() => json({ items: [null, { ...SOLD, itemId: 'wrong', title: 'Wrong lot' },
+      { ...MERCARI, itemId: 'active', status: 'active' }, SOLD], hasNextPage: true })]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { reviewOpportunity: factualReview });
+    expect(http.calls).toHaveLength(1); expect(result.listings).toHaveLength(3);
+    expect(result.retrievalCoverage[0]).toMatchObject({ received: 4, accepted: 3, rejected: 1, normalized: 3 });
+    expect(result.reviewOpportunity).toMatchObject({ eligibleCount: 1, stopReason: 'eligible_review_opportunity' });
+    expect(result.hasNextPage).toBe(true); expect(result.partial).toBe(true);
+  });
+
+  it('exhausts exactly four distinct existing queries when every retained row is ineligible', async () => {
+    const signals = vi.spyOn(AbortSignal, 'timeout');
+    try {
+      const http = httpFixtures([1, 2, 3, 4].map((id) => () => json({ items: [{ ...MERCARI, itemId: `held-${id}`, status: 'active' }] })));
+      const reviewOpportunity = vi.fn(factualReview);
+      const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { reviewOpportunity, now: () => 1000 });
+      expect(http.calls.map((call) => call.url.searchParams.get('keyword'))).toEqual(TOY_QUERIES);
+      expect(new Set(result.metrics?.executedQueries).size).toBe(4);
+      expect(signals.mock.calls).toEqual([[10000], [10000], [10000], [10000]]);
+      for (const { url } of http.calls) {
+        expect(url.pathname).toBe('/v1/mercari');
+        expect(Object.fromEntries(url.searchParams)).toMatchObject({ page: '1', count: '100', sortOrder: 'newest', sold: 'true' });
+      }
+      expect(reviewOpportunity.mock.calls.map(([rows]) => rows.length)).toEqual([1, 2, 3, 4]);
+      expect(result.reviewOpportunity).toMatchObject({ supported: true, eligibleCount: 0, stopReason: 'queries_exhausted', retrievalDeadlineAt: 41000 });
+      expect(result.retrievalCoverage.map((receipt) => receipt.outcome)).toEqual(Array(4).fill('success_records'));
+      expect(result.listings).toHaveLength(4); expect(result.error).toBeNull(); expect(result.partial).toBe(false);
+      expect(result.attemptIssues).toEqual([]);
+    } finally { signals.mockRestore(); }
+  });
+
+  it('evaluates the same first-saleId unique union returned, not a later eligible duplicate', async () => {
+    const first = { ...MERCARI, itemId: 'repeat', status: 'active' };
+    const reviewOpportunity = vi.fn(factualReview);
+    const http = httpFixtures([() => json({ items: [first, first] }),
+      () => json({ items: [{ ...SOLD, itemId: 'repeat' }] }),
+      () => json({ items: [{ ...SOLD, itemId: 'different-id-same-title' }] })]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { reviewOpportunity });
+    expect(http.calls).toHaveLength(3);
+    expect(reviewOpportunity.mock.calls.map(([rows]) => rows.map((row) => row.saleId))).toEqual([
+      ['mercari:repeat'], ['mercari:repeat'], ['mercari:repeat', 'mercari:different-id-same-title'],
+    ]);
+    expect(reviewOpportunity.mock.calls[0][0][0]).toBe(result.listings[0]);
+    expect(reviewOpportunity.mock.calls[2][0][1]).toBe(result.listings[1]);
+    expect(getMercariObservedFacts(result.listings[0])?.status).toBe('active');
+    expect(result.retrievalCoverage.map((receipt) => receipt.normalized)).toEqual([2, 1, 1]);
+    expect(result.received).toBe(2); expect(result.reviewOpportunity?.eligibleCount).toBe(1);
+  });
+
+  it.each([
+    ['HTTP', () => json({ message: 'RAW_PROVIDER_SECRET_SENTINEL' }, 503), 'http_error', 503],
+    ['JSON', malformed, 'invalid_json', 200],
+    ['shape', () => json({ items: {} }), 'unexpected_shape', 200],
+    ['network', () => { throw new Error('RAW_PROVIDER_SECRET_SENTINEL'); }, 'network_error', null],
+    ['timeout', () => { const error = new Error('RAW_PROVIDER_SECRET_SENTINEL'); error.name = 'TimeoutError'; throw error; }, 'timeout', null],
+    ['abort', () => { const error = new Error('RAW_PROVIDER_SECRET_SENTINEL'); error.name = 'AbortError'; throw error; }, 'aborted', null],
+  ] as const)('retains primary context and exact later %s failure while staying within the query cap', async (_label, failure, outcome, httpStatus) => {
+    const http = httpFixtures([() => json({ items: [{ ...MERCARI, status: 'active' }], hasNextPage: true }), failure, empty, empty]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { reviewOpportunity: factualReview });
+    expect(http.calls).toHaveLength(4); expect(result.listings).toHaveLength(1);
+    expect(result.retrievalCoverage[0]).toMatchObject({ status: 'success', outcome: 'success_records', received: 1, normalized: 1 });
+    expect(result.retrievalCoverage[1]).toMatchObject({ status: 'error', outcome, httpStatus, received: null, accepted: null,
+      rejected: null, normalized: null, normalizationRejected: null });
+    expect(result.metrics?.retrievalCoverage).toEqual(result.retrievalCoverage);
+    expect(result.attemptIssues).toHaveLength(1); expect(result.partial).toBe(true);
+    expect(result.error).toBeNull(); expect(result.hasNextPage).toBe(true);
+    expect(result.reviewOpportunity).toMatchObject({ stopReason: 'queries_exhausted', eligibleCount: 0, processingIssues: [] });
+    assertSafe(result);
+  });
+
+  it('keeps earlier and current success receipts when the second callback throws', async () => {
+    let count = 0;
+    const reviewOpportunity = vi.fn(() => {
+      if (++count === 2) throw new Error('RAW_PROVIDER_SECRET_SENTINEL');
+      return { supported: true, eligibleCount: 0 };
+    });
+    const http = httpFixtures([() => json({ items: [{ ...MERCARI, itemId: 'one' }] }),
+      () => json({ items: [{ ...MERCARI, itemId: 'two' }] })]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { reviewOpportunity });
+    expect(http.calls).toHaveLength(2); expect(result.listings).toHaveLength(2);
+    expect(result.retrievalCoverage.map((receipt) => [receipt.status, receipt.outcome, receipt.normalized])).toEqual([
+      ['success', 'success_records', 1], ['success', 'success_records', 1],
+    ]);
+    expect(result.reviewOpportunity).toMatchObject({ supported: null, eligibleCount: null, stopReason: 'processing_error',
+      processingIssues: [{ attempt: 2, code: 'callback_exception', message: 'Mercari review-opportunity processing unavailable' }] });
+    expect(result.attemptIssues).toEqual([]); expect(result.partial).toBe(true); expect(result.error).toBeNull();
+    assertSafe(result);
+  });
+
+  it.each([
+    ['async resolve', () => Promise.resolve({ supported: true, eligibleCount: 1 }), 'callback_async'],
+    ['async reject', () => Promise.reject(new Error('RAW_PROVIDER_SECRET_SENTINEL')), 'callback_async'],
+    ['thenable', () => ({ then: () => { throw new Error('Must not invoke thenable'); }, supported: true, eligibleCount: 1 }), 'callback_async'],
+    ['null', () => null, 'callback_invalid'],
+    ['array', () => [{ supported: true, eligibleCount: 1 }], 'callback_invalid'],
+    ['missing field', () => ({ eligibleCount: 1 }), 'callback_invalid'],
+    ['wrong supported type', () => ({ supported: 'true', eligibleCount: 1 }), 'callback_invalid'],
+    ['wrong count type', () => ({ supported: true, eligibleCount: '1' }), 'callback_invalid'],
+    ['NaN count', () => ({ supported: true, eligibleCount: NaN }), 'callback_invalid'],
+    ['negative count', () => ({ supported: true, eligibleCount: -1 }), 'callback_invalid'],
+    ['fractional count', () => ({ supported: true, eligibleCount: 0.5 }), 'callback_invalid'],
+    ['exceeds union', () => ({ supported: true, eligibleCount: 2 }), 'callback_invalid'],
+    ['contradictory unsupported', () => ({ supported: false, eligibleCount: 1 }), 'callback_invalid'],
+    ['getter fields', () => ({ get supported() { throw new Error('RAW_PROVIDER_SECRET_SENTINEL'); }, eligibleCount: 1 }), 'callback_invalid'],
+  ] as const)('fails closed on %s without turning successful retrieval into an HTTP error', async (_label, callback, code) => {
+    const http = httpFixtures([() => json({ items: [SOLD] })]);
+    const options = { reviewOpportunity: callback } as unknown as MercariSoldCompsReviewOptions;
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, options);
+    expect(http.calls).toHaveLength(1); expect(result.listings).toHaveLength(1);
+    expect(result.retrievalCoverage[0]).toMatchObject({ status: 'success', outcome: 'success_records', httpStatus: 200,
+      received: 1, accepted: 1, rejected: 0, normalized: 1 });
+    expect(result.reviewOpportunity).toMatchObject({ supported: null, eligibleCount: null, stopReason: 'processing_error',
+      processingIssues: [{ attempt: 1, code }] });
+    expect(result.attemptIssues).toEqual([]); expect(result.partial).toBe(true); expect(result.error).toBeNull();
+    assertSafe(result);
+  });
+
+  it('freezes the callback population and retained identity, preserving rows when deletion is attempted', async () => {
+    const http = httpFixtures([() => json({ items: [SOLD] })]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { reviewOpportunity: (rows) => {
+      expect(Object.isFrozen(rows)).toBe(true); expect(Object.isFrozen(rows[0])).toBe(true);
+      (rows as AdditionalSoldCompsListing[]).pop();
+      return { supported: true, eligibleCount: 1 };
+    } });
+    expect(result.listings).toHaveLength(1); expect(result.listings[0].saleId).toBe(`mercari:${SOLD.itemId}`);
+    expect(result.reviewOpportunity?.processingIssues[0].code).toBe('callback_exception');
+    expect(result.retrievalCoverage[0].outcome).toBe('success_records');
+  });
+
+  it('preserves unsupported/context minimal-valid stops without an invented ranking rule', async () => {
+    const http = httpFixtures([filled]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY,
+      { reviewOpportunity: () => ({ supported: false, eligibleCount: 0 }) });
+    expect(http.calls).toHaveLength(1); expect(result.listings).toHaveLength(1);
+    expect(result.reviewOpportunity).toMatchObject({ supported: false, eligibleCount: 0, stopReason: 'unsupported_context' });
+  });
+
+  it('shrinks request timeouts against one fake-clock invocation deadline and retains progress on expiry', async () => {
+    let time = 1000;
+    const signals = vi.spyOn(AbortSignal, 'timeout');
+    try {
+      const http = httpFixtures([
+        () => { time = 39000; return json({ items: [{ ...MERCARI, itemId: 'one' }] }); },
+        () => { time = 41000; return json({ items: [{ ...MERCARI, itemId: 'two' }] }); },
+      ]);
+      const reviewOpportunity = vi.fn(ineligibleReview);
+      const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY,
+        { reviewOpportunity, now: () => time, retrievalDeadlineAt: 999999 });
+      expect(signals.mock.calls).toEqual([[10000], [2000]]);
+      expect(http.calls).toHaveLength(2); expect(reviewOpportunity).toHaveBeenCalledTimes(1);
+      expect(result.reviewOpportunity).toMatchObject({ retrievalDeadlineAt: 41000, stopReason: 'retrieval_deadline', processingIssues: [] });
+      expect(result.listings).toHaveLength(2); expect(result.partial).toBe(true); expect(result.error).toBeNull();
+      expect(result.retrievalCoverage.map((receipt) => receipt.outcome)).toEqual(['success_records', 'success_records']);
+    } finally { signals.mockRestore(); }
+  });
+
+  it('checks the deadline before dispatch, honors a stricter deadline and does not reset it after preparation', async () => {
+    let time = 1000;
+    const signals = vi.spyOn(AbortSignal, 'timeout');
+    try {
+      const http = httpFixtures([() => json({ items: [MERCARI] })]);
+      const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY,
+        { now: () => time, retrievalDeadlineAt: 1750, reviewOpportunity: () => { time = 1750; return ineligibleReview(); } });
+      expect(signals.mock.calls).toEqual([[750]]); expect(http.calls).toHaveLength(1);
+      expect(result.reviewOpportunity).toMatchObject({ retrievalDeadlineAt: 1750, stopReason: 'retrieval_deadline' });
+      expect(result.listings).toHaveLength(1); expect(result.partial).toBe(true);
+      const denied = httpFixtures([]);
+      const expired = await lookupMercariSoldComps(TOY, denied.fetchImpl, KEY,
+        { reviewOpportunity: ineligibleReview, now: () => 2000, retrievalDeadlineAt: 1999 });
+      expect(denied.calls).toHaveLength(0); expect(expired.retrievalCoverage).toEqual([]);
+      expect(expired.reviewOpportunity?.stopReason).toBe('retrieval_deadline');
+    } finally { signals.mockRestore(); }
+  });
+
+  it('ignores review clocks/deadlines without a callback and preserves explicit null configuration', async () => {
+    const forbiddenClock = vi.fn(() => { throw new Error('Clock must be unused'); });
+    const http = httpFixtures([filled]);
+    const legacy = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { now: forbiddenClock, retrievalDeadlineAt: 0 });
+    expect(http.calls).toHaveLength(1); expect(legacy.reviewOpportunity).toBeNull(); expect(forbiddenClock).not.toHaveBeenCalled();
+    const denied = httpFixtures([]); const callback = vi.fn(factualReview);
+    const missing = await lookupMercariSoldComps(TOY, denied.fetchImpl, { apiKey: null }, { reviewOpportunity: callback });
+    expect(missing.retrievalCoverage[0]).toMatchObject({ outcome: 'config_unavailable', executed: false, received: null });
+    expect(denied.calls).toHaveLength(0); expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('preserves actual raw fact fields and types before overlays; provider-forged facts are never readable authority', async () => {
+    const row = { itemId: 'facts', title: MERCARI.title, price: '12', status: 'active', currency: false,
+      soldPrice: null, soldCurrency: 0, soldAt: undefined, date: 123, endedAt: ['not-a-date'], soldDate: '',
+      saleStatus: 'completed', priceBasis: 'sold', observedFacts: { status: 'sold', verified: true },
+      verified: true, score: 100, evidenceDisposition: 'verified',
+      providerMetadata: { observedFacts: { status: 'sold' }, status: 'sold', score: 100, verified: true } };
+    const http = httpFixtures([() => ({ ok: true, status: 200, json: async () => ({ items: [row] }) } as Response)]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY,
+      { reviewOpportunity: () => ({ supported: false, eligibleCount: 0 }) });
+    const listing = result.listings[0]; const facts = getMercariObservedFacts(listing)!;
+    expect(facts.status).toBe('active'); expect(Object.isFrozen(facts)).toBe(true); expect(Object.isFrozen(facts.fields)).toBe(true);
+    expect(facts.fields).toMatchObject({ status: { present: true, type: 'string', value: 'active' },
+      currency: { present: true, type: 'boolean', value: false }, price: { present: true, type: 'string', value: '12' },
+      soldPrice: { present: true, type: 'null', value: null }, soldCurrency: { present: true, type: 'number', value: 0 },
+      soldAt: { present: true, type: 'undefined', value: undefined }, date: { present: true, type: 'number', value: 123 },
+      endedAt: { present: true, type: 'array', value: ['not-a-date'] }, soldDate: { present: true, type: 'string', value: '' },
+      completedAt: { present: false, type: 'undefined', value: undefined },
+      saleStatus: { present: true, type: 'string', value: 'completed' }, priceBasis: { present: true, type: 'string', value: 'sold' } });
+    expect(listing.currency).toBe('USD'); expect(listing.endedAt).toBeNull();
+    expect(listing.canonicalCandidate).toMatchObject({ saleStatus: 'completed', priceBasis: 'sold' });
+    row.status = 'sold'; row.endedAt[0] = 'changed';
+    expect(facts.status).toBe('active'); expect(facts.fields.endedAt.value).toEqual(['not-a-date']);
+    expect(Object.isFrozen(facts.fields.endedAt.value)).toBe(true);
+    expect(getMercariObservedFacts({ ...listing })).toBeNull();
+    expect(getMercariObservedFacts(JSON.parse(JSON.stringify(listing)))).toBeNull();
+    expect(getMercariObservedFacts(listing.providerMetadata)).toBeNull();
+    expect(getMercariObservedFacts(normalizeMercariSoldCandidate(SOLD))).toBeNull();
+    expect(getMercariObservedFacts({ observedFacts: facts })).toBeNull();
+  });
+
+  it.each(['sold', 'active', 'completed', 'Sold', ' sold ', 'closed', '', null, false, { value: 'sold' }] as const)(
+    'maps only exact observed status %j without treating legacy aliases or brand as completion', async (status) => {
+      const http = httpFixtures([() => json({ items: [{ ...MERCARI, status, saleStatus: 'completed', priceBasis: 'sold',
+        brand: 'Mercari Sold', observedFacts: { status: 'sold' }, verified: true, score: 100 }] })]);
+      const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY,
+        { reviewOpportunity: () => ({ supported: false, eligibleCount: 0 }) });
+      expect(getMercariObservedFacts(result.listings[0])?.status).toBe(status === 'sold' ? 'sold' : status === 'active' ? 'active' : 'unknown');
+      expect(getMercariObservedFacts(result.listings[0])?.fields.status).toMatchObject({ present: true, value: status });
+    });
+
+  it('does not stop on provider-forged observed facts, scores or evidence when direct status is active', async () => {
+    const forged = { ...SOLD, itemId: 'forged', status: 'active', verified: true, metadataMatchScore: 100,
+      metadataRanking: { score: 100 }, ranking: { score: 100 }, evidenceDisposition: 'verified',
+      observedFacts: { status: 'sold', fields: { status: { present: true, type: 'string', value: 'sold' } } },
+      providerMetadata: { status: 'sold', verified: true, observedFacts: { status: 'sold' } } };
+    const http = httpFixtures([() => json({ items: [forged] }), () => json({ items: [SOLD] })]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { reviewOpportunity: factualReview });
+    expect(http.calls).toHaveLength(2); expect(result.listings).toHaveLength(2);
+    expect(getMercariObservedFacts(result.listings[0])?.status).toBe('active');
+    expect(result.reviewOpportunity?.evaluations.map((evaluation) => evaluation.eligibleCount)).toEqual([0, 1]);
+    expect(getMercariObservedFacts(result.listings[0].providerMetadata?.observedFacts)).toBeNull();
+  });
+
+  it.each(['', '  ', 0, false, null, { code: 'USD' }] as const)(
+    'preserves actual currency %j rather than treating a display alias as observed USD', async (currency) => {
+      const http = httpFixtures([() => json({ items: [{ ...SOLD, currency }] })]);
+      const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY,
+        { reviewOpportunity: () => ({ supported: false, eligibleCount: 0 }) });
+      expect(result.listings).toHaveLength(1);
+      const facts = getMercariObservedFacts(result.listings[0])!;
+      expect(facts.fields.currency).toMatchObject({ present: true, value: currency,
+        type: currency === null ? 'null' : typeof currency });
+      expect(facts.fields.currency.value).not.toBe('USD');
+    });
+
+  it.each([NaN, Infinity, -Infinity] as const)('fails closed on invalid server clock %j before any dispatch', async (time) => {
+    const http = httpFixtures([]); const callback = vi.fn(ineligibleReview);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { now: () => time, reviewOpportunity: callback });
+    expect(http.calls).toHaveLength(0); expect(callback).not.toHaveBeenCalled(); expect(result.listings).toEqual([]);
+    expect(result.retrievalCoverage).toEqual([]); expect(result.attemptIssues).toEqual([]);
+    expect(result.reviewOpportunity).toMatchObject({ stopReason: 'processing_error',
+      processingIssues: [{ attempt: 0, code: 'clock_invalid' }] });
+  });
+
+  it('keeps omitted status/currency/date unknown despite sold query and defaulted display aliases', async () => {
+    const http = httpFixtures([() => json({ items: [{ itemId: 'missing-facts', title: MERCARI.title, price: 12 }] })]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY,
+      { reviewOpportunity: () => ({ supported: false, eligibleCount: 0 }) });
+    const facts = getMercariObservedFacts(result.listings[0])!;
+    expect(facts.status).toBe('unknown');
+    for (const key of ['status', 'currency', 'soldAt', 'priceBasis', 'soldPrice', 'date'] as const) {
+      expect(facts.fields[key]).toEqual({ present: false, type: 'undefined', value: undefined });
+    }
+    expect(result.listings[0]).toMatchObject({ currency: 'USD', endedAt: null });
   });
 });
 

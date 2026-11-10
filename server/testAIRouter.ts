@@ -40,7 +40,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { annotatePreVisualComparableScores, applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildMetadataFieldComparisons, buildVisualTargetMetadata, decidingVisualEvidence, filterVisualSourceCandidates, gradedVisualEvidenceIsConfirmed, hasExplicitlyUngradedTarget, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, withMetadataFieldComparisons, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { annotatePreVisualComparableScores, applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildMetadataFieldComparisons, buildVisualTargetMetadata, decidingVisualEvidence, filterVisualSourceCandidates, prepareVisualSourceReviewOpportunity, gradedVisualEvidenceIsConfirmed, hasExplicitlyUngradedTarget, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, withMetadataFieldComparisons, type VisualSourceReview, videoGameTargetTypeLabel } from './testAiVisualSourceFilter';
 import { autographReplicaReasonFromText } from '../shared/testAiAutographEvidence';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
@@ -58,7 +58,7 @@ import { lookupSpecialistMarketplace } from './specialistMarketplaceMarketData';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
 import { setProviderOauthStateCookie } from './_core/providerOauthState';
-import { lookupMercariSoldComps, lookupTcgplayerSoldComps } from './soldCompsAdditionalMarketData';
+import { getMercariObservedFacts, lookupMercariSoldComps, lookupTcgplayerSoldComps, type AdditionalSoldCompsInput, type AdditionalSoldCompsListing } from './soldCompsAdditionalMarketData';
 import { retrieveItemsAttempt, retrievalIssue, unavailableRetrievalAttempt, type RetrievalAttempt, type RetrievalIssue } from '../shared/testAiRetrievalAttempt';
 import { collectionLotGuard, collectionLotNotComparable, isCollectionLotItemType } from '../shared/testAiItemType';
 import { bindMetadataRankingPopulation, freezeMetadataRankingPopulation, overlayMetadataRankingPopulation, type MetadataRankingPopulation, type MetadataScorerRole } from '../shared/testAiRankingPopulation';
@@ -623,6 +623,46 @@ export function assessSoldCompsPreVisionCandidates(args: {
     eligible: scoredAssessments.filter((assessment) => !assessment.excluded).map((assessment) => assessment.item),
     excluded: scoredAssessments.filter((assessment) => assessment.excluded),
   };
+}
+
+/** Fresh provider rows only. Shared by the stop closure and the final Mercari flow. */
+function prepareMercariSourceIngress(rows: readonly AdditionalSoldCompsListing[], input: AdditionalSoldCompsInput, targetMetadata: string) {
+  const category = input.category.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const population = sourceMetadataRankingPopulation(rows.map(listing => ({
+    ...(listing.canonicalCandidate ?? {}), ...listing,
+    url: listing.itemUrl, thumbnailUrl: listing.imageUrl,
+    soldPrice: listing.price, soldCurrency: listing.currency,
+    imageUrls: listing.imageUrls ?? listing.canonicalCandidate?.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []),
+    evidenceDisposition: undefined, evidenceReasons: [],
+    soldCompsMetadata: normalizeSoldCompsMetadata(listing),
+  })), 'mercari_sold_comps', targetMetadata);
+  const statusHeld: any[] = [];
+  const soldLabeled = population.listings.filter((listing, index) => {
+    const facts = getMercariObservedFacts(rows[index]);
+    if (facts?.status === 'sold') return true;
+    const reason = facts?.status === 'active'
+      ? 'Provider labels this Mercari row active, not sold; it is retained as context.'
+      : 'Provider sold status is unknown or unverified; this Mercari row is retained as context.';
+    statusHeld.push({ ...listing, visualRequirement: 'not_required_pre_visual', visualReviewStatus: 'not_reviewed',
+      visualReviewRationale: reason, evidenceDisposition: 'context_only', valuationEligible: false,
+      evidenceReasons: [reason], visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }) });
+    return false;
+  });
+  const details = parseTestAiDetails(input.itemDetails);
+  const assessment = category === 'video_games' ? assessSoldCompsPreVisionCandidates({
+    listings: soldLabeled, category, targetMetadata, rankingPopulation: population,
+    targetPlatform: resolveTestAiDetailValue(details, 'platform'),
+    targetIsGraded: Boolean(normalizeTestAiGrade(input.grade, input.certificationCompany ?? '', category)),
+    // The complete-game title/manual-only gate is a game rule. Console and
+    // accessory targets keep their own type-specific scoring and conflicts.
+    enforceVideoGameTitleMatch: videoGameTargetTypeLabel(targetMetadata) === 'game',
+    // Consistency with eBay Sold-Comps and the shared filter. The conflict
+    // candidate already drops marketplace condition, so this does not widen
+    // admission; sealed/grade/lot gates remain.
+    ignoreSubjectiveConditionDifferences: true,
+    targetGameTitle: resolveTestAiDetailValue(details, 'gameTitle') || resolveTestAiDetailValue(details, 'videoGameTitle') || input.title,
+  }) : { eligible: soldLabeled, excluded: [] as SoldCompsPreVisionAssessment[] };
+  return { population, statusHeld, assessment };
 }
 
 type MercariVideoGameRankingArgs = {
@@ -3440,26 +3480,26 @@ export const testAIRouter = router({
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const collectionLotBlock = collectionLotGuard(input);
       if (collectionLotBlock) return collectionLotBlock;
-      const result = await lookupMercariSoldComps(input);
-      const retrievalCoverage = result.retrievalCoverage;
       const normalizedCategory = input.category.trim().toLowerCase().replace(/[\s-]+/g, '_');
+      const targetMetadata = buildVisualTargetMetadata({ title: input.title, category: normalizedCategory,
+        condition: input.condition, itemType: input.itemType, grade: input.grade,
+        certificationCompany: input.certificationCompany, itemDetails: input.itemDetails });
+      const result = await lookupMercariSoldComps(input, undefined, undefined, {
+        reviewOpportunity: rows => {
+          const ingress = prepareMercariSourceIngress(rows, input, targetMetadata);
+          return prepareVisualSourceReviewOpportunity({ targetMetadata, listings: ingress.assessment.eligible,
+            ignoreSubjectiveConditionDifferences: true });
+        },
+      });
+      const retrievalCoverage = result.retrievalCoverage;
       if (result.error || !result.listings.length) return {
         ...result,
         sourcePopulation: buildEmittedSourcePopulationReport('mercari_sold_comps', result.listings.length, result.listings, retrievalCoverage),
         audit: { rawReceived: result.listings.length, retrievalCoverage, ledger: result.listings },
       };
+      try {
+      const ingress = prepareMercariSourceIngress(result.listings, input, targetMetadata);
       if (normalizedCategory === 'video_games') {
-        const details = parseTestAiDetails(input.itemDetails);
-        const targetGameTitle = resolveTestAiDetailValue(details, 'gameTitle') || resolveTestAiDetailValue(details, 'videoGameTitle') || input.title;
-        const targetMetadata = buildVisualTargetMetadata({
-          title: input.title,
-          category: normalizedCategory,
-          condition: input.condition,
-          itemType: input.itemType,
-          grade: input.grade,
-          certificationCompany: input.certificationCompany,
-          itemDetails: input.itemDetails,
-        });
         const visualSourceLabel = 'Mercari Video Game sold listings';
         const toVisualCandidate = (listing: any) => ({
           ...(listing.canonicalCandidate ?? {}),
@@ -3472,26 +3512,8 @@ export const testAIRouter = router({
           evidenceDisposition: undefined,
           evidenceReasons: [],
         });
-        const rankingPopulation = sourceMetadataRankingPopulation(result.listings.map((listing) => ({
-          ...(listing.canonicalCandidate ?? {}),
-          ...listing,
-          url: listing.itemUrl,
-          soldPrice: listing.price,
-          soldCurrency: listing.currency,
-          thumbnailUrl: listing.imageUrl,
-          imageUrls: listing.imageUrls ?? listing.canonicalCandidate?.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []),
-          soldCompsMetadata: normalizeSoldCompsMetadata(listing),
-        })), 'mercari_sold_comps', targetMetadata);
-        const assessment = assessSoldCompsPreVisionCandidates({
-          listings: rankingPopulation.listings,
-          category: normalizedCategory,
-          targetMetadata,
-          rankingPopulation,
-          targetPlatform: resolveTestAiDetailValue(details, 'platform'),
-          targetIsGraded: Boolean(normalizeTestAiGrade(input.grade, input.certificationCompany ?? '', normalizedCategory)),
-          enforceVideoGameTitleMatch: true,
-          targetGameTitle,
-        });
+        const rankingPopulation = ingress.population;
+        const assessment = ingress.assessment;
         const safeTargetImage = (() => {
           if (!input.imageUrl) return null;
           try {
@@ -3523,20 +3545,27 @@ export const testAIRouter = router({
           visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }),
           soldCompsMetadata: metadata,
           metadataFieldComparisons: buildMetadataFieldComparisons(targetMetadata, item),
-        }));
-        const universalExcluded = (universalPreFilter.contextListings ?? []).map((listing: any) => ({
-          ...listing,
-          metadataFieldComparisons: listing.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, listing),
-        }));
+        })).concat(ingress.statusHeld);
         if (!safeTargetImage || !universalPreFilter.listings.length) {
           const reason = !safeTargetImage
             ? 'Mercari Video Game visual review requires a target image; retained records remain context-only.'
             : 'No Mercari Video Game candidate remained eligible after the shared universal and item-type filters; retained records remain context-only.';
+          // One retained occurrence per row: shared context once, then the
+          // disjoint outer/status holds. Never concatenate both projections.
+          const sharedContext = (universalPreFilter.contextListings ?? []).map((listing: any) => ({
+            ...listing,
+            metadataFieldComparisons: listing.metadataFieldComparisons ?? buildMetadataFieldComparisons(targetMetadata, listing),
+          }));
+          // A row selected for review but unsent only because the target image is
+          // missing is context, not a pre-vision exclusion.
+          const sharedHeld = sharedContext.filter((listing: any) => !(listing.visualExecution?.selectedForReview === true
+            || listing.visualExecution?.reasonCode === 'target_image_unavailable'));
+          const retained = [...sharedContext, ...excluded];
           return {
             ...result,
-            listings: universalPreFilter.contextListings ?? [],
-            preVisionExcludedListings: [...excluded, ...universalExcluded],
-            sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...(universalPreFilter.contextListings ?? []), ...excluded, ...universalExcluded], retrievalCoverage),
+            listings: sharedContext,
+            preVisionExcludedListings: [...excluded, ...sharedHeld],
+            sourcePopulation: buildSourcePopulationReport(rankingPopulation, retained, retrievalCoverage),
             visualFilter: {
               ...universalPreFilter,
               note: `${reason} ${universalPreFilter.note}`,
@@ -3544,8 +3573,8 @@ export const testAIRouter = router({
             audit: {
               rawReceived: result.listings.length,
               retrievalCoverage,
-              preVisionExcluded: excluded.length + universalExcluded.length,
-              ledger: [...(universalPreFilter.contextListings ?? []), ...excluded, ...universalExcluded],
+              preVisionExcluded: excluded.length + sharedHeld.length,
+              ledger: retained,
             },
           };
         }
@@ -3612,15 +3641,6 @@ export const testAIRouter = router({
           },
         };
       }
-      const targetMetadata = buildVisualTargetMetadata({
-        title: input.title,
-        category: normalizedCategory,
-        condition: input.condition,
-        itemType: input.itemType,
-        grade: input.grade,
-        certificationCompany: input.certificationCompany,
-        itemDetails: input.itemDetails,
-      });
       const safeTargetImage = (() => {
         if (!input.imageUrl) return null;
         try {
@@ -3642,7 +3662,8 @@ export const testAIRouter = router({
         targetMetadata,
         visualProvider: input.visualProvider,
         ignoreSubjectiveConditionDifferences: true,
-        listings: result.listings.map((listing) => ({
+        rankingPopulation: ingress.population,
+        listings: ingress.assessment.eligible.map((listing) => ({
           ...(listing.canonicalCandidate ?? {}),
           ...listing,
           // The common sold-comparable annotator uses the eBay-shaped aliases;
@@ -3697,7 +3718,7 @@ export const testAIRouter = router({
         sourceId: 'mercari_sold_comps' as const,
         sourceLabel: 'Sold-Comps (Mercari Sold)',
         marketplace: 'Mercari' as const,
-      }));
+      })).concat(ingress.statusHeld);
       const valuationEligible = annotatedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible');
       const eligiblePrices = valuationEligible.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0);
       const metrics = eligiblePrices.length
@@ -3730,6 +3751,19 @@ export const testAIRouter = router({
           ledger: [...annotatedListings, ...visualContextListings],
         },
       };
+      } catch {
+        // Retrieval succeeded; later metadata/preparation failures must not erase its union.
+        const reason = 'Mercari candidate processing unavailable; all retrieved records retained as context, with no pricing authority.';
+        const context = result.listings.map(listing => ({ ...listing, evidenceDisposition: 'context_only' as const,
+          valuationEligible: false, identityApproval: undefined, provenanceToken: undefined,
+          visualRequirement: 'not_required_pre_visual' as const, visualReviewStatus: 'not_reviewed' as const,
+          visualReviewRationale: reason, evidenceReasons: [reason],
+          visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }) }));
+        return { ...result, metrics: null, searchMetrics: result.metrics, listings: context,
+          processingDiagnostic: { code: 'mercari_processing_unavailable', message: reason },
+          sourcePopulation: buildEmittedSourcePopulationReport('mercari_sold_comps', result.listings.length, context, retrievalCoverage),
+          audit: { rawReceived: result.listings.length, retrievalCoverage, ledger: context } };
+      }
     }),
 
   // SoldComps TCGplayer coverage is intentionally Pokémon-only and separate

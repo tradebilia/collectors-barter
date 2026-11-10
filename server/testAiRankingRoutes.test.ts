@@ -9,6 +9,8 @@ const boundaries = vi.hoisted(() => ({ fetch: vi.fn(), llm: vi.fn(), mercari: vi
 vi.mock('./_core/env', () => ({ ENV: { jwtSecret: 'stage4-synthetic-ranking-signing-key-not-a-service-credential', appId: 'stage4-ranking-test' } }));
 vi.mock('./_core/llm', () => ({ invokeLLM: boundaries.llm }));
 vi.mock('./soldCompsAdditionalMarketData', () => ({ lookupMercariSoldComps: boundaries.mercari,
+  // Explicit fake owned-facts seam for this display test; real ownership is tested in the dedicated adapter process.
+  getMercariObservedFacts: (row: { status?: string }) => ({ status: row.status === 'sold' ? 'sold' : 'unknown' }),
   lookupTcgplayerSoldComps: () => { boundaries.denied.push('TCGplayer'); throw new Error('Unconfigured provider forbidden'); } }));
 import { testAIRouter } from './testAIRouter';
 import { buildSoldCompsAnalysisSales, buildSoldCompsApprovalInput } from '../shared/testAiSoldCompsTransport';
@@ -175,6 +177,7 @@ describe('Stage 4 ACTUAL source route population and display projections', () =>
       title: index === 0 ? '1987 The Legend of Zelda SNES PSA 7.5 CIB' : '1987 The Legend of Zelda NES PSA 7.5 CIB',
       itemUrl: `https://www.mercari.com/us/item/stage4-${index}/`, price: 100 + index, currency: 'USD',
       sourceId: 'mercari_sold_comps', sourceLabel: 'Sold-Comps (Mercari Sold)', marketplace: 'Mercari',
+      status: 'sold',
       itemSpecifics: { Platform: index === 0 ? 'SNES' : 'NES' }, evidenceDisposition: 'warning_review', evidenceReasons: [] }));
     boundaries.mercari.mockResolvedValue({ query: ZELDA.title, listings: mercariRows, metrics: null, error: null });
     const noTarget = await caller().getMercariSoldCompsData(ZELDA) as unknown as Row;

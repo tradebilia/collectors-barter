@@ -30,7 +30,12 @@ describe('Mercari Video Game pre-visual filtering', () => {
     const section = routerSource.slice(start, end);
 
     expect(section).toContain("if (normalizedCategory === 'video_games')");
-    expect(section).toContain('enforceVideoGameTitleMatch: true');
+    const preparation = routerSource.slice(routerSource.indexOf('function prepareMercariSourceIngress('), routerSource.indexOf('type MercariVideoGameRankingArgs'));
+    // The complete-game title/manual-only gate applies to game targets only
+    // (not consoles/accessories); the behaviour is proven in the actual route suite.
+    expect(preparation).toContain("enforceVideoGameTitleMatch: videoGameTargetTypeLabel(targetMetadata) === 'game'");
+    expect(section).toContain('prepareMercariSourceIngress');
+    expect(section).toContain('prepareVisualSourceReviewOpportunity');
     expect(section).toContain('preVisionExcludedListings');
     expect(section).toContain('const universalPreFilter = await filterVisualSourceCandidates');
     expect(section).toContain('targetImageUrl: safeTargetImage');

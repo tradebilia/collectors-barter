@@ -42,9 +42,79 @@ const MAX_MERCARI_ITEMS = 100;
 const MAX_TCG_PRODUCTS = 4;
 const MAX_FALLBACK_QUERIES = 3;
 const REQUEST_TIMEOUT_MS = 10_000;
+const MERCARI_RETRIEVAL_BUDGET_MS = 40_000;
 
 /** Explicit options bypass environment access, including when apiKey is null. */
 export type AdditionalSoldCompsOptions = { apiKey: string | null };
+export type MercariReviewOpportunity = { supported: boolean; eligibleCount: number };
+/** Server-only synchronous preparation seam. No network, models or other side effects. */
+export type MercariSoldCompsReviewOptions = {
+  reviewOpportunity?: (listings: readonly AdditionalSoldCompsListing[]) => MercariReviewOpportunity;
+  /** Optional absolute server deadline, clamped to invocation start + 40 seconds. */
+  retrievalDeadlineAt?: number;
+  /** Server-owned clock injection for synthetic tests; unused in legacy mode. */
+  now?: () => number;
+};
+export type MercariReviewOpportunityDiagnostics = {
+  supported: boolean | null;
+  eligibleCount: number | null;
+  stopReason: 'eligible_review_opportunity' | 'unsupported_context' | 'queries_exhausted' | 'processing_error' | 'retrieval_deadline';
+  retrievalDeadlineAt: number | null;
+  evaluations: Array<{ attempt: number; supported: boolean; eligibleCount: number }>;
+  processingIssues: Array<{ attempt: number; code: 'callback_exception' | 'callback_async' | 'callback_invalid' | 'clock_invalid'; message: string }>;
+};
+export type MercariObservedField = Readonly<{
+  present: boolean;
+  type: 'undefined' | 'null' | 'string' | 'number' | 'boolean' | 'bigint' | 'symbol' | 'function' | 'object' | 'array' | 'accessor';
+  value: unknown;
+}>;
+const MERCARI_FACT_FIELDS = ['status', 'saleStatus', 'currency', 'soldCurrency', 'price', 'soldPrice',
+  'priceBasis', 'soldAt', 'soldDate', 'date', 'endedAt', 'saleDate', 'completedAt'] as const;
+export type MercariObservedFacts = Readonly<{
+  /** Only the exact direct-provider string 'sold' is affirmative, never aliases. */
+  status: 'sold' | 'active' | 'unknown';
+  fields: Readonly<Record<typeof MERCARI_FACT_FIELDS[number], MercariObservedField>>;
+}>;
+// Not transported, not attached to metadata and not populated by the public normalizer.
+const mercariObservedFacts = new WeakMap<object, MercariObservedFacts>();
+
+/** Fresh adapter object identities only: copies, provider claims and other normalizers return null. */
+export function getMercariObservedFacts(listing: unknown): MercariObservedFacts | null {
+  return listing !== null && typeof listing === 'object' ? mercariObservedFacts.get(listing) ?? null : null;
+}
+
+function snapshotFactValue(value: unknown, seen = new WeakMap<object, object>()): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  const previous = seen.get(value);
+  if (previous) return previous;
+  // HTTP JSON supplies plain data. Copy own data descriptors without coercion/getters.
+  const copy: Record<string, unknown> | unknown[] = Array.isArray(value) ? [] : Object.create(null);
+  seen.set(value, copy);
+  for (const key of Object.keys(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (descriptor && 'value' in descriptor) {
+      Object.defineProperty(copy, key, { value: snapshotFactValue(descriptor.value, seen), enumerable: true });
+    }
+  }
+  return Object.freeze(copy);
+}
+
+function captureMercariObservedFacts(row: Record<string, unknown>): MercariObservedFacts {
+  const fields = {} as Record<typeof MERCARI_FACT_FIELDS[number], MercariObservedField>;
+  for (const key of MERCARI_FACT_FIELDS) {
+    const descriptor = Object.getOwnPropertyDescriptor(row, key);
+    const present = descriptor !== undefined;
+    const accessor = present && !('value' in descriptor);
+    const value: unknown = accessor ? undefined : descriptor?.value;
+    const type: MercariObservedField['type'] = accessor ? 'accessor' : value === null ? 'null'
+      : Array.isArray(value) ? 'array' : typeof value;
+    fields[key] = Object.freeze({ present, type, value: snapshotFactValue(value) });
+  }
+  const observed = fields.status.type === 'string' ? fields.status.value : undefined;
+  return Object.freeze({ status: observed === 'sold' ? 'sold' : observed === 'active' ? 'active' : 'unknown',
+    fields: Object.freeze(fields) });
+}
+
 const MERCARI_ROW: RetrievalRowContract = { idFields: ['itemId'], titleFields: ['title'], priceFields: ['price'] };
 const TCG_PRODUCT_ROW: RetrievalRowContract = { idFields: ['productId'], titleFields: ['name'] };
 const TCG_SALE_ROW: RetrievalRowContract = { priceFields: ['price'], dateFields: ['soldDate'] };
@@ -57,10 +127,11 @@ function requestHeaders(apiKey: string): Record<string, string> {
   return { Authorization: `Bearer ${apiKey}` };
 }
 
-function getItems(path: string, apiKey: string, fetchImpl: typeof fetch, context: RetrievalAttemptContext, contract: RetrievalRowContract) {
+function getItems(path: string, apiKey: string, fetchImpl: typeof fetch, context: RetrievalAttemptContext, contract: RetrievalRowContract,
+  timeoutMs = REQUEST_TIMEOUT_MS) {
   return retrieveItemsAttempt(() => fetchImpl(`${SOLD_COMPS_API_URL}${path}`, {
     headers: requestHeaders(apiKey),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   }), context, contract);
 }
 
@@ -223,6 +294,7 @@ function unavailable(query: string, provider: 'mercari' | 'tcgplayer', outcome: 
 function retainNormalizedRows(
   rows: Record<string, unknown>[], receipt: RetrievalAttempt, retained: AdditionalSoldCompsListing[],
   normalize: (row: Record<string, unknown>, index: number) => AdditionalSoldCompsListing | null,
+  preserveTransportOutcome = false,
 ) {
   if (receipt.accepted === null) return;
   receipt.normalized = 0;
@@ -241,19 +313,49 @@ function retainNormalizedRows(
   }
   if (receipt.normalizationRejected > 0) {
     receipt.message = 'Sold-Comps provider rows failed normalization';
-    if (receipt.normalized === 0) {
+    if (receipt.normalized === 0 && !preserveTransportOutcome) {
       receipt.status = 'error';
       receipt.outcome = 'row_rejection';
     }
   }
 }
 
-export async function lookupMercariSoldComps(input: AdditionalSoldCompsInput, fetchImpl: typeof fetch = fetch, options?: AdditionalSoldCompsOptions) {
+export async function lookupMercariSoldComps(input: AdditionalSoldCompsInput, fetchImpl: typeof fetch = fetch,
+  options?: AdditionalSoldCompsOptions, reviewOptions?: MercariSoldCompsReviewOptions) {
+  // Only callback mode has an aggregate deadline. Capture its start before query/config work.
+  const callback = reviewOptions?.reviewOpportunity;
+  const callbackMode = callback !== undefined;
+  const clock = reviewOptions?.now ?? Date.now;
+  const reviewOpportunity: MercariReviewOpportunityDiagnostics | null = callbackMode ? {
+    supported: null, eligibleCount: null, stopReason: 'queries_exhausted', retrievalDeadlineAt: null,
+    evaluations: [], processingIssues: [],
+  } : null;
+  const processingIssue = (code: MercariReviewOpportunityDiagnostics['processingIssues'][number]['code'], attempt: number) => {
+    if (!reviewOpportunity) return;
+    reviewOpportunity.supported = null;
+    reviewOpportunity.eligibleCount = null;
+    reviewOpportunity.stopReason = 'processing_error';
+    reviewOpportunity.processingIssues.push({ attempt, code, message: 'Mercari review-opportunity processing unavailable' });
+  };
+  let deadlineAt: number | null = null;
+  if (callbackMode) {
+    try {
+      const startedAt = clock();
+      if (!Number.isFinite(startedAt)) throw new Error('Invalid clock');
+      const supplied = reviewOptions?.retrievalDeadlineAt;
+      if (supplied !== undefined && !Number.isFinite(supplied)) throw new Error('Invalid deadline');
+      deadlineAt = Math.min(startedAt + MERCARI_RETRIEVAL_BUDGET_MS, supplied ?? Infinity);
+      if (!Number.isFinite(deadlineAt)) throw new Error('Invalid deadline');
+      reviewOpportunity!.retrievalDeadlineAt = deadlineAt;
+    } catch {
+      processingIssue('clock_invalid', 0);
+    }
+  }
   const apiKey = options ? options.apiKey : getApiKey();
   const keywords = queryCandidates(input);
   const keyword = keywords[0] ?? queryKeyword(input);
-  if (!apiKey) return unavailable(keyword, 'mercari', 'config_unavailable', 'Sold-Comps API key not configured');
-  if (!keyword) return unavailable(keyword, 'mercari', 'input_unsupported', 'A title is required for Mercari Sold-Comps lookup');
+  if (!apiKey) return { ...unavailable(keyword, 'mercari', 'config_unavailable', 'Sold-Comps API key not configured'), reviewOpportunity };
+  if (!keyword) return { ...unavailable(keyword, 'mercari', 'input_unsupported', 'A title is required for Mercari Sold-Comps lookup'), reviewOpportunity };
   // Keep both normalized progress and history outside the fallible request boundary.
   const executedQueries: string[] = [];
   const retrievalCoverage: RetrievalAttempt[] = [];
@@ -261,27 +363,115 @@ export async function lookupMercariSoldComps(input: AdditionalSoldCompsInput, fe
   const retained: AdditionalSoldCompsListing[] = [];
   let hasNextPage = false;
   for (const candidate of keywords) {
+    let timeoutMs = REQUEST_TIMEOUT_MS;
+    if (reviewOpportunity) {
+      if (reviewOpportunity.stopReason === 'processing_error') break;
+      try {
+        const current = clock();
+        if (!Number.isFinite(current)) throw new Error('Invalid clock');
+        const remaining = Math.floor(deadlineAt! - current);
+        if (remaining <= 0) {
+          reviewOpportunity.stopReason = 'retrieval_deadline';
+          break;
+        }
+        timeoutMs = Math.min(REQUEST_TIMEOUT_MS, remaining);
+      } catch {
+        processingIssue('clock_invalid', retrievalCoverage.length);
+        break;
+      }
+    }
     const params = new URLSearchParams({ keyword: candidate, page: '1', count: String(MAX_MERCARI_ITEMS), sortOrder: 'newest', sold: 'true' });
     executedQueries.push(candidate);
     const result = await getItems(`/v1/mercari?${params.toString()}`, apiKey, fetchImpl,
-      { query: candidate, stage: 'search', attempt: retrievalCoverage.length + 1 }, MERCARI_ROW);
+      { query: candidate, stage: 'search', attempt: retrievalCoverage.length + 1 }, MERCARI_ROW, timeoutMs);
     retrievalCoverage.push(result.receipt);
-    retainNormalizedRows(result.items, result.receipt, retained, mercariListing);
+    retainNormalizedRows(result.items, result.receipt, retained, (row) => {
+      // Capture actual own provider fields before any legacy display/economic overlays.
+      const facts = captureMercariObservedFacts(row);
+      const listing = mercariListing(row);
+      if (listing) mercariObservedFacts.set(listing, facts);
+      // Keep invocation identity and the returned first occurrence stable during preparation.
+      if (listing && callbackMode) Object.freeze(listing);
+      return listing;
+    }, callbackMode);
     const issue = retrievalIssue(result.receipt);
     if (issue) attemptIssues.push(issue);
     hasNextPage = hasNextPage || result.hasNextPage;
-    // Approved stop is MINIMAL valid provider progress, not score/image/economic admission.
-    // An all-invalid raw array advances only through the existing bounded query list.
-    if (result.items.length > 0) break;
+    if (!reviewOpportunity) {
+      // Preserve the legacy MINIMAL-valid stop, including all-normalization-failed batches.
+      if (result.items.length > 0) break;
+      continue;
+    }
+    const union = Object.freeze(uniqueByKey(retained, (listing) => listing.saleId));
+    const preparationTimeRemaining = () => {
+      try {
+        const current = clock();
+        if (!Number.isFinite(current)) throw new Error('Invalid clock');
+        if (current >= deadlineAt!) {
+          reviewOpportunity.stopReason = 'retrieval_deadline';
+          return false;
+        }
+        return true;
+      } catch {
+        processingIssue('clock_invalid', retrievalCoverage.length);
+        return false;
+      }
+    };
+    if (!preparationTimeRemaining()) break;
+    try {
+      // Do not await: asynchronous callbacks are not an approved preparation contract.
+      const decision: unknown = callback!(union);
+      if (decision instanceof Promise) {
+        // Consume rejected native promises without waiting or using any result as authority.
+        void Promise.prototype.then.call(decision, undefined, () => undefined);
+        processingIssue('callback_async', retrievalCoverage.length);
+        break;
+      }
+      if (decision === null || typeof decision !== 'object' || Array.isArray(decision)) {
+        processingIssue('callback_invalid', retrievalCoverage.length);
+        break;
+      }
+      if ('then' in decision) {
+        processingIssue('callback_async', retrievalCoverage.length);
+        break;
+      }
+      const supported = Object.getOwnPropertyDescriptor(decision, 'supported');
+      const eligibleCount = Object.getOwnPropertyDescriptor(decision, 'eligibleCount');
+      if (!supported || !('value' in supported) || typeof supported.value !== 'boolean'
+        || !eligibleCount || !('value' in eligibleCount) || !Number.isSafeInteger(eligibleCount.value)
+        || eligibleCount.value < 0 || eligibleCount.value > union.length
+        || (!supported.value && eligibleCount.value !== 0)) {
+        processingIssue('callback_invalid', retrievalCoverage.length);
+        break;
+      }
+      reviewOpportunity.supported = supported.value;
+      reviewOpportunity.eligibleCount = eligibleCount.value;
+      reviewOpportunity.evaluations.push({ attempt: retrievalCoverage.length, supported: supported.value, eligibleCount: eligibleCount.value });
+      if (!preparationTimeRemaining()) break;
+      // Unsupported/context-only workflows retain their existing bounded minimal-progress stop.
+      if (!supported.value && result.items.length > 0) {
+        reviewOpportunity.stopReason = 'unsupported_context';
+        break;
+      }
+      if (supported.value && eligibleCount.value > 0) {
+        reviewOpportunity.stopReason = 'eligible_review_opportunity';
+        break;
+      }
+    } catch {
+      // Never reclassify HTTP success/counts as callback failure or expose exception prose.
+      processingIssue('callback_exception', retrievalCoverage.length);
+      break;
+    }
   }
   const listings = uniqueByKey(retained, (listing) => listing.saleId);
-  const partial = listings.length > 0 && attemptIssues.length > 0;
+  const partial = listings.length > 0 && (attemptIssues.length > 0
+    || (reviewOpportunity?.processingIssues.length ?? 0) > 0 || reviewOpportunity?.stopReason === 'retrieval_deadline');
   return {
     query: keyword, listings,
-    metrics: { executedQueries, fallbackQueriesUsed: executedQueries.slice(1), retrievalCoverage, attemptIssues, partial },
+    metrics: { executedQueries, fallbackQueriesUsed: executedQueries.slice(1), retrievalCoverage, attemptIssues, partial, reviewOpportunity },
     error: listings.length > 0 ? null : attemptIssues.at(-1)?.message ?? null,
     provider: 'mercari', received: listings.length, hasNextPage,
-    retrievalCoverage, attemptIssues, partial,
+    retrievalCoverage, attemptIssues, partial, reviewOpportunity,
   };
 }
 
