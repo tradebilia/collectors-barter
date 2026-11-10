@@ -21,6 +21,7 @@ import { randomUUID } from "node:crypto";
 import { freezeMetadataRankingPopulation, bindMetadataRankingPopulation, overlayMetadataRankingPopulation, type MetadataRankingPopulation, type MetadataRankingBinding } from "../shared/testAiRankingPopulation";
 import { parsePokemonCardNumber, comparePokemonCardNumbers, readPokemonCardNumbersFromTitle } from "../shared/testAiPokemonCardNumber";
 import { parseToyNumericValue, readToyNumericTitleEvidence, extractToyNumericTitleEvidence, type ToyNumericField } from "../shared/testAiToyNumericEvidence";
+import { determineExplicitGradingState, type ExplicitGradingState as ObservedExplicitGradingState } from "../shared/testAiExplicitGradingState";
 import { compareComparableGrades, parseComparableGrade, parseSourceGradeFromTitle, findStructuredGradeConflict, type ComparableGrade, type ComparableGradeOptions } from "../shared/testAiGradeComparison";
 import { summarizeVisualExecutionOccurrences, type VisualExecution, type VisualExecutionAttempt, type VisualExecutionCounts, type VisualExecutionReasonCode, type VisualExecutionStage, type VisualExecutionFormat } from "../shared/testAiVisualExecution";
 export type VisualSourceCandidate = {
@@ -2148,7 +2149,7 @@ function comparisonMetadataAliases(key: string): string[] {
   const groups = [
     ["grade", "numericGrade", "professionalGrade", "finalGrade"],
     ["certificationCompany", "gradingCompany", "grader"],
-    ["isGraded", "graded"],
+    ["isGraded", "graded", "gradingStatus", "gradingState"],
     ["year", "releaseYear", "publicationYear", "manufactureYear"],
     ["platform", "console", "system"],
     ["completeness", "complete", "isComplete"],
@@ -2174,10 +2175,10 @@ function titleGradeEvidence(title: string, category = ""): { grader: string; gra
   const grade = `${comparable.designation ?? ""}${comparable.numeric}${comparable.plus ? "+" : ""}${comparable.qualifiers.length ? ` ${comparable.qualifiers.join(" ")}` : ""}${comparable.qualifierUncertain ? " (unknown)" : ""}`;
   return { grader: observed.grader ?? "", grade };
 }
-function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string, targetValue: string, category = ""): string {
- const details = candidateStructuredDetails(listing);
- const title = firstCandidateText(
-  listing.normalizedListingTitle,
+function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string, targetValue: string, category = "", identityValues: readonly unknown[] = []): string {
+  const details = candidateStructuredDetails(listing);
+  const title = firstCandidateText(
+    listing.normalizedListingTitle,
   listing.title,
   listing.itemTitle,
   listing.listingTitle,
@@ -2195,14 +2196,15 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 	if (/^(?:grade|numericGrade)$/i.test(key)) {
 		return titleGradeEvidence(title, category)?.grade ?? "Unknown";
 	}
-	if (/^(?:certificationCompany|gradingCompany|grader)$/i.test(key)) {
-		return titleGradeEvidence(title, category)?.grader ?? "Unknown";
-	}
-	if (/^(?:isGraded|graded|gradingStatus|gradingState)$/i.test(key)) {
-		return titleGradeEvidence(title, category) || /\b(?:graded|slabbed|encapsulated)\b/i.test(title) ? "Yes (inferred from title)" : "Unknown";
-	}
-	if (/^(?:complete|completeness|isComplete|completeInBox|completeBox|cib)$/i.test(key)) {
-		const completeness = titleCompletenessState(title);
+		if (/^(?:certificationCompany|gradingCompany|grader)$/i.test(key)) {
+			return titleGradeEvidence(title, category)?.grader ?? "Unknown";
+		}
+		if (/^(?:isGraded|graded|gradingStatus|gradingState)$/i.test(key)) {
+			const state = determineExplicitGradingState({}, { category, title, identityValues });
+			return state.state === 'graded' ? "Yes (inferred from title)" : state.state === 'raw' ? "No (inferred from title)" : "Unknown";
+		}
+		if (/^(?:complete|completeness|isComplete|completeInBox|completeBox|cib)$/i.test(key)) {
+			const completeness = titleCompletenessState(title);
 		if (completeness === "no") return "No (inferred from title)";
 		if (completeness === "yes") return "Yes (inferred from title)";
 		return "Unknown";
@@ -2240,6 +2242,9 @@ function compactRankingReason(value: unknown): string {
 }
 function rankingContributionForField(listing: VisualSourceCandidate, key: string, _fieldLabel: string, candidateValue: string, titleDerivedValue: string, category = "", itemType = ""): MetadataFieldComparison["rankingContribution"] {
   const contribution = rankingAwardContribution(listing.metadataScoreAwards, key, category, itemType);
+  if (/^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key)) && key !== 'isGraded') {
+    return { ...contribution, matched: false, structured: false, titleDerived: false, awardedPoints: 0, awards: [], sources: [] };
+  }
   const rowKey = rankingAwardFieldKey(key, category, itemType);
   const columnAwarded = (source: "structured" | "title", value: string): boolean => {
     if (!meaningfulMetadataText(value)) return false;
@@ -2250,6 +2255,11 @@ function rankingContributionForField(listing: VisualSourceCandidate, key: string
       if (rowKey === "grade") return compareComparableGrades(displayed, evidence.value, { allowBareNumeric: true, category }) === "match";
       if (category === "pokemon" && /^(?:cardNumber|cardNo|number)$/i.test(rowKey)) {
         return comparePokemonCardNumbers(displayed, evidence.value) === "match";
+      }
+      if (rowKey === "isgraded") {
+        const a = determineExplicitGradingState({ isGraded: displayed }).state;
+        const b = determineExplicitGradingState({ isGraded: evidence.value }).state;
+        return a !== 'unknown' && a !== 'conflicted' && a === b;
       }
       const a = metadataBooleanState(displayed), b = metadataBooleanState(evidence.value);
       if (a && b) return a === b;
@@ -2266,6 +2276,12 @@ function rankingContributionForField(listing: VisualSourceCandidate, key: string
 }
 function comparisonStatus(targetValue: string, candidateValue: string, category = "", key = ""): MetadataFieldComparison["status"] {
   if (!meaningfulMetadataText(targetValue) || !meaningfulMetadataText(candidateValue)) return "unknown";
+  if (/^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key))) {
+    const bare = (value: string) => value.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, '');
+    const a = determineExplicitGradingState({ isGraded: bare(targetValue) }).state;
+    const b = determineExplicitGradingState({ isGraded: bare(candidateValue) }).state;
+    return a === 'unknown' || b === 'unknown' || a === 'conflicted' || b === 'conflicted' ? 'unknown' : a === b ? 'match' : 'different';
+  }
   if (category === "pokemon" && /^(?:cardNumber|cardNo|number)$/i.test(key)) {
     const compared = comparePokemonCardNumbers(targetValue, candidateValue);
     return compared === "partial" ? "unknown" : compared;
@@ -2298,7 +2314,10 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
   const targetType = targetItemTypeValue(targetMetadata);
   const isBoardGameTarget = category === "vintage_toys" && vintageToyTargetItemType(targetMetadata) === "board game/puzzle";
   const excluded = new Set(["image", "imageUrl", "imageUrls", "photos", "thumbnail", "titleEvidence", "normalizedStructuredMetadata"]);
+  const isGradingField = (key: string) => /^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key));
   const keys = new Set<string>([
+    ...(['video_games', 'movies', 'music', 'pokemon', 'vintage_toys', 'coins', 'paper_money', 'sports_cards', 'comics', 'stamps'].includes(category)
+      || listing.metadataScoreAwards?.some(award => award.field === 'isGraded') ? ['isGraded'] : []),
     ...Object.keys(targetDetails),
     ...Object.keys(candidateDetails),
     "itemType",
@@ -2315,30 +2334,37 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
   const emittedFieldLabels = new Set<string>();
   for (const key of keys) {
     if (excluded.has(key) || /^(?:id|url|saleId|sourceId|providerReference|price|currency|date)$/i.test(key)) continue;
-			const targetRaw = firstMeaningfulValue(resolvedVisualFieldValue(metadataValue(targetMetadata, key), targetDetails, key), readMetadataValue(targetDetails, comparisonMetadataAliases(key)));
-			const targetValue = comparisonValue(targetRaw);
-			const candidateValue = comparisonCandidateFieldValue(listing, candidateDetails, key);
-			const titleDerivedValue = isBoardGameTarget
+				const targetRaw = firstMeaningfulValue(resolvedVisualFieldValue(metadataValue(targetMetadata, key), targetDetails, key), readMetadataValue(targetDetails, comparisonMetadataAliases(key)));
+      const states = key === 'isGraded' ? explicitScoreGradingStates(targetMetadata, listing) : null;
+      const stateDisplay = (state: ObservedExplicitGradingState | undefined, value: string) => state?.state === 'conflicted'
+        ? `Conflicted (${state.observations.filter(observation => observation.state !== 'unknown').slice(0, 8)
+          .map(observation => `${observation.field}=${observation.value.slice(0, 160)}`).join('; ')})` : value;
+				const targetValue = stateDisplay(states?.target, comparisonValue(targetRaw));
+				const candidateValue = stateDisplay(states?.candidate, comparisonCandidateFieldValue(listing, candidateDetails, key));
+				const titleDerivedValue = isBoardGameTarget
           && /^(?:year|releaseYear)$/i.test(key)
-          ? "Unknown" : comparisonTitleDerivedValue(listing, key, targetValue, category);
+          ? "Unknown" : comparisonTitleDerivedValue(listing, key, targetValue, category,
+            /^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key)) ? explicitScoreGradingStates(targetMetadata, listing).candidateIdentityValues : []);
 			const fieldLabel = comparisonFieldLabel(key);
 			const normalizedFieldLabel = fieldLabel.trim().toLowerCase();
-			if (emittedFieldLabels.has(normalizedFieldLabel)) continue;
-			emittedFieldLabels.add(normalizedFieldLabel);
-			rows.push({
-				fieldKey: key,
+				if (emittedFieldLabels.has(normalizedFieldLabel)) continue;
+				emittedFieldLabels.add(normalizedFieldLabel);
+      const rankingContribution = rankingContributionForField(listing, key, fieldLabel, candidateValue, titleDerivedValue, category, targetType);
+				rows.push({
+					fieldKey: key,
           targetField: fieldLabel,
 				targetValue,
 				candidateField: fieldLabel,
 			candidateValue,
 					status: comparisonStatus(targetValue, candidateValue, category, key),
-					titleDerivedField: `${comparisonFieldLabel(key)} (from title)`,
-					titleDerivedValue,
-					titleDerivedStatus: comparisonStatus(targetValue, titleDerivedValue, category, key),
-					rankingContribution: rankingContributionForField(listing, key, fieldLabel, candidateValue, titleDerivedValue, category, targetType),
-			});
+						titleDerivedField: `${comparisonFieldLabel(key)} (from title)`,
+						titleDerivedValue,
+						titleDerivedStatus: states?.candidate.state === 'conflicted' || states?.target.state === 'conflicted'
+              ? 'unknown' : comparisonStatus(targetValue, titleDerivedValue, category, key),
+						rankingContribution,
+				});
   }
-	return ([{
+		return ([{
 		fieldKey: "title",
 			targetField: "Target listing title",
     targetValue: comparisonValue(extractTargetTitle(targetMetadata)),
@@ -4416,7 +4442,10 @@ export function universalMetadataScore(listing: VisualSourceCandidate, targetMet
     matched.push(titleGrade && (!structuredGrader || /^(?:unknown|n_a|na|none|not_applicable)$/i.test(structuredGrader)) ? "grading company (title-derived)" : "grading company");
     awards.push({ field: 'gradingCompany', source: structuredGrader && !/^(?:unknown|n_a|na|none|not_applicable)$/i.test(structuredGrader) ? 'structured' : directTitleGrade ? 'title' : 'combined', awardedPoints: 15 });
   }
-  return { score: Math.min(100, score), matched, awards };
+  const base = { score: Math.min(100, score), matched, awards };
+  return ['disney_pins', 'original_art', 'autographs'].includes(category)
+    || category === 'comics' && normalizedChoice(metadataValue(targetMetadata, 'itemType')) === 'original_art' ? base
+    : contingentGradingScore(listing, targetMetadata, [['titleOverlap', 60], ['grade', 25], ['gradingCompany', 15]], base);
 }
 function annotateUniversalScores<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string): Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }> {
   return candidates
@@ -4531,6 +4560,59 @@ function scoreAward(field: string, awardedPoints: number, predicate: ScorePredic
     ? { field, source: predicate.source, awardedPoints, ...(predicate.evidence ? { evidence: predicate.evidence } : {}) }
     : { field, source: 'combined', awardedPoints };
 }
+const GRADING_SCORE_FIELDS = new Set(['isgraded', 'gradingcompany', 'certificationcompany', 'grade', 'numericgrade', 'gradingdetails']);
+const gradingFieldKey = (field: string) => field.toLowerCase().replace(/[^a-z0-9]/g, '');
+function explicitScoreGradingStates(targetMetadata: string, listing: VisualSourceCandidate) {
+  const details = extractTargetItemDetails(targetMetadata);
+  const category = normalizedChoice(metadataValue(targetMetadata, 'category'));
+  // Only actual identity fields disambiguate a product such as WWE Raw; the
+  // target's arbitrary title, condition, description and grader are not hints.
+  const identityFields = ['gameTitle', 'cardName', 'setName', 'series', 'releaseTitle', 'albumTitle', 'movieTitle', 'boxSetName',
+    'toyName', 'toyNameCharacter', 'gamePuzzleName', 'vehicleName', 'franchise', 'comicTitle', 'productName'];
+  const identityValues = identityFields.map(field => readMetadataValue(details, [field])).filter(Boolean);
+  const candidateDetails = candidateStructuredDetails(listing);
+  const candidateIdentityValues = [...identityValues, ...identityFields.map(field => readMetadataValue(listing, [field]) || readMetadataValue(candidateDetails, [field])).filter(Boolean)];
+  const target = determineExplicitGradingState({
+    fullItemDetails: details, isGraded: metadataValue(targetMetadata, 'isGraded'), grade: metadataValue(targetMetadata, 'grade'),
+    certificationCompany: metadataValue(targetMetadata, 'certificationCompany'),
+    ...directMetadataFields(targetMetadata),
+  }, { category, title: extractTargetTitle(targetMetadata), identityValues });
+  const candidate = determineExplicitGradingState(listing, { category, title: canonicalCandidateTitle(listing), identityValues: candidateIdentityValues });
+  return { target, candidate, identityValues, candidateIdentityValues };
+}
+function gradingStateScoreWitness(state: ObservedExplicitGradingState): ScoreEvidence | null {
+  const witness = state.witness;
+  if (!witness) return null;
+  const observation = state.observations.find(value => value.field === witness.field && value.value === witness.value && value.source === witness.source);
+  // Map the actual title capture/structured state alias to its semantic field;
+  // grade/grader-derived state keeps its real field and cannot color a fictional
+  // provider Is Graded value or make a raw award appear on Grade/grader rows.
+  const alias = witness.field.split(/[.\[\]]/).find(value => ['isgraded', 'graded', 'gradingstatus', 'gradingstate'].includes(gradingFieldKey(value)));
+  return { value: witness.value, source: witness.source,
+    field: observation?.kind === 'explicit' ? alias || 'isGraded' : witness.field };
+}
+function contingentGradingScore(
+  listing: VisualSourceCandidate, targetMetadata: string, fields: readonly (readonly [string, number])[], base: MetadataScoreResult,
+): MetadataScoreResult {
+  const gradingWeight = fields.reduce((sum, [field, points]) => sum + (GRADING_SCORE_FIELDS.has(gradingFieldKey(field)) ? points : 0), 0);
+  if (!gradingWeight) return base;
+  const { target, candidate } = explicitScoreGradingStates(targetMetadata, listing);
+  const raw = target.state === 'raw';
+  const conflicted = target.state === 'conflicted' || candidate.state === 'conflicted';
+  const nativeStateWeight = fields.reduce((sum, [field, points]) => sum + (gradingFieldKey(field) === 'isgraded' ? points : 0), 0);
+  if (!raw && !conflicted && !nativeStateWeight) return base;
+  const exactLegacyLabels: Record<string, string> = { 'grade (title-derived)': 'grade', 'grading company': 'gradingCompany', 'grading company (title-derived)': 'gradingCompany' };
+  const displaced = (field: string) => (raw || conflicted) ? GRADING_SCORE_FIELDS.has(gradingFieldKey(exactLegacyLabels[field] || field)) : gradingFieldKey(field) === 'isgraded';
+  const awards = base.awards.filter(award => !displaced(award.field));
+  const matched = base.matched.filter(field => !displaced(field));
+  const unknown = (base.unknown ?? []).filter(field => !displaced(field));
+  const stateWeight = raw ? gradingWeight : nativeStateWeight;
+  if (!conflicted && stateWeight && target.state !== 'unknown' && candidate.state === target.state) {
+    const witness = gradingStateScoreWitness(candidate);
+    if (witness) { awards.push(scoreAward('isGraded', stateWeight, scoreMatch(true, witness))); matched.push('isGraded'); }
+  } else if (conflicted || stateWeight && (target.state === 'unknown' || candidate.state === 'unknown')) unknown.push('isGraded');
+  return { score: awards.reduce((sum, award) => sum + award.awardedPoints, 0), matched, unknown: [...new Set(unknown)], awards };
+}
 function scoreComposite(left: ScorePredicate, right: ScorePredicate, result: boolean | null): ScoreMatch {
   const parts = [left, right].filter((part): part is ScoreMatch => typeof part === 'object' && part !== null);
   const evidence = parts.flatMap((part) => part.evidence ?? []);
@@ -4618,50 +4700,10 @@ function videoGameScoreGrade(targetValue: unknown, listing: VisualSourceCandidat
   return scoreMatch(result === 'unknown' ? null : result === 'match', witness);
 }
 function videoGameScoreIsGraded(targetValue: unknown, listing: VisualSourceCandidate): ScorePredicate {
-  const target = normalizedChoice(targetValue);
-  if (!/^(?:yes|no|true|false|1|0|graded|ungraded|raw)$/.test(target)) return null;
-  const details = candidateStructuredDetails(listing);
-  const structured = firstMeaningfulValue(
-    listing.isGraded,
-    listing.grade,
-    listing.gradingCompany,
-    listing.certificationCompany,
-    listing.grader,
-    details.isGraded,
-    details.graded,
-    details.gradingStatus,
-    details.grade,
-    details.gradingCompany,
-    details.certificationCompany,
-    details.grader,
-  );
-  const structuredChoice = normalizedChoice(structured);
-  const explicitGradingEvidence = firstMeaningfulValue(
-    listing.grade,
-    listing.gradingCompany,
-    listing.certificationCompany,
-    listing.grader,
-    details.grade,
-    details.gradingCompany,
-    details.certificationCompany,
-    details.grader,
-  );
-  let candidate: 'yes' | 'no' | null = null;
-  let source: RankingAward['source'] = 'structured';
-  if (/^(?:yes|true|1|graded)$/.test(structuredChoice)) candidate = 'yes';
-  else if (/^(?:no|false|0|ungraded|raw)$/.test(structuredChoice)) candidate = 'no';
-  else if (explicitGradingEvidence != null && String(explicitGradingEvidence).trim()) candidate = 'yes';
-  if (!candidate) {
-    const title = canonicalCandidateTitle(listing);
-    const titleEvidence = titleGradeEvidence(title);
-    source = 'title';
-    if (titleEvidence || /\b(?:graded|slabbed|encapsulated|sealed\s+holder|in\s+holder)\b/i.test(title)) candidate = 'yes';
-    else if (/\b(?:ungraded|raw|loose|no\s+slab|no\s+holder)\b/i.test(title)) candidate = 'no';
-    else if (structured == null && title.trim()) { candidate = 'no'; source = 'rule'; }
-  }
-  if (!candidate) return null;
-  const targetIsGraded = /^(?:yes|true|1|graded)$/.test(target);
-  return { result: (targetIsGraded ? 'yes' : 'no') === candidate, source };
+  const target = determineExplicitGradingState({ isGraded: targetValue }, { category: 'video_games' });
+  const candidate = determineExplicitGradingState(listing, { category: 'video_games', title: canonicalCandidateTitle(listing) });
+  if (target.state === 'unknown' || candidate.state === 'unknown' || target.state === 'conflicted' || candidate.state === 'conflicted') return null;
+  return scoreMatch(target.state === candidate.state, gradingStateScoreWitness(candidate));
 }
 function videoGameScore<T extends readonly (readonly [string, number])[]>(
   listing: VisualSourceCandidate,
@@ -4708,7 +4750,7 @@ function videoGameScore<T extends readonly (readonly [string, number])[]>(
     add('isGraded', 5, videoGameScoreIsGraded(firstMeaningfulValue(metadataValue(targetMetadata, 'isGraded'), target.isGraded, target.graded), listing));
   }
   void fields;
-  return { score, matched, unknown, awards };
+  return contingentGradingScore(listing, targetMetadata, fields, { score, matched, unknown, awards });
 }
 export function videoGameGameVisualScore(listing: VisualSourceCandidate, targetMetadata: string) { return videoGameScore(listing, targetMetadata, VIDEO_GAME_GAME_SCORE_FIELDS, 'game'); }
 export function videoGameConsoleVisualScore(listing: VisualSourceCandidate, targetMetadata: string) { return videoGameScore(listing, targetMetadata, VIDEO_GAME_CONSOLE_SCORE_FIELDS, 'console'); }
@@ -4780,7 +4822,7 @@ export function moviesIndividualVisualScore(listing: VisualSourceCandidate, targ
   add('sealed', 5, movieScoreBooleanMatches(firstMeaningfulValue(target.sealed, target.sealedStatus), listing));
   add('gradingCompany', 5, coinGradingCompanyMatches(targetMetadata, normalizeVisualSourceCandidate(listing)));
   add('grade', 5, coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing)));
-  return { score, matched, unknown, awards };
+  return contingentGradingScore(listing, targetMetadata, MOVIES_INDIVIDUAL_SCORE_FIELDS, { score, matched, unknown, awards });
 }
 export function moviesBoxSetVisualScore(listing: VisualSourceCandidate, targetMetadata: string): MetadataScoreResult {
   if (movieTargetItemType(targetMetadata) !== 'box_set') return { score: 0, matched: [], unknown: [], awards: [] };
@@ -4796,7 +4838,7 @@ export function moviesBoxSetVisualScore(listing: VisualSourceCandidate, targetMe
   const gradeMatch = coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing));
   const companyMatch = coinGradingCompanyMatches(targetMetadata, normalizeVisualSourceCandidate(listing));
   add('gradingDetails', 10, scoreComposite(gradeMatch, companyMatch, scoreResult(gradeMatch) === true && scoreResult(companyMatch) === true ? true : scoreResult(gradeMatch) === false || scoreResult(companyMatch) === false ? false : null));
-  return { score, matched, unknown, awards };
+  return contingentGradingScore(listing, targetMetadata, MOVIES_BOX_SET_SCORE_FIELDS, { score, matched, unknown, awards });
 }
 export function moviesVisualCap(score: number): number {
   if (score >= 90) return 8;
@@ -4866,7 +4908,7 @@ export function paperMoneyVisualScore(listing: VisualSourceCandidate, targetMeta
   add('gradingCompany', 8, coinGradingCompanyMatches(targetMetadata, candidate));
   add('signature', 5, paperMoneyBooleanMatches(firstMeaningfulValue(targetDetails.signature, targetDetails.signed, targetDetails.isSigned), candidateText, /\b(?:signed|signature|autograph(?:ed)?)\b/i, /\b(?:unsigned|not\s+signed|no\s+signature)\b/i));
   add('condition', 5, scoreMatch(paperMoneyTextMatches(firstMeaningfulValue(targetDetails.condition, metadataValue(targetMetadata, 'condition')), candidate.condition || candidateText), candidate.condition ? { value: candidate.condition, source: 'structured', field: 'condition' } : null));
-  return { score, matched, unknown, awards };
+  return contingentGradingScore(listing, targetMetadata, PAPER_MONEY_SCORE_FIELDS, { score, matched, unknown, awards });
 }
 export function paperMoneyVisualCap(score: number): number {
   if (score >= 90) return 8;
@@ -4957,7 +4999,7 @@ export function stampsSetVisualScore(listing: VisualSourceCandidate, targetMetad
   add('grade', 5, coinNumericGradeMatches(targetMetadata, candidate));
   add('gradingCompany', 4, coinGradingCompanyMatches(targetMetadata, candidate));
   add('format', 3, stampFormatMatches(targetMetadata, listing));
-  return { score, matched, unknown, awards };
+  return contingentGradingScore(listing, targetMetadata, STAMPS_SET_SCORE_FIELDS, { score, matched, unknown, awards });
 }
 export function stampsSetVisualCap(score: number): number { if (score >= 90) return 8; if (score >= 80) return 6; if (score >= 70) return 4; if (score >= 60) return 2; return 0; }
 const COIN_SINGLE_SCORE_FIELDS = [
@@ -5087,7 +5129,7 @@ export function coinsSingleVisualScore(listing: VisualSourceCandidate, targetMet
     coinScoreTargetValue(targetDetails, ['country', 'issuingCountry', 'issuingAuthority']), listing,
     ['country', 'issuingCountry', 'issuingAuthority'], [/\b(United States|USA|US|Canada|Mexico|Australia|United Kingdom|Great Britain)\b/i],
   ));
-  return { score, matched, unknown, awards };
+  return contingentGradingScore(listing, targetMetadata, COIN_SINGLE_SCORE_FIELDS, { score, matched, unknown, awards });
 }
 export function coinsSingleVisualCap(score: number): number {
   if (score >= 90) return 8;
@@ -5430,7 +5472,7 @@ export function musicVisualScore(listing: VisualSourceCandidate, targetMetadata:
   add('packagingIncluded', 2, musicScoreBooleanMatches(targetDetails.packagingIncluded, listing, ['packagingIncluded', 'originalPackaging'], /\b(?:original|complete|with)\s+(?:packaging|case|jewel case|sleeve)\b/i, /\b(?:no|without|missing)\s+(?:original\s+)?(?:packaging|case|jewel case|sleeve)\b/i));
   add('gradingCompany', 5, coinGradingCompanyMatches(targetMetadata, normalizeVisualSourceCandidate(listing)));
   add('grade', 5, coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing)));
-  return { score, matched, unknown, awards };
+  return contingentGradingScore(listing, targetMetadata, MUSIC_SCORE_FIELDS, { score, matched, unknown, awards });
 }
 
 export function musicVisualCap(score: number): number {
@@ -5516,7 +5558,7 @@ export function comicsSingleVisualScore(listing: VisualSourceCandidate, targetMe
   add('distributionType', 5, comicValueMatches(targetDetails.distributionType, candidateText));
   add('facsimile', 3, comicBoolean(firstMeaningfulValue(targetDetails.facsimile, targetDetails.original), candidateText, /\b(?:facsimile|facsimile\s*edition|reprint)\b/i, /\b(?:original|first\s*print)\b/i));
   add('signed', 2, comicBoolean(targetDetails.signed, candidateText, /\b(?:signed|autograph(?:ed)?)\b/i, /\b(?:unsigned|not\s*signed)\b/i));
-  return { score, matched, unknown, awards };
+  return contingentGradingScore(listing, targetMetadata, COMICS_SINGLE_SCORE_FIELDS, { score, matched, unknown, awards });
 }
 export function comicsSingleVisualCap(score: number): number {
   if (score >= 90) return 10;
@@ -5636,7 +5678,7 @@ export function sportsCardSingleVisualScore(listing: VisualSourceCandidate, targ
   add('relicStatus', 2, sportsCardBooleanSignal(targetRelic, candidateIdentityText, /\b(?:relic|memorabilia|patch|jersey)\b/i) === 'match', sportsCardBooleanSignal(targetRelic, candidateIdentityText, /\b(?:relic|memorabilia|patch|jersey)\b/i) !== 'unknown');
   add('serialNumberedStatus', 2, sportsCardBooleanSignal(targetSerial, candidateIdentityText, /\b(?:\d+\/\d+|serial(?:ized)?|numbered|print\s*run)\b/i) === 'match', sportsCardBooleanSignal(targetSerial, candidateIdentityText, /\b(?:\d+\/\d+|serial(?:ized)?|numbered|print\s*run)\b/i) !== 'unknown');
 
-  return { score, matched, unknown, awards };
+  return contingentGradingScore(listing, targetMetadata, SPORTS_CARD_SCORE_FIELDS, { score, matched, unknown, awards });
 }
 
 export function sportsCardSingleVisualCap(score: number): number {
@@ -5888,7 +5930,7 @@ export function pokemonVisualScore(listing: VisualSourceCandidate, targetMetadat
       case 'grade': add(field, points, coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing))); break;
     }
   }
-  return { score, matched, unknown, awards };
+  return contingentGradingScore(listing, targetMetadata, fields, { score, matched, unknown, awards });
 }
 export function pokemonVisualCap(score: number): number {
   if (score >= 90) return 8;
@@ -6108,7 +6150,7 @@ export function vintageToyVisualScore(listing: VisualSourceCandidate, targetMeta
       case "grade": addResult(field, coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing))); break;
     }
   }
-  return { score, matched, unknown, awards };
+  return contingentGradingScore(listing, targetMetadata, vintageToyScoreFields(type), { score, matched, unknown, awards });
 }
 
 export function vintageToyVisualCap(score: number): number {

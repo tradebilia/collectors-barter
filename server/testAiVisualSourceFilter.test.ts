@@ -741,7 +741,9 @@ describe("visual source filter", () => {
   it("scores Video Games / Game, Console, and Accessory independently", () => {
     const gameTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", isGraded: "No", fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" } });
     const gameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard", isGraded: "No", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gameTarget);
-    expect(gameScore.score).toBe(85);
+    expect(gameScore.score).toBe(95);
+    expect(gameScore.awards.find(award => award.field === 'isGraded')?.awardedPoints).toBe(15);
+    expect(gameScore.awards.some(award => ['grade', 'gradingCompany'].includes(award.field))).toBe(false);
     expect(gameScore.matched).toEqual(expect.arrayContaining(["gameTitle", "platform", "releaseYear", "region", "edition", "isGraded", "upcEan"]));
     expect(gameScore.unknown).toContain("productForm");
 
@@ -768,7 +770,8 @@ describe("visual source filter", () => {
     expect(accessoryScore.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "workingCondition", "originalPackaging"]));
     const cosmeticConditionScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller", condition: "Like New", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", originalPackaging: "Yes" }) }, accessoryTarget);
     expect(cosmeticConditionScore.matched).not.toContain("workingCondition");
-    expect(cosmeticConditionScore.score).toBe(90);
+    expect(cosmeticConditionScore.score).toBe(85);
+    expect(cosmeticConditionScore.matched).not.toContain('isGraded');
     const powerGloveTarget = buildVisualTargetMetadata({ title: "NES Power Glove", category: "video_games", itemType: "accessory", fullItemDetails: { accessoryType: "Controller", accessoryName: "Power Glove", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" } });
     for (const [title, expectedScore, expectedFields] of [
       ["VTG Nintendo NES Power Glove Controller Large Extremely RARE Sz L Original Box", 85, ["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "originalPackaging"]],

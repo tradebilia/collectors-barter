@@ -67,12 +67,12 @@ function parseObservedGrade(value: string, options: ComparableGradeOptions): Com
 /**
  * Title channel only. Recognized grader/labeled/designation/parenthesized
  * grade syntax is required; arbitrary years, issue numbers and negated grade
- * claims are not evidence. Multiple incompatible claims remain unconfirmed.
+ * claims are not evidence. Retain independent claims even without a winner.
  */
-export function parseSourceGradeFromTitle(value: unknown, options: Pick<ComparableGradeOptions, 'category'> = {}): SourceTitleGrade | null {
+export function readSourceGradeClaimsFromTitle(value: unknown, options: Pick<ComparableGradeOptions, 'category'> = {}): SourceTitleGrade[] {
   const title = stripPresentationNote(meaningfulMetadataText(value));
   if (!title || /\b(?:raw|ungraded|not\s+(?:professionally\s+)?graded|not\s+certified|no\s+grade|grade\s+(?:unknown|unreadable)|(?:PSA|CGC|BGS|PCGS|NGC|WATA|VGA)\s+(?:style|like|candidate|ready))\b/i.test(title)
-    || new RegExp(`\\b(?:not|no|non|without)\\s+(?:an?\\s+)?(?:${GRADERS})\\b`, 'i').test(title)) return null;
+    || new RegExp(`\\b(?:not|no|non|without)\\s+(?:an?\\s+)?(?:${GRADERS})\\b`, 'i').test(title)) return [];
   const claims: SourceTitleGrade[] = [];
   const patterns = [
     new RegExp(`\\b(${GRADERS})\\b\\s*[:=-]?\\s*(?:graded\\s*)?(?:grade\\s*[:=-]?\\s*)?\\(?\\s*((?:[QC]\\s*)?${GRADE_OBSERVATION})(?![\\d.+])`, 'gi'),
@@ -116,6 +116,12 @@ export function parseSourceGradeFromTitle(value: unknown, options: Pick<Comparab
       claims.push({ grade, grader: index === 0 ? match[1].toUpperCase() : null, comparable });
     }
   }
+  return claims;
+}
+
+/** Multiple incompatible or incomplete claims cannot select an aggregate grade. */
+export function parseSourceGradeFromTitle(value: unknown, options: Pick<ComparableGradeOptions, 'category'> = {}): SourceTitleGrade | null {
+  const claims = readSourceGradeClaimsFromTitle(value, options);
   if (!claims.length) return null;
   const first = claims[0];
   // No first-claim winner when another claim is incompatible or incomplete.

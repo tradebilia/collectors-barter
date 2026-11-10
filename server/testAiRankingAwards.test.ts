@@ -210,8 +210,9 @@ describe("actual category awards and unchanged model arithmetic", () => {
     const target = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", isGraded: "No" });
     const game = videoGameGameVisualScore({ title: "Super Mario Bros. 3" }, target);
     expectAccounting(game);
-    expect(game.awards.find((award) => award.field === "isGraded")).toEqual({ field: "isGraded", source: "rule", awardedPoints: 5 });
-    expect(rankingAwardContribution(game.awards, "isGraded")).toMatchObject({ matched: true, structured: false, titleDerived: false });
+    expect(game.awards.find((award) => award.field === "isGraded")).toBeUndefined();
+    expect(rankingAwardContribution(game.awards, "isGraded")).toMatchObject({ matched: false, structured: false, titleDerived: false });
+    expect(game.unknown).toContain('isGraded');
   });
 
   it("Pin individual annotation uses the Pin scorer, not the broad individual Movie classifier", () => {
