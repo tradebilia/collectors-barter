@@ -17,6 +17,50 @@ const finalLabels: Record<string, string> = {
   CONTEXT_ONLY: 'NOT USED — CONTEXT ONLY', FINAL_HARD_EXCLUDED: 'NOT USED — HARD EXCLUSION',
   UNSUPPORTED_CURRENCY: 'NOT USED — UNSUPPORTED CURRENCY', NOT_SUBMITTED_NOT_ASSESSED: 'NOT USED — NOT ASSESSED',
 };
+/** Exact server final-analysis gates, translated without hiding the machine code. */
+const finalAnalysisBlockerLabels: Record<string, string> = {
+  PROVENANCE_UNVERIFIED: 'Server provenance was not verified; the source record cannot affect valuation.',
+  SOURCE_DISPOSITION_RESTRICTIVE: 'The source disposition remained restrictive at final analysis.',
+  INVALID_PRICE: 'The reported price is missing, zero, or non-positive.',
+  UNKNOWN_CURRENCY: 'The sale currency is unknown.', UNSUPPORTED_CURRENCY: 'The sale currency is not USD.',
+  NOT_COMPLETED: 'The record was not verified as a completed sale.',
+  UNKNOWN_PRICE_BASIS: 'The price basis was not verified as sold, closed, or realized.',
+  PREMIUM_NOT_INCLUDED: 'Buyer premium treatment was not compatible with the source policy.',
+  INVALID_DATE: 'The sale date is missing, invalid, or future-dated.', HISTORICAL_DATE: 'The sale is outside the current-date policy window.',
+  VISUAL_MISMATCH: 'Visual review flagged the candidate as a mismatch.',
+  REQUIRED_APPROVAL_MISSING: 'Required server-final identity approval is missing or not bound to this target and image.',
+  APPROVED_LOT_CONFLICT: 'The approved transaction is a lot or bundle, not one comparable product.',
+  TRANSACTION_IDENTITY_MISSING: 'No meaningful provider record ID or valid listing URL was verified.',
+  TRANSACTION_LOT_CONFLICT: 'The transaction covers a lot or bundle, so no single-product price is used.',
+  AUCTION_AMOUNT_UNRESOLVED: 'The auction amount could not be reconciled under the source premium policy.',
+  HIGH_VALUE_PRICE_TOO_LOW: 'The price failed the high-value safety floor against the owner reference value.',
+  HIGH_VALUE_PRICE_TOO_HIGH: 'The price failed the high-value safety ceiling against the owner reference value.',
+  CATALOG_NUMBER_CONFLICT: 'The catalog, card, or issue number conflicts with the target.',
+  CATEGORY_IDENTITY_CONFLICT: 'A category-critical identity field conflicts with the target.',
+  UNIVERSAL_IDENTITY_CONFLICT: 'A universal identity field conflicts with the target.',
+  VARIANT_CONFLICT: 'The candidate declares a different variant or release detail.',
+  GRADE_ADJACENT: 'The candidate is the same underlying object in a different grade state.',
+  CERTIFICATION_ADJACENT: 'The candidate is certification-adjacent to the target.',
+  CATEGORY_REVIEW_REQUIRED: 'A category-critical identity field remains unresolved.',
+  UNIVERSAL_REVIEW_REQUIRED: 'A universal identity field remains unresolved.',
+  VARIANT_REVIEW_REQUIRED: 'A declared variant requires review before direct valuation use.',
+  SIGNED_FORM_CONFLICT: 'The signed transaction form conflicts with the target.',
+  APPROVED_STATE_CONFLICT: 'The approved transaction state conflicts with the target.',
+  TARGET_IDENTITY_INCOMPLETE: 'The target is missing a critical identity field.',
+  IDENTITY_SCORE_BELOW_THRESHOLD: 'The final identity score is below the admission threshold.',
+  MATERIAL_IDENTITY_HOLD: 'A material identity review hold prevented primary valuation use.',
+  INSUFFICIENT_CURRENT_SUPPORT: 'The current evidence did not meet the support floor for primary valuation.',
+  GUIDE_FALLBACK_PRIMARY: 'Primary market-sales support was unavailable; guide fallback was selected instead.',
+  SOURCE_BALANCED_CAP: 'The candidate was omitted by the source-balanced valuation cap.',
+  IQR_EXCLUDED_N_GE_10: 'The candidate was excluded by the outlier policy.',
+  EXACT_DUPLICATE_POLICY: 'An exact duplicate transaction was suppressed.',
+  PROBABLE_DUPLICATE_POLICY: 'A probable duplicate transaction was suppressed.',
+  MERCARI_UNDATED_QUALIFIED_EXCEPTION: 'Mercari qualified for the signed sold=true undated-sale exception.',
+};
+function finalAnalysisReasons(row: CandidateDisplayRow): string[] {
+  const codes = [...(row.valuationUse?.sourceAdmission?.blockerCodes ?? []), ...(row.valuationUse?.use?.reasonCodes ?? [])];
+  return [...new Set(codes)].map((code) => `${code}: ${finalAnalysisBlockerLabels[code] ?? 'Final analysis recorded this code as a reason the candidate was not used.'}`);
+}
 function evidenceReasons(row: CandidateDisplayRow): string {
   return Array.isArray(row.evidenceReasons) ? row.evidenceReasons.filter((reason: unknown) => typeof reason === 'string' && reason.trim()).join('; ') : '';
 }
@@ -49,7 +93,9 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
   if (row.valuationUse?.use?.code) {
     const primary = pricing.code === 'CURRENT_SALES_PRIMARY';
     const hard = pricing.code === 'FINAL_HARD_EXCLUDED';
-    const details = [pricing.reason, hard ? evidence || (receipt?.hardExclusion ? execution.reason : undefined) : undefined,
+    const exactFinalReasons = finalAnalysisReasons(row);
+    const details = [pricing.reason, exactFinalReasons.length ? exactFinalReasons.join(' · ') : undefined,
+      hard ? evidence || (receipt?.hardExclusion ? execution.reason : undefined) : undefined,
       pricing.code === 'CONTEXT_ONLY' ? contextReason : undefined,
       hasMercariUndatedSoldAdmission(row) ? mercariPriceContextLabel(row) : undefined].filter(Boolean).join(' · ');
     return { label: primary ? 'USED IN VALUATION' : finalLabels[pricing.code] ?? 'NOT USED — FINAL DECISION RECORDED',
