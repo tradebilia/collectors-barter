@@ -4295,7 +4295,7 @@ describe("visual source filter", () => {
     expect(pageSource).toContain("maximum 2 minutes");
     expect(pageSource).toContain("Only candidates with a completed visual result can support current-value evidence");
     expect(pageSource).toContain("AI image checks stopped after returning partial results");
-    expect(pageSource).toContain("Partial/error source response — known completed observations are retained.");
+    expect(pageSource).toContain("Partial/error source response — known source observations are retained.");
     expect(pageSource).toContain("No actual dispatch receipts are available. Legacy verdicts are not proof of image execution.");
     expect(pageSource).toMatch(/import \{[^}]*\bTestAiProcessCompleteNotice as ProcessCompleteNotice\b[^}]*\} from '@\/components\/TestAiCandidateStatus';/);
     expect(componentSource).toMatch(/export function TestAiProcessCompleteNotice\(\{ data \}: \{ data\?: any \}\) \{\s+if \(!data\) return <p\b[^>]*>No returned source response — request execution and result coverage are unknown\. This is not a zero-match result\.<\/p>;\s+const retrieval = sourceRetrievalCoverage\(data\);/);

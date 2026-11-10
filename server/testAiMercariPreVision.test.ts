@@ -74,13 +74,14 @@ describe('Mercari Video Game pre-visual filtering', () => {
     const end = routerSource.indexOf('// SoldComps TCGplayer coverage', start);
     const section = routerSource.slice(start, end);
 
-    expect(routerSource).toContain('completed Mercari sales use the same evidence-based analyzer disposition');
+    expect(routerSource).toContain('Provider-labeled sold listing; reported price, final amount unverified.');
     expect(section).toContain('filterVisualSourceCandidates');
     expect(section).toContain("targetImageUrl: safeTargetImage");
     expect(section).toContain("visualReviewRequired: true");
-    expect(section).toContain("valuationEligible: valuationEligible.length");
+    expect(section).toContain('finalizeMercariContextResult');
+    expect(routerSource).toContain('audit: { ...payload.audit, ledger, valuationEligible: 0, completedSaleCount: 0 }');
     expect(section).not.toContain("if (!['disney_pins', 'coins'].includes(normalizedCategory) && !input.imageUrl)");
-    expect(pageSource).toContain('records can affect valuation after the shared sold-evidence and identity gates.');
+    expect(pageSource).toContain('Final amount and sale-event date unverified; no Mercari valuation metrics or admitted completed sales.');
   });
 
   it('orders every ranked candidate-analysis surface by rank before rendering', () => {
@@ -117,12 +118,14 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(pageSource).toContain('<CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" targetImageUrl={item.primaryPhotoUrl} />');
     expect(pageSource).toContain('<CandidateMasterList listings={auditLedger} sourceLabel="eBay Sold History" targetImageUrl={item.primaryPhotoUrl} />');
     expect(pageSource).toMatch(/import \{[^}]*\bsourceRetainedDisplayGroups\b[^}]*\} from '@shared\/testAiSourceDisplay';/);
-    expect(pageSource).toContain('const retainedMaster = mergeCandidateDisplayGroups(sourceRetainedDisplayGroups(data));');
+    expect(pageSource).toContain('const retainedMaster = isMercari && Array.isArray(data?.audit?.ledger)');
+    expect(pageSource).toContain('sortAnalysisCandidates(data.audit.ledger)');
+    expect(pageSource).toContain('mergeCandidateDisplayGroups(sourceRetainedDisplayGroups(data))');
     expect(sourceDisplaySource).toContain(`export function sourceRetainedDisplayGroups(data: any): any[][] {
   return [data?.audit?.ledger, data?.listings, data?.preVisionExcludedListings,
     data?.visualFilter?.contextListings, data?.context].map((group) => Array.isArray(group) ? group : []);
 }`);
-    expect(pageSource).toContain('<CandidateMasterList listings={retainedMaster} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />');
+    expect(pageSource).toContain("<CandidateMasterList listings={retainedMaster} sourceLabel={isMercari ? 'Mercari listing context' : `${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />");
     expect(pageSource).toContain(`function mergeMasterCandidates(...groups: any[][]): any[] {
   return mergeCandidateDisplayGroups(groups);
 }`);
@@ -133,7 +136,7 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(masterListSource).toContain('<MetadataComparisonTable listing={listing} />');
     expect(masterListSource).toContain('<TestAiCandidateStatus listing={listing} scope={scope} reconciled />');
     expect(pageSource).toContain('{rankedListings.map((l: any, i: number) => (');
-    expect(pageSource).toContain('{rankedListings.map((listing: any, index: number) => (');
+    expect(pageSource).toContain('const visualReviewRows = rankedListings.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => hasActualVisualResponse(listing));');
   });
 
   it('promotes a confirmed Mercari Video Game visual match to analyzer eligibility', () => {

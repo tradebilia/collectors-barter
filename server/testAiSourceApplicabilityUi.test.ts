@@ -350,7 +350,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('sales.filter((sale: any) => sale.completed && Number(sale.price) > 0),\n        cardsightAiData');
     expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter');
     expect(source).toContain("const accepted = listings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);");
-    expect(source).toContain('server has already applied the shared evidence gate and the final');
+    expect(source).toContain('const contextRecords = buildMercariAnalysisSales({ listings: retained }, true)');
     expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),\n        oneThirtyPointData');
     expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),\n        pwccQuery.data');
     expect(source).toContain('Identity-matched active asking price; not a completed sale.');
@@ -406,7 +406,8 @@ describe('manual Test AI selector boundary', () => {
     expect(outcomeSource).toContain('Context only');
     expect(outcomeSource).toContain('Held out');
     expect(outcomeSource).toContain('<strong>{outcome.accepted}</strong> sent to valuation');
-    expect(outcomeSource).toContain('Completed sales found: {outcome.completed}. Sent to valuation is the final accepted comparable count.');
+    expect(outcomeSource).toContain('Completed sales found:');
+    expect(outcomeSource).toContain('Sent to valuation is the final accepted comparable count.');
     expect(outcomeSource).toContain('timed out');
   });
 
@@ -446,13 +447,14 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('<strong>{currentValueListings.length}</strong><br />current-window source eligible');
     expect(source).toContain('<strong>{historicalTrendListings.length}</strong><br />historical source eligible');
     expect(source).toContain('<strong>{preVisionExcludedListings.length}</strong><br />held out');
-    expect(source).toContain("<AnalyzerUseLine eligible={listing.evidenceDisposition === 'valuation_eligible'}");
+    expect(source).toContain("listing.evidenceDisposition === 'valuation_eligible'");
+    expect(source).toContain('Mercari listing context');
     expect(source).toContain('Source eligible for final review ({acceptedListings.length})');
     expect(source).toContain('<TestAiCandidateStatus listing={listing} />');
     expect(source).toContain("{open ? 'Hide image checks' : 'View image checks'}");
     expect(source).toContain('<TestAiVisualReviewRow key={candidateDisplayKey(listing, {}, String(index))} listing={listing} targetImageUrl={targetImageUrl} />');
     expect(statusComponentSource).toContain('View full explanation');
-    expect(source).toContain('const searchMetrics = data?.searchMetrics ?? data?.metrics;');
+    expect(source).toContain('...data, metrics: null, searchMetrics: null,');
     expect(source).toMatch(/import \{[^}]*\bTestAiRetrievalLadder\b[^}]*\} from '\.\.\/components\/TestAiRetrievalLadder';/);
     expect(source).toContain('{data && <TestAiRetrievalLadder data={data} sourceLabel="eBay Sold History" marketplace="eBay" />}');
     expect(source).toContain('{data && <TestAiRetrievalLadder data={data} sourceLabel={sourceLabel} marketplace={marketplace} />}');
@@ -470,7 +472,7 @@ describe('manual Test AI selector boundary', () => {
   it('keeps Mercari pre-visual context records visible with image transport and a no-image fallback', () => {
     expect(routerSource).toContain('visualReviewListings: [...annotatedListings, ...visualContextListings]');
     expect(routerSource).toContain('preVisionExcludedListings: visualContextListings');
-    expect(routerSource).toContain('searchMetrics: result.metrics');
+    expect(routerSource).toContain('metrics: null, searchMetrics: null');
     expect(routerSource).toContain('imageUrl: listing.imageUrl ?? listing.thumbnailUrl ?? listing.imageUrls?.[0] ?? listing.images?.[0] ?? null');
     expect(source).toContain('const preVisionExcludedListings = sortAnalysisCandidates(data?.preVisionExcludedListings ?? []);');
     expect(source).toContain("from '@shared/testAiRankingDisplay'");
@@ -484,12 +486,14 @@ describe('manual Test AI selector boundary', () => {
       const rankB = validDisplayRank(b.listing.metadataMatchRank) ?? Number.POSITIVE_INFINITY;
       if (rankA !== rankB) return rankA - rankB;`);
     expect(source).toMatch(/import \{[^}]*\bsourceRetainedDisplayGroups\b[^}]*\} from '@shared\/testAiSourceDisplay';/);
-    expect(source).toContain('const retainedMaster = mergeCandidateDisplayGroups(sourceRetainedDisplayGroups(data));');
+    expect(source).toContain('const retainedMaster = isMercari && Array.isArray(data?.audit?.ledger)');
+    expect(source).toContain('sortAnalysisCandidates(data.audit.ledger)');
+    expect(source).toContain('mergeCandidateDisplayGroups(sourceRetainedDisplayGroups(data))');
     expect(sourceDisplaySource).toContain(`export function sourceRetainedDisplayGroups(data: any): any[][] {
   return [data?.audit?.ledger, data?.listings, data?.preVisionExcludedListings,
     data?.visualFilter?.contextListings, data?.context].map((group) => Array.isArray(group) ? group : []);
 }`);
-    expect(source).toContain('<CandidateMasterList listings={retainedMaster} sourceLabel={`${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />');
+    expect(source).toContain("<CandidateMasterList listings={retainedMaster} sourceLabel={isMercari ? 'Mercari listing context' : `${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />");
     expect(source).toContain("import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';");
     expect(masterListSource).toContain('export function TestAiCandidateMasterList({ listings, sourceLabel, targetImageUrl, scope: suppliedScope }');
     expect(masterListSource).toContain('const candidates = reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);');

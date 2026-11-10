@@ -1,14 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createElement, Fragment } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-
+import { buildMercariAnalysisSales } from '../shared/testAiMercariTransport';
+import { normalizeTestAiEvidence } from '../shared/testAiEvidenceNormalization';
 // Dedicated isolated harness ONLY: testAIRouter -> actual adapter -> actual helper.
 // Do not mock soldCompsAdditionalMarketData or testAiRetrievalAttempt here.
 // All unrelated provider/DB/news modules must retain denied virtual boundaries.
 const boundaries = vi.hoisted(() => ({ fetch: vi.fn(), llm: vi.fn(), denied: [] as string[] }));
 vi.mock('./_core/env', () => ({ ENV: { jwtSecret: 'stage6-synthetic-retrieval-route-signing-key-not-a-service-credential', appId: 'stage6-retrieval-route' } }));
 vi.mock('./_core/llm', () => ({ invokeLLM: boundaries.llm }));
-import { testAIRouter, buildSoldCompsQueryCandidates } from './testAIRouter';
+import { testAIRouter, buildSoldCompsQueryCandidates, testAiEvidenceSummarySchema } from './testAIRouter';
 import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
 import { TestAiRetrievalLadder } from '../client/src/components/TestAiRetrievalLadder';
 import { TestAiProcessCompleteNotice } from '../client/src/components/TestAiCandidateStatus';
@@ -424,6 +425,7 @@ describe('Step 6 bounded ranking-aware Mercari full chain', () => {
       providerMetadata: { status: 'sold' }, canonicalCandidate: { saleStatus: 'completed' } })] }),
       () => json({ items: [sold(game)] })];
     const result = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    expect(result.reviewOpportunity?.processingIssues, JSON.stringify(result.reviewOpportunity)).toEqual([]);
     expect(requests).toHaveLength(2);
     expect(ledgerIds(result).size).toBe(2);
     const rejected = retained(result).find(row => row.saleId === 'mercari:forged');
@@ -567,5 +569,247 @@ describe('Step 6 bounded ranking-aware Mercari full chain', () => {
     expect(requests).toHaveLength(1); expect(boundaries.llm).toHaveBeenCalled();
     expect(ledgerIds(result)).toEqual(new Set(['mercari:good']));
     expect(retained(result).every(row => !row.identityApproval && !row.provenanceToken)).toBe(true);
+  });
+});
+
+// Pricing-policy Step A: exact actual adapter ownership plus real route projection.
+describe('Mercari owned status and truthful context populations', () => {
+  const target = { title: 'Metroid NES 1987 CIB', category: 'video_games', itemType: 'game',
+    itemDetails: JSON.stringify({ gameTitle: 'Metroid', platform: 'NES', releaseYear: '1987', completeInBox: 'Yes', sealed: 'No', isGraded: 'No' }) };
+  const row = (id: string, extra: Row = {}): Row => ({ itemId: id, title: target.title,
+    status: 'sold', price: '42', currency: 'USD', url: `https://www.mercari.com/us/item/${id}/`,
+    imageUrl: 'https://example.test/mercari-status/primary.jpg', ...extra });
+  function assertContext(result: Row) {
+    expect(result.metrics).toBeNull(); expect(result.searchMetrics).toBeNull();
+    expect(result.requestedMode).toBe('sold');
+    expect(result.audit.valuationEligible).toBe(0);
+    const all = retained(result);
+    expect(all).toHaveLength(new Set(all.map(item => item.saleId)).size);
+    const partitions = Object.values(result.returnedPopulations) as Row[][];
+    expect(partitions.flat().map(item => item.saleId).sort()).toEqual(all.map(item => item.saleId).sort());
+    for (const item of all) {
+      expect(item.valuationEligible).toBe(false);
+      expect(item.saleStatus).not.toBe('completed'); expect(item.saleStatus).not.toBe('closed');
+      expect(item.completedStatusBasis).toBeNull(); expect(item.date).toBeNull(); expect(item.endedAt).toBeNull();
+      expect(item.soldPrice).toBeNull(); expect(item.soldCurrency).toBeNull();
+      expect(item.identityApproval).toBeUndefined(); expect(item.provenanceToken).toBeUndefined();
+    }
+    for (const request of requests) expect(request.url.searchParams.get('sold')).toBe('true');
+  }
+
+  it('keeps all mixed returned statuses ranked once with measured populations and no false sale metrics', async () => {
+    fixtures = [() => json({ scrapedAt: '2026-11-10T15:00:00Z', items: [
+      row('sold'), row('active', { status: 'active' }), row('unknown', { status: null }),
+      row('conflicting', { saleStatus: 'active', completed: true }),
+    ] })];
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    expect(requests).toHaveLength(1); assertContext(result);
+    expect(result.statusCounts).toMatchObject({ retainedListingCount: 4, providerSoldListingCount: 1,
+      activeListingCount: 1, unknownListingCount: 2, completedSaleCount: 0 });
+    const conflict = retained(result).find(item => item.saleId === 'mercari:conflicting');
+    expect(conflict.mercariObservation).toMatchObject({ observedStatus: 'sold', listingStatus: 'unknown' });
+    expect(conflict.evidenceReasons.join(' ')).toMatch(/saleStatus|conflict|active/);
+    for (const item of retained(result)) {
+      expect(item.metadataMatchScore).toBeTypeOf('number');
+      expect(item.metadataFieldComparisons.length).toBeGreaterThan(0);
+    }
+    expect(boundaries.llm).not.toHaveBeenCalled();
+  });
+
+  it.each([{ sold: false }, { completed: false }, { confirmed: false }, { saleStatus: 'active' }, { isActive: true }, { cancelled: true }])
+  ('continues the bounded sold review after opposing original status fact %j', async conflict => {
+    fixtures = [() => json({ items: [row('conflict', conflict)] }), () => json({ items: [row('real')] })];
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    expect(requests).toHaveLength(2); assertContext(result);
+    expect(result.returnedPopulations.soldListings.map((item: Row) => item.saleId)).toEqual(['mercari:real']);
+    expect(result.returnedPopulations.unknownListings.map((item: Row) => item.saleId)).toEqual(['mercari:conflict']);
+  });
+
+  it.each([undefined, null, false, '', { code: 'USD' }])('never repairs missing/invalid currency %j or dates via final-price aliases', async currency => {
+    fixtures = [() => json({ items: [row('currency', { currency, soldCurrency: 'USD', soldAt: '2026-11-08T12:00:00Z',
+      finalPrice: '99', originalPrice: '50' })] })];
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    expect(requests).toHaveLength(1); assertContext(result);
+    const item = retained(result)[0];
+    expect(item.price).toBe(42); expect(item.currency).toBeNull();
+    expect(item.mercariObservation.fields.soldAt.value).toBe('2026-11-08T12:00:00Z');
+    expect(item.mercariObservation.fields.finalPrice.value).toBe('99');
+    expect(item.mercariObservation.fields.originalPrice.value).toBe('50');
+  });
+
+  it('cannot replace active-first status with a later same-ID sold record', async () => {
+    fixtures = [() => json({ items: [row('same', { status: 'active', price: '41' })] }),
+      () => json({ items: [row('same', { price: '99' }), row('new')] })];
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    expect(requests).toHaveLength(2); assertContext(result);
+    expect(result.returnedPopulations.activeListings[0]).toMatchObject({ saleId: 'mercari:same', price: 41 });
+    expect(result.returnedPopulations.soldListings.map((item: Row) => item.saleId)).toEqual(['mercari:new']);
+  });
+
+  it('retains active/unknown populations after a later source failure without manufactured sales', async () => {
+    fixtures = [() => json({ items: [row('active', { status: 'active' }), row('unknown', { status: '' })] }),
+      () => json({}, 503)];
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    expect(requests).toHaveLength(2); assertContext(result);
+    expect(result.partial).toBe(true); expect(result.error).toBeNull();
+    expect(result.statusCounts).toMatchObject({ retainedListingCount: 2, providerSoldListingCount: 0, activeListingCount: 1, unknownListingCount: 1 });
+    expect(coverage(result)[1]).toMatchObject({ outcome: 'http_error', received: null, accepted: null });
+  });
+});
+
+describe('Mercari status cross-layer reviewed regressions', () => {
+  const target = { title: 'Metroid NES 1987 CIB', category: 'video_games', itemType: 'game',
+    itemDetails: JSON.stringify({ gameTitle: 'Metroid', platform: 'NES', releaseYear: '1987', completeInBox: 'Yes', sealed: 'No', isGraded: 'No', edition: 'Original' }) };
+  const row = (id: string, extra: Row = {}): Row => ({ itemId: id, title: target.title, status: 'sold', price: '42',
+    currency: 'USD', url: `https://www.mercari.com/us/item/${id}/`, imageUrl: 'https://example.test/mercari-cross-layer/image.jpg', ...extra });
+
+  it.each([
+    [{}, 'USD'], [{ soldCurrency: 'USD' }, 'USD'], [{ currency: 'CAD' }, 'CAD'],
+    [{ soldCurrency: null }, null], [{ soldCurrency: 'CAD' }, null], [{ currency: null, soldCurrency: 'USD' }, null],
+  ] as const)('preserves actual source currency through final route and both identical handoffs: %j', async (extra, expected) => {
+    fixtures = [() => json({ items: [row('currency', extra)] })];
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    const left = buildMercariAnalysisSales(result, true);
+    const right = buildMercariAnalysisSales(result, true);
+    expect(left).toStrictEqual(right); expect(left).toHaveLength(result.listings.length);
+    expect(left[0].currency).toBe(expected);
+    expect(buildMercariAnalysisSales({ listings: left }, true)[0].currency).toBe(expected);
+    expect(left[0].date).toBeNull(); expect(left[0].priceBasis).toBe('unknown');
+    expect(left[0].saleStatus).not.toBe('completed'); expect(left[0].provenanceToken).toBeNull();
+    expect(result.statusCounts.providerSoldListingCount).toBe(1);
+  });
+
+  it.each([
+    { platform: 'SNES' }, { edition: 'Reprint' }, { isGraded: true, gradingCompany: 'PSA', grade: '9' },
+    { item_details: JSON.stringify({ platform: 'SNES' }) },
+  ])('keeps matching-title but conflicting original structured metadata %j and continues fallback', async extra => {
+    fixtures = [() => json({ items: [row('conflicting-metadata', extra)] }), () => json({ items: [row('valid')] })];
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    expect(requests).toHaveLength(2);
+    const conflicting = retained(result).find(item => item.saleId === 'mercari:conflicting-metadata');
+    expect(conflicting.mercariObservation.originalMetadata).toMatchObject(extra);
+    expect(conflicting.metadataMatchScore).toBeTypeOf('number');
+    expect(conflicting.metadataFieldComparisons.length).toBeGreaterThan(0);
+    expect(conflicting.evidenceReasons.join(' ')).toMatch(/different|conflict|graded|platform|edition/i);
+    if ('isGraded' in extra) {
+      expect(conflicting.visualExecution).toMatchObject({ state: 'not_dispatched', hardExclusion: true, attempts: [] });
+      expect(conflicting.visualReviewRationale).toMatch(/graded|ungraded|raw/i);
+      expect(conflicting.evidenceReasons).toContain(conflicting.visualReviewRationale);
+    }
+    expect(conflicting.valuationEligible).toBe(false);
+  });
+
+  it('retains the inverse graded-target/raw-candidate hold and continues to a genuinely graded opportunity', async () => {
+    const gradedTarget = { ...target, grade: '9', certificationCompany: 'PSA',
+      itemDetails: JSON.stringify({ gameTitle: 'Metroid', platform: 'NES', releaseYear: '1987',
+        completeInBox: 'Yes', sealed: 'No', isGraded: 'Yes', gradingCompany: 'PSA', grade: '9', edition: 'Original' }) };
+    fixtures = [() => json({ items: [row('explicit-raw', { isGraded: false })] }),
+      () => json({ items: [row('genuinely-graded', { isGraded: true, gradingCompany: 'PSA', grade: '9' })] })];
+    const result = await caller().getMercariSoldCompsData(gradedTarget) as unknown as Row;
+    expect(requests).toHaveLength(2);
+    const raw = retained(result).find(item => item.saleId === 'mercari:explicit-raw');
+    expect(raw.visualExecution).toMatchObject({ state: 'not_dispatched', hardExclusion: true, attempts: [] });
+    expect(raw.evidenceReasons.join(' ')).toMatch(/graded|ungraded|raw/i);
+    expect(raw.mercariObservation.originalMetadata.isGraded).toBe(false);
+    expect(raw.valuationEligible).toBe(false);
+    expect(retained(result).filter(item => item.saleId === 'mercari:explicit-raw')).toHaveLength(1);
+  });
+
+  it('redacts JSON-string credential keys while preserving direct and wrapped collectible authentication facts', async () => {
+    fixtures = [() => json({ items: [row('metadata', { authenticationCompany: 'PSA/DNA',
+      itemDetails: JSON.stringify({ authenticationCompany: 'PSA/DNA', apiKey: 'SYNTHETIC_REFLECTED_CREDENTIAL_SENTINEL' }) })] })];
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    expect(JSON.stringify(result)).not.toContain('SYNTHETIC_REFLECTED_CREDENTIAL_SENTINEL');
+    expect(retained(result)[0].mercariObservation.originalMetadata.authenticationCompany).toBe('PSA/DNA');
+    expect(retained(result)[0].mercariObservation.originalMetadata.itemDetails).toContain('PSA/DNA');
+  });
+
+  it('keeps raw query observations, unique retained context and operational source preparation separate', async () => {
+    fixtures = [() => json({ items: [row('same', { status: 'active' }), row('unknown', { status: null })] }),
+      () => json({ items: [row('same'), row('valid')] })];
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    expect(result.sourcePopulation.queryReturnedObservationCount).toBe(4);
+    expect(result.statusCounts.retainedListingCount).toBe(3);
+    const prepared = buildMercariAnalysisSales(result, true);
+    expect(prepared.length).toBeLessThanOrEqual(result.statusCounts.retainedListingCount);
+    const summary = normalizeTestAiEvidence(target, [{ id: 'mercari_sold_comps', label: 'Sold-Comps (Mercari)',
+      kind: 'market_completed', status: result.partial ? 'partial' : 'success',
+      message: 'Sold mode requested. Returned provider-labeled sold / active / unknown listings are separated; reported prices and sale dates remain unverified. Image matches establish identity only; 0 admitted completed sales.',
+      market: { requestedMode: 'sold', returnedRecordCount: result.sourcePopulation.queryReturnedObservationCount,
+        ...result.statusCounts, analyzerRecords: prepared as any, completedSaleCount: 0,
+        analyzerSubmittedSaleCount: 0, analyzerCurrentValueSaleCount: 0, analyzerHistoricalContextSaleCount: 0 } }]);
+    expect(testAiEvidenceSummarySchema.safeParse(summary).success).toBe(true);
+    expect(summary.evidenceSufficiency.completedSaleCount).toBe(0);
+    expect(summary.marketEvidence.every(text => text.length <= 600)).toBe(true);
+    expect(summary.marketEvidence.join(' ')).not.toMatch(/\d+ submitted context records/);
+  });
+
+  it('retains missing full raw totals as unknown after a later error while reporting the known retained context', async () => {
+    fixtures = [() => json({ items: [row('active', { status: 'active' }), row('unknown', { status: null })] }), () => json({}, 503)];
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    expect(result.sourcePopulation.queryReturnedObservationCount).toBeNull();
+    expect(result.sourcePopulation.knownQueryReturnedObservationCount).toBe(2);
+    expect(result.statusCounts.retainedListingCount).toBe(2);
+    expect(result.statusCounts.completedSaleCount).toBe(0);
+  });
+
+  it('a completed actual graded visual normalization confirms identity without announcing pricing admission', async () => {
+    const graded = { ...GAME, title: 'The Legend of Zelda NES WATA 7.5 Sealed A++', certificationCompany: 'WATA',
+      imageUrl: 'https://example.test/mercari-cross-layer/target.jpg',
+      itemDetails: JSON.stringify({ gameTitle: 'The Legend of Zelda', platform: 'NES', releaseYear: '1987', isGraded: 'Yes', gradingCompany: 'WATA', grade: '7.5', completeInBox: 'Yes', sealed: 'Yes' }) };
+    fixtures = [() => json({ items: [row('visual', { title: graded.title })] })];
+    boundaries.llm.mockImplementation(async (request: Row) => {
+      const text = request.messages[0].content.filter((part: Row) => part.type === 'text').map((part: Row) => part.text).join('\n');
+      const index = text.match(/CANDIDATE (\d+): title=/)?.[1];
+      expect(index).toBeDefined();
+      return { choices: [{ message: { content: JSON.stringify({ reviews: [{ candidateIndex: Number(index), verdict: 'mismatch', confidence: 'high',
+        rationale: 'Grading label difference: target label reads Sealed A++ versus candidate label reads Sealed A+; the game identity otherwise matches.',
+        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true,
+          gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, artworkMatches: true }, visualDifferences: [] }] }) } }] };
+    });
+    const result = await caller().getMercariSoldCompsData(graded) as unknown as Row;
+    expect(boundaries.llm).toHaveBeenCalled();
+    const matched = retained(result).find(item => item.saleId === 'mercari:visual');
+    expect(matched.visualReviewStatus).toBe('match'); expect(matched.visualAudit.initialVerdict).toBe('mismatch');
+    expect(matched.visualAudit.initialRationale).toMatch(/sealed A\+/i);
+    expect(matched.visualReviewRationale).not.toMatch(/eligible for valuation/i);
+    expect(matched.visualPricingNotice).toContain('not admitted');
+    expect(result.visualFilter.reviews[0].rationale).not.toMatch(/eligible for valuation/i);
+    expect(matched.valuationEligible).toBe(false); expect(result.statusCounts.completedSaleCount).toBe(0);
+    expect(buildMercariAnalysisSales(result, true)[0].saleStatus).toBe('unknown');
+  });
+});
+
+describe('Mercari ranked processing failure receipt retention', () => {
+  it('does not erase established comparisons or invent a not-dispatched receipt when image processing fails after ranking', async () => {
+    const target = { title: 'Metroid NES 1987 CIB', category: 'video_games', itemType: 'game',
+      imageUrl: 'https://example.test/mercari-processing/target.jpg',
+      itemDetails: JSON.stringify({ gameTitle: 'Metroid', platform: 'NES', releaseYear: '1987', completeInBox: 'Yes', sealed: 'No', isGraded: 'No' }) };
+    fixtures = [() => json({ items: [{ itemId: 'retained-rank', title: target.title, status: 'sold', price: '42', currency: 'USD',
+      imageUrl: 'https://example.test/mercari-processing/candidate.jpg' }] })];
+    const realNow = Date.now;
+    let clock: ReturnType<typeof vi.spyOn> | undefined;
+    boundaries.llm.mockImplementation(async () => {
+      clock = vi.spyOn(Date, 'now').mockImplementationOnce(() => { throw new Error('Synthetic post-ranking processing failure'); }).mockImplementation(realNow);
+      return { choices: [{ message: { content: JSON.stringify({ reviews: [{ candidateIndex: 0, verdict: 'match', confidence: 'high',
+        rationale: 'Synthetic deciding images show the same game and physical form.', visualDifferences: [],
+        visualEvidence: { identityMatches: true, artworkMatches: true } }] }) } }] };
+    });
+    try {
+      const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+      const item = retained(result)[0];
+      expect(item.metadataMatchScore).toBeTypeOf('number'); expect(item.metadataMatchRank).toBe(1);
+      expect(item.metadataFieldComparisons.length).toBeGreaterThan(0);
+      expect(item.metadataRanking.populationId).toBeTruthy();
+      expect(item.valuationEligible).toBe(false); expect(result.statusCounts.completedSaleCount).toBe(0);
+      if (result.processingDiagnostic) {
+        expect(result.processingDiagnostic.code).toBe('mercari_processing_unavailable');
+        expect(item.visualExecution?.reasonCode).not.toBe('outer_metadata_hold');
+      } else {
+        // A shared candidate-level error may retain its own real failed receipt;
+        // both paths must preserve ranks without fabricating final price use.
+        expect(item.visualExecution).toBeDefined();
+      }
+    } finally { clock?.mockRestore(); }
   });
 });

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MetadataRankingBinding } from '../shared/testAiRankingPopulation';
 import type { VisualEvidence } from './testAiVisualSourceFilter';
+import { captureMercariObservation } from '../shared/testAiMercariObservation';
 
 // Reviewed isolated harness ONLY. Provider/DB/news dependency modules must remain
 // denied virtual harness boundaries. Router, normalization, scorer, visual filter,
@@ -10,7 +11,10 @@ vi.mock('./_core/env', () => ({ ENV: { jwtSecret: 'stage4-synthetic-ranking-sign
 vi.mock('./_core/llm', () => ({ invokeLLM: boundaries.llm }));
 vi.mock('./soldCompsAdditionalMarketData', () => ({ lookupMercariSoldComps: boundaries.mercari,
   // Explicit fake owned-facts seam for this display test; real ownership is tested in the dedicated adapter process.
-  getMercariObservedFacts: (row: { status?: string }) => ({ status: row.status === 'sold' ? 'sold' : 'unknown' }),
+  getMercariObservedFacts: (row: { status?: string }) => {
+    const report = captureMercariObservation(row, 'sold');
+    return { status: report.listingStatus, report };
+  },
   lookupTcgplayerSoldComps: () => { boundaries.denied.push('TCGplayer'); throw new Error('Unconfigured provider forbidden'); } }));
 import { testAIRouter, readEbayBrowseItemSummaries, EBAY_ACTIVE_EXACT_PAGE_LIMIT, EBAY_ACTIVE_QUERY_TIER_LIMIT } from './testAIRouter';
 import { buildSoldCompsAnalysisSales, buildSoldCompsApprovalInput } from '../shared/testAiSoldCompsTransport';

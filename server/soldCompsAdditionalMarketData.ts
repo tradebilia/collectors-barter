@@ -2,6 +2,10 @@ import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDef
 import { normalizeMarketplaceCandidate, type MarketplaceCandidate, type MarketplaceConditionEvidence } from '../shared/testAiMarketplaceCandidate';
 import { retrieveItemsAttempt, retrievalIssue, unavailableRetrievalAttempt, validateRetrievalRow,
   type RetrievalAttempt, type RetrievalAttemptContext, type RetrievalIssue, type RetrievalRowContract } from '../shared/testAiRetrievalAttempt';
+import { captureMercariObservation, captureMercariResponseScrapedAt, encodeMercariRequestedMode, mercariObservedCurrency,
+  mercariOriginalMetadata, type MercariListingStatus, type MercariObservationReport, type MercariObservedField,
+  type MercariRequestedMode } from '../shared/testAiMercariObservation';
+export type { MercariObservedField } from '../shared/testAiMercariObservation';
 
 export type AdditionalSoldCompsInput = {
   title: string;
@@ -21,7 +25,7 @@ export type AdditionalSoldCompsListing = {
   itemUrl: string | null;
   saleId: string;
   price: number;
-  currency: string;
+  currency: string | null;
   endedAt: string | null;
   condition: string | null;
   marketplaceCondition?: string | null;
@@ -35,6 +39,18 @@ export type AdditionalSoldCompsListing = {
   evidenceReasons: string[];
   providerMetadata?: Record<string, unknown>;
   canonicalCandidate?: MarketplaceCandidate;
+  rawMetadata?: Record<string, unknown>;
+  mercariObservation?: MercariObservationReport;
+  observedStatus?: MercariListingStatus;
+  listingStatus?: MercariListingStatus;
+  requestedMode?: MercariRequestedMode;
+  statusIssues?: readonly string[];
+  economicIssues?: readonly string[];
+  priceContext?: MercariObservationReport['priceContext'];
+  saleStatus?: 'active' | 'unknown';
+  priceBasis?: 'asking' | 'unknown';
+  completedStatusBasis?: null;
+  date?: null;
 };
 
 const SOLD_COMPS_API_URL = 'https://api.sold-comps.com';
@@ -49,6 +65,8 @@ export type AdditionalSoldCompsOptions = { apiKey: string | null };
 export type MercariReviewOpportunity = { supported: boolean; eligibleCount: number };
 /** Server-only synchronous preparation seam. No network, models or other side effects. */
 export type MercariSoldCompsReviewOptions = {
+  /** Owned by this invocation, never provider echoes or browser listing metadata. */
+  requestedMode?: MercariRequestedMode;
   reviewOpportunity?: (listings: readonly AdditionalSoldCompsListing[]) => MercariReviewOpportunity;
   /** Optional absolute server deadline, clamped to invocation start + 40 seconds. */
   retrievalDeadlineAt?: number;
@@ -63,17 +81,14 @@ export type MercariReviewOpportunityDiagnostics = {
   evaluations: Array<{ attempt: number; supported: boolean; eligibleCount: number }>;
   processingIssues: Array<{ attempt: number; code: 'callback_exception' | 'callback_async' | 'callback_invalid' | 'clock_invalid'; message: string }>;
 };
-export type MercariObservedField = Readonly<{
-  present: boolean;
-  type: 'undefined' | 'null' | 'string' | 'number' | 'boolean' | 'bigint' | 'symbol' | 'function' | 'object' | 'array' | 'accessor';
-  value: unknown;
-}>;
-const MERCARI_FACT_FIELDS = ['status', 'saleStatus', 'currency', 'soldCurrency', 'price', 'soldPrice',
-  'priceBasis', 'soldAt', 'soldDate', 'date', 'endedAt', 'saleDate', 'completedAt'] as const;
 export type MercariObservedFacts = Readonly<{
-  /** Only the exact direct-provider string 'sold' is affirmative, never aliases. */
-  status: 'sold' | 'active' | 'unknown';
-  fields: Readonly<Record<typeof MERCARI_FACT_FIELDS[number], MercariObservedField>>;
+  /** Effective status for existing ingress compatibility; direct observation stays separate. */
+  status: MercariListingStatus;
+  observedStatus: MercariListingStatus;
+  listingStatus: MercariListingStatus;
+  requestedMode: MercariRequestedMode;
+  fields: MercariObservationReport['fields'];
+  report: MercariObservationReport;
 }>;
 // Not transported, not attached to metadata and not populated by the public normalizer.
 const mercariObservedFacts = new WeakMap<object, MercariObservedFacts>();
@@ -83,36 +98,9 @@ export function getMercariObservedFacts(listing: unknown): MercariObservedFacts 
   return listing !== null && typeof listing === 'object' ? mercariObservedFacts.get(listing) ?? null : null;
 }
 
-function snapshotFactValue(value: unknown, seen = new WeakMap<object, object>()): unknown {
-  if (value === null || typeof value !== 'object') return value;
-  const previous = seen.get(value);
-  if (previous) return previous;
-  // HTTP JSON supplies plain data. Copy own data descriptors without coercion/getters.
-  const copy: Record<string, unknown> | unknown[] = Array.isArray(value) ? [] : Object.create(null);
-  seen.set(value, copy);
-  for (const key of Object.keys(value)) {
-    const descriptor = Object.getOwnPropertyDescriptor(value, key);
-    if (descriptor && 'value' in descriptor) {
-      Object.defineProperty(copy, key, { value: snapshotFactValue(descriptor.value, seen), enumerable: true });
-    }
-  }
-  return Object.freeze(copy);
-}
-
-function captureMercariObservedFacts(row: Record<string, unknown>): MercariObservedFacts {
-  const fields = {} as Record<typeof MERCARI_FACT_FIELDS[number], MercariObservedField>;
-  for (const key of MERCARI_FACT_FIELDS) {
-    const descriptor = Object.getOwnPropertyDescriptor(row, key);
-    const present = descriptor !== undefined;
-    const accessor = present && !('value' in descriptor);
-    const value: unknown = accessor ? undefined : descriptor?.value;
-    const type: MercariObservedField['type'] = accessor ? 'accessor' : value === null ? 'null'
-      : Array.isArray(value) ? 'array' : typeof value;
-    fields[key] = Object.freeze({ present, type, value: snapshotFactValue(value) });
-  }
-  const observed = fields.status.type === 'string' ? fields.status.value : undefined;
-  return Object.freeze({ status: observed === 'sold' ? 'sold' : observed === 'active' ? 'active' : 'unknown',
-    fields: Object.freeze(fields) });
+function ownedMercariFacts(report: MercariObservationReport): MercariObservedFacts {
+  return Object.freeze({ status: report.listingStatus, observedStatus: report.observedStatus,
+    listingStatus: report.listingStatus, requestedMode: report.requestedMode, fields: report.fields, report });
 }
 
 const MERCARI_ROW: RetrievalRowContract = { idFields: ['itemId'], titleFields: ['title'], priceFields: ['price'] };
@@ -133,6 +121,21 @@ function getItems(path: string, apiKey: string, fetchImpl: typeof fetch, context
     headers: requestHeaders(apiKey),
     signal: AbortSignal.timeout(timeoutMs),
   }), context, contract);
+}
+
+function getMercariItems(path: string, apiKey: string, fetchImpl: typeof fetch, context: RetrievalAttemptContext,
+  timeoutMs: number, observeBody: (body: unknown) => void) {
+  return retrieveItemsAttempt(async () => {
+    const response = await fetchImpl(`${SOLD_COMPS_API_URL}${path}`, {
+      headers: requestHeaders(apiKey),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    return { ok: response.ok, status: response.status, json: async () => {
+      const body: unknown = await response.json();
+      observeBody(body);
+      return body;
+    } };
+  }, context, MERCARI_ROW);
 }
 
 function queryKeyword(input: AdditionalSoldCompsInput): string {
@@ -175,34 +178,54 @@ function uniqueByKey<T>(items: T[], key: (item: T) => string): T[] {
   });
 }
 
-export function normalizeMercariSoldCandidate(item: any): AdditionalSoldCompsListing | null {
-  if (validateRetrievalRow(item, MERCARI_ROW).length) return null;
-  const price = Number(item?.price);
+export function normalizeMercariSoldCandidate(item: unknown, requestedMode: MercariRequestedMode = 'sold'): AdditionalSoldCompsListing | null {
+  return normalizeMercariObservedCandidate(item, captureMercariObservation(item, requestedMode));
+}
+
+function normalizeMercariObservedCandidate(row: unknown, report: MercariObservationReport): AdditionalSoldCompsListing | null {
+  if (row === null || typeof row !== 'object') return null;
+  // Keep the existing scalar validator; never invoke a provider getter to feed it.
+  const scalars: Record<string, unknown> = {};
+  for (const key of ['itemId', 'title', 'price']) {
+    const descriptor = Object.getOwnPropertyDescriptor(row, key);
+    if (!descriptor || !('value' in descriptor)) return null;
+    scalars[key] = descriptor.value;
+  }
+  if (validateRetrievalRow(scalars, MERCARI_ROW).length) return null;
+  const item = mercariOriginalMetadata(report);
+  const price = Number(scalars.price);
+  const currency = mercariObservedCurrency(report);
+  const saleStatus = report.listingStatus === 'active' ? 'active' as const : 'unknown' as const;
+  const priceBasis = report.listingStatus === 'active' ? 'asking' as const : 'unknown' as const;
   const imageValues = [
     ...(Array.isArray(item.images) ? item.images : []),
     ...(Array.isArray(item.photos) ? item.photos : []),
+    ...(Array.isArray(item.imageUrls) ? item.imageUrls : []),
+    ...(Array.isArray(item.galleryImages) ? item.galleryImages : []),
+    ...(Array.isArray(item.gallery) ? item.gallery : []),
+    ...(Array.isArray(item.galleryUrls) ? item.galleryUrls : []),
     item.imageUrl,
     item.thumbnailUrl,
   ];
   const canonicalCandidate = normalizeMarketplaceCandidate({
     ...item,
     sourceId: 'mercari_sold_comps',
-    sourceLabel: 'Sold-Comps (Mercari Sold)',
-    title: item.title,
+    sourceLabel: 'Sold-Comps (Mercari Listings)',
+    title: scalars.title,
     listingTitle: item.listingTitle,
     name: item.name,
-    itemId: item.itemId,
-    saleId: `mercari:${String(item.itemId)}`,
+    itemId: scalars.itemId,
+    saleId: `mercari:${String(scalars.itemId)}`,
     url: item.url,
     itemUrl: item.itemUrl,
     price,
-    soldPrice: price,
-    currency: String(item.currency || 'USD').toUpperCase(),
-    soldCurrency: String(item.currency || 'USD').toUpperCase(),
-    date: item.soldAt,
-    endedAt: item.soldAt,
-    saleStatus: 'completed',
-    priceBasis: 'sold',
+    currency,
+    soldCurrency: null,
+    date: null,
+    endedAt: null,
+    saleStatus,
+    priceBasis,
+    completedStatusBasis: null,
     marketplace: 'Mercari',
     originMarketplace: 'Mercari',
     condition: item.condition,
@@ -211,44 +234,56 @@ export function normalizeMercariSoldCandidate(item: any): AdditionalSoldCompsLis
     imageUrls: imageValues,
   }, {
     sourceId: 'mercari_sold_comps',
-    sourceLabel: 'Sold-Comps (Mercari Sold)',
+    sourceLabel: 'Sold-Comps (Mercari Listings)',
     marketplace: 'Mercari',
     originMarketplace: 'Mercari',
-    saleStatus: 'completed',
-    priceBasis: 'sold',
+    rawMetadata: item,
+    saleStatus,
+    priceBasis,
+    valuation: { disposition: 'context_only', reasons: ['Mercari final price and sale-event date remain unverified.'] },
   });
+  // Shared normalizers may use nullish aliases; enforce Mercari's explicit original economics.
+  canonicalCandidate.currency = currency;
+  canonicalCandidate.date = null;
+  Object.assign(canonicalCandidate, { endedAt: null, completedStatusBasis: null });
   return {
     title: canonicalCandidate.title,
     titleCandidates: canonicalCandidate.titleCandidates,
     itemUrl: canonicalCandidate.url,
-    saleId: `mercari:${String(item.itemId)}`,
+    saleId: `mercari:${String(scalars.itemId)}`,
     price: canonicalCandidate.price ?? price,
-    currency: canonicalCandidate.currency ?? 'USD',
-    endedAt: canonicalCandidate.date,
+    currency,
+    endedAt: null,
+    date: null,
+    saleStatus,
+    priceBasis,
+    completedStatusBasis: null,
     condition: canonicalCandidate.marketplaceCondition,
     marketplaceCondition: canonicalCandidate.marketplaceCondition,
     conditionEvidence: canonicalCandidate.conditionEvidence,
     imageUrl: canonicalCandidate.imageUrl,
     imageUrls: canonicalCandidate.imageUrls,
     sourceId: 'mercari_sold_comps',
-    sourceLabel: 'Sold-Comps (Mercari Sold)',
+    sourceLabel: 'Sold-Comps (Mercari Listings)',
     marketplace: 'Mercari',
     evidenceDisposition: 'warning_review',
-    evidenceReasons: ['Mercari results are available for testing but remain context-only until provider-specific identity and signed-admission review is complete.'],
-    providerMetadata: {
-      ...canonicalCandidate.rawMetadata,
-      marketplace: item.marketplace,
-      categoryId: item.categoryId,
-      categoryName: item.categoryName,
-      brand: item.brand,
-      status: item.status,
+    evidenceReasons: ['Mercari listings remain context/review only; final price, sale-event date and signed admission are unverified.',
+      ...report.statusIssues, ...report.economicIssues],
+    mercariObservation: report,
+    observedStatus: report.observedStatus,
+    listingStatus: report.listingStatus,
+    requestedMode: report.requestedMode,
+    statusIssues: report.statusIssues,
+    economicIssues: report.economicIssues,
+    priceContext: report.priceContext,
+    rawMetadata: item,
+    providerMetadata: Object.freeze({
+      ...item,
       providerCondition: item.condition,
-    },
+    }),
     canonicalCandidate,
   };
 }
-
-const mercariListing = normalizeMercariSoldCandidate;
 
 function tcgplayerListing(product: any, sale: any, index: number): AdditionalSoldCompsListing | null {
   if (validateRetrievalRow(product, TCG_PRODUCT_ROW).length || validateRetrievalRow(sale, TCG_SALE_ROW).length) return null;
@@ -320,8 +355,34 @@ function retainNormalizedRows(
   }
 }
 
+export type MercariReturnedPopulations = Readonly<{
+  soldListings: readonly AdditionalSoldCompsListing[];
+  activeListings: readonly AdditionalSoldCompsListing[];
+  unknownListings: readonly AdditionalSoldCompsListing[];
+}>;
+type MercariRetrievalAttempt = RetrievalAttempt & { requestedMode: MercariRequestedMode; responseScrapedAt?: MercariObservedField };
+function mercariReturnedPopulations(listings: readonly AdditionalSoldCompsListing[]): MercariReturnedPopulations {
+  const soldListings: AdditionalSoldCompsListing[] = [];
+  const activeListings: AdditionalSoldCompsListing[] = [];
+  const unknownListings: AdditionalSoldCompsListing[] = [];
+  for (const listing of listings) {
+    const status = getMercariObservedFacts(listing)?.listingStatus ?? 'unknown';
+    (status === 'sold' ? soldListings : status === 'active' ? activeListings : unknownListings).push(listing);
+  }
+  return Object.freeze({ soldListings: Object.freeze(soldListings), activeListings: Object.freeze(activeListings),
+    unknownListings: Object.freeze(unknownListings) });
+}
+function mercariUnavailable(query: string, outcome: 'config_unavailable' | 'input_unsupported', error: string,
+  requestedMode: MercariRequestedMode, reviewOpportunity: MercariReviewOpportunityDiagnostics | null) {
+  const result = unavailable(query, 'mercari', outcome, error);
+  const receipt: MercariRetrievalAttempt = { ...result.retrievalCoverage[0], requestedMode };
+  return { ...result, requestedMode, returnedPopulations: mercariReturnedPopulations(result.listings),
+    retrievalCoverage: [receipt], attemptIssues: [receipt], reviewOpportunity };
+}
+
 export async function lookupMercariSoldComps(input: AdditionalSoldCompsInput, fetchImpl: typeof fetch = fetch,
   options?: AdditionalSoldCompsOptions, reviewOptions?: MercariSoldCompsReviewOptions) {
+  const requestedMode: MercariRequestedMode = reviewOptions?.requestedMode === 'active' ? 'active' : 'sold';
   // Only callback mode has an aggregate deadline. Capture its start before query/config work.
   const callback = reviewOptions?.reviewOpportunity;
   const callbackMode = callback !== undefined;
@@ -354,11 +415,11 @@ export async function lookupMercariSoldComps(input: AdditionalSoldCompsInput, fe
   const apiKey = options ? options.apiKey : getApiKey();
   const keywords = queryCandidates(input);
   const keyword = keywords[0] ?? queryKeyword(input);
-  if (!apiKey) return { ...unavailable(keyword, 'mercari', 'config_unavailable', 'Sold-Comps API key not configured'), reviewOpportunity };
-  if (!keyword) return { ...unavailable(keyword, 'mercari', 'input_unsupported', 'A title is required for Mercari Sold-Comps lookup'), reviewOpportunity };
+  if (!apiKey) return mercariUnavailable(keyword, 'config_unavailable', 'Sold-Comps API key not configured', requestedMode, reviewOpportunity);
+  if (!keyword) return mercariUnavailable(keyword, 'input_unsupported', 'A title is required for Mercari Sold-Comps lookup', requestedMode, reviewOpportunity);
   // Keep both normalized progress and history outside the fallible request boundary.
   const executedQueries: string[] = [];
-  const retrievalCoverage: RetrievalAttempt[] = [];
+  const retrievalCoverage: MercariRetrievalAttempt[] = [];
   const attemptIssues: RetrievalIssue[] = [];
   const retained: AdditionalSoldCompsListing[] = [];
   let hasNextPage = false;
@@ -380,16 +441,20 @@ export async function lookupMercariSoldComps(input: AdditionalSoldCompsInput, fe
         break;
       }
     }
-    const params = new URLSearchParams({ keyword: candidate, page: '1', count: String(MAX_MERCARI_ITEMS), sortOrder: 'newest', sold: 'true' });
+    const params = new URLSearchParams({ keyword: candidate, page: '1', count: String(MAX_MERCARI_ITEMS), sortOrder: 'newest', sold: encodeMercariRequestedMode(requestedMode) });
     executedQueries.push(candidate);
-    const result = await getItems(`/v1/mercari?${params.toString()}`, apiKey, fetchImpl,
-      { query: candidate, stage: 'search', attempt: retrievalCoverage.length + 1 }, MERCARI_ROW, timeoutMs);
-    retrievalCoverage.push(result.receipt);
+    let responseScrapedAt: MercariObservedField | undefined;
+    const result = await getMercariItems(`/v1/mercari?${params.toString()}`, apiKey, fetchImpl,
+      { query: candidate, stage: 'search', attempt: retrievalCoverage.length + 1 }, timeoutMs,
+      (body) => { responseScrapedAt = captureMercariResponseScrapedAt(body); });
+    const receipt: MercariRetrievalAttempt = Object.assign(result.receipt, { requestedMode },
+      responseScrapedAt === undefined ? {} : { responseScrapedAt });
+    retrievalCoverage.push(receipt);
     retainNormalizedRows(result.items, result.receipt, retained, (row) => {
-      // Capture actual own provider fields before any legacy display/economic overlays.
-      const facts = captureMercariObservedFacts(row);
-      const listing = mercariListing(row);
-      if (listing) mercariObservedFacts.set(listing, facts);
+      // Capture original own fields before normalization; only this adapter owns object authority.
+      const report = captureMercariObservation(row, requestedMode, responseScrapedAt);
+      const listing = normalizeMercariObservedCandidate(row, report);
+      if (listing) mercariObservedFacts.set(listing, ownedMercariFacts(report));
       // Keep invocation identity and the returned first occurrence stable during preparation.
       if (listing && callbackMode) Object.freeze(listing);
       return listing;
@@ -467,8 +532,8 @@ export async function lookupMercariSoldComps(input: AdditionalSoldCompsInput, fe
   const partial = listings.length > 0 && (attemptIssues.length > 0
     || (reviewOpportunity?.processingIssues.length ?? 0) > 0 || reviewOpportunity?.stopReason === 'retrieval_deadline');
   return {
-    query: keyword, listings,
-    metrics: { executedQueries, fallbackQueriesUsed: executedQueries.slice(1), retrievalCoverage, attemptIssues, partial, reviewOpportunity },
+    query: keyword, listings, requestedMode, returnedPopulations: mercariReturnedPopulations(listings),
+    metrics: { executedQueries, fallbackQueriesUsed: executedQueries.slice(1), retrievalCoverage, attemptIssues, partial, reviewOpportunity, requestedMode },
     error: listings.length > 0 ? null : attemptIssues.at(-1)?.message ?? null,
     provider: 'mercari', received: listings.length, hasNextPage,
     retrievalCoverage, attemptIssues, partial, reviewOpportunity,

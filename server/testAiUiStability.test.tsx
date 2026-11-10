@@ -180,7 +180,7 @@ describe('TestAI UI source-input and state feedback stability', () => {
       values[side] = summary;
       callbacks[side] = setSummary;
       const display = useTestAiSourceDisplayData(useMemo(() => packet(price), [price]), false);
-      const next = useMemo(() => normalizeTestAiEvidence({ ...target, title: `${side} ${scope}` }, [marketObservation('mercari_sold_comps', display.data)]), [display, side, scope]);
+      const next = useMemo(() => normalizeTestAiEvidence({ ...target, title: `${side} ${scope}` }, [marketObservation('sold_comps', display.data)]), [display, side, scope]);
       useEffect(() => { if (enabled) setSummary(next); }, [enabled, next, setSummary]);
       useEffect(() => { commits[side].push(summary); }, [summary, side]);
       return <output data-side={side}>{summary ? JSON.stringify(summary) : 'cleared'}</output>;
@@ -209,7 +209,7 @@ describe('TestAI UI source-input and state feedback stability', () => {
     expect(values.right).toBe(rightInitial);
     await act(async () => callbacks.left(null));
     expect(values.left).toBeNull();
-    const equivalent = clone(normalizeTestAiEvidence({ ...target, title: 'left new-item' }, [marketObservation('mercari_sold_comps', packet())]));
+    const equivalent = clone(normalizeTestAiEvidence({ ...target, title: 'left new-item' }, [marketObservation('sold_comps', packet())]));
     await act(async () => callbacks.left(equivalent));
     expect(values.left).toEqual(equivalent);
   });

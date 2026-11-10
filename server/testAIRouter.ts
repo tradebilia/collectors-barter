@@ -44,6 +44,7 @@ import { annotatePreVisualComparableScores, applyDeclaredIdentityFilter, autogra
 import { autographReplicaReasonFromText } from '../shared/testAiAutographEvidence';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
+import { mercariObservedCurrency, type MercariObservationReport } from '../shared/testAiMercariObservation';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
 import { lookupCardsightAi } from './cardsightAi';
@@ -752,27 +753,121 @@ export function assessSoldCompsPreVisionCandidates(args: {
   };
 }
 
+/** Source-stage context only. A public report never supplies pricing authority. */
+function mercariContextProjection(listing: any, report: MercariObservationReport | null) {
+  const status = report?.listingStatus ?? 'unknown';
+  const contextReason = status === 'active' ? 'Active asking-price context; not a completed sale.'
+    : status === 'sold' ? 'Provider-labeled sold listing; reported price, final amount unverified. Sale-event date is unverified.'
+      : 'Status unknown/conflicting; reported price is context only.';
+  const existingReasons = Array.isArray(listing.evidenceReasons) ? listing.evidenceReasons.filter((reason: unknown) => typeof reason === 'string') : [];
+  // The shared filter can express a deterministic hard hold in its execution
+  // receipt/rationale without an evidenceReasons array. Keep that diagnostic;
+  // economic context must not erase the actual graded/raw identity conflict.
+  const heldReasons = listing.visualExecution?.hardExclusion === true
+    && listing.visualExecution?.state === 'not_dispatched' && typeof listing.visualReviewRationale === 'string'
+    ? [listing.visualReviewRationale] : [];
+  const reasons = [...new Set([...existingReasons, ...heldReasons, ...(report?.statusIssues ?? []), ...(report?.economicIssues ?? []), contextReason])];
+  return { ...listing, mercariObservation: report, listingStatus: status,
+    observedStatus: report?.observedStatus ?? 'unknown', requestedMode: 'sold' as const,
+    priceContext: report?.priceContext ?? 'unknown', currency: mercariObservedCurrency(report),
+    soldCurrency: null, soldPrice: null, finalPrice: null, salePrice: null, transactionPrice: null,
+    date: null, endedAt: null, soldAt: null, saleDate: null, recency: 'undated' as const,
+    saleStatus: status === 'active' ? 'active' as const : 'unknown' as const,
+    priceBasis: status === 'active' ? 'asking' as const : 'unknown' as const,
+    completedStatusBasis: null, confirmed: false, completed: false, verified: false,
+    identityApproval: undefined, provenanceToken: undefined, provenance: undefined,
+    sourceId: 'mercari_sold_comps' as const, sourceLabel: 'Sold-Comps (Mercari)',
+    originMarketplace: 'Mercari', valuationEligible: false,
+    // Raw visualAudit observations/receipts remain untouched. Generated final
+    // prose is a display aid and cannot announce financial admission here.
+    visualReviewRationale: mercariIdentityOnlyRationale(listing.visualReviewRationale),
+    visualPricingNotice: 'Image verdict establishes identity only; Mercari is not admitted to pricing.',
+    evidenceDisposition: listing.evidenceDisposition && listing.evidenceDisposition !== 'valuation_eligible'
+      ? listing.evidenceDisposition : 'context_only', evidenceReasons: reasons };
+}
+
+function mercariIdentityOnlyRationale(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+  return value.replace(/\b(?:is\s+)?eligible for valuation\b/gi,
+    'is confirmed for image identity only; Mercari is not admitted to pricing');
+}
+
+/** Apply one private source observation to every branch; never refill submission slots. */
+function finalizeMercariContextResult(payload: any, originals: readonly AdditionalSoldCompsListing[]) {
+  const byId = new Map(originals.map(row => [row.saleId, row]));
+  const observed = (row: any) => {
+    const original = byId.get(row.saleId);
+    return original ? getMercariObservedFacts(original)?.report ?? null : null;
+  };
+  const project = (row: any) => mercariContextProjection(row, observed(row));
+  const originalLedger = Array.isArray(payload.audit?.ledger) ? payload.audit.ledger : originals;
+  const advanced = new Map<string, any>();
+  const stage = (row: any) => row?.visualAudit || (Array.isArray(row?.visualExecution?.attempts) && row.visualExecution.attempts.length > 0) ? 3
+    : row?.visualExecution?.hardExclusion === true
+      || row?.evidenceDisposition === 'rejected_objective_conflict' || row?.evidenceDisposition === 'warning_review'
+      || row?.evidenceDisposition === 'pre_vision_excluded' ? 2 : 1;
+  // All groups belong to this server invocation. Financial/status facts are
+  // still rebuilt from the private originals; only evolved diagnostics survive.
+  for (const group of [payload.listings, payload.visualFilter?.listings, payload.visualFilter?.contextListings,
+    payload.preVisionExcludedListings, payload.visualReviewListings]) {
+    if (!Array.isArray(group)) continue;
+    for (const row of group) {
+      if (typeof row?.saleId !== 'string' || !byId.has(row.saleId)) continue;
+      const previous = advanced.get(row.saleId);
+      if (!previous || stage(row) >= stage(previous)) advanced.set(row.saleId, row);
+    }
+  }
+  const ledger: any[] = [];
+  const seen = new Set<string>();
+  for (const row of [...originalLedger, ...originals]) {
+    if (typeof row.saleId !== 'string' || !byId.has(row.saleId) || seen.has(row.saleId)) continue;
+    seen.add(row.saleId); ledger.push(project({ ...row, ...advanced.get(row.saleId) }));
+  }
+  const returnedPopulations = {
+    soldListings: ledger.filter(row => row.listingStatus === 'sold'),
+    activeListings: ledger.filter(row => row.listingStatus === 'active'),
+    unknownListings: ledger.filter(row => row.listingStatus === 'unknown'),
+  };
+  const result = { ...payload, requestedMode: 'sold' as const, metrics: null, searchMetrics: null,
+    returnedPopulations, statusCounts: { retainedListingCount: ledger.length,
+      providerSoldListingCount: returnedPopulations.soldListings.length,
+      activeListingCount: returnedPopulations.activeListings.length,
+      unknownListingCount: returnedPopulations.unknownListings.length, completedSaleCount: 0 },
+    audit: { ...payload.audit, ledger, valuationEligible: 0, completedSaleCount: 0 },
+  };
+  for (const key of ['listings', 'contextListings', 'preVisionExcludedListings', 'visualReviewListings']) {
+    if (Array.isArray(payload[key])) result[key] = payload[key].map(project);
+  }
+  if (payload.visualFilter) result.visualFilter = { ...payload.visualFilter,
+    listings: (payload.visualFilter.listings ?? []).map(project),
+    contextListings: (payload.visualFilter.contextListings ?? []).map(project),
+    reviews: (payload.visualFilter.reviews ?? []).map((review: any) => ({ ...review,
+      rationale: mercariIdentityOnlyRationale(review.rationale),
+      visualPricingNotice: 'Image verdict establishes identity only; Mercari is not admitted to pricing.' })),
+    note: `Sold mode requested. Returned ${returnedPopulations.soldListings.length} provider-labeled sold, ${returnedPopulations.activeListings.length} active and ${returnedPopulations.unknownListings.length} unknown/conflicting listings; 0 admitted completed sales. ${payload.visualFilter.note ?? ''}` };
+  return result;
+}
+
 /** Fresh provider rows only. Shared by the stop closure and the final Mercari flow. */
 function prepareMercariSourceIngress(rows: readonly AdditionalSoldCompsListing[], input: AdditionalSoldCompsInput, targetMetadata: string) {
   const category = input.category.trim().toLowerCase().replace(/[\s-]+/g, '_');
-  const population = sourceMetadataRankingPopulation(rows.map(listing => ({
+  const population = sourceMetadataRankingPopulation(rows.map(listing => mercariContextProjection({
     ...(listing.canonicalCandidate ?? {}), ...listing,
     url: listing.itemUrl, thumbnailUrl: listing.imageUrl,
-    soldPrice: listing.price, soldCurrency: listing.currency,
     imageUrls: listing.imageUrls ?? listing.canonicalCandidate?.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []),
     evidenceDisposition: undefined, evidenceReasons: [],
     soldCompsMetadata: normalizeSoldCompsMetadata(listing),
-  })), 'mercari_sold_comps', targetMetadata);
+  }, getMercariObservedFacts(listing)?.report ?? null)), 'mercari_sold_comps', targetMetadata);
   const statusHeld: any[] = [];
   const soldLabeled = population.listings.filter((listing, index) => {
     const facts = getMercariObservedFacts(rows[index]);
-    if (facts?.status === 'sold') return true;
-    const reason = facts?.status === 'active'
+    if (facts?.report?.listingStatus === 'sold') return true;
+    const reason = facts?.report?.listingStatus === 'active'
       ? 'Provider labels this Mercari row active, not sold; it is retained as context.'
       : 'Provider sold status is unknown or unverified; this Mercari row is retained as context.';
     statusHeld.push({ ...listing, visualRequirement: 'not_required_pre_visual', visualReviewStatus: 'not_reviewed',
       visualReviewRationale: reason, evidenceDisposition: 'context_only', valuationEligible: false,
-      evidenceReasons: [reason], visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }) });
+      evidenceReasons: [...(listing.evidenceReasons ?? []), reason], visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }) });
     return false;
   });
   const details = parseTestAiDetails(input.itemDetails);
@@ -1479,7 +1574,15 @@ export function getSoldCompsApiKey(env: NodeJS.ProcessEnv = process.env): string
   return env.SOLD_COMPS_API_KEY || env.SOLID_COMPS_API_KEY || null;
 }
 
-const testAiEvidenceSummarySchema = z.object({
+const mercariPopulationCountsSchema = z.object({
+  requestedMode: z.enum(['sold', 'active']).optional(),
+  retainedListingCount: z.number().int().nonnegative().optional(),
+  providerSoldListingCount: z.number().int().nonnegative().optional(),
+  activeListingCount: z.number().int().nonnegative().optional(),
+  unknownListingCount: z.number().int().nonnegative().optional(),
+});
+
+export const testAiEvidenceSummarySchema = z.object({
   category: z.string().max(80),
   identity: z.array(z.object({ key: z.string().max(80), label: z.string().max(120), value: z.string().max(240) })).max(20),
   identityReadiness: z.object({
@@ -1498,7 +1601,7 @@ const testAiEvidenceSummarySchema = z.object({
   reviewFlags: z.array(z.object({ kind: z.enum(['material', 'context', 'coverage']), sourceId: z.string().max(80).optional(), sourceLabel: z.string().max(120).optional(), field: z.string().max(120).optional(), message: z.string().max(600) })).max(30),
   marketEvidence: z.array(z.string().max(600)).max(20),
   guideAnchors: z.array(z.object({ sourceId: z.string().max(80), sourceLabel: z.string().max(120), grade: z.string().max(40), selectedGrade: z.string().max(40).optional(), matchType: z.enum(['exact', 'mapped']).optional(), value: z.number().positive().max(10_000_000), recordedSales: z.number().int().nonnegative().nullable(), lastSaleDate: z.string().max(80).nullable(), totalRecordedSales: z.number().int().nonnegative().nullable(), currency: z.string().max(12).optional(), retrievedAt: z.string().max(80).optional(), expiresAt: z.string().max(80).optional(), sourceQuery: z.string().max(600).optional(), sourceRecordId: z.string().max(1_500).optional(), form: z.string().max(80).optional(), provenanceToken: z.string().max(16_000).nullable().optional() })).max(5),
-  sources: z.array(z.object({ id: z.string().max(80), label: z.string().max(120), kind: z.enum(['market_current', 'market_completed', 'market_historical', 'certification', 'reference']), role: z.enum(['valuation_candidate', 'valuation_guide', 'asking_price_context', 'historical_context', 'certification_context', 'reference_context']), status: z.enum(['success', 'partial', 'not_found', 'error', 'idle']), message: z.string().max(600).nullable().optional() })).max(30),
+  sources: z.array(z.object({ id: z.string().max(80), label: z.string().max(120), kind: z.enum(['market_current', 'market_completed', 'market_historical', 'certification', 'reference']), role: z.enum(['valuation_candidate', 'valuation_guide', 'asking_price_context', 'historical_context', 'certification_context', 'reference_context']), status: z.enum(['success', 'partial', 'not_found', 'error', 'idle']), message: z.string().max(600).nullable().optional(), ...mercariPopulationCountsSchema.shape })).max(30),
 });
 
 /** Lossless diagnostic transport; browser fields never establish approval or sale authority. */
@@ -3621,8 +3724,9 @@ export const testAIRouter = router({
       }
     }),
 
-  // SoldComps Mercari coverage is deliberately separate from eBay retrieval, but
-  // completed Mercari sales use the same evidence-based analyzer disposition.
+  // Mercari listing status and image identity are not completed-sale authority.
+  // Every result branch remains restrictive context until price/date semantics
+  // and independent server admission have been established.
   // Coins, Disney Pins, and Video Games retain their category-specific visual
   // gates; every other category still receives the shared sold-comparable gate.
   getMercariSoldCompsData: protectedProcedure
@@ -3644,6 +3748,7 @@ export const testAIRouter = router({
         condition: input.condition, itemType: input.itemType, grade: input.grade,
         certificationCompany: input.certificationCompany, itemDetails: input.itemDetails });
       const result = await lookupMercariSoldComps(input, undefined, undefined, {
+        requestedMode: 'sold',
         reviewOpportunity: rows => {
           const ingress = prepareMercariSourceIngress(rows, input, targetMetadata);
           return prepareVisualSourceReviewOpportunity({ targetMetadata, listings: ingress.assessment.eligible,
@@ -3651,13 +3756,17 @@ export const testAIRouter = router({
         },
       });
       const retrievalCoverage = result.retrievalCoverage;
-      if (result.error || !result.listings.length) return {
+      if (result.error || !result.listings.length) return finalizeMercariContextResult({
         ...result,
         sourcePopulation: buildEmittedSourcePopulationReport('mercari_sold_comps', result.listings.length, result.listings, retrievalCoverage),
         audit: { rawReceived: result.listings.length, retrievalCoverage, ledger: result.listings },
-      };
+      }, result.listings);
+      let establishedIngress: ReturnType<typeof prepareMercariSourceIngress> | undefined;
+      let establishedVisualRows: any[] | undefined;
+      let visualDispatchStarted = false;
       try {
       const ingress = prepareMercariSourceIngress(result.listings, input, targetMetadata);
+      establishedIngress = ingress;
       if (normalizedCategory === 'video_games') {
         const visualSourceLabel = 'Mercari Video Game sold listings';
         const toVisualCandidate = (listing: any) => ({
@@ -3682,6 +3791,7 @@ export const testAIRouter = router({
             return null;
           }
         })();
+        visualDispatchStarted = true;
         const universalPreFilter = await filterVisualSourceCandidates({
           sourceRole: 'marketplace',
           sourceLabel: visualSourceLabel,
@@ -3694,6 +3804,7 @@ export const testAIRouter = router({
         });
         universalPreFilter.listings = overlayMetadataRankingPopulation(universalPreFilter.listings, rankingPopulation);
         universalPreFilter.contextListings = overlayMetadataRankingPopulation(universalPreFilter.contextListings ?? [], rankingPopulation);
+        establishedVisualRows = [...universalPreFilter.listings, ...universalPreFilter.contextListings];
         const excluded = assessment.excluded.map(({ item, metadata, reasons }) => ({
           ...item,
           itemUrl: item.itemUrl ?? item.url ?? null,
@@ -3720,7 +3831,7 @@ export const testAIRouter = router({
           const sharedHeld = sharedContext.filter((listing: any) => !(listing.visualExecution?.selectedForReview === true
             || listing.visualExecution?.reasonCode === 'target_image_unavailable'));
           const retained = [...sharedContext, ...excluded];
-          return {
+          return finalizeMercariContextResult({
             ...result,
             listings: sharedContext,
             preVisionExcludedListings: [...excluded, ...sharedHeld],
@@ -3735,7 +3846,7 @@ export const testAIRouter = router({
               preVisionExcluded: excluded.length + sharedHeld.length,
               ledger: retained,
             },
-          };
+          }, result.listings);
         }
         const visualFilter = universalPreFilter;
         const targetGrade = normalizeTestAiGrade(input.grade, input.certificationCompany ?? '', normalizedCategory);
@@ -3744,13 +3855,13 @@ export const testAIRouter = router({
           itemUrl: listing.itemUrl ?? listing.url ?? null,
           imageUrl: listing.imageUrl ?? listing.thumbnailUrl ?? null,
           sourceId: 'mercari_sold_comps' as const,
-          sourceLabel: 'Sold-Comps (Mercari Sold)',
+          sourceLabel: 'Sold-Comps (Mercari)',
           marketplace: 'Mercari' as const,
-          soldPrice: listing.soldPrice ?? listing.price,
-          soldCurrency: listing.soldCurrency ?? listing.currency,
-          saleStatus: 'completed' as const,
-          completedStatusBasis: 'Mercari completed-sale endpoint',
-          priceBasis: 'sold' as const,
+          soldPrice: null,
+          soldCurrency: null,
+          saleStatus: 'unknown' as const,
+          completedStatusBasis: null,
+          priceBasis: 'unknown' as const,
           evidenceDisposition: undefined,
           evidenceReasons: [],
         }, {
@@ -3783,7 +3894,7 @@ export const testAIRouter = router({
           sourceLabel: 'Sold-Comps (Mercari Sold)',
           marketplace: 'Mercari' as const,
         }));
-        return {
+        return finalizeMercariContextResult({
           ...result,
           listings: annotatedListings,
           preVisionExcludedListings: [...excluded, ...visualContextListings],
@@ -3798,7 +3909,7 @@ export const testAIRouter = router({
             preVisionExcluded: excluded.length,
             ledger: [...annotatedListings, ...excluded, ...visualContextListings],
           },
-        };
+        }, result.listings);
       }
       const safeTargetImage = (() => {
         if (!input.imageUrl) return null;
@@ -3814,6 +3925,7 @@ export const testAIRouter = router({
         : normalizedCategory === 'disney_pins'
           ? 'Mercari Disney Pins sold listings'
           : `Mercari ${normalizedCategory.replace(/_/g, ' ')} sold listings`;
+      visualDispatchStarted = true;
       const visualFilter = await filterVisualSourceCandidates({
               sourceRole: 'marketplace',
         sourceLabel: visualSourceLabel,
@@ -3833,13 +3945,13 @@ export const testAIRouter = router({
           soldPrice: listing.price,
           soldCurrency: listing.currency,
           imageUrls: listing.imageUrls ?? listing.canonicalCandidate?.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []),
-          // The adapter's warning is provisional. The strict visual result,
-          // not the adapter warning, decides whether a Disney Pin can enter
-          // valuation below.
+          // Image matching establishes identity, not a verified paid price or
+          // sale event. Final Mercari treatment remains restrictive context.
           evidenceDisposition: undefined,
           evidenceReasons: [],
         })),
       });
+      establishedVisualRows = [...visualFilter.listings, ...(visualFilter.contextListings ?? [])];
 
       const annotatedListings = visualFilter.listings.map((listing: any) => {
         const annotated = annotateSoldComparableCandidate(listing, {
@@ -3878,50 +3990,47 @@ export const testAIRouter = router({
         sourceLabel: 'Sold-Comps (Mercari Sold)',
         marketplace: 'Mercari' as const,
       })).concat(ingress.statusHeld);
-      const valuationEligible = annotatedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible');
-      const eligiblePrices = valuationEligible.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0);
-      const metrics = eligiblePrices.length
-        ? {
-            avg: eligiblePrices.reduce((sum: number, price: number) => sum + price, 0) / eligiblePrices.length,
-            median: [...eligiblePrices].sort((a, b) => a - b)[Math.floor(eligiblePrices.length / 2)],
-            min: Math.min(...eligiblePrices),
-            max: Math.max(...eligiblePrices),
-            confidence: eligiblePrices.length >= 5 ? 'high' : eligiblePrices.length >= 2 ? 'medium' : 'low',
-          }
-        : null;
-      return {
+      return finalizeMercariContextResult({
         ...result,
-        searchMetrics: result.metrics,
+        searchMetrics: null,
         listings: annotatedListings,
         visualReviewListings: [...annotatedListings, ...visualContextListings],
         preVisionExcludedListings: visualContextListings,
         sourcePopulation: buildEmittedSourcePopulationReport('mercari_sold_comps', result.listings.length, [...annotatedListings, ...visualContextListings], retrievalCoverage),
-        metrics,
+        metrics: null,
         visualFilter: {
           ...visualFilter,
-          note: `Mercari ${normalizedCategory === 'coins' ? 'coin' : normalizedCategory === 'disney_pins' ? 'Disney Pin' : normalizedCategory.replace(/_/g, ' ')} results use the shared visual gate. Only completed visual matches can enter analyzer valuation; all other records remain context-only. ${visualFilter.note}`,
+          note: `Mercari ${normalizedCategory === 'coins' ? 'coin' : normalizedCategory === 'disney_pins' ? 'Disney Pin' : normalizedCategory.replace(/_/g, ' ')} results use the shared visual gate for identity only. Reported prices and sale-event dates remain unverified, so all records remain context-only. ${visualFilter.note}`,
         },
         audit: {
           rawReceived: result.listings.length,
           retrievalCoverage,
-          valuationEligible: valuationEligible.length,
+          valuationEligible: 0,
           preVisionExcluded: visualContextListings.length,
-          warningReview: annotatedListings.filter((listing: any) => listing.evidenceDisposition !== 'valuation_eligible').length + visualContextListings.length,
+          warningReview: annotatedListings.length + visualContextListings.length,
           ledger: [...annotatedListings, ...visualContextListings],
         },
-      };
+      }, result.listings);
       } catch {
         // Retrieval succeeded; later metadata/preparation failures must not erase its union.
         const reason = 'Mercari candidate processing unavailable; all retrieved records retained as context, with no pricing authority.';
-        const context = result.listings.map(listing => ({ ...listing, evidenceDisposition: 'context_only' as const,
+        const latestRows = new Map((establishedIngress?.population.listings ?? result.listings)
+          .map((listing: any) => [listing.saleId, listing]));
+        for (const listing of establishedVisualRows ?? []) if (latestRows.has(listing.saleId)) latestRows.set(listing.saleId, listing);
+        const context = [...latestRows.values()].map((listing: any) => ({ ...listing, evidenceDisposition: 'context_only' as const,
           valuationEligible: false, identityApproval: undefined, provenanceToken: undefined,
-          visualRequirement: 'not_required_pre_visual' as const, visualReviewStatus: 'not_reviewed' as const,
-          visualReviewRationale: reason, evidenceReasons: [reason],
-          visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }) }));
-        return { ...result, metrics: null, searchMetrics: result.metrics, listings: context,
-          processingDiagnostic: { code: 'mercari_processing_unavailable', message: reason },
-          sourcePopulation: buildEmittedSourcePopulationReport('mercari_sold_comps', result.listings.length, context, retrievalCoverage),
-          audit: { rawReceived: result.listings.length, retrievalCoverage, ledger: context } };
+          visualRequirement: listing.visualRequirement ?? 'not_required_pre_visual',
+          visualReviewStatus: listing.visualReviewStatus ?? 'not_reviewed',
+          visualReviewRationale: listing.visualReviewRationale ?? reason,
+          evidenceReasons: [...(listing.evidenceReasons ?? []), reason],
+          visualExecution: listing.visualExecution ?? (!visualDispatchStarted
+            ? createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }) : undefined) }));
+        return finalizeMercariContextResult({ ...result, metrics: null, searchMetrics: null, listings: context,
+          processingDiagnostic: { code: 'mercari_processing_unavailable', message: reason,
+            executionMeasurement: visualDispatchStarted && !establishedVisualRows ? 'unmeasured_after_processing_failure' : 'retained' },
+          sourcePopulation: establishedIngress ? buildSourcePopulationReport(establishedIngress.population, context, retrievalCoverage)
+            : buildEmittedSourcePopulationReport('mercari_sold_comps', result.listings.length, context, retrievalCoverage),
+          audit: { rawReceived: result.listings.length, retrievalCoverage, ledger: context } }, result.listings);
       }
     }),
 

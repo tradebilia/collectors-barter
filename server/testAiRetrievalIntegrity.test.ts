@@ -39,6 +39,17 @@ function httpFixtures(fixtures: Fixture[]) {
 const empty = () => json({ items: [] });
 const filled = () => json({ items: [MERCARI] });
 
+// Currency no longer coerces through metadata. A descriptor failure exercises the
+// same adapter normalization-failure receipt/retention boundary without getters.
+const unreadableMercariMetadata = (row: Record<string, unknown>) => new Proxy(row, {
+  getOwnPropertyDescriptor(target, key) {
+    if (key === 'itemId') throw new Error('Synthetic descriptor unavailable');
+    return Reflect.getOwnPropertyDescriptor(target, key);
+  },
+});
+const originalRowsResponse = (rows: Record<string, unknown>[]) => ({ ok: true, status: 200,
+  json: async () => ({ items: rows }) } as Response);
+
 const SOLD = { ...MERCARI, status: 'sold' };
 // Synthetic stop-policy stand-in only. Actual shared category preparation is parent-owned.
 const factualReview = (rows: readonly AdditionalSoldCompsListing[]) => ({ supported: true,
@@ -185,8 +196,8 @@ describe('Stage 6 actual Mercari adapter bounded fallback and retention', () => 
   });
 
   it('keeps a valid sibling when actual metadata normalization throws and still stops on minimal progress', async () => {
-    // A JSON object with no callable primitive conversion reaches the real normalizer.
-    const http = httpFixtures([() => json({ items: [MERCARI, { ...MERCARI, itemId: 'bad-metadata', currency: { toString: null } }] })]);
+    const unreadable = unreadableMercariMetadata({ ...MERCARI, itemId: 'bad-metadata' });
+    const http = httpFixtures([() => originalRowsResponse([MERCARI, unreadable])]);
     const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY);
     expect(http.calls).toHaveLength(1); expect(result.listings).toHaveLength(1);
     expect(result.retrievalCoverage[0]).toMatchObject({ accepted: 2, rejected: 0, normalized: 1,
@@ -250,14 +261,14 @@ describe('Step 6 Mercari server-owned review-opportunity adapter mode', () => {
   it.each([
     ['wrong target', { ...SOLD, itemId: 'wrong', title: 'Different damaged lot of 50' }, 1],
     ['active matching row', { ...MERCARI, itemId: 'active', status: 'active' }, 1],
-    ['all normalization failed', { ...SOLD, itemId: 'bad', currency: { toString: null } }, 0],
+    ['all normalization failed', unreadableMercariMetadata({ ...SOLD, itemId: 'bad' }), 0],
   ] as const)('continues after %s and stops on an eligible fallback, retaining normalization counts', async (_label, primary, normalized) => {
     const populations: string[][] = [];
     const reviewOpportunity = vi.fn((rows: readonly AdditionalSoldCompsListing[]) => {
       populations.push(rows.map((row) => row.saleId));
       return factualReview(rows);
     });
-    const http = httpFixtures([() => json({ items: [primary] }), () => json({ items: [SOLD] })]);
+    const http = httpFixtures([() => originalRowsResponse([primary]), () => json({ items: [SOLD] })]);
     const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { reviewOpportunity });
     expect(http.calls.map((call) => call.url.searchParams.get('keyword'))).toEqual(TOY_QUERIES.slice(0, 2));
     expect(populations[0]).toHaveLength(normalized);
@@ -475,8 +486,10 @@ describe('Step 6 Mercari server-owned review-opportunity adapter mode', () => {
       endedAt: { present: true, type: 'array', value: ['not-a-date'] }, soldDate: { present: true, type: 'string', value: '' },
       completedAt: { present: false, type: 'undefined', value: undefined },
       saleStatus: { present: true, type: 'string', value: 'completed' }, priceBasis: { present: true, type: 'string', value: 'sold' } });
-    expect(listing.currency).toBe('USD'); expect(listing.endedAt).toBeNull();
-    expect(listing.canonicalCandidate).toMatchObject({ saleStatus: 'completed', priceBasis: 'sold' });
+    expect(listing.currency).toBeNull(); expect(listing.endedAt).toBeNull();
+    expect(listing.canonicalCandidate).toMatchObject({ saleStatus: 'active', priceBasis: 'asking', currency: null, date: null });
+    expect(listing.mercariObservation).toBe(facts.report);
+    expect(facts).toMatchObject({ observedStatus: 'active', listingStatus: 'active', requestedMode: 'sold' });
     row.status = 'sold'; row.endedAt[0] = 'changed';
     expect(facts.status).toBe('active'); expect(facts.fields.endedAt.value).toEqual(['not-a-date']);
     expect(Object.isFrozen(facts.fields.endedAt.value)).toBe(true);
@@ -520,6 +533,8 @@ describe('Step 6 Mercari server-owned review-opportunity adapter mode', () => {
       expect(facts.fields.currency).toMatchObject({ present: true, value: currency,
         type: currency === null ? 'null' : typeof currency });
       expect(facts.fields.currency.value).not.toBe('USD');
+      expect(result.listings[0].currency).toBeNull();
+      expect(result.listings[0].canonicalCandidate?.currency).toBeNull();
     });
 
   it.each([NaN, Infinity, -Infinity] as const)('fails closed on invalid server clock %j before any dispatch', async (time) => {
@@ -540,7 +555,96 @@ describe('Step 6 Mercari server-owned review-opportunity adapter mode', () => {
     for (const key of ['status', 'currency', 'soldAt', 'priceBasis', 'soldPrice', 'date'] as const) {
       expect(facts.fields[key]).toEqual({ present: false, type: 'undefined', value: undefined });
     }
-    expect(result.listings[0]).toMatchObject({ currency: 'USD', endedAt: null });
+    expect(result.listings[0]).toMatchObject({ currency: null, endedAt: null, date: null, saleStatus: 'unknown', priceBasis: 'unknown' });
+  });
+});
+
+describe('STEP A Mercari adapter truthful observed listing context', () => {
+  it('retains one first-ID union and disjoint effective partitions after sold conflicts and active-first duplicates', async () => {
+    const activeFirst = { ...SOLD, itemId: 'repeat-mode', status: 'active' };
+    const conflict = { ...SOLD, itemId: 'conflict', completed: false, soldAt: '2026-09-01' };
+    const eligible = { ...SOLD, itemId: 'new-sold', soldAt: undefined };
+    const http = httpFixtures([
+      () => json({ items: [activeFirst, conflict] }),
+      () => json({ items: [{ ...SOLD, itemId: 'repeat-mode', price: '100', title: 'Better later title' }, eligible] }),
+    ]);
+    const callback = vi.fn(factualReview);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { requestedMode: 'sold', reviewOpportunity: callback });
+    expect(http.calls).toHaveLength(2);
+    expect(result.listings).toHaveLength(3);
+    expect(result.returnedPopulations.activeListings).toEqual([result.listings[0]]);
+    expect(result.returnedPopulations.unknownListings).toEqual([result.listings[1]]);
+    expect(result.returnedPopulations.soldListings).toEqual([result.listings[2]]);
+    expect(new Set(Object.values(result.returnedPopulations).flat()).size).toBe(result.listings.length);
+    expect(result.listings[0]).toMatchObject({ price: 12, title: MERCARI.title, listingStatus: 'active' });
+    expect(getMercariObservedFacts(result.listings[1])).toMatchObject({ status: 'unknown', observedStatus: 'sold', listingStatus: 'unknown' });
+    expect(result.listings[1].mercariObservation?.statusIssues).toContain('status_conflict:completed');
+    expect(result.reviewOpportunity?.evaluations.map((evaluation) => evaluation.eligibleCount)).toEqual([0, 1]);
+    expect(result.requestedMode).toBe('sold');
+    expect(result.retrievalCoverage.every((receipt) => receipt.requestedMode === 'sold')).toBe(true);
+    for (const listing of result.listings) {
+      expect(listing.date).toBeNull(); expect(listing.endedAt).toBeNull(); expect(listing.completedStatusBasis).toBeNull();
+      expect(listing.canonicalCandidate?.valuation.disposition).toBe('context_only');
+      expect(listing.canonicalCandidate?.date).toBeNull();
+      if (listing.listingStatus !== 'active') expect(listing).toMatchObject({ saleStatus: 'unknown', priceBasis: 'unknown' });
+    }
+  });
+
+  it('encodes only the owned invocation mode and retains response scrapedAt as retrieval context, never a sale date', async () => {
+    const http = httpFixtures([() => json({ scrapedAt: '2026-11-10T12:00:00Z', requestedMode: 'sold', items: [
+      { ...SOLD, requestedMode: 'sold', soldAt: '2026-09-01', soldDate: '2026-09-02', date: '2026-09-03', endedAt: '2026-09-04' },
+    ] })]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY, { requestedMode: 'active' });
+    expect(http.calls).toHaveLength(1);
+    expect(http.calls[0].url.searchParams.get('sold')).toBe('false');
+    expect(result.requestedMode).toBe('active');
+    expect(result.retrievalCoverage[0]).toMatchObject({ requestedMode: 'active', responseScrapedAt: {
+      present: true, type: 'string', value: '2026-11-10T12:00:00Z' } });
+    const listing = result.listings[0]; const facts = getMercariObservedFacts(listing)!;
+    expect(facts.report).toBe(listing.mercariObservation);
+    expect(facts.requestedMode).toBe('active');
+    expect(facts.report.statusIssues).toContain('requested_mode_row_mismatch');
+    expect(facts.report.responseScrapedAt).toEqual(result.retrievalCoverage[0].responseScrapedAt);
+    expect(listing).toMatchObject({ listingStatus: 'sold', saleStatus: 'unknown', priceBasis: 'unknown', date: null, endedAt: null });
+    expect(listing.canonicalCandidate).toMatchObject({ date: null, saleStatus: 'unknown', priceBasis: 'unknown' });
+    expect(listing.canonicalCandidate?.rawMetadata).toMatchObject({ soldAt: '2026-09-01', soldDate: '2026-09-02',
+      date: '2026-09-03', endedAt: '2026-09-04' });
+  });
+
+  it('retains malformed optional currency rows without coercion/failure while keeping original prices separate', async () => {
+    const http = httpFixtures([() => json({ items: [{ ...SOLD, itemId: 'currency-object', currency: { toString: null } },
+      { ...SOLD, itemId: 'currency-conflict', soldCurrency: 'EUR', originalPrice: '20', soldPrice: '11', finalPrice: '10' },
+      { ...SOLD, itemId: 'no-currency', currency: null, soldCurrency: 'USD' }] })]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY);
+    expect(http.calls).toHaveLength(1); expect(result.listings).toHaveLength(3);
+    expect(result.retrievalCoverage[0]).toMatchObject({ normalized: 3, normalizationRejected: 0 });
+    expect(result.partial).toBe(false);
+    for (const listing of result.listings) expect(listing.currency).toBeNull();
+    const listing = result.listings[1];
+    expect(listing.price).toBe(12);
+    expect(listing.canonicalCandidate?.rawMetadata).toMatchObject({ price: '12', soldPrice: '11', originalPrice: '20', finalPrice: '10',
+      currency: 'USD', soldCurrency: 'EUR' });
+    expect(listing.mercariObservation?.economicIssues).toEqual(expect.arrayContaining(['currency_conflict:soldCurrency',
+      'price_conflict:soldPrice', 'price_conflict:finalPrice', 'final_price_basis_unverified', 'sale_date_unknown']));
+    expect(listing.mercariObservation?.economicIssues.some((issue) => issue.includes('originalPrice'))).toBe(false);
+    expect(listing).not.toHaveProperty('soldPrice');
+  });
+
+  it('does not expose reflected sensitive metadata or share mutable original ownership in any projection', async () => {
+    const metadata = { keep: 'Original', Authorization: 'RAW_PROVIDER_SECRET_SENTINEL', apiKey: 'RAW_PROVIDER_SECRET_SENTINEL',
+      nested: { accessToken: 'RAW_PROVIDER_SECRET_SENTINEL', condition: 'Original' } };
+    const row = { ...SOLD, metadata, providerMetadata: { metadata, observedFacts: { status: 'sold', verified: true } } };
+    const http = httpFixtures([() => originalRowsResponse([row])]);
+    const result = await lookupMercariSoldComps(TOY, http.fetchImpl, KEY);
+    assertSafe(result);
+    const listing = result.listings[0]; const report = getMercariObservedFacts(listing)!.report;
+    expect(listing.rawMetadata).toBe(listing.canonicalCandidate?.rawMetadata);
+    expect(Object.isFrozen(listing.rawMetadata)).toBe(true);
+    expect(listing.rawMetadata?.metadata).toEqual({ keep: 'Original', nested: { condition: 'Original' } });
+    metadata.keep = 'Changed'; metadata.nested.condition = 'Changed';
+    expect(report.fields.metadata.value).toEqual({ keep: 'Original', nested: { condition: 'Original' } });
+    expect(getMercariObservedFacts({ ...listing, mercariObservation: report })).toBeNull();
+    expect(getMercariObservedFacts(JSON.parse(JSON.stringify(listing)))).toBeNull();
   });
 });
 

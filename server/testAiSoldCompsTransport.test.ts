@@ -255,8 +255,8 @@ describe('Stage 3 narrow actual page wiring guards', () => {
   const page = readFileSync(new URL('../client/src/pages/TestAI.tsx', import.meta.url), 'utf8');
 
   it('calls the tested lossless projection in both eBay positions before Mercari and leaves the generic normalizer for other adapters', () => {
-    expect(page).toContain('buildSoldCompsAnalysisSales(leftSoldCompsData, leftHasSoldComps),\n      leftHasMercari');
-    expect(page).toContain('buildSoldCompsAnalysisSales(rightSoldCompsData, rightHasSoldComps),\n      rightHasMercari');
+    expect(page).toContain('buildSoldCompsAnalysisSales(leftSoldCompsData, leftHasSoldComps),\n      buildMercariAnalysisSales(leftMercariSoldCompsData, leftHasMercari)');
+    expect(page).toContain('buildSoldCompsAnalysisSales(rightSoldCompsData, rightHasSoldComps),\n      buildMercariAnalysisSales(rightMercariSoldCompsData, rightHasMercari)');
     expect(page).toContain('const normalizeComparableSale = (sale: any, defaults:');
     expect(page).toContain('for (let index = 0; balanced.length < 120; index += 1)');
     expect(page).toContain('if (candidate && balanced.length < 120)');

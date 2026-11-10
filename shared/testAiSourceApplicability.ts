@@ -16,7 +16,7 @@ export type SourceApplicability = {
 export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'ebay_active', categories: '*', requires: 'title', purpose: 'Current asking-price research across all Tradebilia categories.' },
   { sourceId: 'sold_comps', categories: '*', requires: 'title', purpose: 'Completed eBay-sale research across all Tradebilia categories.' },
-  { sourceId: 'mercari_sold_comps', categories: '*', requires: 'title', purpose: 'Completed Mercari-sale research across all Tradebilia categories through SoldComps; provider-specific identity review remains required and results are context-only during testing.' },
+  { sourceId: 'mercari_sold_comps', categories: '*', requires: 'title', purpose: 'Mercari sold-mode listing research through SoldComps; retained provider-sold, active, and unknown listings are factual context for provider-specific identity review, not completed-sale evidence. Reported prices remain outside valuation until economics, sale timing, and server provenance are verified.' },
   { sourceId: 'tcgplayer_sold_comps', categories: ['pokemon'], requires: 'title', purpose: 'Completed Pokémon TCGplayer-sale research through SoldComps; only dated positive-price sales are returned and results remain context-only during testing.' },
   { sourceId: 'hipstamp', categories: ['stamps'], requires: 'title', purpose: 'HIPStamp current asking-price and supply context for Stamps items; not completed-sale evidence.' },
   { sourceId: 'hipstamp_sold', categories: ['stamps'], requires: 'title', purpose: 'HIPStamp store-scoped closed listings marked sold; historical context, not marketplace-wide sales evidence.' },

@@ -13,6 +13,19 @@ export type EvidenceSourceStatus = 'success' | 'partial' | 'not_found' | 'error'
 
 export type EvidenceSourceKind = 'market_current' | 'market_completed' | 'market_historical' | 'certification' | 'reference';
 
+/** Browser diagnostics only: measured listing populations confer no sale authority. */
+export type EvidenceMarketPopulationDiagnostics = {
+  requestedMode?: 'sold' | 'active';
+  /** Provider-returned population; distinct from the retained first-ID union. */
+  returnedRecordCount?: number;
+  /** Full retained union, including held, active, and unknown listings. */
+  retainedListingCount?: number;
+  /** Retained provider-sold listing partition, not completed-sale credit. */
+  providerSoldListingCount?: number;
+  activeListingCount?: number;
+  unknownListingCount?: number;
+};
+
 export type AnalyzerRecordDetail = {
   id: string;
   title: string;
@@ -32,9 +45,7 @@ export type EvidenceSourceObservation = {
   role?: EvidenceSourceRole;
   status: EvidenceSourceStatus;
   fields?: Record<string, unknown>;
-  market?: {
-    /** All provider records returned for this source run, before evidence treatment. */
-    returnedRecordCount?: number;
+  market?: EvidenceMarketPopulationDiagnostics & {
     currentListingCount?: number;
     completedSaleCount?: number;
     analyzerSubmittedSaleCount?: number;
@@ -87,23 +98,24 @@ export type NormalizedEvidenceSummary = {
   selectedSourceSummaries?: string[];
   sourceDecisions?: EvidenceSourceDecision[];
   guideAnchors: GuideValueAnchor[];
-  sources: { id: string; label: string; kind: EvidenceSourceKind; role: EvidenceSourceRole; status: EvidenceSourceStatus; message?: string | null }[];
+  sources: (Omit<EvidenceMarketPopulationDiagnostics, 'returnedRecordCount'> & { id: string; label: string; kind: EvidenceSourceKind; role: EvidenceSourceRole; status: EvidenceSourceStatus; message?: string | null })[];
 };
 
-export type EvidenceSourceDecision = {
+export type EvidenceSourceDecision = EvidenceMarketPopulationDiagnostics & {
   id: string;
   label: string;
   status: EvidenceSourceStatus;
   kind: EvidenceSourceKind;
-  /** Total price-bearing records returned by a market source during this run. */
-  returned: number;
+  /** Legacy market total; for Mercari, measured provider returns only (not necessarily priced). */
+  returned?: number;
   completed: number;
   accepted: number;
   /** Completed records held out of source-level valuation eligibility. */
   excludedFromValuation: number;
   currentValue: number;
   historicalTrend: number;
-  context: number;
+  /** Mercari uses measured retained/returned totals; absent measures remain undefined. */
+  context?: number;
   acceptedPrices: number[];
   analyzerRecords: AnalyzerRecordDetail[];
   treatment: 'valuation_candidate' | 'valuation_guide' | 'current_value' | 'historical_trend' | 'context_only' | 'certification_context' | 'unavailable';
@@ -113,17 +125,17 @@ export type EvidenceSourceDecision = {
   message?: string | null;
 };
 
-export type TestAiSourceRunOutcome = {
+export type TestAiSourceRunOutcome = EvidenceMarketPopulationDiagnostics & {
   id: string;
   label: string;
   status: EvidenceSourceStatus;
-  returned: number;
+  returned?: number;
   completed: number;
   accepted: number;
   currentValue: number;
   historicalTrend: number;
   excludedFromValuation: number;
-  context: number;
+  context?: number;
   visualAnalysisRequired: boolean;
   timedOut: boolean;
   message?: string | null;
@@ -464,7 +476,44 @@ function getListingValues(input: EvidenceListingInput): Record<string, string> {
   return base;
 }
 
+/** Do not coerce strings, booleans, nulls, accessors, or unsafe/fractional counts. */
+function measuredMercariMarketValue(source: EvidenceSourceObservation, key: keyof EvidenceMarketPopulationDiagnostics): unknown {
+  if (source.id !== 'mercari_sold_comps' || !source.market || typeof source.market !== 'object') return undefined;
+  const descriptor = Object.getOwnPropertyDescriptor(source.market, key);
+  return descriptor && 'value' in descriptor ? descriptor.value : undefined;
+}
+
+function measuredMercariCount(source: EvidenceSourceObservation, key: Exclude<keyof EvidenceMarketPopulationDiagnostics, 'requestedMode'>): number | undefined {
+  const value = measuredMercariMarketValue(source, key);
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
+}
+
+function mercariPopulationDiagnostics(source: EvidenceSourceObservation): EvidenceMarketPopulationDiagnostics {
+  if (source.id !== 'mercari_sold_comps') return {};
+  const requestedMode = measuredMercariMarketValue(source, 'requestedMode');
+  return {
+    requestedMode: requestedMode === 'sold' || requestedMode === 'active' ? requestedMode : undefined,
+    returnedRecordCount: measuredMercariCount(source, 'returnedRecordCount'),
+    retainedListingCount: measuredMercariCount(source, 'retainedListingCount'),
+    providerSoldListingCount: measuredMercariCount(source, 'providerSoldListingCount'),
+    activeListingCount: measuredMercariCount(source, 'activeListingCount'),
+    unknownListingCount: measuredMercariCount(source, 'unknownListingCount'),
+  };
+}
+
+function compactMercariMarketSummary(source: EvidenceSourceObservation): string {
+  const population = mercariPopulationDiagnostics(source);
+  const count = (value: number | undefined) => value === undefined ? 'not measured' : String(value);
+  const mode = population.requestedMode === undefined ? 'requested mode not reported' : `${population.requestedMode} mode requested`;
+  const base = `${source.label.slice(0, 60)}: ${mode}; provider returned records: ${count(population.returnedRecordCount)}; retained listings: ${count(population.retainedListingCount)}; retained provider-sold listings: ${count(population.providerSoldListingCount)}, active listings: ${count(population.activeListingCount)}, unknown listings: ${count(population.unknownListingCount)}; 0 admitted completed-sale credit. Retained context/identity review only: final amounts and sale dates unverified; active asking context; unknown-status basis unknown. Retrieval status: ${source.status}.`;
+  // The final summary-schema narrative limit remains 600. Context/credit and
+  // population facts take precedence over verbose duplicate source messages.
+  const message = typeof source.message === 'string' ? source.message.slice(0, Math.max(0, 600 - base.length - 3)) : '';
+  return `${base}${message ? ` — ${message}` : ''}`.slice(0, 600);
+}
+
 function compactMarketSummary(source: EvidenceSourceObservation): string | null {
+  if (source.id === 'mercari_sold_comps') return compactMercariMarketSummary(source);
   if (!['success', 'partial'].includes(source.status) || !source.market) return null;
   const market = source.market;
   const parts: string[] = [];
@@ -481,6 +530,13 @@ function compactMarketSummary(source: EvidenceSourceObservation): string | null 
 }
 
 function compactSubmittedPriceSummary(source: EvidenceSourceObservation): string | null {
+  if (source.id === 'mercari_sold_comps') {
+    const records = source.market?.analyzerRecords;
+    const measured = Array.isArray(records);
+    const recordCount = measured ? String(records.length) : 'not measured';
+    const priceCount = measured ? String(records.filter((record) => typeof record.price === 'number' && Number.isFinite(record.price) && record.price > 0).length) : 'not measured';
+    return `${source.label.slice(0, 60)}: retained context-detail records: ${recordCount}; priced context observations: ${priceCount}; final-price/currency basis unresolved — aggregate not shown; 0 admitted completed-sale credit. These source details are not final-request submission receipts; operational submission and final pricing use are separate.`;
+  }
   const currentPrices = source.market?.currentValuePrices;
   const historicalPrices = source.market?.historicalTrendPrices;
   const withholding = 'currency/basis unresolved — aggregate not shown; anonymous source observations, not final-price statistics';
@@ -493,6 +549,7 @@ function compactSubmittedPriceSummary(source: EvidenceSourceObservation): string
 }
 
 function compactSelectedSourceSummary(source: EvidenceSourceObservation): string {
+  if (source.id === 'mercari_sold_comps') return compactMercariMarketSummary(source);
   if (source.status === 'error') return `${source.label}: unavailable${source.message ? ` — ${source.message}` : '.'}`;
   if (source.status === 'not_found') return `${source.label}: no record returned; returned no record; source/final populations not measured.`;
   if (source.market) {
@@ -503,6 +560,28 @@ function compactSelectedSourceSummary(source: EvidenceSourceObservation): string
 
 function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceDecision {
   const market = source.market;
+  if (source.id === 'mercari_sold_comps') {
+    const population = mercariPopulationDiagnostics(source);
+    const context = population.retainedListingCount ?? population.returnedRecordCount;
+    return {
+      id: source.id, label: source.label, status: source.status, kind: source.kind,
+      ...population,
+      returned: population.returnedRecordCount,
+      completed: 0, accepted: 0, excludedFromValuation: 0, currentValue: 0, historicalTrend: 0,
+      context,
+      acceptedPrices: [],
+      analyzerRecords: Array.isArray(market?.analyzerRecords)
+        ? market.analyzerRecords.map((record) => ({ ...record, bucket: 'context' as const }))
+        : [],
+      treatment: context !== undefined && context > 0
+        ? 'context_only'
+        : source.status === 'error' || source.status === 'not_found' ? 'unavailable' : 'context_only',
+      analyzerWeightPct: null,
+      treatmentReason: 'Mercari requested mode and provider-sold/active/unknown listing populations are browser diagnostics only. The measured retained union (or provider returns when retention is unmeasured) remains context/identity review, including partial/error retrieval; sold labels, reported prices, and browser completion fields confer no completed-sale or valuation credit. Final server provenance, economics, timing, and identity gates are unchanged.',
+      visualAnalysisRequired: source.visualAnalysisRequired !== false,
+      message: source.message,
+    };
+  }
   const completed = Number(market?.completedSaleCount ?? 0);
   const accepted = Number(market?.analyzerSubmittedSaleCount ?? 0);
   const currentValue = Number(market?.currentValueSaleCount ?? market?.recentSaleCount ?? 0);
@@ -589,6 +668,14 @@ export function summarizeTestAiSourceRunOutcomes(decisions: EvidenceSourceDecisi
     historicalTrend: decision.historicalTrend,
     excludedFromValuation: decision.excludedFromValuation,
     context: decision.context,
+    ...(decision.id === 'mercari_sold_comps' ? {
+      requestedMode: decision.requestedMode,
+      returnedRecordCount: decision.returnedRecordCount,
+      retainedListingCount: decision.retainedListingCount,
+      providerSoldListingCount: decision.providerSoldListingCount,
+      activeListingCount: decision.activeListingCount,
+      unknownListingCount: decision.unknownListingCount,
+    } : {}),
     visualAnalysisRequired: decision.visualAnalysisRequired,
     timedOut: decision.status === 'error' && /\b(?:timeout|timed out|aborted)\b/i.test(String(decision.message ?? '')),
     message: decision.message,
@@ -739,11 +826,17 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
   const marketEvidencePriceSummaries = sources.map(compactSubmittedPriceSummary).filter((entry): entry is string => Boolean(entry));
   const selectedSourceSummaries = sources.map(compactSelectedSourceSummary);
   const evidenceSufficiency = buildP0EvidenceSufficiency({
-    completedSaleCount: sources.reduce((count, source) => count + (['success', 'partial'].includes(source.status) ? Number(source.market?.completedSaleCount ?? 0) : 0), 0),
-    askingListingCount: sources.reduce((count, source) => count + (['success', 'partial'].includes(source.status) ? Number(source.market?.currentListingCount ?? 0) : 0), 0),
-    historicalRecordCount: sources.reduce((count, source) => count + (['success', 'partial'].includes(source.status) ? Number(source.market?.recentSaleCount ?? 0) + Number(source.market?.historicalSaleCount ?? 0) + Number(source.market?.undatedSaleCount ?? 0) : 0), 0),
+    completedSaleCount: sources.reduce((count, source) => count + (source.id !== 'mercari_sold_comps' && ['success', 'partial'].includes(source.status) ? Number(source.market?.completedSaleCount ?? 0) : 0), 0),
+    askingListingCount: sources.reduce((count, source) => count + (source.id === 'mercari_sold_comps'
+      ? measuredMercariCount(source, 'activeListingCount') ?? 0
+      : ['success', 'partial'].includes(source.status) ? Number(source.market?.currentListingCount ?? 0) : 0), 0),
+    historicalRecordCount: sources.reduce((count, source) => count + (source.id !== 'mercari_sold_comps' && ['success', 'partial'].includes(source.status) ? Number(source.market?.recentSaleCount ?? 0) + Number(source.market?.historicalSaleCount ?? 0) + Number(source.market?.undatedSaleCount ?? 0) : 0), 0),
     unavailableSourceCount: sources.filter((source) => source.status === 'error' || source.status === 'not_found').length,
   });
+  if (evidenceSufficiency.completedSaleCount === 0 && sources.some((source) => source.id === 'mercari_sold_comps'
+    && (measuredMercariCount(source, 'retainedListingCount') ?? measuredMercariCount(source, 'returnedRecordCount') ?? 0) > 0)) {
+    evidenceSufficiency.message = 'No completed-sale evidence is selected. Measured Mercari listings remain context/identity review only; provider-sold labels and unknown-status records do not establish final prices or completed-sale support.';
+  }
   return {
     category: displayCategory(category),
     identity,
@@ -756,7 +849,15 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
     selectedSourceSummaries,
     sourceDecisions: sources.map(buildSourceDecision),
     guideAnchors,
-    sources: sources.map(({ id, label, kind, role, status, message }) => ({ id, label, kind, role: role ?? evidenceRoleForSourceKind(kind), status, message })),
+    sources: sources.map((source) => {
+      const { returnedRecordCount: _returnedRecordCount, ...population } = mercariPopulationDiagnostics(source);
+      return {
+        id: source.id, label: source.label, kind: source.kind,
+        role: source.id === 'mercari_sold_comps' ? 'reference_context' as const : source.role ?? evidenceRoleForSourceKind(source.kind),
+        status: source.status, message: source.message,
+        ...population,
+      };
+    }),
   };
 }
 

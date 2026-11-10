@@ -244,7 +244,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
   });
 
   it("keeps eBay Sold-Comps context candidates visible with their reasons", () => {
-    const soldSection = procedureSource("getSoldCompsData: protectedProcedure", "// SoldComps Mercari coverage");
+    const soldSection = procedureSource("getSoldCompsData: protectedProcedure", "getMercariSoldCompsData: protectedProcedure");
     expect(soldSection).toContain("const visualContextAuditLedger = (sharedVisualFilter.contextListings ?? []).map");
     expect(soldSection).toContain("ledger: [...canonicalListings, ...visualContextAuditLedger");
     expect(soldSection).toContain("visualContextAuditLedger.length");
