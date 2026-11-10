@@ -3,6 +3,7 @@ import { ENV } from './_core/env';
 import type { MarketSale } from './testAiComparableEngine';
 import { canonicalizeIdentityApprovalTarget, canonicalizeIdentityApprovalCandidateFields, identityApprovalCandidateFieldsCompatible, canonicalIdentityApprovalGrade, identityApprovalTargetsEquivalent, IDENTITY_APPROVAL_TARGET_VERSION, type IdentityApprovalTargetInput } from '../shared/testAiIdentityApprovalTarget';
 import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
+import { hasMeaningfulTransactionIdentity } from './testAiEconomicIntegrity';
 import {
   decidingVisualEvidence, gradedVisualEvidenceIsConfirmed, conservativeGradedVisualReviews,
   hasCompletedCoinAdjudication, disneyPinsEvidenceIsExact,
@@ -22,8 +23,12 @@ export const CANONICAL_OBSERVATION_VERSION = '2.9.0';
 export const CANONICAL_OBSERVATION_POLICY_VERSION = '2.9.0';
 export const OBSERVATION_TOKEN_MAX_AGE_MS = 20 * 60 * 1_000;
 
+export const MERCARI_UNDATED_SALE_POLICY = 'mercari_undated_sold_v1' as const;
+export const MERCARI_REPORTED_SOLD_PRICE_BASIS = 'Sold-Comps Mercari sold=true reported sold price' as const;
+type FinalIdentityAdapterId = 'sold_comps' | 'mercari_sold_comps';
 type AdapterId =
   | 'sold_comps'
+  | 'mercari_sold_comps'
   | 'the_card_api'
   | 'cardsight_ai'
   | 'lelands'
@@ -75,6 +80,11 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
     defaultOriginMarketplace: 'ebay',
     defaultPriceBasis: 'sold',
     completedStatusBasis: 'Sold-Comps completed-sale endpoint',
+  },
+  mercari_sold_comps: {
+    id: 'mercari_sold_comps', label: 'Mercari Sold-Comps', version: '1.0.0',
+    defaultOriginMarketplace: 'mercari', defaultPriceBasis: 'sold',
+    completedStatusBasis: MERCARI_REPORTED_SOLD_PRICE_BASIS,
   },
   the_card_api: {
     id: 'the_card_api',
@@ -154,6 +164,8 @@ export type CanonicalObservationFacts = {
   price: number | null;
   currency: string | null;
   date: string | null;
+  /** Additive signed exception; omitted entirely from legacy adapter payloads. */
+  saleDatePolicy?: typeof MERCARI_UNDATED_SALE_POLICY;
   sourceRecordId: string | null;
   canonicalUrl: string | null;
   originMarketplace: string;
@@ -208,9 +220,9 @@ export type IdentityApprovalV1 = {
   targetFields: Readonly<Record<string, string>>;
   targetFingerprint: string;
   targetImageReferenceFingerprint: string;
-  adapterId: 'sold_comps';
+  adapterId: FinalIdentityAdapterId;
   adapterVersion: string;
-  originMarketplace: 'ebay';
+  originMarketplace: 'ebay' | 'mercari';
   sourceRecordId: string | null;
   canonicalTransactionId: string;
   sourceFactsHash: string;
@@ -392,7 +404,13 @@ function normalizedFacts(
   if (!facts.title) facts.validationErrors.push('provider record is missing a title');
   if (facts.price === null) facts.validationErrors.push('provider record is missing a positive realized price');
   if (facts.currency === null) facts.validationErrors.push('provider record is missing a valid three-letter currency');
-  if (!facts.date) facts.validationErrors.push('provider record is missing a valid sale date');
+  if (sale.saleDatePolicy !== undefined && sale.saleDatePolicy !== null) {
+    if (adapter.id === 'mercari_sold_comps' && facts.originMarketplace === 'mercari'
+      && sale.saleDatePolicy === MERCARI_UNDATED_SALE_POLICY && sale.date === null) {
+      facts.saleDatePolicy = MERCARI_UNDATED_SALE_POLICY;
+    } else facts.validationErrors.push('sale date policy is invalid for this adapter, origin, or non-null date');
+  }
+  if (!facts.date && !facts.saleDatePolicy) facts.validationErrors.push('provider record is missing a valid sale date');
   if (!facts.sourceRecordId && !facts.canonicalUrl) facts.validationErrors.push('provider record is missing both a provider record ID and canonical URL');
   return facts;
 }
@@ -432,11 +450,17 @@ function usableTransaction(facts: CanonicalObservationFacts): boolean {
     && /[a-z0-9]/i.test(facts.sourceRecordId));
   return usableRecord || Boolean(facts.canonicalUrl && /^ebay\.[a-z.]+\/itm\/(?:[^/?]+\/)?\d+(?:\?|$)/i.test(facts.canonicalUrl));
 }
-function approvalFactsAreEligible(facts: CanonicalObservationFacts, acquiredAt: string): boolean {
+function approvalFactsAreEligible(facts: CanonicalObservationFacts, acquiredAt: string, adapterId: FinalIdentityAdapterId): boolean {
   const date = facts.date ? Date.parse(facts.date) : NaN, acquisition = Date.parse(acquiredAt);
-  return facts.validationErrors.length === 0 && facts.originMarketplace === 'ebay'
-    && usableTransaction(facts) && facts.currency === 'USD' && facts.price !== null && facts.price > 0
-    && Number.isFinite(date) && date <= acquisition && Number.isFinite(acquisition)
+  const mercari = adapterId === 'mercari_sold_comps';
+  const transactionUsable = mercari ? hasMeaningfulTransactionIdentity({ title: facts.title, price: facts.price, saleId: facts.sourceRecordId })
+    || Boolean(facts.canonicalUrl && /^mercari\.com\/us\/item\/m\d+(?:\?|$)/i.test(facts.canonicalUrl)) : usableTransaction(facts);
+  const dateEligible = mercari ? facts.date === null && facts.saleDatePolicy === MERCARI_UNDATED_SALE_POLICY
+    && facts.completedStatusBasis === MERCARI_REPORTED_SOLD_PRICE_BASIS
+    : facts.saleDatePolicy === undefined && Number.isFinite(date) && date <= acquisition;
+  return facts.validationErrors.length === 0 && facts.originMarketplace === (mercari ? 'mercari' : 'ebay')
+    && transactionUsable && facts.currency === 'USD' && facts.price !== null && facts.price > 0
+    && dateEligible && Number.isFinite(acquisition)
     && facts.saleStatus === 'completed' && facts.priceBasis === 'sold'
     && facts.visualRequirement === 'required' && facts.visualReviewStatus === 'match' && facts.evidenceDisposition === 'valuation_eligible'
     && facts.evidenceReasons.length === 0 && !(facts.lotQuantity !== null && facts.lotQuantity > 1)
@@ -480,10 +504,14 @@ export type ServerFinalIdentityApprovalOptions = {
   /** Server wrapper passes only known declarations from its already parsed provider metadata. */
   candidateIdentityFields?: Record<string, string>;
 };
-/** Called only by the server's post-Stage-1, record-bound ordinary Sold-Comps path. */
+/** Server post-Stage-1 record-bound eBay or authorized undated Mercari path. */
 export function createServerFinalIdentityApproval(options: ServerFinalIdentityApprovalOptions): ServerFinalIdentityApproval | null {
   const { sale, target, reviewedTarget, review, targetMetadata } = options;
-  if (sale.sourceId !== 'sold_comps' || sale.sourceAdapter && sale.sourceAdapter !== 'sold_comps') return null;
+  if (sale.sourceId !== 'sold_comps' && sale.sourceId !== 'mercari_sold_comps') return null;
+  const adapterId = sale.sourceId;
+  if (sale.sourceAdapter && sale.sourceAdapter !== adapterId) return null;
+  if (adapterId === 'mercari_sold_comps' && (sale.originMarketplace !== 'mercari' || sale.recency !== 'undated'
+    || sale.completedStatusBasis !== MERCARI_REPORTED_SOLD_PRICE_BASIS)) return null;
   const canonical = canonicalizeIdentityApprovalTarget(target);
   if (canonical.conflicts.length || canonical.serialized.length > 3_000 || !identityApprovalTargetsEquivalent(reviewedTarget, target)) return null;
   const actualMetadataTarget = metadataTarget(targetMetadata);
@@ -495,8 +523,8 @@ export function createServerFinalIdentityApproval(options: ServerFinalIdentityAp
   const picture = imageFingerprint(options.targetImageReference);
   if (!picture || picture !== imageFingerprint(options.expectedImageReference)) return null;
   const acquiredAt = (options.acquiredAt ?? new Date()).toISOString();
-  const facts = normalizedFacts(CANONICAL_ADAPTER_REGISTRY.sold_comps, sale);
-  if (!approvalFactsAreEligible(facts, acquiredAt) || review.verdict !== 'match' || !review.visualAudit) return null;
+  const facts = normalizedFacts(CANONICAL_ADAPTER_REGISTRY[adapterId], sale);
+  if (!approvalFactsAreEligible(facts, acquiredAt, adapterId) || review.verdict !== 'match' || !review.visualAudit) return null;
   if (!identityApprovalCandidateFieldsCompatible(canonical.fields, { saleForm: facts.saleForm ?? '' })
     || candidate && (Number(candidate.fields.lotQuantity) > 1
       || /\b(?:lot|bundle|components?|accessory[- ]only|manual[- ]only|box[- ]only)\b/i.test(candidate.fields.saleForm ?? candidate.fields.productForm ?? ''))) return null;
@@ -550,8 +578,8 @@ export function createServerFinalIdentityApproval(options: ServerFinalIdentityAp
     requiredAdjudication, adjudicationCompleted: true,
     targetVersion: IDENTITY_APPROVAL_TARGET_VERSION, targetFields: canonical.fields,
     targetFingerprint: sha256(canonical.serialized), targetImageReferenceFingerprint: picture,
-    adapterId: 'sold_comps', adapterVersion: CANONICAL_ADAPTER_REGISTRY.sold_comps.version, originMarketplace: 'ebay',
-    sourceRecordId: facts.sourceRecordId, canonicalTransactionId: transactionId('sold_comps', facts)!,
+    adapterId, adapterVersion: CANONICAL_ADAPTER_REGISTRY[adapterId].version, originMarketplace: adapterId === 'mercari_sold_comps' ? 'mercari' : 'ebay',
+    sourceRecordId: facts.sourceRecordId, canonicalTransactionId: transactionId(adapterId, facts)!,
     sourceFactsHash: sourceFactsHash(facts), acquiredAt, decidingEvidence: evidence, decidingRationale: rationale, visualDifferences: differences,
     ...(candidate ? { candidateIdentityFields: candidate.fields } : {}),
   });
@@ -574,13 +602,13 @@ function validApproval(approval: IdentityApprovalV1, facts: CanonicalObservation
     || !['high', 'medium'].includes(approval.confidence) || !['initial', 'high_resolution_retry'].includes(approval.decidingPass)
     || typeof approval.requiredAdjudication !== 'boolean' || approval.adjudicationCompleted !== true
     || approval.targetVersion !== IDENTITY_APPROVAL_TARGET_VERSION) return false;
-  if (provenance.adapterId !== 'sold_comps' || approval.adapterId !== provenance.adapterId
-    || approval.adapterVersion !== provenance.adapterVersion || approval.originMarketplace !== 'ebay'
+  if (!['sold_comps', 'mercari_sold_comps'].includes(provenance.adapterId) || approval.adapterId !== provenance.adapterId
+    || approval.adapterVersion !== provenance.adapterVersion || approval.originMarketplace !== (provenance.adapterId === 'mercari_sold_comps' ? 'mercari' : 'ebay')
     || provenance.originMarketplace !== facts.originMarketplace || approval.originMarketplace !== facts.originMarketplace
     || approval.sourceRecordId !== facts.sourceRecordId || approval.acquiredAt !== provenance.acquiredAt
     || approval.canonicalTransactionId !== transactionId(provenance.adapterId, facts)
     || approval.canonicalTransactionId !== provenance.canonicalTransactionId
-    || approval.sourceFactsHash !== sourceFactsHash(facts) || !approvalFactsAreEligible(facts, provenance.acquiredAt)) return false;
+    || approval.sourceFactsHash !== sourceFactsHash(facts) || !approvalFactsAreEligible(facts, provenance.acquiredAt, approval.adapterId)) return false;
   if (!approval.targetFields || typeof approval.targetFields !== 'object' || Array.isArray(approval.targetFields)
     || Object.keys(approval.targetFields).length > 100 || !approval.targetFields.category
     || Object.values(approval.targetFields).some((value) => typeof value !== 'string' || !value || value.length > 2_000)) return false;
@@ -623,10 +651,12 @@ function validApproval(approval: IdentityApprovalV1, facts: CanonicalObservation
 function authorityStillBound(sale: MarketSale, authority: VerifiedApproval): boolean {
   const elapsed = Date.now() - authority.verifiedAtWallMs;
   if (elapsed < 0 || elapsed > authority.remainingAgeMs) return false;
-  if (sale.sourceId !== 'sold_comps' || sale.sourceAdapter !== 'sold_comps'
+  const adapterId = authority.approval.adapterId;
+  if (sale.sourceId !== adapterId || sale.sourceAdapter !== adapterId
+    || adapterId === 'mercari_sold_comps' && sale.recency !== 'undated'
     || sale.observationId !== authority.provenance.payloadHash || sale.canonicalTransactionId !== authority.provenance.canonicalTransactionId
     || sale.evidenceDisposition !== 'valuation_eligible' || sale.duplicateStatus && !['unique', 'possible_duplicate'].includes(sale.duplicateStatus)) return false;
-  const current = normalizedFacts(CANONICAL_ADAPTER_REGISTRY.sold_comps, sale);
+  const current = normalizedFacts(CANONICAL_ADAPTER_REGISTRY[adapterId], sale);
   // Reconstructed URLs are already scheme-less canonical facts. Preserve their
   // path case only when exactly bound, or parse a scheme-less successor with an
   // authority-local https prefix. Never change legacy sealing normalization.
@@ -664,6 +694,18 @@ export function transferVerifiedIdentityApproval(from: MarketSale, to: MarketSal
   return true;
 }
 
+/** Null dates are admitted only by private, still-bound final identity authority. */
+export function hasVerifiedMercariUndatedSale(
+  sale: MarketSale, target?: IdentityApprovalTargetInput & { approvalTargetImageReference?: string }, imageReference?: string,
+): boolean {
+  const authority = verifiedIdentityApprovals.get(sale);
+  return Boolean(authority && authority.approval.adapterId === 'mercari_sold_comps'
+    && authority.facts.originMarketplace === 'mercari' && authority.facts.date === null
+    && authority.facts.saleDatePolicy === MERCARI_UNDATED_SALE_POLICY
+    && sale.date === null && sale.recency === 'undated' && authorityStillBound(sale, authority)
+    && (!target || getVerifiedIdentityApproval(sale, target, imageReference)));
+}
+
 function asMarketSale(facts: CanonicalObservationFacts, provenance: CanonicalObservationProvenance): MarketSale {
   const reasons = [...facts.evidenceReasons, ...facts.validationErrors];
   const recency = facts.date ? (Date.now() - Date.parse(facts.date) <= 365 * 86_400_000 ? 'recent' : 'historical') : 'undated';
@@ -672,6 +714,7 @@ function asMarketSale(facts: CanonicalObservationFacts, provenance: CanonicalObs
     price: facts.price,
     currency: facts.currency,
     date: facts.date,
+    ...(facts.saleDatePolicy ? { saleDatePolicy: facts.saleDatePolicy } : {}),
     marketplace: facts.originMarketplace,
     originMarketplace: facts.originMarketplace,
     sourceId: provenance.adapterId,
@@ -722,7 +765,7 @@ export function sealCanonicalObservation(
     ? canonicalizeIdentityApprovalCandidateFields(mint.approval.targetFields.category, structured as Record<string, string>) : undefined;
   const candidateStillBound = !currentCandidate || currentCandidate.conflicts.length === 0
     && JSON.stringify(currentCandidate.fields) === JSON.stringify(mint?.approval.candidateIdentityFields);
-  const identityApproval = mint && adapterId === 'sold_comps' && mint.sale === sale
+  const identityApproval = mint && adapterId === mint.approval.adapterId && mint.sale === sale
     && mint.approval.acquiredAt === acquiredAt && sourceFactsHash(facts) === mint.approval.sourceFactsHash
     && candidateStillBound && canonicalTransactionId === mint.approval.canonicalTransactionId ? mint.approval : undefined;
   const provenance: CanonicalObservationProvenance = {

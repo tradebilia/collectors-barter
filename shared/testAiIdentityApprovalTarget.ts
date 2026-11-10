@@ -124,6 +124,11 @@ export function canonicalizeIdentityApprovalTarget(input: IdentityApprovalTarget
   for (const field of identity.fields) {
     if (/certificate|certNumber|authentication/i.test(field.key)) continue;
     if (category === 'disney_pins' && DISNEY_IRRELEVANT_GRADING_FIELDS.has(field.key)) continue;
+    // The itemType is already independently bound above. Do not manufacture a
+    // second Movies collectibleType from itemType only when replaying canonical
+    // fields; that changes the fingerprint between issue and verification.
+    if (category === 'movies' && field.key === 'collectibleType'
+      && !CATEGORY.movies.collectibleType.some(key => known(details[key]))) continue;
     if (!fields[field.key] && field.key in aliases) {
       const value = convert(field.key, field.value);
       if (value) fields[field.key] = value;

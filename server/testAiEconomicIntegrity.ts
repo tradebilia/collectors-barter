@@ -160,6 +160,7 @@ export function evaluateAdapterEconomicPolicy(sale: Pick<MarketSale, 'sourceAdap
   // Preserve the named reported retail conventions. This does not imply that
   // shipping/tax are included, and never adds or converts an amount.
   if (sale.priceBasis === 'sold' && ((adapter === 'sold_comps' || adapter === '130point' || adapter === 'pcgs_auction_results') && origin === 'ebay'
+    || adapter === 'mercari_sold_comps' && origin === 'mercari'
     || adapter === 'comicconnect' && origin === 'comicconnect'
     || adapter === 'tcgplayer_reef' && origin === 'tcgplayer')) return allow();
   // Every other auction-origin amount requires the selected amount's explicit

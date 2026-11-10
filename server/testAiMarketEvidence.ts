@@ -3,7 +3,8 @@ import { isCompletedSaleCandidate, scoreComparable } from './testAiComparableEng
 import { evaluateAdapterEconomicPolicy, hasMeaningfulTransactionIdentity, signedTransactionLotConflict, transactionIdentity } from './testAiEconomicIntegrity';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 import { nullableTestAiPrice } from '../shared/testAiEvidenceNormalization';
-import { getVerifiedIdentityApproval, transferVerifiedIdentityApproval, verifyCanonicalObservation } from './testAiCanonicalObservation';
+import { getVerifiedIdentityApproval, hasVerifiedMercariUndatedSale, transferVerifiedIdentityApproval, verifyCanonicalObservation,
+  MERCARI_REPORTED_SOLD_PRICE_BASIS } from './testAiCanonicalObservation';
 import { randomUUID } from 'node:crypto';
 import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAuditRef,
   boundedFinalDisplayCorrelation, boundedDiagnosticVisualExecution, retainServerNormalizationReport, type NormalizationBlockerCode, type ValuationUseSide } from '../shared/testAiValuationUse';
@@ -15,6 +16,7 @@ import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAu
  */
 export const COMPLETED_SALE_SOURCE_DEFAULTS: Record<string, { priceBasis: NonNullable<MarketSale['priceBasis']>; statusBasis: string }> = {
   sold_comps: { priceBasis: 'sold', statusBasis: 'Sold-Comps completed-sale endpoint' },
+  mercari_sold_comps: { priceBasis: 'sold', statusBasis: MERCARI_REPORTED_SOLD_PRICE_BASIS },
   '130point': { priceBasis: 'sold', statusBasis: '130point completed-sale endpoint' },
   the_card_api: { priceBasis: 'sold', statusBasis: 'The Card API completed-sale endpoint' },
   cardsight_ai: { priceBasis: 'sold', statusBasis: 'Cardsight.ai completed-sale endpoint' },
@@ -134,10 +136,12 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     ? trustedInput.buyerPremium
     : 'unknown';
   const visualReviewStatus = normalizedVisualStatus(trustedInput.visualReviewStatus);
-  const visualRequirement = trustedInput.visualRequirement === 'required' ? 'required' : 'not_required';
+  const visualRequirement = sourceId === 'mercari_sold_comps' || trustedInput.visualRequirement === 'required' ? 'required' : 'not_required';
   const identityApproval = verification.verified && options?.target
     ? getVerifiedIdentityApproval(trustedInput, options.target, options.target.approvalTargetImageReference)
     : null;
+  const mercariUndated = Boolean(identityApproval && options?.target
+    && hasVerifiedMercariUndatedSale(trustedInput, options.target, options.target.approvalTargetImageReference));
   const transactionLotConflict = verification.verified && signedTransactionLotConflict(options?.target, trustedInput);
   const transactionIdentityPresent = verification.verified && hasMeaningfulTransactionIdentity(trustedInput);
   const economics = evaluateAdapterEconomicPolicy({ ...trustedInput, sourceAdapter: sourceId, priceBasis: resolvedPriceBasis,
@@ -162,7 +166,8 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   if (economics.reason) reasons.push(economics.reason);
   if (!transactionIdentityPresent) reasons.push('meaningful observed provider record ID or valid listing/transaction URL is missing; retained as context only');
   if (highValuePriceConflict && priceSafety.reason) reasons.push(priceSafety.reason);
-  if (dateInfo.recency === 'undated') reasons.push('sale date is missing, invalid, or future-dated');
+  if (mercariUndated) reasons.push('Qualified undated Mercari exception: sale date remains Unknown; timing is unverified and sold=true reported sold price is used as reported, not proof of a recent sale or a private accepted-offer amount.');
+  if (dateInfo.recency === 'undated' && !mercariUndated) reasons.push('sale date is missing, invalid, or future-dated');
   if (dateInfo.recency === 'historical') reasons.push('sale date is older than one year');
   if (dateInfo.recency === 'extended') reasons.push('sale date is older than one year and is admitted only under the labeled illiquid-market extension policy');
   if (visualReviewStatus === 'mismatch') reasons.push(`visual comparison requires review${trustedInput.visualReviewRationale ? `: ${safeText(trustedInput.visualReviewRationale, 300)}` : ''}`);
@@ -181,7 +186,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     && economics.eligible
     && transactionIdentityPresent
     && !highValuePriceConflict
-    && (dateInfo.recency === 'recent' || dateInfo.recency === 'extended')
+    && (sourceId === 'mercari_sold_comps' ? mercariUndated : dateInfo.recency === 'recent' || dateInfo.recency === 'extended')
     && visualReviewStatus !== 'mismatch'
     && !transactionLotConflict
     && (visualRequirement !== 'required' || (visualReviewStatus === 'match' && Boolean(identityApproval)));
@@ -199,7 +204,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   if (!transactionIdentityPresent) blockerCodes.push('TRANSACTION_IDENTITY_MISSING');
   if (priceSafety.applies && priceSafety.status === 'too_low') blockerCodes.push('HIGH_VALUE_PRICE_TOO_LOW');
   if (priceSafety.applies && priceSafety.status === 'too_high') blockerCodes.push('HIGH_VALUE_PRICE_TOO_HIGH');
-  if (dateInfo.recency === 'undated') blockerCodes.push('INVALID_DATE');
+  if (dateInfo.recency === 'undated' && !mercariUndated) blockerCodes.push('INVALID_DATE');
   if (dateInfo.recency === 'historical') blockerCodes.push('HISTORICAL_DATE');
   if (visualReviewStatus === 'mismatch') blockerCodes.push('VISUAL_MISMATCH');
   if (transactionLotConflict) blockerCodes.push('TRANSACTION_LOT_CONFLICT');
@@ -210,6 +215,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   if (economics.warning) warningCodes.push(economics.warning);
   if (verification.verified && !transactionIdentity(trustedInput).providerRecordId && transactionIdentity(trustedInput).listingUrl) warningCodes.push('LISTING_REFERENCE_EVENT_AMBIGUITY');
   if (dateInfo.recency === 'extended') warningCodes.push('ILLIQUID_EXTENSION_DIAGNOSTIC');
+  if (mercariUndated) warningCodes.push('MERCARI_UNDATED_TIMING_UNVERIFIED', 'MERCARI_SOLD_TRUE_PRICE_AS_REPORTED');
   const sourceCorrelation = boundedFinalSourceCorrelation(input);
   const analysisIntake = {
     version: FINAL_VALUATION_USE_VERSION,
@@ -245,6 +251,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     currency,
     date: dateInfo.date,
     recency: dateInfo.recency,
+    ...(verification.verified && trustedInput.saleDatePolicy ? { saleDatePolicy: trustedInput.saleDatePolicy } : {}),
     marketplace: safeText(trustedInput.marketplace, 160),
     originMarketplace: safeText(trustedInput.originMarketplace, 160),
     sourceId: verification.verified ? sourceId || null : null,

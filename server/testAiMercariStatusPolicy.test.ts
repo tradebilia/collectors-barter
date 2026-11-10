@@ -16,8 +16,9 @@ const context = { title: target.title, price: 42, currency: 'USD', sourceId: 'me
   evidenceDisposition: 'context_only' as const, visualRequirement: 'required' as const };
 
 describe('Mercari status is not completed-price authority', () => {
-  it('keeps Mercari absent from trusted completed-adapter defaults', () => {
-    expect(COMPLETED_SALE_SOURCE_DEFAULTS.mercari_sold_comps).toBeUndefined();
+  it('registers only the exact Mercari sold=true reported-price convention; flags still confer no authority', () => {
+    expect(COMPLETED_SALE_SOURCE_DEFAULTS.mercari_sold_comps).toStrictEqual({ priceBasis: 'sold',
+      statusBasis: 'Sold-Comps Mercari sold=true reported sold price' });
   });
 
   it.each([

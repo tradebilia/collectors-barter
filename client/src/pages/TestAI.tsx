@@ -34,7 +34,7 @@ import { SANDBOX_SPECIALIST_SOURCES, type SandboxSpecialistSource } from '@share
 import { isSandboxSiteBlockedSource } from '@shared/sandboxBlockedSources';
 import { HIGH_VALUE_SOLD_COMP_MAX_RATIO, HIGH_VALUE_SOLD_COMP_MIN_RATIO, HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD } from '@shared/testAiSoldCompSafety';
 import { buildApprovalTargetImageInput, buildSoldCompsAnalysisSales, buildSoldCompsApprovalInput } from '@shared/testAiSoldCompsTransport';
-import { buildMercariAnalysisSales, mercariMeasuredPopulation, mercariPriceContextLabel } from '@shared/testAiMercariTransport';
+import { buildMercariAnalysisSales, hasMercariUndatedSoldAdmission, mercariMeasuredPopulation, mercariPriceContextLabel } from '@shared/testAiMercariTransport';
 import { COLLECTION_LOT_NOT_COMPARABLE_MESSAGE, isCollectionLotItemType } from '@shared/testAiItemType';
 
 function TestAiDecisionSection({
@@ -137,7 +137,7 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     icon: '🟠',
     provides: ['historic_prices'],
     status: 'live' as const,
-    description: 'Sold mode requested via Sold-Comps API; returned Mercari sold/active/unknown listings are context only, with final amount and sale date unverified',
+    description: 'Sold-Comps Mercari reported sold prices; server-issued, image-confirmed comps may support valuation under the Mercari date exception. Sale date remains Unknown; legacy, active and unqualified rows stay context/review only.',
   },
   tcgplayer_sold_comps: {
     id: 'tcgplayer_sold_comps',
@@ -1062,36 +1062,39 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
 
 // Display-only copies: original observations and ranking/metadata/image receipts
 // survive; legacy favorable economics never repair authoritative Mercari nulls.
-function mercariDisplayRows(rows: any[]): any[] {
-  return buildMercariAnalysisSales({ listings: rows }, true).map((listing, index) => ({
+function mercariDisplayRows(rows: any[], requestedMode?: unknown): any[] {
+  return buildMercariAnalysisSales({ listings: rows, requestedMode }, true).map((listing, index) => ({
     ...listing,
     // Only final transport is bounded to 20 reasons; display retains all holds.
     evidenceReasons: rows[index].evidenceReasons,
   }));
 }
 
-function mercariDisplayData(data: any): any {
+function mercariDisplayData(data: any, parentRequestedMode?: unknown): any {
   if (!data) return data;
-  const rows = (value: any) => Array.isArray(value) ? mercariDisplayRows(value) : value;
+  const requestedMode = parentRequestedMode === 'active' ? 'active' : data.requestedMode;
+  const rows = (value: any) => Array.isArray(value) ? mercariDisplayRows(value, requestedMode) : value;
+  const qualifiedCount = (data.listings ?? []).filter((listing: any) => hasMercariUndatedSoldAdmission(listing, requestedMode)).length;
   return {
-    ...data, metrics: null, searchMetrics: null,
+    ...data, requestedMode, metrics: qualifiedCount ? data.metrics : null, searchMetrics: qualifiedCount ? data.searchMetrics : null,
     listings: rows(data.listings), context: rows(data.context),
     preVisionExcludedListings: rows(data.preVisionExcludedListings),
     visualReviewListings: rows(data.visualReviewListings),
-    audit: data.audit ? { ...data.audit, ledger: rows(data.audit.ledger), valuationEligible: 0 } : data.audit,
+    audit: data.audit ? { ...data.audit, ledger: rows(data.audit.ledger), valuationEligible: qualifiedCount } : data.audit,
     visualFilter: data.visualFilter ? { ...data.visualFilter, listings: rows(data.visualFilter.listings), contextListings: rows(data.visualFilter.contextListings) } : data.visualFilter,
-    candidateDisplayBatch: data.candidateDisplayBatch ? mercariDisplayData(data.candidateDisplayBatch) : data.candidateDisplayBatch,
+    candidateDisplayBatch: data.candidateDisplayBatch ? mercariDisplayData(data.candidateDisplayBatch, requestedMode) : data.candidateDisplayBatch,
   };
 }
 
 function MercariPopulationLine({ data }: { data: any }) {
   const counts = mercariMeasuredPopulation(data);
-  return <p className="text-[10px] text-amber-200">{counts.requestedMode === 'active' ? 'Active mode requested' : 'Sold mode requested'}{counts.requestedMode === undefined ? ' · response mode unmeasured' : ''} · Returned provider-labeled sold {counts.providerSoldListingCount ?? 'unmeasured'} / active {counts.activeListingCount ?? 'unmeasured'} / unknown {counts.unknownListingCount ?? 'unmeasured'} · retained {counts.retainedListingCount ?? 'unmeasured'} · completed/admitted 0 · valuation metrics unavailable.</p>;
+  const qualifiedCount = (data?.listings ?? []).filter((listing: any) => hasMercariUndatedSoldAdmission(listing, counts.requestedMode)).length;
+  return <p className="text-[10px] text-amber-200">{counts.requestedMode === 'active' ? 'Active mode requested' : 'Sold mode requested'}{counts.requestedMode === undefined ? ' · response mode unmeasured' : ''} · Returned provider-labeled sold {counts.providerSoldListingCount ?? 'unmeasured'} / active {counts.activeListingCount ?? 'unmeasured'} / unknown {counts.unknownListingCount ?? 'unmeasured'} · retained {counts.retainedListingCount ?? 'unmeasured'} · date-exception source eligible {qualifiedCount} · final valuation use assessed separately.</p>;
 }
 
 function MercariRowContext({ listing }: { listing: any }) {
   const report = listing.mercariObservation;
-  return <p className="text-[9px] text-amber-200/90">{mercariPriceContextLabel(listing)} · Sale date unknown{report?.statusIssues?.length ? ` · Status issues: ${report.statusIssues.join('; ')}` : ''}{report?.economicIssues?.length ? ` · Economic issues: ${report.economicIssues.join('; ')}` : ''}</p>;
+  return <p className="text-[9px] text-amber-200/90">{mercariPriceContextLabel(listing)}{!hasMercariUndatedSoldAdmission(listing) ? ' · Sale date: Unknown' : ''}{report?.statusIssues?.length ? ` · Status issues (diagnostic): ${report.statusIssues.join('; ')}` : ''}{report?.economicIssues?.length ? ` · Economic issues: ${report.economicIssues.join('; ')}` : ''}</p>;
 }
 
 function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, marketplace }: { item: SelectedItem; side: 'left' | 'right'; data?: any; isLoading?: boolean; sourceLabel: string; marketplace: string }) {
@@ -1107,12 +1110,15 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
     : mergeCandidateDisplayGroups(sourceRetainedDisplayGroups(data));
   const strictVisualReview = (item.category === 'disney_pins' || item.category === 'coins') && isMercari;
   const rankedListings = sortAnalysisCandidates(listings);
-  const acceptedListings = isMercari ? [] : rankedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
+  const acceptedListings = rankedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0
+    && (!isMercari || hasMercariUndatedSoldAdmission(listing, data?.requestedMode)));
   const reviewedListings = rankedListings.filter((listing: any) => hasActualVisualResponse(listing));
   // Status issues are shown for held occurrences too, in the existing row panel.
   // This display population never changes the analysis handoff listings subset.
   const displayListings = isMercari ? retainedMaster : rankedListings;
   const currentValueListings = acceptedListings.filter((listing: any) => {
+    // Eligibility by explicit policy, not an invented recent sale/window date.
+    if (isMercari && hasMercariUndatedSoldAdmission(listing, data?.requestedMode)) return true;
     const endedAt = Date.parse(String(listing.endedAt ?? ''));
     return Number.isFinite(endedAt) && Date.now() >= endedAt && Date.now() - endedAt <= 365 * 86_400_000;
   });
@@ -1135,7 +1141,7 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
       <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
       {data && <TestAiRetrievalLadder data={data} sourceLabel={sourceLabel} marketplace={marketplace} />}
       <ProcessCompleteNotice data={data} /><TestAiSourcePopulationSummary packet={data?.sourcePopulation} />
-      <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">{isMercari ? `Data type: Mercari listing context · final price and sale-event date unverified. No Mercari record affects valuation.${strictVisualReview ? ' Strict two-pass checks assess image identity only, not economic eligibility.' : ''}` : `Data type: Completed ${marketplace} sales · context-only during provider-specific testing. These records do not affect valuation yet.`}</p>
+      <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">{isMercari ? `Data type: Mercari reported sold prices · Sale date: Unknown · Mercari date exception. Only server-issued, image-confirmed policy-qualified comps are source eligible; legacy, active and unqualified rows remain context/review only. Final valuation use is assessed separately.${strictVisualReview ? ' Strict two-pass image checks still apply.' : ''}` : `Data type: Completed ${marketplace} sales · context-only during provider-specific testing. These records do not affect valuation yet.`}</p>
       {isMercari && <MercariPopulationLine data={data} />}
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {data && <p className="text-gray-400 text-[10px]">{retainedMaster.length} known retained candidate{retainedMaster.length === 1 ? '' : 's'} in the source master list (not raw provider response counts).</p>}
@@ -1145,13 +1151,13 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
         <div className="mt-1 grid gap-1 sm:grid-cols-3 lg:grid-cols-6">
           <p className="text-sky-200"><strong>{retainedMaster.length}</strong><br />known retained candidates</p>
           <p className="text-emerald-200"><strong>{acceptedListings.length}</strong><br />source eligible</p>
-          <p className="text-cyan-200"><strong>{currentValueListings.length}</strong><br />current-window source eligible</p>
+          <p className="text-cyan-200"><strong>{currentValueListings.length}</strong><br />{isMercari ? 'date-exception value eligible' : 'current-window source eligible'}</p>
           <p className="text-violet-200"><strong>{historicalTrendListings.length}</strong><br />historical source eligible</p>
           <p className="text-gray-300"><strong>{contextListings}</strong><br />context only</p>
           <p className="text-orange-200"><strong>{preVisionExcludedListings.length}</strong><br />held out</p>
         </div>
       </div>}
-      <CandidateMasterList listings={retainedMaster} sourceLabel={isMercari ? 'Mercari listing context' : `${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />
+      <CandidateMasterList listings={retainedMaster} sourceLabel={isMercari ? 'Mercari sold comps and listing context' : `${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />
       {data?.visualFilter?.note && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1 text-[10px] text-cyan-200"><p>{data.visualFilter.note}</p><p className="mt-0.5 text-cyan-100/80">{reviewedListings.length} candidate image{reviewedListings.length === 1 ? '' : 's'} reviewed · {acceptedListings.length} valuation-eligible</p></div>}
       <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={sourceLabel} />
       {acceptedListings.length > 0 && <div className="rounded border border-emerald-700/35 bg-emerald-950/20 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Source eligible for final review ({acceptedListings.length})</p><div className="mt-1 space-y-1">{acceptedListings.map((listing: any, index: number) => <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-center justify-between gap-2"><div className="min-w-0"><a href={listing.itemUrl || undefined} target="_blank" rel="noopener noreferrer" className="truncate text-[10px] text-blue-300 hover:underline">{listing.title}</a><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><TestAiCandidateStatus listing={listing} /><VisualDifferenceList listing={listing} /></div><span className="shrink-0 text-[10px] font-semibold text-emerald-300">{formatCandidateDisplayPrice(listing)}</span></div>)}</div></div>}
@@ -1159,7 +1165,7 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
         <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
           <div className="flex items-center gap-2 min-w-0">
             <TestAiSafeImage src={listing.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />
-            <div className="min-w-0"><a href={listing.itemUrl || undefined} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{listing.title}</a><p className="text-[10px] text-gray-500">{listing.condition || 'Condition unavailable'} · {isMercari ? 'Sale date unknown' : listing.endedAt ? `Sold ${listing.endedAt}` : 'Date unavailable'}</p>{isMercari && <MercariRowContext listing={listing} />}<MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><TestAiCandidateStatus listing={listing} /><VisualDifferenceList listing={listing} /><AnalyzerUseLine eligible={!isMercari && listing.evidenceDisposition === 'valuation_eligible'} reason={isMercari ? 'Context only; final price and sale-event date unverified. Image identity cannot authorize valuation.' : (listing.evidenceReasons ?? (listing.evidenceDisposition === 'valuation_eligible' ? ['Strict visual identity gate passed; final comparable selection still applies.'] : ['Context-only provider result'])).join('; ')} /></div>
+            <div className="min-w-0"><a href={listing.itemUrl || undefined} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{listing.title}</a><p className="text-[10px] text-gray-500">{listing.condition || 'Condition unavailable'} · {isMercari ? 'Sale date: Unknown' : listing.endedAt ? `Sold ${listing.endedAt}` : 'Date unavailable'}</p>{isMercari && <MercariRowContext listing={listing} />}<MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><TestAiCandidateStatus listing={listing} /><VisualDifferenceList listing={listing} /><AnalyzerUseLine eligible={listing.evidenceDisposition === 'valuation_eligible' && (!isMercari || hasMercariUndatedSoldAdmission(listing, data?.requestedMode))} reason={isMercari ? hasMercariUndatedSoldAdmission(listing, data?.requestedMode) ? 'Image-confirmed reported sold price under the Mercari date exception; server verification and final comparable selection still apply. Sale date: Unknown.' : (listing.evidenceReasons ?? ['Context/review only; no qualifying server-issued Mercari date-exception receipt.']).join('; ') : (listing.evidenceReasons ?? (listing.evidenceDisposition === 'valuation_eligible' ? ['Strict visual identity gate passed; final comparable selection still applies.'] : ['Context-only provider result'])).join('; ')} /></div>
           </div>
           <p className="text-amber-300 font-semibold text-sm flex-shrink-0">{formatCandidateDisplayPrice(listing)}</p>
         </div>
@@ -3114,33 +3120,44 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const retained = Array.isArray(mercariSoldCompsData?.audit?.ledger)
         ? mercariSoldCompsData.audit.ledger
         : mergeCandidateDisplayGroups(sourceRetainedDisplayGroups(mercariSoldCompsData));
-      const contextRecords = buildMercariAnalysisSales({ listings: retained }, true);
+      const contextRecords = buildMercariAnalysisSales({ listings: retained, requestedMode: mercariSoldCompsData?.requestedMode }, true);
+      // Source-stage subset only; this summary never refills operational intake.
+      const eligible = buildMercariAnalysisSales(mercariSoldCompsData, true).filter((listing) => hasMercariUndatedSoldAdmission(listing, counts.requestedMode));
+      const eligiblePrices = eligible.map((listing) => Number(listing.price));
+      const isEligibleRecord = (listing: any) => eligible.some((operational) => operational.provenanceToken === listing.provenanceToken
+        && operational.saleId === listing.saleId && operational.metadataOriginOccurrenceKey === listing.metadataOriginOccurrenceKey);
       add({
         id: 'mercari_sold_comps',
         label: 'Sold-Comps — Mercari Listings',
-        kind: 'market_historical',
-        role: 'reference_context',
+        kind: eligible.length ? 'market_completed' : 'market_historical',
+        role: eligible.length ? 'valuation_candidate' : 'reference_context',
         status: evidenceStatus(mercariSoldCompsData),
         market: {
           ...counts,
           returnedRecordCount: counts.returnedRecordCount,
           currentListingCount: counts.activeListingCount,
-          completedSaleCount: 0,
-          analyzerSubmittedSaleCount: 0,
-          analyzerSubmittedPrices: [],
+          completedSaleCount: eligible.length,
+          analyzerSubmittedSaleCount: eligible.length,
+          analyzerSubmittedPrices: eligiblePrices,
           analyzerRecords: contextRecords.map((listing, index) => ({
-            ...toAnalyzerRecord(listing, index, 'context', [mercariPriceContextLabel(listing), 'Sale date unknown', ...(listing.mercariObservation?.statusIssues ?? []), ...(listing.mercariObservation?.economicIssues ?? [])].join('; ')),
+            // Transported receipt shape supports summary-only source eligibility;
+            // it is not browser signature verification or financial authority.
+            ...listing,
+            ...toAnalyzerRecord(listing, index, isEligibleRecord(listing) ? 'current_value' : 'context', [mercariPriceContextLabel(listing), 'Sale date: Unknown', ...(listing.mercariObservation?.statusIssues ?? []), ...(listing.mercariObservation?.economicIssues ?? [])].join('; ')),
+            // A separately retained audit-only row is not source-stage intake.
+            evidenceDisposition: listing.evidenceDisposition === 'valuation_eligible' && !isEligibleRecord(listing) ? 'context_only' : listing.evidenceDisposition,
             currency: listing.currency, date: null,
           })),
-          currentValueSaleCount: 0,
+          currentValueSaleCount: eligible.length,
           historicalTrendSaleCount: 0,
-          currentValuePrices: [],
+          currentValuePrices: eligiblePrices,
           historicalTrendPrices: [],
           recentSaleCount: 0,
           historicalSaleCount: 0,
-          undatedSaleCount: 0,
+          undatedSaleCount: eligible.length,
         },
-        message: [sourceEvidenceMessage(mercariSoldCompsData), 'Sold mode requested; returned listings remain context/review only. Final amount and sale-event date unverified; no Mercari valuation metrics or admitted completed sales.'].filter(Boolean).join(' '),
+        visualAnalysisRequired: true,
+        message: [sourceEvidenceMessage(mercariSoldCompsData), `${counts.requestedMode === 'active' ? 'Active' : 'Sold'} mode requested; ${eligible.length} server-issued, image-confirmed Mercari reported sold-price comps are source eligible under the date exception. Sale date: Unknown; no recent-sale guarantee. Legacy and unqualified rows remain context/review only. Final server verification and valuation-use decisions apply.`].filter(Boolean).join(' '),
       });
     }
     if (enabledSources.has('one_thirty_point')) {
@@ -4868,15 +4885,15 @@ export default function TestAI() {
     rightSearchItem ? buildSoldCompsApprovalInput({ title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl, visualProvider }, effectiveRightItem ?? rightSearchItem) : { title: '', category: '' },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('sold_comps') }
   );
-  // Invalidate both columns' cached pre-policy completed/USD Mercari semantics.
+  // Invalidate both columns' old context-only / pre-policy Mercari receipts.
   // This changes only the existing query key, not request scope or budgets.
-  const mercariVisualReviewVersion = 'mercari-status-context-step-a-v5';
+  const mercariVisualReviewVersion = 'mercari-undated-sold-v1';
   const leftMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion, visualProvider } : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
+    leftSearchItem ? buildSoldCompsApprovalInput({ title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion, visualProvider }, effectiveLeftItem ?? leftSearchItem) : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('mercari_sold_comps'), retry: false }
   );
   const rightMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion, visualProvider } : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
+    rightSearchItem ? buildSoldCompsApprovalInput({ title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion, visualProvider }, effectiveRightItem ?? rightSearchItem) : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('mercari_sold_comps'), retry: false }
   );
   const leftTcgplayerSoldCompsQuery = trpc.testAI.getTcgplayerSoldCompsData.useQuery(

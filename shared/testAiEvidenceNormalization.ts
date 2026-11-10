@@ -8,6 +8,7 @@ import {
 } from './testAiP0Evidence';
 import { extractCandidateStructuredMetadata, meaningfulMetadataText, readMetadataValue } from './testAiMetadataValues';
 import { compareComparableGrades } from './testAiGradeComparison';
+import { hasMercariUndatedSoldAdmission } from './testAiMercariTransport';
 
 export const TEST_AI_VALUE_UNAVAILABLE_MESSAGE = 'Value cannot be established from the available data';
 
@@ -511,10 +512,23 @@ function mercariPopulationDiagnostics(source: EvidenceSourceObservation): Eviden
   };
 }
 
+/** Display qualification only. Final financial authority is independently verified on the server. */
+function qualifiedMercariRecords(source: EvidenceSourceObservation): AnalyzerRecordDetail[] {
+  if (source.id !== 'mercari_sold_comps' || !['success', 'partial'].includes(source.status)
+    || !source.market || typeof source.market !== 'object') return [];
+  const mode = measuredMercariMarketValue(source, 'requestedMode');
+  const descriptor = Object.getOwnPropertyDescriptor(source.market, 'analyzerRecords');
+  const records = descriptor && 'value' in descriptor ? descriptor.value : undefined;
+  if (mode === 'active' || !Array.isArray(records)) return [];
+  return records.filter((record: AnalyzerRecordDetail): boolean => hasMercariUndatedSoldAdmission(record, mode));
+}
+
 function compactMercariMarketSummary(source: EvidenceSourceObservation): string {
   const population = mercariPopulationDiagnostics(source);
   const count = (value: number | undefined) => value === undefined ? 'not measured' : String(value);
   const mode = population.requestedMode === undefined ? 'requested mode not reported' : `${population.requestedMode} mode requested`;
+  const qualified = qualifiedMercariRecords(source).length;
+  if (qualified > 0) return `${source.label.slice(0, 60)}: ${mode}; provider returned records: ${count(population.returnedRecordCount)}; retained listings: ${count(population.retainedListingCount)}; ${qualified} source-eligible, image-confirmed reported sold-price comps under the Mercari exception. Sale date: Unknown; no recent-sale guarantee. Actual submission, server signature verification and final valuation selection are separate.`.slice(0, 600);
   const base = `${source.label.slice(0, 60)}: ${mode}; provider returned records: ${count(population.returnedRecordCount)}; retained listings: ${count(population.retainedListingCount)}; retained provider-sold listings: ${count(population.providerSoldListingCount)}, active listings: ${count(population.activeListingCount)}, unknown listings: ${count(population.unknownListingCount)}; 0 admitted completed-sale credit. Retained context/identity review only: final amounts and sale dates unverified; active asking context; unknown-status basis unknown. Retrieval status: ${source.status}.`;
   // The final summary-schema narrative limit remains 600. Context/credit and
   // population facts take precedence over verbose duplicate source messages.
@@ -541,6 +555,8 @@ function compactMarketSummary(source: EvidenceSourceObservation): string | null 
 
 function compactSubmittedPriceSummary(source: EvidenceSourceObservation): string | null {
   if (source.id === 'mercari_sold_comps') {
+    const qualified = qualifiedMercariRecords(source).length;
+    if (qualified > 0) return `${source.label.slice(0, 60)}: ${qualified} source-eligible USD reported sold-price observations under the Mercari exception; sale date Unknown. This is not a recent-sale claim or final-request receipt; server verification and final valuation membership are reported separately.`;
     const records = source.market?.analyzerRecords;
     const measured = Array.isArray(records);
     const recordCount = measured ? String(records.length) : 'not measured';
@@ -572,6 +588,23 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
   const market = source.market;
   if (source.id === 'mercari_sold_comps') {
     const population = mercariPopulationDiagnostics(source);
+    const qualified = qualifiedMercariRecords(source);
+    if (qualified.length > 0) {
+      const qualifiedSet = new Set(qualified);
+      const retained = population.retainedListingCount ?? population.returnedRecordCount;
+      return {
+        id: source.id, label: source.label, status: source.status, kind: source.kind, ...population,
+        returned: population.returnedRecordCount, completed: qualified.length, accepted: qualified.length,
+        excludedFromValuation: 0, currentValue: qualified.length, historicalTrend: 0,
+        context: retained === undefined ? undefined : Math.max(0, retained - qualified.length),
+        acceptedPrices: qualified.map(record => Number(record.price)),
+        analyzerRecords: (market?.analyzerRecords ?? []).map(record => ({ ...record,
+          bucket: qualifiedSet.has(record) ? 'current_value' as const : 'context' as const })),
+        treatment: 'valuation_candidate', analyzerWeightPct: null,
+        treatmentReason: 'Image-confirmed Mercari reported sold-price candidates carry the server-issued unknown-date exception. Sale date remains Unknown. Source eligibility is not final pricing use; signatures, identity binding and valuation selection are verified independently on the server.',
+        visualAnalysisRequired: source.visualAnalysisRequired !== false, message: source.message,
+      };
+    }
     const context = population.retainedListingCount ?? population.returnedRecordCount;
     return {
       id: source.id, label: source.label, status: source.status, kind: source.kind,
@@ -838,7 +871,9 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
   const marketEvidencePriceSummaries = sources.map(compactSubmittedPriceSummary).filter((entry): entry is string => Boolean(entry));
   const selectedSourceSummaries = sources.map(compactSelectedSourceSummary);
   const evidenceSufficiency = buildP0EvidenceSufficiency({
-    completedSaleCount: sources.reduce((count, source) => count + (source.id !== 'mercari_sold_comps' && ['success', 'partial'].includes(source.status) ? Number(source.market?.completedSaleCount ?? 0) : 0), 0),
+    completedSaleCount: sources.reduce((count, source) => count + (source.id === 'mercari_sold_comps'
+      ? qualifiedMercariRecords(source).length
+      : ['success', 'partial'].includes(source.status) ? Number(source.market?.completedSaleCount ?? 0) : 0), 0),
     askingListingCount: sources.reduce((count, source) => count + (source.id === 'mercari_sold_comps'
       ? measuredMercariCount(source, 'activeListingCount') ?? 0
       : ['success', 'partial'].includes(source.status) ? Number(source.market?.currentListingCount ?? 0) : 0), 0),
@@ -865,7 +900,9 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
       const { returnedRecordCount: _returnedRecordCount, ...population } = mercariPopulationDiagnostics(source);
       return {
         id: source.id, label: source.label, kind: source.kind,
-        role: source.id === 'mercari_sold_comps' ? 'reference_context' as const : source.role ?? evidenceRoleForSourceKind(source.kind),
+        role: source.id === 'mercari_sold_comps'
+          ? qualifiedMercariRecords(source).length > 0 ? 'valuation_candidate' as const : 'reference_context' as const
+          : source.role ?? evidenceRoleForSourceKind(source.kind),
         status: source.status, message: source.message,
         ...population,
       };

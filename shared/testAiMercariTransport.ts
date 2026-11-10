@@ -17,24 +17,54 @@ export type MercariTransportListing = {
 };
 
 export type MercariAnalysisSale = MercariTransportListing & {
-  sourceId: 'mercari_sold_comps'; sourceAdapter: null; originMarketplace: 'mercari';
-  saleStatus: 'active' | 'unknown'; priceBasis: 'unknown'; completedStatusBasis: null;
+  sourceId: 'mercari_sold_comps'; sourceAdapter: 'mercari_sold_comps' | null; originMarketplace: 'mercari';
+  saleStatus: 'completed' | 'active' | 'unknown'; priceBasis: 'sold' | 'unknown'; completedStatusBasis: string | null;
   date: null; endedAt: null; recency: 'undated';
-  buyerPremium: 'unknown'; shipping: 'unknown'; tax: 'unknown';
-  evidenceDisposition: 'context_only' | 'warning_review' | 'rejected_objective_conflict' | 'omitted_by_cap' | 'not_visually_reviewed_window' | null;
+  saleDatePolicy: 'mercari_undated_sold_v1' | null;
+  buyerPremium: unknown; shipping: unknown; tax: unknown;
+  evidenceDisposition: 'valuation_eligible' | 'context_only' | 'warning_review' | 'rejected_objective_conflict' | 'omitted_by_cap' | 'not_visually_reviewed_window' | null;
   evidenceReasons: string[] | null;
-  provenanceToken: null; provenance: null; identityApproval: null;
-  observationId: null; canonicalTransactionId: null;
+  provenanceToken: string | null; provenance: unknown; identityApproval: unknown;
+  observationId: unknown; canonicalTransactionId: unknown;
 };
 
 const own = (record: object, field: string) => Object.prototype.hasOwnProperty.call(record, field);
 const isStatus = (value: unknown): value is MercariListingStatus => value === 'sold' || value === 'active' || value === 'unknown';
 
-/** The report is diagnostic, not private adapter ownership or financial authority.
- * Do not reclassify provider aliases in the browser. Only restrictive status
- * projections may supplement the report; an active hold can never become sold.
+const objectFields = (value: unknown): Record<string, unknown> | undefined => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
+export const MERCARI_UNDATED_SOLD_POLICY = 'mercari_undated_sold_v1' as const;
+
+/** Shape recognition for lossless handoff/presentation ONLY, not authentication.
+ * The server must verify the token and its signed facts/identity target. Never
+ * generate a token, approval, completion overlay or date from browser flags.
  */
+export function hasMercariUndatedSoldAdmission(sale: MercariTransportListing, requestedMode?: unknown): sale is MercariAnalysisSale {
+  if (requestedMode === 'active' || sale.requestedMode === 'active' || sale.mercariObservation?.requestedMode === 'active') return false;
+  const provenance = objectFields(sale.provenance);
+  const approval = objectFields(sale.identityApproval);
+  const basis = sale.completedStatusBasis;
+  return sale.sourceId === 'mercari_sold_comps' && sale.sourceAdapter === 'mercari_sold_comps'
+    && sale.originMarketplace === 'mercari' && sale.saleDatePolicy === MERCARI_UNDATED_SOLD_POLICY
+    && sale.date === null && sale.endedAt === null && sale.recency === 'undated'
+    && sale.saleStatus === 'completed' && sale.priceBasis === 'sold'
+    && typeof sale.price === 'number' && Number.isFinite(sale.price) && sale.price > 0 && sale.currency === 'USD'
+    && typeof basis === 'string' && /Sold[- ]Comps/i.test(basis) && /Mercari/i.test(basis)
+    && /sold\s*=\s*true/i.test(basis) && /reported sold price/i.test(basis)
+    && sale.visualRequirement === 'required' && sale.visualReviewStatus === 'match'
+    && sale.evidenceDisposition === 'valuation_eligible'
+    && typeof sale.provenanceToken === 'string' && Boolean(sale.provenanceToken.trim())
+    && provenance?.adapterId === 'mercari_sold_comps' && provenance.originMarketplace === 'mercari'
+    && approval?.status === 'approved' && approval.origin === 'server_final_visual' && approval.verdict === 'match'
+    && approval.adapterId === 'mercari_sold_comps' && approval.originMarketplace === 'mercari';
+}
+
+/** Provider status conflicts stay diagnostic in sold mode. Actual active-mode
+ * requests remain active context, regardless of a contradictory sold row. */
 export function mercariTransportStatus(sale: MercariTransportListing): MercariListingStatus {
+  if (sale.requestedMode === 'active' || sale.mercariObservation?.requestedMode === 'active') return 'active';
+  if (hasMercariUndatedSoldAdmission(sale)) return 'sold';
+  const mode = sale.requestedMode ?? sale.mercariObservation?.requestedMode;
+  if (mode === 'sold') return 'sold';
   const reportStatus = sale.mercariObservation?.version === 1 ? sale.mercariObservation.listingStatus : undefined;
   const observedStatus = sale.mercariObservation?.version === 1 ? sale.mercariObservation.observedStatus : undefined;
   if (observedStatus === 'active' || reportStatus === 'active' || sale.listingStatus === 'active' || sale.saleStatus === 'active') return 'active';
@@ -44,7 +74,10 @@ export function mercariTransportStatus(sale: MercariTransportListing): MercariLi
 }
 
 export function mercariPriceContextLabel(sale: MercariTransportListing): string {
+  if (hasMercariUndatedSoldAdmission(sale)) return 'Reported sold price · Sale date: Unknown · Mercari date exception';
   const status = mercariTransportStatus(sale);
+  if (status !== 'sold' && (sale.requestedMode === 'sold' || sale.mercariObservation?.requestedMode === 'sold')
+    && sale.requestedMode !== 'active' && sale.mercariObservation?.requestedMode !== 'active') return 'Sold-mode Mercari listing; reported price, final amount unverified';
   return status === 'sold' ? 'Provider-labeled sold listing; reported price, final amount unverified'
     : status === 'active' ? 'Active asking-price context' : 'Status unknown/conflicting';
 }
@@ -77,18 +110,33 @@ function ownDataFields(row: MercariTransportListing): MercariTransportListing {
 /**
  * One Mercari handoff for A and B. Copy diagnostics/metadata/ranks/images and
  * occurrence bindings, preserve the original typed observation report, and
- * neutralize stale provider/browser economic and canonical approval overlays.
- * Neither sold mode, a sold label nor image success establishes a final sale.
+ * preserve only the new policy-bearing receipt shape for server verification.
+ * Legacy rows still neutralize stale provider/browser approval overlays.
  * This maps only the supplied operational listings subset: no union/partition
  * append, filtering, deduplication, reorder, cap or intake refill occurs here.
  */
 export function buildMercariAnalysisSales(
-  data: { listings?: readonly MercariTransportListing[] | null } | null | undefined,
+  data: { listings?: readonly MercariTransportListing[] | null; requestedMode?: unknown } | null | undefined,
   enabled: boolean,
 ): MercariAnalysisSale[] {
   if (!enabled || !Array.isArray(data?.listings)) return [];
   return data.listings.map((input) => {
     const sale = ownDataFields(input);
+    if (data?.requestedMode === 'active') sale.requestedMode = 'active';
+    if (hasMercariUndatedSoldAdmission(sale, data?.requestedMode)) {
+      const projected: MercariAnalysisSale = { ...sale, listingStatus: 'sold',
+        // Do not claim browser verification or carry stale final-use overlays.
+        verified: false, trusted: false, approved: false, serverFinalApprovalVerified: false,
+        approval: null, serverFinalApproval: null, trustedIdentityApproval: null, serverFinalIdentityApproval: null,
+        valuationUse: null, economicAdmission: null,
+      };
+      // The signed exception is undated. Retrieval timestamps remain diagnostics,
+      // never a sale date; legacy date aliases cannot repair canonical nulls.
+      for (const field of ['soldAt', 'soldDate', 'saleDate', 'completedAt']) {
+        if (own(sale, field)) projected[field] = null;
+      }
+      return projected;
+    }
     const listingStatus = mercariTransportStatus(sale);
     const report = sale.mercariObservation;
     const observedPrice = report?.version === 1 ? report.fields?.price : undefined;
@@ -113,6 +161,7 @@ export function buildMercariAnalysisSales(
       date: null,
       endedAt: null,
       recency: 'undated',
+      saleDatePolicy: null,
       completed: false,
       confirmed: false,
       sold: false,

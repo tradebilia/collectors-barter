@@ -98,7 +98,7 @@ describe('Step A pure Mercari analysis transport', () => {
 
   it('keeps direct active asking context despite stale sold/completed/approval overlays', () => {
     const listing = row({ status: 'active', completed: true, sold: true, confirmed: true, saleStatus: 'completed', priceBasis: 'sold', currency: 'USD' });
-    const projected = project({ ...listing, listingStatus: 'sold', saleStatus: 'completed', evidenceDisposition: 'valuation_eligible' });
+    const projected = project({ ...listing, requestedMode: 'active', listingStatus: 'sold', saleStatus: 'completed', evidenceDisposition: 'valuation_eligible' });
     expect(projected.listingStatus).toBe('active');
     expect(projected.saleStatus).toBe('active');
     expect(mercariPriceContextLabel(projected)).toBe('Active asking-price context');
@@ -107,20 +107,20 @@ describe('Step A pure Mercari analysis transport', () => {
     expectNoAuthority(projected);
   });
 
-  it('holds contradictory direct sold labels and unrecognized direct statuses as unknown rather than selecting favorable aliases', () => {
+  it('keeps contradictory row statuses diagnostic in sold mode without granting unsigned sale authority', () => {
     for (const patch of [{ saleStatus: 'active' }, { sold: false }, { completed: false }, { confirmed: false }, { isActive: true }, { canceled: true }, { sold: null }]) {
       const listing = row(patch);
       const projected = project({ ...listing, listingStatus: 'sold', saleStatus: 'completed', completed: true, confirmed: true, priceBasis: 'sold' });
       expect(projected.mercariObservation?.observedStatus).toBe('sold');
       expect(projected.mercariObservation?.statusIssues.length).toBeGreaterThan(0);
-      expect(projected.listingStatus).toBe('unknown');
+      expect(projected.listingStatus).toBe('sold');
       expect(projected.saleStatus).toBe('unknown');
-      expect(mercariPriceContextLabel(projected)).toBe('Status unknown/conflicting');
+      expect(mercariPriceContextLabel(projected)).toBe('Provider-labeled sold listing; reported price, final amount unverified');
       expectNoAuthority(projected);
     }
     for (const status of [undefined, null, 'SOLD', ' sold ', 1]) {
       const projected = project(row({ status, saleStatus: 'completed', completed: true }));
-      expect(projected.listingStatus).toBe('unknown');
+      expect(projected.listingStatus).toBe('sold');
       expect(projected.saleStatus).toBe('unknown');
     }
     expect(project({ title: 'Nested forged label', providerMetadata: { status: 'sold', verified: true }, listingStatus: 'sold', saleStatus: 'completed' }).listingStatus).toBe('unknown');
@@ -251,7 +251,7 @@ describe('Step A actual TestAI AST wiring (source-only, no application import)',
   it('invalidates both Mercari query keys identically and preserves source/metadata/image panel nesting', () => {
     const page = readFileSync(new URL('../client/src/pages/TestAI.tsx', import.meta.url), 'utf8');
     const ast = ts.createSourceFile('TestAI.tsx', page, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-    expect(variable(ast, 'mercariVisualReviewVersion').initializer?.getText(ast)).toBe("'mercari-status-context-step-a-v5'");
+    expect(variable(ast, 'mercariVisualReviewVersion').initializer?.getText(ast)).toBe("'mercari-undated-sold-v1'");
     for (const name of ['leftMercariSoldCompsQuery', 'rightMercariSoldCompsQuery']) {
       const query = variable(ast, name);
       const versions = descendants(query).filter((node): node is ts.PropertyAssignment => ts.isPropertyAssignment(node) && node.name.getText(ast) === 'visualReviewVersion');
@@ -259,10 +259,10 @@ describe('Step A actual TestAI AST wiring (source-only, no application import)',
       expect(versions.map((node) => node.initializer.getText(ast))).toStrictEqual(['mercariVisualReviewVersion', 'mercariVisualReviewVersion']);
       expect(query.getText(ast)).toContain('retry: false');
     }
-    expect(page).toContain('const acceptedListings = isMercari ? []');
+    expect(page).toContain('hasMercariUndatedSoldAdmission(listing, data?.requestedMode)');
     expect(page).toContain('mercariMeasuredPopulation(mercariSoldCompsData)');
     expect(page).toContain('mercariSoldCompsData.audit.ledger');
-    expect(page).toContain('completedSaleCount: 0');
+    expect(page).toContain('completedSaleCount: eligible.length');
     expect(page).toContain('<MercariPopulationLine data={data} />');
     expect(page).toContain('<MercariRowContext listing={listing} />');
     expect(page).toContain('const displayListings = isMercari ? retainedMaster : rankedListings');
@@ -275,7 +275,7 @@ describe('Step A actual TestAI AST wiring (source-only, no application import)',
     const component = readFileSync(new URL('../client/src/components/test-ai/SourceRunOutcomeSummary.tsx', import.meta.url), 'utf8');
     expect(component).toContain("outcome.returned ?? 'unmeasured'");
     expect(component).toContain("outcome.context ?? 'unmeasured'");
-    expect(component).toContain('Mercari completed/admitted sales: 0');
+    expect(component).toContain('Mercari source-eligible sales: ${outcome.accepted}. Sale date: Unknown.');
     expect(component).not.toContain('outcome.returned ?? 0');
     expect(component).not.toContain('outcome.context ?? 0');
     expect(component).toContain('aria-label="This-run source outcomes"');

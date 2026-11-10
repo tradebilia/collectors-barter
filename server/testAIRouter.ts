@@ -798,14 +798,97 @@ function mercariIdentityOnlyRationale(value: unknown): unknown {
     'is confirmed for image identity only; Mercari is not admitted to pricing');
 }
 
+type MercariApprovalContext = {
+  input: AdditionalSoldCompsInput & { imageUrl?: string; approvalTarget?: ComparableTarget; approvalTargetImageReference?: string };
+  targetMetadata: string;
+};
+
+/** Only fresh private adapter observations plus the actual bound visual row can authorize this exception. */
+function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsListing, context: MercariApprovalContext) {
+  const report = getMercariObservedFacts(original)?.report;
+  const fallback = mercariContextProjection(row, report ?? null);
+  if (!report || report.requestedMode !== 'sold' || row.visualReviewStatus !== 'match'
+    || !row.visualAudit || row.visualExecution?.hardExclusion === true
+    || row.evidenceDisposition !== 'valuation_eligible') return fallback;
+  const originalPrice = report.fields.price;
+  const price = originalPrice?.present && (originalPrice.type === 'number'
+    || originalPrice.type === 'string' && typeof originalPrice.value === 'string' && /^\d+(?:\.\d+)?$/.test(originalPrice.value))
+    ? Number(originalPrice.value) : NaN;
+  const currency = mercariObservedCurrency(report);
+  const dateFields = ['soldAt', 'soldDate', 'date', 'endedAt', 'saleDate', 'completedAt'];
+  const hasUnvalidatedDate = dateFields.some(key => report.fields[key]?.present && report.fields[key].value != null
+    && report.fields[key].value !== '');
+  const cancelled = ['cancelled', 'canceled', 'isCancelled', 'isCanceled'].some(key => report.fields[key]?.value === true)
+    || ['cancelled', 'canceled'].includes(String(report.fields.cancellationStatus?.value));
+  const priceConflict = report.economicIssues.some(issue => issue.startsWith('price_conflict:'));
+  const sourceConflict = report.economicIssues.includes('marketplace_conflict')
+    || report.fields.originMarketplace?.present && report.fields.originMarketplace.value !== 'mercari';
+  if (!Number.isFinite(price) || price <= 0 || currency !== 'USD' || hasUnvalidatedDate || cancelled || priceConflict || sourceConflict) {
+    return { ...fallback, evidenceReasons: [...fallback.evidenceReasons,
+      hasUnvalidatedDate ? 'Provider sale-date field requires validation; the unknown-date exception cannot erase a supplied date.'
+        : cancelled ? 'Explicit cancellation prevents sold-sale admission.'
+          : priceConflict ? 'Conflicting original price fields prevent sold-price admission.'
+            : sourceConflict ? 'Original marketplace conflicts with Mercari.' : 'A positive original Mercari price and explicit USD currency are required.'] };
+  }
+  const reviewedTarget: ComparableTarget = { title: context.input.title, category: context.input.category,
+    itemType: context.input.itemType, grade: context.input.grade, condition: context.input.condition,
+    certificationCompany: context.input.certificationCompany, itemDetails: context.input.itemDetails,
+    statedTradeValue: context.input.statedTradeValue };
+  const target = context.input.approvalTarget ?? reviewedTarget;
+  const imageReference = context.input.imageUrl;
+  const candidateIdentityFields = row.soldCompsMetadata ?? normalizeSoldCompsMetadata(row);
+  const sale = prepareSourceTransactionIdentity({ ...row, price, currency, date: null, endedAt: null,
+    soldAt: null, saleDate: null, soldDate: null, recency: 'undated' as const,
+    saleDatePolicy: 'mercari_undated_sold_v1' as const,
+    saleId: original.saleId, url: original.itemUrl, sourceId: 'mercari_sold_comps', sourceAdapter: 'mercari_sold_comps',
+    originMarketplace: 'mercari', marketplace: 'Mercari', sourceLabel: 'Sold-Comps (Mercari Sold)',
+    requestedMode: 'sold', listingStatus: 'sold', priceBasis: 'sold' as const, saleStatus: 'completed' as const,
+    completedStatusBasis: 'Sold-Comps Mercari sold=true reported sold price',
+    visualRequirement: 'required' as const, evidenceDisposition: 'valuation_eligible' as const, evidenceReasons: [],
+    buyerPremium: 'unknown' as const, shipping: 'unknown' as const, tax: 'unknown' as const,
+    normalizedStructuredMetadata: candidateIdentityFields, identityApproval: undefined, provenanceToken: undefined,
+    provenance: undefined, mercariObservation: report });
+  const knownIdentity = scoreComparable(reviewedTarget, sale);
+  const hardConflict = knownIdentity.categoryIdentity.status === 'objective_conflict'
+    || knownIdentity.identityRelationship === 'conflict'
+    || ['grade_adjacent_comparable', 'variant_comparable'].includes(knownIdentity.valuationRelationship)
+    || signedComparableFormConflicts(reviewedTarget, sale.saleForm).length > 0;
+  const confidence = row.visualAudit.finalPass === 'high_resolution_retry'
+    ? row.visualAudit.retryConfidence : row.visualAudit.initialConfidence;
+  const acquiredAt = new Date();
+  const approval = !hardConflict && imageReference ? createServerFinalIdentityApproval({ sale, target, reviewedTarget,
+    targetImageReference: imageReference, expectedImageReference: context.input.approvalTargetImageReference ?? imageReference,
+    targetMetadata: context.targetMetadata, acquiredAt, candidateIdentityFields,
+    review: { candidateIndex: 0, verdict: 'match', confidence: confidence === 'high' || confidence === 'medium' ? confidence : 'low',
+      rationale: String(row.visualReviewRationale ?? ''), visualEvidence: row.visualEvidence,
+      visualAudit: row.visualAudit, visualDifferences: row.visualDifferences } }) : null;
+  if (!approval) return { ...fallback, evidenceReasons: [...fallback.evidenceReasons,
+    hardConflict ? 'Known identity conflict prevents Mercari final approval.'
+      : 'Server-final Mercari identity approval is unavailable or target/image binding changed; retained for review.'] };
+  const sealed = sealCanonicalObservation('mercari_sold_comps', sale, { acquiredAt, query: context.input.title, identityApproval: approval });
+  if (!sealed.provenanceToken || !sealed.identityApproval) return fallback;
+  return { ...sale, ...sealed, valuationEligible: true,
+    priceContext: 'sold_listing_reported', visualPricingNotice: 'Reported sold price; sale date Unknown — Mercari date exception. Final valuation selection still applies.' };
+}
+
 /** Apply one private source observation to every branch; never refill submission slots. */
-function finalizeMercariContextResult(payload: any, originals: readonly AdditionalSoldCompsListing[]) {
+function finalizeMercariContextResult(payload: any, originals: readonly AdditionalSoldCompsListing[], approvalContext?: MercariApprovalContext) {
   const byId = new Map(originals.map(row => [row.saleId, row]));
   const observed = (row: any) => {
     const original = byId.get(row.saleId);
     return original ? getMercariObservedFacts(original)?.report ?? null : null;
   };
-  const project = (row: any) => mercariContextProjection(row, observed(row));
+  const projections = new Map<string, any>();
+  const project = (row: any) => {
+    const original = byId.get(row.saleId);
+    if (!original) return mercariContextProjection(row, observed(row));
+    if (!projections.has(row.saleId)) {
+      const current = { ...row, ...advanced.get(row.saleId) };
+      projections.set(row.saleId, approvalContext && !payload.processingDiagnostic && !payload.error
+        ? sealMercariFinalVisualListing(current, original, approvalContext) : mercariContextProjection(current, observed(row)));
+    }
+    return projections.get(row.saleId);
+  };
   const originalLedger = Array.isArray(payload.audit?.ledger) ? payload.audit.ledger : originals;
   const advanced = new Map<string, any>();
   const stage = (row: any) => row?.visualAudit || (Array.isArray(row?.visualExecution?.attempts) && row.visualExecution.attempts.length > 0) ? 3
@@ -814,8 +897,8 @@ function finalizeMercariContextResult(payload: any, originals: readonly Addition
       || row?.evidenceDisposition === 'pre_vision_excluded' ? 2 : 1;
   // All groups belong to this server invocation. Financial/status facts are
   // still rebuilt from the private originals; only evolved diagnostics survive.
-  for (const group of [payload.listings, payload.visualFilter?.listings, payload.visualFilter?.contextListings,
-    payload.preVisionExcludedListings, payload.visualReviewListings]) {
+  for (const group of [payload.visualFilter?.listings, payload.visualFilter?.contextListings,
+    payload.preVisionExcludedListings, payload.visualReviewListings, payload.listings]) {
     if (!Array.isArray(group)) continue;
     for (const row of group) {
       if (typeof row?.saleId !== 'string' || !byId.has(row.saleId)) continue;
@@ -834,12 +917,13 @@ function finalizeMercariContextResult(payload: any, originals: readonly Addition
     activeListings: ledger.filter(row => row.listingStatus === 'active'),
     unknownListings: ledger.filter(row => row.listingStatus === 'unknown'),
   };
+  const eligibleCount = ledger.filter(row => row.valuationEligible === true && row.evidenceDisposition === 'valuation_eligible').length;
   const result = { ...payload, requestedMode: 'sold' as const, metrics: null, searchMetrics: null,
     returnedPopulations, statusCounts: { retainedListingCount: ledger.length,
       providerSoldListingCount: returnedPopulations.soldListings.length,
       activeListingCount: returnedPopulations.activeListings.length,
-      unknownListingCount: returnedPopulations.unknownListings.length, completedSaleCount: 0 },
-    audit: { ...payload.audit, ledger, valuationEligible: 0, completedSaleCount: 0 },
+      unknownListingCount: returnedPopulations.unknownListings.length, completedSaleCount: eligibleCount },
+    audit: { ...payload.audit, ledger, valuationEligible: eligibleCount, completedSaleCount: eligibleCount },
   };
   for (const key of ['listings', 'contextListings', 'preVisionExcludedListings', 'visualReviewListings']) {
     if (Array.isArray(payload[key])) result[key] = payload[key].map(project);
@@ -849,8 +933,8 @@ function finalizeMercariContextResult(payload: any, originals: readonly Addition
     contextListings: (payload.visualFilter.contextListings ?? []).map(project),
     reviews: (payload.visualFilter.reviews ?? []).map((review: any) => ({ ...review,
       rationale: mercariIdentityOnlyRationale(review.rationale),
-      visualPricingNotice: 'Image verdict establishes identity only; Mercari is not admitted to pricing.' })),
-    note: `Sold mode requested. All retained rows are treated as sold-mode deals; row-level status conflicts remain visible as diagnostics. ${returnedPopulations.soldListings.length} sold-mode deals retained. Final-price and sale-date safeguards remain separate. ${payload.visualFilter.note ?? ''}` };
+      visualPricingNotice: 'Image identity and signed source admission are required. Qualified Mercari reported sold prices may be used with sale date Unknown.' })),
+    note: `Sold mode requested. All retained rows are treated as sold-mode deals; row-level status conflicts remain visible as diagnostics. ${returnedPopulations.soldListings.length} sold-mode deals retained; ${eligibleCount} signed, identity-approved candidates source-eligible under the Mercari unknown-date exception. Sale date remains Unknown; final selection still applies. ${payload.visualFilter.note ?? ''}` };
   return result;
 }
 
@@ -3732,9 +3816,9 @@ export const testAIRouter = router({
       }
     }),
 
-  // Mercari listing status and image identity are not completed-sale authority.
-  // Every result branch remains restrictive context until price/date semantics
-  // and independent server admission have been established.
+  // Mercari sold=true reported prices may enter valuation under the signed
+  // unknown-sale-date exception, only after bound final visual identity approval.
+  // Retrieval/processing failures and unconfirmed identities remain context.
   // Coins, Disney Pins, and Video Games retain their category-specific visual
   // gates; every other category still receives the shared sold-comparable gate.
   getMercariSoldCompsData: protectedProcedure
@@ -3746,6 +3830,8 @@ export const testAIRouter = router({
       // visual-admission contract changes.
       visualReviewVersion: z.string().max(80).optional(),
       visualProvider: z.enum(['manus_forge', 'openai']).optional(),
+      approvalTarget: identityApprovalTargetInputSchema.optional(),
+      approvalTargetImageReference: z.string().max(2_000).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -3917,7 +4003,7 @@ export const testAIRouter = router({
             preVisionExcluded: excluded.length,
             ledger: [...annotatedListings, ...excluded, ...visualContextListings],
           },
-        }, result.listings);
+        }, result.listings, { input, targetMetadata });
       }
       const safeTargetImage = (() => {
         if (!input.imageUrl) return null;
@@ -3953,8 +4039,9 @@ export const testAIRouter = router({
           soldPrice: listing.price,
           soldCurrency: listing.currency,
           imageUrls: listing.imageUrls ?? listing.canonicalCandidate?.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []),
-          // Image matching establishes identity, not a verified paid price or
-          // sale event. Final Mercari treatment remains restrictive context.
+        // Image matching establishes identity, not a verified paid price or
+          // sale event. Signed source admission applies the reported-price
+          // policy while retaining an Unknown sale date.
           evidenceDisposition: undefined,
           evidenceReasons: [],
         })),
@@ -4008,7 +4095,7 @@ export const testAIRouter = router({
         metrics: null,
         visualFilter: {
           ...visualFilter,
-          note: `Mercari ${normalizedCategory === 'coins' ? 'coin' : normalizedCategory === 'disney_pins' ? 'Disney Pin' : normalizedCategory.replace(/_/g, ' ')} results use the shared visual gate for identity only. Reported prices and sale-event dates remain unverified, so all records remain context-only. ${visualFilter.note}`,
+          note: `Mercari ${normalizedCategory === 'coins' ? 'coin' : normalizedCategory === 'disney_pins' ? 'Disney Pin' : normalizedCategory.replace(/_/g, ' ')} results use the shared visual gate and signed reported-sold-price admission. Sale date remains Unknown under the Mercari-only exception. ${visualFilter.note}`,
         },
         audit: {
           rawReceived: result.listings.length,
@@ -4018,7 +4105,7 @@ export const testAIRouter = router({
           warningReview: annotatedListings.length + visualContextListings.length,
           ledger: [...annotatedListings, ...visualContextListings],
         },
-      }, result.listings);
+      }, result.listings, { input, targetMetadata });
       } catch {
         // Retrieval succeeded; later metadata/preparation failures must not erase its union.
         const reason = 'Mercari candidate processing unavailable; all retrieved records retained as context, with no pricing authority.';

@@ -1,5 +1,6 @@
 import type { CandidateDisplayRow } from '../../../../shared/testAiCandidateLedger';
 import { candidateExecutionFact, candidateExecutionReceipt, candidateIdentityFact, candidatePricingFact, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException } from '../../../../shared/testAiCandidateStatus';
+import { hasMercariUndatedSoldAdmission, mercariPriceContextLabel } from '../../../../shared/testAiMercariTransport';
 
 export type CandidateFinalDecision = { label: string; reason: string; code: string; className: string };
 const neutral = 'border-slate-600/60 bg-slate-900/60 text-slate-200';
@@ -20,10 +21,13 @@ function evidenceReasons(row: CandidateDisplayRow): string {
   return Array.isArray(row.evidenceReasons) ? row.evidenceReasons.filter((reason: unknown) => typeof reason === 'string' && reason.trim()).join('; ') : '';
 }
 function explicitContextReason(row: CandidateDisplayRow): string | undefined {
-  if (row.sourceId === 'mercari_sold_comps' && (row.requestedMode === 'sold' || row.mercariObservation?.requestedMode === 'sold')) {
+  if (hasMercariUndatedSoldAdmission(row)) return undefined;
+  if (row.sourceId === 'mercari_sold_comps' && row.requestedMode !== 'active' && row.mercariObservation?.requestedMode !== 'active'
+    && (row.requestedMode === 'sold' || row.mercariObservation?.requestedMode === 'sold')) {
     return 'Sold-mode Mercari listing; the final transaction amount and sale-event date are unverified, so the reported price remains context only.';
   }
-  if (row.saleStatus === 'active' || row.sourceEconomics?.convention === 'active_ask'
+  if (row.requestedMode === 'active' || row.mercariObservation?.requestedMode === 'active'
+    || row.saleStatus === 'active' || row.sourceEconomics?.convention === 'active_ask'
     || row.mercariObservation?.priceContext === 'active_asking' || row.priceBasis === 'asking'
     || row.sourceRelevance?.role === 'asking_price_context' || row.sourceRole === 'asking_price_context') {
     return 'Active asking-price context only; this is not a confirmed completed sale.';
@@ -46,7 +50,8 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
     const primary = pricing.code === 'CURRENT_SALES_PRIMARY';
     const hard = pricing.code === 'FINAL_HARD_EXCLUDED';
     const details = [pricing.reason, hard ? evidence || (receipt?.hardExclusion ? execution.reason : undefined) : undefined,
-      pricing.code === 'CONTEXT_ONLY' ? contextReason : undefined].filter(Boolean).join(' · ');
+      pricing.code === 'CONTEXT_ONLY' ? contextReason : undefined,
+      hasMercariUndatedSoldAdmission(row) ? mercariPriceContextLabel(row) : undefined].filter(Boolean).join(' · ');
     return { label: primary ? 'USED IN VALUATION' : finalLabels[pricing.code] ?? 'NOT USED — FINAL DECISION RECORDED',
       reason: `${pricing.label}${details ? ` · ${details}` : ''}`, code: pricing.code,
       className: primary ? green : hard ? red : amber };
@@ -66,6 +71,9 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
   if (hasActualVisualResponse(row) && ['rough_match', 'unreadable', 'manual_unknown'].includes(identity.code)) return {
     label: 'NOT USED — REVIEW UNRESOLVED', reason: `${identity.label}; identity is not confirmed and final valuation has not run.`, code: identity.code, className: amber };
   if (contextReason) return { label: 'VALUATION NOT RUN', reason: `${contextReason} No final valuation-use decision is recorded.`, code: 'CONTEXT_BEFORE_ANALYSIS', className: neutral };
+  if (hasMercariUndatedSoldAdmission(row)) return { label: 'VALUATION NOT RUN',
+    reason: `Image-confirmed, source-eligible Mercari sold comp under the date exception. ${mercariPriceContextLabel(row)}. Final valuation analysis has not run; source eligibility is not a final valuation-use decision.`,
+    code: 'MERCARI_DATE_EXCEPTION_BEFORE_ANALYSIS', className: neutral };
   if (hasActualVisualResponse(row) && identity.code === 'match') return { label: 'VALUATION NOT RUN',
     reason: 'Image match recorded; final valuation analysis has not run. Matching and source eligibility do not mean used in valuation.', code: 'MATCH_BEFORE_ANALYSIS', className: neutral };
   if (row.evidenceDisposition === 'valuation_eligible') return { label: 'VALUATION NOT RUN',

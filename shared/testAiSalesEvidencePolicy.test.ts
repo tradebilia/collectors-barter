@@ -244,15 +244,17 @@ describe('sales-policy dependency and financial boundaries (source-only)', () =>
     expect(ENGINE_SOURCE).not.toContain('buildSoldReviewBudget');
   });
 
-  it('leaves the definitive financial support predicate exactly unchanged', () => {
+  it('preserves financial floors while qualifying undated Mercari separately from dated proof', () => {
+    expect(ENGINE_SOURCE).toContain('const saleCount = profile.valuationEligibleSaleCount ?? profile.currentWindowSaleCount;');
+    expect(ENGINE_SOURCE).toContain('const marketplaceCount = profile.valuationEligibleIndependentMarketplaceCount ?? profile.currentWindowIndependentMarketplaceCount;');
     expect(ENGINE_SOURCE).toContain(`  return Boolean(supported && low !== null && mid !== null && high !== null
     && [low, mid, high].every((value) => Number.isFinite(value) && value > 0)
     && low <= mid && mid <= high
-    && profile.currentWindowSaleCount >= floor.minimumSelectedSales
+    && saleCount >= floor.minimumSelectedSales
     && profile.evidenceQuality !== 'low'
     && profile.spreadPct !== null && profile.spreadPct <= floor.maximumSpreadPct
-    && (profile.currentWindowIndependentMarketplaceCount >= floor.minimumIndependentMarketplaces
-      || profile.currentWindowSaleCount >= floor.minimumSelectedSales + 2));`);
+    && (marketplaceCount >= floor.minimumIndependentMarketplaces
+      || saleCount >= floor.minimumSelectedSales + 2));`);
     expect(ENGINE_SOURCE).toContain('const evidenceIndependenceAdequate = independentMarketplaceCount >= categoryEvidenceThresholds.minimumIndependentMarketplaces || accepted.length >= categoryEvidenceThresholds.minimumSelectedSales + 2;');
   });
 });
