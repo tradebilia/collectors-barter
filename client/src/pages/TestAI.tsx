@@ -1,5 +1,5 @@
 import { TestAiRetrievalLadder } from '../components/TestAiRetrievalLadder';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { skipToken } from '@tanstack/react-query';
 import { trpc } from "@/lib/trpc";
 import { useTestAiContentState, useTestAiSourceDisplayData } from '@/hooks/useTestAiUiStability';
@@ -34,6 +34,37 @@ import { HIGH_VALUE_SOLD_COMP_MAX_RATIO, HIGH_VALUE_SOLD_COMP_MIN_RATIO, HIGH_VA
 import { buildApprovalTargetImageInput, buildSoldCompsAnalysisSales, buildSoldCompsApprovalInput } from '@shared/testAiSoldCompsTransport';
 import { buildMercariAnalysisSales, mercariMeasuredPopulation, mercariPriceContextLabel } from '@shared/testAiMercariTransport';
 import { COLLECTION_LOT_NOT_COMPARABLE_MESSAGE, isCollectionLotItemType } from '@shared/testAiItemType';
+
+function TestAiDecisionSection({
+  number,
+  title,
+  description,
+  tone = 'slate',
+  children,
+}: {
+  number: string;
+  title: string;
+  description: string;
+  tone?: 'slate' | 'cyan' | 'violet' | 'amber';
+  children: ReactNode;
+}) {
+  const tones = {
+    slate: 'border-slate-700/50 bg-slate-950/20 text-slate-200',
+    cyan: 'border-cyan-700/40 bg-cyan-950/10 text-cyan-100',
+    violet: 'border-violet-700/40 bg-violet-950/10 text-violet-100',
+    amber: 'border-amber-700/40 bg-amber-950/10 text-amber-100',
+  } as const;
+  return <section className={`rounded-lg border p-2.5 ${tones[tone]}`} aria-labelledby={`test-ai-decision-${number}`}>
+    <div className="mb-2 flex items-start gap-2">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-800 text-[9px] font-bold text-gray-300">{number}</span>
+      <div className="min-w-0">
+        <h3 id={`test-ai-decision-${number}`} className="text-[10px] font-bold uppercase tracking-wide">{title}</h3>
+        <p className="mt-0.5 text-[9px] leading-snug text-gray-400">{description}</p>
+      </div>
+    </div>
+    {children}
+  </section>;
+}
 
 // ─── Data Source Registry ────────────────────────────────────────────────────
 // Each source defines: what data it provides, what it needs (cert ID, title, etc.)
@@ -1378,6 +1409,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     collectEbayCandidateDisplayOccurrences(displayData),
     displayData?.metadataParentDisplayListings ?? [],
   );
+  const pricingEligibleCount = displayData?.listings?.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible').length ?? 0;
   const autographValuationListings = autographMarketContextOnly
     ? (displayData?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible')
     : [];
@@ -1414,38 +1446,47 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🛒 eBay Active Listings</p>
         {(isLoading || visualReviewLoading) && <Spinner className="w-3 h-3" />}
       </div>
-      <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
-        <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search query <span className="font-normal text-cyan-200/60">({queryStatus})</span></p>
-        <p className="mt-0.5 break-words font-mono text-[10px] text-gray-200">"{visibleSearchQuery}"</p>
-        {displayData?.debug?.executedQueries?.length > 1 && <div className="mt-1 space-y-0.5 text-[9px] text-cyan-200/70"><p className="font-semibold uppercase tracking-wide">Executed query tiers</p>{displayData.debug.executedQueries.map((executedQuery: string, index: number) => <p key={`${executedQuery}-${index}`} className="break-words font-mono">{index + 1}. "{executedQuery}"</p>)}</div>}
-      </div>
-      <ProcessCompleteNotice data={data} /><TestAiSourcePopulationSummary packet={data?.sourcePopulation} />
-      <p className="text-gray-500 text-[10px]">Data type: Current fixed-price and auction listings · {showingVisualMatchMetrics ? 'Visual-match-only current-market metrics' : 'Full-market current-market context'}</p>
-      {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
-      {!data?.error && data?.retrievalWarning && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] text-amber-200">Partial eBay retrieval: {data.retrievalWarning}</p>}
-      {data?.marketContextOnly && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[10px] text-amber-200">Autographs / Signed Item market context only — ranked by relevance, with no visual cap because these candidates are never sent to visual analysis.</p>}
-      {effectiveVisualReviewData?.error && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not complete: {effectiveVisualReviewData.error}</p>}
-      {visualReviewErrorMessage && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">{effectiveVisualReviewData ? 'AI image checks stopped after returning partial results' : 'AI image checks could not start'}: {visualReviewErrorMessage}</p>}
-      {effectiveVisualReviewData?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{effectiveVisualReviewData.visualFilter.note}</p>}
-      {effectiveVisualReviewData?.visualFilter && !effectiveVisualReviewData?.marketContextOnly && !effectiveVisualReviewData?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
-      {visibleMetrics && (
-        <div className="space-y-1.5">
-          <TestAiSourceMetricSummary metrics={visibleMetrics} sourceLabel="eBay Active" role={showingVisualMatchMetrics ? 'Legacy visual-match asking context' : 'Full-market asking context'} />
-          {visibleMetrics.confidenceReason && <p className="rounded border border-slate-700/50 bg-slate-950/35 px-2 py-1.5 text-[9px] leading-snug text-slate-300"><strong className="text-slate-100">Confidence reason:</strong> {visibleMetrics.confidenceReason}</p>}
-          {(visibleMetrics.auctionCount > 0 || visibleMetrics.bidCountKnown > 0 || visibleMetrics.uniqueBidderCountKnown > 0) && <p className="rounded border border-violet-700/30 bg-violet-950/20 px-2 py-1.5 text-[9px] leading-snug text-violet-200"><strong className="text-violet-100">Auction activity:</strong> {visibleMetrics.auctionCount ?? 0} auction listing{visibleMetrics.auctionCount === 1 ? '' : 's'} · {visibleMetrics.bidCountKnown ? `${visibleMetrics.totalBidCount} total reported bids across ${visibleMetrics.bidCountKnown} listing${visibleMetrics.bidCountKnown === 1 ? '' : 's'}` : 'bid totals unavailable'} · {visibleMetrics.uniqueBidderCountKnown ? `${visibleMetrics.totalUniqueBidderCount} reported unique bidders across ${visibleMetrics.uniqueBidderCountKnown} listing${visibleMetrics.uniqueBidderCountKnown === 1 ? '' : 's'}` : 'unique-bidder totals unavailable'} (per-auction counts; not de-duplicated across listings).</p>}
+      <TestAiDecisionSection number="1" title="Source results" description="What eBay returned and what survived the deterministic source filters." tone="cyan">
+        <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5"><p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search query <span className="font-normal text-cyan-200/60">({queryStatus})</span></p><p className="mt-0.5 break-words font-mono text-[10px] text-gray-200">"{visibleSearchQuery}"</p></div>
+        <ProcessCompleteNotice data={data} /><TestAiSourcePopulationSummary packet={data?.sourcePopulation} />
+        <p className="mt-1 text-[10px] text-gray-500">Data type: Current fixed-price and auction listings · asking-price context, not completed-sale evidence.</p>
+        {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
+        {!data?.error && data?.retrievalWarning && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] text-amber-200">Partial eBay retrieval: {data.retrievalWarning}</p>}
+        {data?.marketContextOnly && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[10px] text-amber-200">Market context only — these candidates are ranked for relevance and are not sent to visual analysis.</p>}
+        <p className="mt-1 text-[9px] text-cyan-200/80">{displayData?.listings?.length ?? 0} returned/displayed candidate listing{displayData?.listings?.length === 1 ? '' : 's'} after source filtering.</p>
+      </TestAiDecisionSection>
+
+      <TestAiDecisionSection number="2" title="Visual review" description="Whether the candidate images looked like the same kind of item as the target." tone="violet">
+        {effectiveVisualReviewData?.error && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not complete: {effectiveVisualReviewData.error}</p>}
+        {visualReviewErrorMessage && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">{effectiveVisualReviewData ? 'AI image checks stopped after returning partial results' : 'AI image checks could not start'}: {visualReviewErrorMessage}</p>}
+        {effectiveVisualReviewData?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{effectiveVisualReviewData.visualFilter.note}</p>}
+        {data && !data.error && !reviewRequested && !item.primaryPhotoUrl && <div className="rounded border border-amber-700/30 bg-amber-950/20 p-2"><p className="text-[10px] font-semibold text-amber-100">Visual confirmation unavailable</p><p className="text-[9px] text-amber-200/80">No target image is available, so candidates remain asking-price context only.</p></div>}
+        {reviewRequested && visualReviewLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are running. Asking-price context remains available while the bounded review completes.</p>}
+        {effectiveVisualReviewData?.visualFilter?.status === 'completed_with_timeout' && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] text-amber-200">Review stopped at its safety time limit. Unfinished candidates remain context only.</p>}
+        {effectiveVisualReviewData?.visualFilter && !effectiveVisualReviewData?.marketContextOnly && <MarketplaceVisualReview data={effectiveVisualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
+        <p className="mt-1 text-[9px] text-violet-200">Visually similar: <strong>{visualMatchCount}</strong> · pricing eligibility is decided separately below.</p>
+      </TestAiDecisionSection>
+
+      <TestAiDecisionSection number="3" title="Pricing eligibility" description="Whether any candidate is allowed to affect the valuation. A visual match alone is not enough." tone="amber">
+        <div className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-2">
+          <p className="text-[11px] font-bold text-amber-100">{pricingEligibleCount > 0 ? `${pricingEligibleCount} candidate${pricingEligibleCount === 1 ? '' : 's'} accepted for valuation evidence` : '0 candidates accepted for valuation evidence'}</p>
+          <p className="mt-0.5 text-[10px] text-amber-200/80">eBay Active listings show asking prices. They remain context only and do not establish final valuation from completed sales.</p>
         </div>
-      )}
-      {showingVisualMatchMetrics && <p className="text-[9px] text-emerald-300">{visualMatchCount} legacy visually accepted, priced listings in the source metric population; final pricing use is reported separately.</p>}
-      {showingVisualMatchMetrics && <TestAiSourceMetricSummary metrics={data?.metrics} sourceLabel="eBay Active before image filtering" role="Full-market asking context" />}
-      {data && !data.error && !reviewRequested && !item.primaryPhotoUrl && <div className="rounded border border-amber-700/30 bg-amber-950/20 p-2"><p className="text-[10px] font-semibold text-amber-100">Visual confirmation unavailable</p><p className="text-[9px] text-amber-200/80">No target image is available, so eBay Active listings remain asking-price context only and cannot enter current-value analyzer evidence.</p></div>}
-      {reviewRequested && visualReviewLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are required before visually supported eBay Active listings can enter current-value evidence. Asking-price context remains available below while the bounded review runs in batches of 10 (maximum 30 candidates; maximum 2 minutes overall).</p>}
-      {effectiveVisualReviewData?.visualFilter?.status === 'completed_with_timeout' && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] text-amber-200">The AI image review stopped at its safety time limit. Only candidates with a completed visual result can support current-value evidence; the rest remain asking-price context.</p>}
-      {effectiveVisualReviewData?.visualFilter && !effectiveVisualReviewData?.marketContextOnly && <MarketplaceVisualReview data={effectiveVisualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
-      {displayData?.query && <p className="text-gray-500 text-[10px]">{displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'} · {displayData.debug?.exactTierPageCount ?? 1} exact page{displayData.debug?.exactTierPageCount === 1 ? '' : 's'} checked</p>}
-      {displayData?.debug && <p className="text-cyan-200/70 text-[9px]">Exact-tier results: {displayData.debug.exactTierFilteredCount ?? 0} retained after grade/identity filters ({displayData.debug.exactTierResultCount ?? 0} returned by eBay across {displayData.debug.exactTierPageCount ?? 1} page{displayData.debug.exactTierPageCount === 1 ? '' : 's'}). {displayData.debug.exactTierUsedFallbacks ? 'Additional fallback tiers were needed after exact-query pagination.' : 'No fallback tiers were needed.'}</p>}
-      <CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" targetImageUrl={item.primaryPhotoUrl} />
-      {displayData?.debug && !displayData.debug.targetIsGraded && (displayData.debug.rawTargetExcludedGradedCount ?? 0) > 0 && <p className="text-cyan-200/70 text-[9px]">Raw/ungraded target rule: {displayData.debug.rawTargetExcludedGradedCount} listing{displayData.debug.rawTargetExcludedGradedCount === 1 ? '' : 's'} with an explicit grading/slab signal were excluded before display and image review.</p>}
-      {displayData?.marketContextOnly && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[9px] text-amber-200">Signed Item candidates are ranked by market relevance only. No visual cap applies because these results are never sent to visual analysis.</p>}
+        {visibleMetrics && <div className="mt-2 space-y-1.5"><TestAiSourceMetricSummary metrics={visibleMetrics} sourceLabel="Asking-price context" role={showingVisualMatchMetrics ? 'Visual-match asking context' : 'Full-market asking context'} />{visibleMetrics.confidenceReason && <p className="rounded border border-slate-700/50 bg-slate-950/35 px-2 py-1.5 text-[9px] leading-snug text-slate-300"><strong className="text-slate-100">Context confidence:</strong> {visibleMetrics.confidenceReason}</p>}</div>}
+        <CandidateMasterList listings={activeMasterListings} sourceLabel="eBay Active Listings" targetImageUrl={item.primaryPhotoUrl} />
+        {showingVisualMatchMetrics && <TestAiSourceMetricSummary metrics={data?.metrics} sourceLabel="Asking context before image filtering" role="Full-market asking context" />}
+      </TestAiDecisionSection>
+
+      <details className="rounded-lg border border-slate-700/50 bg-slate-950/20 p-2.5">
+        <summary className="cursor-pointer text-[10px] font-bold uppercase tracking-wide text-slate-300">4. Technical details and audit trail</summary>
+        <div className="mt-2 space-y-1.5">
+          {displayData?.debug?.executedQueries?.length > 1 && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5"><p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Executed query tiers</p>{displayData.debug.executedQueries.map((executedQuery: string, index: number) => <p key={`${executedQuery}-${index}`} className="break-words font-mono text-[9px] text-cyan-200/70">{index + 1}. "{executedQuery}"</p>)}</div>}
+          {displayData?.query && <p className="text-gray-500 text-[10px]">{displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'} · {displayData.debug?.exactTierPageCount ?? 1} exact page{displayData.debug?.exactTierPageCount === 1 ? '' : 's'} checked</p>}
+          {displayData?.debug && <p className="text-cyan-200/70 text-[9px]">Exact-tier results: {displayData.debug.exactTierFilteredCount ?? 0} retained after grade/identity filters ({displayData.debug.exactTierResultCount ?? 0} returned by eBay across {displayData.debug.exactTierPageCount ?? 1} page{displayData.debug.exactTierPageCount === 1 ? '' : 's'}). {displayData.debug.exactTierUsedFallbacks ? 'Additional fallback tiers were needed after exact-query pagination.' : 'No fallback tiers were needed.'}</p>}
+          {visibleMetrics && (visibleMetrics.auctionCount > 0 || visibleMetrics.bidCountKnown > 0 || visibleMetrics.uniqueBidderCountKnown > 0) && <p className="rounded border border-violet-700/30 bg-violet-950/20 px-2 py-1.5 text-[9px] leading-snug text-violet-200"><strong className="text-violet-100">Auction activity:</strong> {visibleMetrics.auctionCount ?? 0} auction listing{visibleMetrics.auctionCount === 1 ? '' : 's'} · {visibleMetrics.bidCountKnown ? `${visibleMetrics.totalBidCount} total reported bids across ${visibleMetrics.bidCountKnown} listing${visibleMetrics.bidCountKnown === 1 ? '' : 's'}` : 'bid totals unavailable'} · {visibleMetrics.uniqueBidderCountKnown ? `${visibleMetrics.totalUniqueBidderCount} reported unique bidders across ${visibleMetrics.uniqueBidderCountKnown} listing${visibleMetrics.uniqueBidderCountKnown === 1 ? '' : 's'}` : 'unique-bidder totals unavailable'} (per-auction counts; not de-duplicated across listings).</p>}
+          {displayData?.debug && !displayData.debug.targetIsGraded && (displayData.debug.rawTargetExcludedGradedCount ?? 0) > 0 && <p className="text-cyan-200/70 text-[9px]">Raw/ungraded target rule: {displayData.debug.rawTargetExcludedGradedCount} listing{displayData.debug.rawTargetExcludedGradedCount === 1 ? '' : 's'} with an explicit grading/slab signal were excluded before display and image review.</p>}
+        </div>
+      </details>
       {autographMarketContextOnly ? <>
         {autographValuationListings.length > 0 && <section className="rounded border border-emerald-700/40 bg-emerald-950/15 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Source-stage Asking Context</p><p className="mt-0.5 text-[9px] text-emerald-100/70">These listings passed the Autographs source identity and score rules. Legacy source metrics are separate from final pricing use; currency-unproven aggregates are withheld.</p><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1">{autographValuationListings.map(renderListing)}</div></section>}
         {autographContextListings.length > 0 && <section className="rounded border border-amber-700/40 bg-amber-950/15 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-amber-300">Context Only — Not Used in Valuation</p><p className="mt-0.5 text-[9px] text-amber-100/70">These listings remain visible for transparency but do not affect the current-value metrics.</p><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1">{autographContextListings.map(renderListing)}</div></section>}

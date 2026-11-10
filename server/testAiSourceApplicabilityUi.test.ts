@@ -430,7 +430,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),\n        oneThirtyPointData');
     expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),\n        pwccEvidenceData');
     expect(source).toContain('Identity-matched active asking price; not a completed sale.');
-    expect(source).toContain('AI image checks are required before visually supported eBay Active listings can enter current-value evidence');
+    expect(source).toContain('AI image checks are running. Asking-price context remains available while the bounded review completes.');
     expect(source).toContain('const recordCount = records.length > 0 ? records.length : acceptedCount;');
     expect(source).toContain("currency: record?.currency ?? record?.soldCurrency ?? null");
     expect(source).toContain('record.price != null ? formatCandidateDisplayPrice(record)');
@@ -496,8 +496,13 @@ describe('manual Test AI selector boundary', () => {
   it('requires eBay Active visual review before current-value evidence when images exist', () => {
     expect(source).toContain('useState(Boolean(item.primaryPhotoUrl))');
     expect(source).toContain('setReviewRequested(Boolean(item.primaryPhotoUrl))');
-    expect(source).toContain('AI image checks are required before visually supported eBay Active listings can enter current-value evidence');
-    expect(source).toContain('No target image is available, so eBay Active listings remain asking-price context only and cannot enter current-value analyzer evidence.');
+    expect(source).toContain('AI image checks are running. Asking-price context remains available while the bounded review completes.');
+    expect(source).toContain('No target image is available, so candidates remain asking-price context only.');
+    expect(source).toContain('<TestAiDecisionSection number="1" title="Source results"');
+    expect(source).toContain('<TestAiDecisionSection number="2" title="Visual review"');
+    expect(source).toContain('<TestAiDecisionSection number="3" title="Pricing eligibility"');
+    expect(source).toContain('Technical details and audit trail');
+    expect(source).toContain('0 candidates accepted for valuation evidence');
     expect(source).not.toContain('Optional AI image checks');
   });
 

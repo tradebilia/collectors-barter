@@ -315,7 +315,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("setVisualReviewData({ ...operationalBatch, candidateDisplayBatch: displayBatch, candidateDisplayParentData: data });");
     expect(pageSource).toContain("onVisualReviewData?.(effectiveVisualReviewData && !effectiveVisualReviewData.error ? effectiveVisualReviewData : null);");
     expect(pageSource).toContain("<MarketplaceVisualReview data={effectiveVisualReviewData}");
-    expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");
+    expect(pageSource).toContain("AI image checks are running. Asking-price context remains available while the bounded review completes.");
     expect(pageSource).toContain("const displayData = mergeEbayVisualReviewDisplayData(data, effectiveVisualReviewData)");
     expect(pageSource).toContain("AI image checks could not start");
     expect(pageSource).toContain("AI image checks stopped after returning partial results");
@@ -446,8 +446,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("const showingVisualMatchMetrics = !!effectiveVisualReviewData?.visualMatchMetrics");
     expect(pageSource).toContain("const visibleMetrics = showingVisualMatchMetrics ? effectiveVisualReviewData.visualMatchMetrics : data?.metrics");
     expect(pageSource).toMatch(/import \{[^}]*\bTestAiSourceMetricSummary\b[^}]*\} from '@\/components\/TestAiCandidateStatus';/);
-    expect(pageSource).toContain('<TestAiSourceMetricSummary metrics={visibleMetrics} sourceLabel="eBay Active" role={showingVisualMatchMetrics ? \'Legacy visual-match asking context\' : \'Full-market asking context\'} />');
-    expect(pageSource).toContain('{showingVisualMatchMetrics && <TestAiSourceMetricSummary metrics={data?.metrics} sourceLabel="eBay Active before image filtering" role="Full-market asking context" />}');
+    expect(pageSource).toContain('<TestAiSourceMetricSummary metrics={visibleMetrics} sourceLabel="Asking-price context" role={showingVisualMatchMetrics ? \'Visual-match asking context\' : \'Full-market asking context\'} />');
+    expect(pageSource).toContain('{showingVisualMatchMetrics && <TestAiSourceMetricSummary metrics={data?.metrics} sourceLabel="Asking context before image filtering" role="Full-market asking context" />}');
     expect(statusComponentSource).toContain("export function TestAiSourceMetricSummary({ metrics, members, sourceLabel, role }: {");
     expect(statusComponentSource).toContain("import { sourceCurrentWindowLabel, sourceMetricDisplay, sourceRetrievalCoverage } from '../../../shared/testAiSourceDisplay';");
     expect(statusComponentSource).toContain("const display = sourceMetricDisplay(metrics, members);");
@@ -458,8 +458,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(sourceDisplaySource).toContain("Currency/basis unresolved — aggregate not shown · unverified legacy source metrics; not final pricing use");
     expect(sourceDisplaySource).toContain("avg: verified ? format(metrics?.avg) : 'Withheld', median: verified ? format(metrics?.median) : 'Withheld'");
     expect(sourceDisplaySource).toContain("range: verified ? `${format(metrics?.min)}–${format(metrics?.max)}` : 'Withheld'");
-    expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");
-    expect(pageSource).toContain("No accepted visual matches have usable prices");
+    expect(pageSource).toContain("AI image checks are running. Asking-price context remains available while the bounded review completes.");
+    expect(pageSource).toContain("0 candidates accepted for valuation evidence");
     expect(pageSource).toContain("Auction activity:");
     expect(pageSource).toContain("unique bidders");
   });
