@@ -91,6 +91,14 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('403 error');
   });
 
+  it('groups all eBay marketplace variants under Marketplace', () => {
+    expect(source).toContain("label: 'eBay Active Listings',\n    group: 'Marketplace'");
+    expect(source).toContain("label: 'eBay Sold History',\n    group: 'Marketplace'");
+    expect(source).toContain("label: 'Sold-Comps (eBay Sold)',\n    group: 'Marketplace'");
+    expect(source).toContain("const SOURCE_GROUPS = ['Grading', 'Marketplace', 'Permission pending', 'Deferred by owner', 'Reference'] as const;");
+    expect(source).not.toContain("group: 'eBay'");
+  });
+
   it('labels received fields separately from the actual provider search', () => {
     expect(source).toContain('Structured fields received:');
     expect(source).toContain('Actual search sent:');

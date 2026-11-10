@@ -104,7 +104,7 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
   ebay_active: {
     id: 'ebay_active',
     label: 'eBay Active Listings',
-    group: 'eBay',
+    group: 'Marketplace',
     icon: '🛒',
     provides: ['current_prices', 'price_metrics'],
     status: 'live' as const,
@@ -113,7 +113,7 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
   ebay_sold: {
     id: 'ebay_sold',
     label: 'eBay Sold History',
-    group: 'eBay',
+    group: 'Marketplace',
     icon: '📊',
     provides: ['historic_prices'],
     status: 'placeholder' as const,
@@ -122,7 +122,7 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
   sold_comps: {
     id: 'sold_comps',
     label: 'Sold-Comps (eBay Sold)',
-    group: 'eBay',
+    group: 'Marketplace',
     icon: '💰',
     provides: ['historic_prices', 'price_metrics'],
     status: 'live' as const,
@@ -427,7 +427,7 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
 };
 
 type SourceId = string;
-const SOURCE_GROUPS = ['eBay', 'Grading', 'Marketplace', 'Permission pending', 'Deferred by owner', 'Reference'] as const;
+const SOURCE_GROUPS = ['Grading', 'Marketplace', 'Permission pending', 'Deferred by owner', 'Reference'] as const;
 
 const GRADING_COMPANIES = ['CGC', 'PSA', 'BGS', 'PCGS', 'NGC', 'CBCS', 'SGC', 'HGA', 'CSG', 'Other'] as const;
 type GradingCompany = typeof GRADING_COMPANIES[number];
