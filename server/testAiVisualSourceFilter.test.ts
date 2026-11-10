@@ -3078,7 +3078,7 @@ describe("visual source filter", () => {
     });
     expect(rows).toEqual(expect.arrayContaining([
       expect.objectContaining({ targetField: "Game or puzzle name", candidateValue: "Monopoly: Manhattan Beach", titleDerivedValue: expect.stringContaining("Monopoly: Manhattan Beach"), titleDerivedStatus: "match" }),
-      expect.objectContaining({ targetField: "Year", candidateValue: "Unknown", titleDerivedValue: "2000", titleDerivedStatus: "match", status: "unknown" }),
+      expect.objectContaining({ targetField: "Year", candidateValue: "Unknown", titleDerivedValue: "Unknown", titleDerivedStatus: "unknown", status: "unknown" }),
       expect.objectContaining({ targetField: "Completeness", candidateValue: "Unknown", titleDerivedValue: "Yes (inferred from title)", titleDerivedStatus: "match", status: "unknown" }),
     ]));
   });

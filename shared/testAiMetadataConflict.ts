@@ -1,6 +1,8 @@
 import { titleContainsValue } from "./testAiTitleEvidence";
 import { extractCandidateStructuredMetadata, meaningfulMetadataText, readMetadataValue, metadataBooleanState, STRUCTURED_GRADE_ALIASES } from './testAiMetadataValues';
 import { compareComparableGrades, findStructuredGradeConflict, parseSourceGradeFromTitle } from './testAiGradeComparison';
+import { comparePokemonCardNumbers, parsePokemonCardNumber, readPokemonCardNumbersFromTitle } from './testAiPokemonCardNumber';
+import { parseToyNumericValue, extractToyNumericTitleEvidence, type ToyNumericField } from './testAiToyNumericEvidence';
 
 export type MetadataConflict = {
   field: string;
@@ -122,6 +124,136 @@ function candidateFields(candidate: MetadataRecord): MetadataRecord {
   return extractCandidateStructuredMetadata(candidate);
 }
 
+function isPokemonNumberField(field: string): boolean {
+  return ['cardnumber', 'cardno', 'number'].includes(field.toLowerCase().replace(/[^a-z0-9]/g, ''));
+}
+
+/** Keep independent aliases/array observations; placeholders never become numbers. */
+function declaredNumericValues(record: MetadataRecord, isField: (field: string) => boolean,
+  parseValue: (value: unknown) => { raw: string } | null): string[] {
+  const values: string[] = [];
+  const seen = new WeakSet<object>();
+  let remaining = 2048;
+  const wrappers = new Set(['normalizedstructuredmetadata', 'structuredmetadata', 'soldcompsmetadata',
+    'fullitemdetails', 'itemdetails', 'details', 'itemspecifics', 'specifics', 'aspects', 'metadata', 'rawmetadata']);
+  const add = (value: unknown) => {
+    for (const observation of Array.isArray(value) ? value.slice(0, 256) : [value]) {
+      const parsed = parseValue(observation);
+      if (parsed) values.push(parsed.raw);
+    }
+  };
+  const visit = (value: unknown, depth: number): void => {
+    if (depth > 6 || remaining-- <= 0) return;
+    if (typeof value === 'string') {
+      if (value.length <= 200000 && /^\s*[\[{]/.test(value)) {
+        try { visit(JSON.parse(value), depth + 1); } catch { /* malformed wrapper is unknown */ }
+      }
+      return;
+    }
+    if (!value || typeof value !== 'object' || seen.has(value)) return;
+    seen.add(value);
+    if (Array.isArray(value)) {
+      value.slice(0, 256).forEach(child => visit(child, depth + 1));
+      return;
+    }
+    const fields = value as MetadataRecord;
+    const aspect = readMetadataValue(fields, ['name', 'key', 'label', 'propertyName']);
+    if (isField(aspect)) {
+      Object.entries(fields).filter(([field]) => /^(?:value|values|propertyvalue)$/i.test(field)).forEach(([, child]) => add(child));
+    }
+    for (const [field, child] of Object.entries(fields).slice(0, 512)) {
+      if (isField(field)) add(child);
+      if (wrappers.has(field.toLowerCase().replace(/[^a-z0-9]/g, ''))) visit(child, depth + 1);
+    }
+  };
+  visit(record, 0);
+  return [...new Set(values)];
+}
+
+function pokemonNumberValues(record: MetadataRecord): string[] {
+  return declaredNumericValues(record, isPokemonNumberField, parsePokemonCardNumber);
+}
+
+const TOY_NUMERIC_ALIASES: Readonly<Record<'setNumber' | 'pieceCount', readonly string[]>> = {
+  setNumber: ['setNumber', 'setNo', 'number'],
+  pieceCount: ['pieceCount', 'pieces', 'numberOfPieces'],
+};
+
+function isToyNumericField(field: string): boolean {
+  return Object.values(TOY_NUMERIC_ALIASES).flat().some(alias => compact(alias) === compact(field));
+}
+
+function toyNumericConflicts(targetMetadata: string, target: MetadataRecord, candidate: MetadataRecord,
+  candidateRecord: MetadataRecord, candidateTitle: string): MetadataConflict[] {
+  const conflicts: MetadataConflict[] = [];
+  for (const [field, aliases] of Object.entries(TOY_NUMERIC_ALIASES)) {
+    const numericField = field as ToyNumericField;
+    const parse = (value: unknown) => parseToyNumericValue(value, numericField);
+    const isField = (value: string) => aliases.some(alias => compact(alias) === compact(value));
+    const targetTitle = extractToyNumericTitleEvidence(String(target.title ?? ''), numericField);
+    const sourceTitle = extractToyNumericTitleEvidence(candidateTitle, numericField);
+    const targetValues = [...new Set([
+      ...declaredNumericValues(target, isField, parse),
+      ...declaredNumericValues(targetDetails(targetMetadata), isField, parse),
+      ...aliases.flatMap(alias => {
+        const value = parse(metadataValue(targetMetadata, alias));
+        return value ? [value.raw] : [];
+      }),
+      ...targetTitle.observations.map(value => value.raw),
+    ])];
+    const candidateValues = [...new Set([
+      ...declaredNumericValues(candidateRecord, isField, parse),
+      ...declaredNumericValues(candidate, isField, parse),
+      ...sourceTitle.observations.map(value => value.raw),
+    ])];
+    const add = (targetValue: string, candidateValue: string, reason: string) => {
+      if (!conflicts.some(conflict => conflict.field === field && conflict.targetValue === targetValue && conflict.candidateValue === candidateValue)) {
+        conflicts.push({ field, targetValue, candidateValue, reason });
+      }
+    };
+    const different = (left: string, right: string) => parse(left)?.value !== parse(right)?.value;
+    targetValues.forEach(expected => candidateValues.forEach(observed => {
+      if (different(expected, observed)) add(expected, observed, `${field} differs in explicit toy numeric evidence`);
+    }));
+    for (const values of [targetValues, candidateValues]) {
+      values.forEach((value, index) => values.slice(index + 1).forEach(other => {
+        if (different(value, other)) add(value, other, `${field} title or structured aliases declare contradictory values`);
+      }));
+    }
+    if ((targetTitle.ambiguous || sourceTitle.ambiguous) && !conflicts.some(conflict => conflict.field === field)) {
+      add(targetValues[0] ?? '', candidateValues.join(', '), `${field} title evidence is ambiguous; no numeric winner is selected`);
+    }
+  }
+  return conflicts;
+}
+
+function pokemonNumberConflicts(targetValues: string[], candidateValues: string[], ambiguous: boolean): MetadataConflict[] {
+  const conflicts: MetadataConflict[] = [];
+  const add = (targetValue: string, candidateValue: string, reason: string) => {
+    if (!conflicts.some(conflict => conflict.targetValue === targetValue && conflict.candidateValue === candidateValue)) {
+      conflicts.push({ field: 'cardNumber', targetValue, candidateValue, reason });
+    }
+  };
+  for (const targetValue of targetValues) {
+    for (const candidateValue of candidateValues) {
+      if (comparePokemonCardNumbers(targetValue, candidateValue) === 'different') {
+        add(targetValue, candidateValue, 'Card/catalog number differs: candidate declares a different Pokémon card number, denominator or namespace');
+      }
+    }
+  }
+  for (const values of [targetValues, candidateValues]) {
+    values.forEach((value, index) => values.slice(index + 1).forEach(other => {
+      if (comparePokemonCardNumbers(value, other) === 'different') {
+        add(value, other, 'Pokémon card-number title or structured aliases declare contradictory identities');
+      }
+    }));
+  }
+  if (ambiguous && !conflicts.length) {
+    add(targetValues[0] ?? '', candidateValues.join(', '), 'candidate title has ambiguous opposed Pokémon card-number observations');
+  }
+  return conflicts;
+}
+
 function valueMatchesEvidence(value: string, evidence: string): boolean {
   const wanted = compact(value);
   const haystack = compact(evidence);
@@ -179,7 +311,7 @@ export function findMaterialMetadataConflicts(
   const candidateRecord = candidateFields(candidate);
   const category = normalizeCategory(String(target.category ?? ''));
   const boardGameTarget = category === 'vintage_toys'
-    && normalizeCategory(String(target.itemType ?? '')) === 'board_game___puzzle';
+    && /^(?:board_game(?:[_/].*)?|puzzle)$/.test(normalizeCategory(String(target.itemType ?? '')));
   const targetCondition = firstValue(target, 'condition');
   const targetIsGraded = /^(?:yes|true|graded)$/i.test(String(target.isGraded ?? '').trim())
     || (Boolean(firstValue(target, 'grade')) && !/^(?:unknown|n ?a|none|raw|ungraded|0(?:\.0+)?)$/i.test(firstValue(target, 'grade')) && Boolean(firstValue(target, 'gradingCompany')));
@@ -218,8 +350,35 @@ export function findMaterialMetadataConflicts(
       ?? '',
   );
   const conflicts: MetadataConflict[] = [];
+  if (category === 'pokemon') {
+    const targetTitleNumbers = readPokemonCardNumbersFromTitle(String(target.title ?? ''));
+    const candidateTitleNumbers = readPokemonCardNumbersFromTitle(candidateTitle);
+    const targetNumbers = [...new Set([
+      ...pokemonNumberValues(target),
+      ...pokemonNumberValues(targetDetails(targetMetadata)),
+      ...['cardNumber', 'cardNo', 'number'].flatMap(field => {
+        const parsed = parsePokemonCardNumber(metadataValue(targetMetadata, field));
+        return parsed ? [parsed.raw] : [];
+      }),
+      ...targetTitleNumbers.observations.map(observation => observation.raw),
+    ])];
+    const candidateNumbers = [...new Set([
+      ...pokemonNumberValues(candidateRecord),
+      ...pokemonNumberValues(candidate),
+      ...candidateTitleNumbers.observations.map(observation => observation.raw),
+    ])];
+    conflicts.push(...pokemonNumberConflicts(targetNumbers, candidateNumbers,
+      targetTitleNumbers.ambiguous || candidateTitleNumbers.ambiguous));
+  }
+  if (category === 'vintage_toys') {
+    conflicts.push(...toyNumericConflicts(targetMetadata, target, candidate, candidateRecord, candidateTitle));
+  }
 
   for (const field of fields) {
+    // Pokémon collector identities are compared above, not punctuation-stripped
+    // exact fields or a first-digit title regex. Other categories keep that path.
+    if (category === 'pokemon' && isPokemonNumberField(field)) continue;
+    if (category === 'vintage_toys' && isToyNumericField(field)) continue;
     const targetValue = firstValue(target, field);
     if (!targetValue || /^(unknown|n ?a|none|raw|ungraded)$/i.test(targetValue)) continue;
     const rawCandidateValue = firstValue(candidateRecord, field);

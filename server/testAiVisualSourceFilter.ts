@@ -19,9 +19,10 @@ import type { MetadataScoreResult, RankingAward, RankingAwardEvidence } from "..
 import { rankingAwardContribution, rankingAwardFieldKey } from "../shared/testAiRankingAwards";
 import { randomUUID } from "node:crypto";
 import { freezeMetadataRankingPopulation, bindMetadataRankingPopulation, overlayMetadataRankingPopulation, type MetadataRankingPopulation, type MetadataRankingBinding } from "../shared/testAiRankingPopulation";
+import { parsePokemonCardNumber, comparePokemonCardNumbers, readPokemonCardNumbersFromTitle } from "../shared/testAiPokemonCardNumber";
+import { parseToyNumericValue, readToyNumericTitleEvidence, extractToyNumericTitleEvidence, type ToyNumericField } from "../shared/testAiToyNumericEvidence";
 import { compareComparableGrades, parseComparableGrade, parseSourceGradeFromTitle, findStructuredGradeConflict, type ComparableGrade, type ComparableGradeOptions } from "../shared/testAiGradeComparison";
 import { summarizeVisualExecutionOccurrences, type VisualExecution, type VisualExecutionAttempt, type VisualExecutionCounts, type VisualExecutionReasonCode, type VisualExecutionStage, type VisualExecutionFormat } from "../shared/testAiVisualExecution";
-
 export type VisualSourceCandidate = {
   title?: string | null;
   imageUrl?: string | null;
@@ -2155,6 +2156,9 @@ function comparisonMetadataAliases(key: string): string[] {
     ["sealed", "factorySealed", "sealedStatus"],
     ["publisherBrand", "brand", "manufacturer"],
     ["condition", "mediaCondition"],
+    ["cardNumber", "cardNo", "number"],
+    ["setNumber", "setNo"],
+    ["pieceCount", "pieces", "numberOfPieces"],
   ];
   const normalized = normalizedFieldKey(key);
   const group = groups.find((aliases) => aliases.some((alias) => normalizedFieldKey(alias) === normalized));
@@ -2208,14 +2212,20 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 		if (/\b(?:factory\s+sealed|sealed|unopened)\b/i.test(title)) return "Yes (inferred from title)";
 		return "Unknown";
 	}
-	if (/^(?:packagingType|packaging|form|saleForm)$/i.test(key)) {
-		if (/\b(?:factory\s+sealed|sealed|moc|mint\s+on\s+card|carded)\b/i.test(title)) return "Sealed/Carded (inferred from title)";
-		if (/\b(?:loose|no\s+box|boxless)\b/i.test(title)) return "Loose (inferred from title)";
-		return "Unknown";
-	}
-	const normalizedTarget = comparisonValue(targetValue);
-	return normalizedTarget !== "Unknown" && titleContainsValue(title, normalizedTarget)
-			? `${normalizedTarget} (detected in title)`
+		if (/^(?:packagingType|packaging|form|saleForm)$/i.test(key)) {
+			if (/\b(?:factory\s+sealed|sealed|moc|mint\s+on\s+card|carded)\b/i.test(title)) return "Sealed/Carded (inferred from title)";
+			if (/\b(?:loose|no\s+box|boxless)\b/i.test(title)) return "Loose (inferred from title)";
+			return "Unknown";
+		}
+    if (category === "pokemon" && /^(?:cardNumber|cardNo|number)$/i.test(key)) {
+      return pokemonTitleNumber(title)?.raw ?? "Unknown";
+    }
+    if (category === "vintage_toys" && /^(?:setNumber|pieceCount|numberOfPieces)$/i.test(key)) {
+      return readToyNumericTitleEvidence(title, key as ToyNumericField)?.raw ?? "Unknown";
+    }
+		const normalizedTarget = comparisonValue(targetValue);
+		return normalizedTarget !== "Unknown" && titleContainsValue(title, normalizedTarget)
+				? `${normalizedTarget} (detected in title)`
 			: "Unknown";
 }
 function normalizedRankingReason(value: unknown): string {
@@ -2238,6 +2248,9 @@ function rankingContributionForField(listing: VisualSourceCandidate, key: string
       if (evidence.source !== source || rankingAwardFieldKey(evidence.field, category, itemType) !== rowKey
         || !meaningfulMetadataText(evidence.value)) return false;
       if (rowKey === "grade") return compareComparableGrades(displayed, evidence.value, { allowBareNumeric: true, category }) === "match";
+      if (category === "pokemon" && /^(?:cardNumber|cardNo|number)$/i.test(rowKey)) {
+        return comparePokemonCardNumbers(displayed, evidence.value) === "match";
+      }
       const a = metadataBooleanState(displayed), b = metadataBooleanState(evidence.value);
       if (a && b) return a === b;
       const left = comparisonComparable(displayed), right = comparisonComparable(evidence.value!);
@@ -2253,6 +2266,15 @@ function rankingContributionForField(listing: VisualSourceCandidate, key: string
 }
 function comparisonStatus(targetValue: string, candidateValue: string, category = "", key = ""): MetadataFieldComparison["status"] {
   if (!meaningfulMetadataText(targetValue) || !meaningfulMetadataText(candidateValue)) return "unknown";
+  if (category === "pokemon" && /^(?:cardNumber|cardNo|number)$/i.test(key)) {
+    const compared = comparePokemonCardNumbers(targetValue, candidateValue);
+    return compared === "partial" ? "unknown" : compared;
+  }
+  if (category === "vintage_toys" && /^(?:setNumber|pieceCount|numberOfPieces)$/i.test(key)) {
+    const target = parseToyNumericValue(targetValue, key as ToyNumericField);
+    const candidate = parseToyNumericValue(candidateValue, key as ToyNumericField);
+    return target && candidate ? target.value === candidate.value ? "match" : "different" : "unknown";
+  }
   if (/^(?:sealed|factorysealed|sealedstatus|sealstatus|complete|iscomplete|completeness|completeinbox|originalpackaging|originalboxincluded|isgraded|graded)$/.test(normalizedFieldKey(key))) {
     const a = metadataBooleanState(targetValue), b = metadataBooleanState(candidateValue);
     if (a && b) return a === b ? "match" : "different";
@@ -2274,6 +2296,7 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
   const candidateDetails = candidateStructuredDetails(listing);
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   const targetType = targetItemTypeValue(targetMetadata);
+  const isBoardGameTarget = category === "vintage_toys" && vintageToyTargetItemType(targetMetadata) === "board game/puzzle";
   const excluded = new Set(["image", "imageUrl", "imageUrls", "photos", "thumbnail", "titleEvidence", "normalizedStructuredMetadata"]);
   const keys = new Set<string>([
     ...Object.keys(targetDetails),
@@ -2284,7 +2307,7 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
     "certificationCompany",
     "year",
   ]);
-  if (category === "vintage_toys" && targetType === "board game/puzzle") {
+  if (isBoardGameTarget) {
     keys.add("gamePuzzleName");
     keys.add("completeness");
   }
@@ -2295,7 +2318,9 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 			const targetRaw = firstMeaningfulValue(resolvedVisualFieldValue(metadataValue(targetMetadata, key), targetDetails, key), readMetadataValue(targetDetails, comparisonMetadataAliases(key)));
 			const targetValue = comparisonValue(targetRaw);
 			const candidateValue = comparisonCandidateFieldValue(listing, candidateDetails, key);
-			const titleDerivedValue = comparisonTitleDerivedValue(listing, key, targetValue, category);
+			const titleDerivedValue = isBoardGameTarget
+          && /^(?:year|releaseYear)$/i.test(key)
+          ? "Unknown" : comparisonTitleDerivedValue(listing, key, targetValue, category);
 			const fieldLabel = comparisonFieldLabel(key);
 			const normalizedFieldLabel = fieldLabel.trim().toLowerCase();
 			if (emittedFieldLabels.has(normalizedFieldLabel)) continue;
@@ -3622,6 +3647,8 @@ function compoundNumber(value: unknown): { numerator: string; denominator: strin
 
 function explicitCompoundNumberConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   const details = extractTargetItemDetails(targetMetadata);
+  // Pokémon fractions and namespaces use the same bounded parser at every gate.
+  if (normalizedChoice(metadataValue(targetMetadata, "category")) === "pokemon") return null;
   const target = compoundNumber(details.cardNumber ?? details.catalogNumber);
   if (!target) return null;
   const candidate = canonicalCandidateTitle(listing).match(/(?:\b(?:card(?:\s*(?:no\.?|number))?|catalog(?:\s*(?:no\.?|number))?|cat\.?)\s*#?|#\s*)(\d{1,6}[A-Za-z]?)\s*\/\s*(\d{1,7})\b/i);
@@ -3906,7 +3933,6 @@ function pokemonIdentityConflict(targetMetadata: string, listing: VisualSourceCa
     ? [
         ['card name', firstMeaningfulValue(target.cardName, target.pokemonName, target.name, extractTargetTitle(targetMetadata)), ['cardName', 'pokemonName', 'name'], [], true],
         ['set', target.setName ?? target.set ?? target.cardSet, ['setName', 'set', 'cardSet', 'series'], [], true],
-        ['card number', target.cardNumber ?? target.cardNo ?? target.number, ['cardNumber', 'cardNo', 'number'], [/(?:#|card\s*(?:no\.?|number)?\s*)(\d{1,4}(?:\s*\/\s*\d{1,4})?)/i], false],
         ['language', target.language, ['language'], [/(English|Japanese|French|German|Italian|Spanish|Korean|Chinese)/i], false],
         ['finish', target.finish ?? target.finishVariant, ['finish', 'finishVariant'], [/(Normal|Holo|Reverse\s+Holo|Full\s+Art|Rainbow|Gold)/i], false],
         ['card type / mechanic', target.cardType ?? target.mechanic ?? target.variant, ['cardType', 'mechanic', 'variant'], [/(VMAX|VSTAR|\bV\b|\bGX\b|\bex\b|BREAK|Tag\s+Team|Radiant|Amazing\s+Rare|ACE\s+SPEC)/i], false],
@@ -5809,6 +5835,29 @@ function pokemonScoreNumber(targetValue: unknown, listing: VisualSourceCandidate
   const candidate = witness?.value.match(/\d{1,4}(?:\s*\/\s*\d{1,4})?/i)?.[0];
   return scoreMatch(candidate ? pokemonComparableValue(candidate) === pokemonComparableValue(target) : null, witness);
 }
+function pokemonTitleNumber(title: string) {
+  const parsed = readPokemonCardNumbersFromTitle(title);
+  if (parsed.ambiguous) return null;
+  // Prefer a fuller actual declaration, not a value reconstructed from target.
+  const specificity = (value: typeof parsed.observations[number]) => Number(Boolean(value.denominator)) * 4
+    + [value.numerator.prefix, value.numerator.suffix, value.denominator?.prefix, value.denominator?.suffix].filter(Boolean).length;
+  return [...parsed.observations].sort((a, b) => specificity(b) - specificity(a))[0] ?? null;
+}
+function pokemonScoreCardNumber(targetValue: unknown, listing: VisualSourceCandidate, targetMetadata: string): ScorePredicate {
+  if (!parsePokemonCardNumber(targetValue)) return null;
+  const details = candidateStructuredDetails(listing);
+  const aliases = ['cardNumber', 'cardNo', 'number'];
+  const declarations = aliases.map(alias => readMetadataValue(listing, [alias]) || readMetadataValue(details, [alias])).filter(Boolean);
+  const titleNumbers = readPokemonCardNumbersFromTitle(canonicalCandidateTitle(listing));
+  if (titleNumbers.ambiguous || findMaterialMetadataConflicts(targetMetadata, listing).some(conflict => aliases.includes(conflict.field))) return null;
+  if (declarations.some((value, index) => declarations.slice(index + 1).some(other => comparePokemonCardNumbers(value, other) === 'different'))
+    || declarations.some(value => titleNumbers.observations.some(observed => comparePokemonCardNumbers(value, observed.raw) === 'different'))) return null;
+  const explicit = scoreCandidateEvidence(listing, aliases);
+  const titleObservation = pokemonTitleNumber(canonicalCandidateTitle(listing));
+  const witness = explicit ?? (titleObservation ? { value: titleObservation.raw, source: 'title' as const, field: 'cardNumber' } : null);
+  const result = comparePokemonCardNumbers(targetValue, witness?.value);
+  return scoreMatch(result === 'match' ? true : result === 'different' ? false : null, witness);
+}
 export function pokemonVisualScore(listing: VisualSourceCandidate, targetMetadata: string): MetadataScoreResult {
   const type = pokemonTargetItemType(targetMetadata);
   const target = extractTargetItemDetails(targetMetadata);
@@ -5820,7 +5869,7 @@ export function pokemonVisualScore(listing: VisualSourceCandidate, targetMetadat
     switch (field) {
       case 'cardName': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.cardName, target.pokemonName, target.name, extractTargetTitle(targetMetadata)), listing, ['cardName', 'pokemonName', 'name', 'title'], [], true)); break;
       case 'setName': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.setName, target.set, target.cardSet, target.series), listing, ['setName', 'set', 'cardSet', 'series'], [], true)); break;
-      case 'cardNumber': add(field, points, pokemonScoreNumber(firstMeaningfulValue(target.cardNumber, target.cardNo, target.number), listing, ['cardNumber', 'cardNo', 'number'], [/(?:#|card\s*(?:no\.?|number)?\s*)(\d{1,4}(?:\s*\/\s*\d{1,4})?)/i])); break;
+      case 'cardNumber': add(field, points, pokemonScoreCardNumber(firstMeaningfulValue(target.cardNumber, target.cardNo, target.number), listing, targetMetadata)); break;
       case 'language': add(field, points, pokemonScoreValue(target.language, listing, ['language'], [/(English|Japanese|French|German|Italian|Spanish|Korean|Chinese)/i], false)); break;
       case 'finish': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.finish, target.finishVariant), listing, ['finish', 'finishVariant'], [/(Normal|Holo|Reverse\s+Holo|Full\s+Art|Rainbow|Gold)/i], false)); break;
       case 'cardType': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.cardType, target.mechanic, target.variant), listing, ['cardType', 'mechanic', 'variant'], [/(VMAX|VSTAR|\bV\b|\bGX\b|\bex\b|BREAK|Tag\s+Team|Radiant|Amazing\s+Rare|ACE\s+SPEC)/i], false)); break;
@@ -5938,11 +5987,21 @@ function vintageToyScoreYearMatch(targetValue: unknown, listing: VisualSourceCan
 }
 
 function vintageToyScoreNumberMatch(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[]): ScorePredicate {
-  const target = String(targetValue ?? "").match(/\b\d{1,7}\b/)?.[0];
+  const field = aliases[0] as ToyNumericField;
+  const target = parseToyNumericValue(targetValue, field);
   if (!target) return null;
-  const candidate = vintageToyScoreCandidateText(listing, aliases);
-  const candidateNumber = (candidate.explicit || candidate.text).match(new RegExp(`\b${target}\b`))?.[0];
-  return scoreMatch(candidateNumber ? candidateNumber === target : null, candidate.explicit ? { value: candidate.explicit, source: 'structured', field: aliases[0] } : null);
+  const details = candidateStructuredDetails(listing);
+  const explicit = scoreCandidateEvidence(listing, aliases);
+  const declarations = aliases.map(alias => readMetadataValue(listing, [alias]) || readMetadataValue(details, [alias])).filter(Boolean)
+    .map(value => parseToyNumericValue(value, field));
+  if (declarations.some(value => value && declarations.some(other => other && value.value !== other.value))) return null;
+  const titleDeclarations = extractToyNumericTitleEvidence(canonicalCandidateTitle(listing), field);
+  if (titleDeclarations.ambiguous || declarations.some(value => value
+    && titleDeclarations.observations.some(observed => value.value !== observed.value))) return null;
+  const titleValue = readToyNumericTitleEvidence(canonicalCandidateTitle(listing), field);
+  const candidate = explicit ? parseToyNumericValue(explicit.value, field) : titleValue;
+  const witness = explicit ?? (titleValue ? { value: titleValue.raw, source: 'title' as const, field } : null);
+  return scoreMatch(candidate ? candidate.value === target.value : null, witness);
 }
 
 function vintageToyScoreStateMatch(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], positive: RegExp, negative: RegExp): ScorePredicate {

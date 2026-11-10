@@ -89,6 +89,9 @@ export function rankingAwardFieldKey(field: string, category = "", _itemType = "
   // Pokémon finish is identity finish, not a Coin designation/strike term.
   if (categoryKey === "pokemon" && ["finish", "finishvariant"].includes(key)) return "finish";
   if (categoryKey === "pokemon" && ["editionera", "edition", "era"].includes(key)) return "editionera";
+  if (categoryKey === "pokemon" && key === "number") return "cardnumber";
+  if (categoryKey === "vintagetoys" && ["setnumber", "setno"].includes(key)) return "setnumber";
+  if (categoryKey === "vintagetoys" && ["piececount", "pieces", "numberofpieces"].includes(key)) return "piececount";
   if (categoryKey === "stamps" && ["scottnumber", "catalognumber", "catalogno"].includes(key)) return "scottnumber";
   return ALIAS_KEYS.get(key) ?? key;
 }

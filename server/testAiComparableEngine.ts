@@ -14,6 +14,8 @@ import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAu
   type FinalIntakeReport, type FinalIdentityAdmission, type FinalValuationUse, type FinalUseReport,
   boundedFinalDisplayCorrelation, boundedDiagnosticVisualExecution, type FinalDisplayCorrelation, type FinalUsePriceGroup, type ValuationUseOptions } from '../shared/testAiValuationUse';
 import type { MetadataRankingBinding } from '../shared/testAiRankingPopulation';
+import { comparePokemonCardNumbers, parsePokemonCardNumber, readPokemonCardNumbersFromTitle,
+  type PokemonCardNumberComparison } from '../shared/testAiPokemonCardNumber';
 
 export type EvidenceState =
   | 'no_market_evidence'
@@ -413,6 +415,73 @@ function extractComparableNumber(title: string, category?: string): string | nul
 function normalizeComparableNumber(value: string | null | undefined): string | null {
   const match = String(value ?? '').match(/\d{1,6}/);
   return match ? String(Number(match[0])) : null;
+}
+
+function pokemonStructuredNumbers(record: Readonly<Record<string, unknown>> | undefined): string[] {
+  return Object.entries(record ?? {})
+    .filter(([field]) => ['cardnumber', 'cardno', 'number'].includes(field.toLowerCase().replace(/[^a-z0-9]/g, '')))
+    .flatMap(([, value]) => Array.isArray(value) ? value : [value])
+    .flatMap(value => {
+      const parsed = parsePokemonCardNumber(value);
+      return parsed ? [parsed.raw] : [];
+    });
+}
+
+/** Whether one observation includes every explicit component of another. */
+function pokemonNumberCovers(expected: string, observed: string): boolean {
+  const left = parsePokemonCardNumber(expected), right = parsePokemonCardNumber(observed);
+  if (!left || !right || comparePokemonCardNumbers(expected, observed) === 'different') return false;
+  return ([['numerator', left.numerator], ['denominator', left.denominator]] as const).every(([role, part]) => {
+    if (!part) return true;
+    const candidate = right[role];
+    return Boolean(candidate && part.number === candidate.number
+      && (!part.prefix || part.prefix === candidate.prefix) && (!part.suffix || part.suffix === candidate.suffix));
+  });
+}
+
+/** Title witnesses can confirm; declared structured numbers can only contradict. */
+function pokemonComparableNumberStatus(target: ComparableTarget, details: Record<string, unknown>, title: string,
+  declaredNumbers: readonly string[] = []): {
+    targetValue: string | null; observedNumber: string | null;
+    comparison: PokemonCardNumberComparison; conflicts: string[];
+  } {
+  const targetTitle = readPokemonCardNumbersFromTitle(target.title);
+  const sourceTitle = readPokemonCardNumbersFromTitle(title);
+  const targets = [...new Set([...pokemonStructuredNumbers(details), ...targetTitle.observations.map(value => value.raw)])];
+  const titleNumbers = sourceTitle.observations.map(value => value.raw);
+  const candidates = [...new Set([...titleNumbers, ...declaredNumbers])];
+  const conflicts: string[] = [];
+  const addConflict = (value: string) => {
+    // Keep the existing exact #3 diagnostic while retaining full namespace/fraction.
+    const diagnostic = parsePokemonCardNumber(value)?.canonical ?? value;
+    if (!conflicts.includes(diagnostic)) conflicts.push(diagnostic);
+  };
+  for (const values of [targets, candidates]) {
+    values.forEach((value, index) => values.slice(index + 1).forEach(other => {
+      if (comparePokemonCardNumbers(value, other) === 'different') addConflict(other);
+    }));
+  }
+  for (const expected of targets) {
+    for (const candidate of candidates) {
+      if (comparePokemonCardNumbers(expected, candidate) === 'different') addConflict(candidate);
+    }
+  }
+  if ((targetTitle.ambiguous || sourceTitle.ambiguous) && !conflicts.length) addConflict('ambiguous title numbers');
+  // Keep the most complete target witnesses, without combining incomparable
+  // fragments or inferring absent components. A lone #4 vs 4/102 stays partial.
+  const completeTargets = targets.filter(expected => !targets.some(other =>
+    comparePokemonCardNumbers(expected, other) === 'partial' && pokemonNumberCovers(expected, other)));
+  const fullMatch = titleNumbers.some(value => targets.length > 0
+    && completeTargets.every(expected => comparePokemonCardNumbers(expected, value) === 'match'));
+  const partialMatch = titleNumbers.some(value => targets.some(expected =>
+    ['match', 'partial'].includes(comparePokemonCardNumbers(expected, value))));
+  const observed = sourceTitle.observations.find(value => value.denominator) ?? sourceTitle.observations[0];
+  return {
+    targetValue: targets[0] ?? null,
+    observedNumber: observed?.raw ?? null,
+    comparison: conflicts.length ? 'different' : fullMatch ? 'match' : partialMatch ? 'partial' : 'unknown',
+    conflicts,
+  };
 }
 
 function daysOld(date: string | null | undefined, nowMs: number): number | null {
@@ -1367,7 +1436,7 @@ export function assessComparableCategoryIdentity(
   const conflicts: string[] = [];
   const targetYear = firstString(details, ['year', 'releaseYear', 'publicationYear', 'originalReleaseYear']);
   const targetNumber = firstString(details, ['cardNumber', 'issueNumber', 'catalogNumber', 'serialNumber']);
-  const normalizedTargetNumber = normalizeComparableNumber(targetNumber);
+  const normalizedTargetNumber = category === 'pokemon' ? null : normalizeComparableNumber(targetNumber);
   const record = (label: string, value: string | null, matches: boolean, explicitConflict?: string | null) => {
     if (!value) return;
     if (explicitConflict) conflicts.push(`${label} differs (${explicitConflict})`);
@@ -1413,8 +1482,9 @@ export function assessComparableCategoryIdentity(
     const cardType = firstString(details, ['cardType', 'mechanic', 'variant', 'variation']);
     record('Card name', cardName, titleContainsExpectedPhrase(title, cardName));
     record('Set', setName, titleContainsExpectedPhrase(title, setName));
-    const number = numberStatus();
-    record('Card #', targetNumber, number.matches, number.conflict);
+    const number = pokemonComparableNumberStatus(target, details, title);
+    record('Card #', number.targetValue, number.comparison === 'match', number.conflicts.join(', ') || null);
+    if (!number.targetValue && number.conflicts.length) conflicts.push(`Card # differs (${number.conflicts.join(', ')})`);
     record('Edition / era', edition, titleContainsExpectedPhrase(title, edition));
     record('Finish', finish, titleContainsExpectedPhrase(title, finish));
     record('Card type / mechanic', cardType, titleContainsExpectedPhrase(title, cardType));
@@ -1812,22 +1882,51 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   }
 
   const targetNumber = firstString(details, ['cardNumber', 'issueNumber', 'catalogNumber', 'serialNumber']);
-  const normalizedTargetNumber = normalizeComparableNumber(targetNumber);
-  const observedNumber = extractComparableNumber(title, String(target.category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_'));
-  const categoryIdentity = assessComparableCategoryIdentity(target, details, title, observedNumber);
+  const normalizedTargetNumber = categoryKey === 'pokemon' ? null : normalizeComparableNumber(targetNumber);
   const identityApproval = getVerifiedIdentityApproval(sale, target, target.approvalTargetImageReference);
+  // Inbound/browser metadata has no positive authority here. Even a signed
+  // projection is used only to preserve declared contradictions to title/target.
+  const pokemonNumber = categoryKey === 'pokemon' ? pokemonComparableNumberStatus(target, details, title, [
+    ...pokemonStructuredNumbers(sale.normalizedStructuredMetadata),
+    ...pokemonStructuredNumbers(identityApproval?.candidateIdentityFields),
+  ]) : null;
+  const observedNumber = pokemonNumber ? pokemonNumber.observedNumber : extractComparableNumber(title, categoryKey);
+  const titleCategoryIdentity = assessComparableCategoryIdentity(target, details, title, observedNumber);
+  const categoryIdentity = pokemonNumber?.conflicts.length ? {
+    ...titleCategoryIdentity,
+    status: 'objective_conflict' as const,
+    confirmedFields: titleCategoryIdentity.confirmedFields.filter(field => field !== 'Card #'),
+    unconfirmedFields: titleCategoryIdentity.unconfirmedFields.filter(field => field !== 'Card #'),
+    conflicts: [...new Set([...titleCategoryIdentity.conflicts, `Card # differs (${pokemonNumber.conflicts.join(', ')})`])],
+  } : titleCategoryIdentity;
   const requiredApprovalMissing = sale.visualRequirement === 'required' && !identityApproval;
   const transportedApprovalUnverified = Boolean(sale.identityApproval) && !identityApproval;
+  const numberMatches = pokemonNumber ? pokemonNumber.comparison === 'match'
+    : Boolean(normalizedTargetNumber && observedNumber === normalizedTargetNumber);
   let materialNumberConflict = false;
-  if (normalizedTargetNumber && observedNumber === normalizedTargetNumber) {
+  if (numberMatches) {
     score += 12;
     reasons.push('catalog or issue number matches');
-  } else if (normalizedTargetNumber && observedNumber && observedNumber !== normalizedTargetNumber) {
+  } else if (pokemonNumber ? pokemonNumber.comparison === 'different'
+    : normalizedTargetNumber && observedNumber && observedNumber !== normalizedTargetNumber) {
     score -= 24;
     materialNumberConflict = true;
     reasons.push('explicit catalog or issue number differs');
-  } else if (normalizedTargetNumber) {
+  } else if (pokemonNumber?.comparison === 'partial') {
+    reasons.push('catalog or issue number partially matches; full Pokémon denominator or namespace is unconfirmed');
+  } else if (pokemonNumber ? pokemonNumber.targetValue : normalizedTargetNumber) {
     reasons.push('catalog or issue number is not stated in the comparable title');
+  }
+  if (pokemonNumber) {
+    // Original title captures/aliases are diagnostic facts, not first-digit tails.
+    const captures = readPokemonCardNumbersFromTitle(title).observations.map(value => value.raw);
+    if (captures.length) reasons.push(`Pokémon card numbers observed in title: ${captures.join(', ')}`);
+    const declared = [...new Set([...pokemonStructuredNumbers(sale.normalizedStructuredMetadata),
+      ...pokemonStructuredNumbers(identityApproval?.candidateIdentityFields)])];
+    if (declared.length && materialNumberConflict) reasons.push(`Pokémon card numbers declared in metadata: ${declared.join(', ')}`);
+    if (materialNumberConflict) reasons.push(`Pokémon target card numbers: ${[...new Set([
+      ...pokemonStructuredNumbers(details), ...readPokemonCardNumbersFromTitle(target.title).observations.map(value => value.raw),
+    ])].join(', ')}`);
   }
 
   const targetVariant = firstString(details, ['variant', 'parallel', 'edition', 'pressing', 'releaseType', 'language']);
@@ -1929,9 +2028,12 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   if (requiredApprovalMissing || transportedApprovalUnverified) reasons.push('required or transported identity approval is not verified for this target/image; title-only admission is withheld');
   const finalCategoryIdentity = approvedIdentity ? {
     ...categoryIdentity,
-    status: 'direct_confirmed' as const,
+    status: pokemonNumber?.comparison === 'partial' ? 'needs_review' as const : 'direct_confirmed' as const,
     confirmedFields: [...categoryIdentity.confirmedFields, 'Server-final visual identity'],
-    unconfirmedFields: [],
+    // Visual approval may resolve title omissions, but an explicitly partial
+    // card-number witness is still not a full number confirmation.
+    unconfirmedFields: pokemonNumber?.comparison === 'partial'
+      ? categoryIdentity.unconfirmedFields.filter(field => field === 'Card #') : [],
   } : categoryIdentity;
   if (materialNumberConflict || categoryHardConflict || universalHardConflict || transactionLotConflict) {
     identityRelationship = 'conflict';
@@ -1945,7 +2047,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   } else if (approvedIdentity) {
     identityRelationship = 'exact_identity';
     valuationRelationship = 'direct_comparable';
-  } else if (categoryDirectConfirmed && normalizedTargetNumber && observedNumber === normalizedTargetNumber) {
+  } else if (categoryDirectConfirmed && numberMatches) {
     identityRelationship = 'exact_identity';
     valuationRelationship = 'direct_comparable';
   } else if (categoryDirectConfirmed && targetVariant && title.toLowerCase().includes(targetVariant.toLowerCase())) {
@@ -2050,8 +2152,8 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     accepted, classification, score: boundedScore, identityRelationship, valuationRelationship,
     categoryIdentity: { ...finalCategoryIdentity, confirmedFields: [...finalCategoryIdentity.confirmedFields],
       unconfirmedFields: [...finalCategoryIdentity.unconfirmedFields], conflicts: [...finalCategoryIdentity.conflicts] },
-    titleCategoryIdentity: { ...categoryIdentity, confirmedFields: [...categoryIdentity.confirmedFields],
-      unconfirmedFields: [...categoryIdentity.unconfirmedFields], conflicts: [...categoryIdentity.conflicts] },
+    titleCategoryIdentity: { ...titleCategoryIdentity, confirmedFields: [...titleCategoryIdentity.confirmedFields],
+      unconfirmedFields: [...titleCategoryIdentity.unconfirmedFields], conflicts: [...titleCategoryIdentity.conflicts] },
     serverFinalApprovalVerified: Boolean(identityApproval),
     basis: accepted ? approvedIdentity ? 'server_final_visual' : 'title_evidence' : 'not_admitted',
     visualReviewStatus: sale.visualReviewStatus ?? 'not_reviewed', blockerCodes: identityBlockerCodes,
@@ -2070,7 +2172,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     identityRelationship,
     valuationRelationship,
     categoryIdentity: finalCategoryIdentity,
-    titleCategoryIdentity: categoryIdentity,
+    titleCategoryIdentity,
     identityAdmissionBasis: approvedIdentity ? 'server_final_visual' : 'title_evidence',
     ...(identityApproval ? { identityApproval } : {}),
     sourceId: sale.sourceId ?? sale.marketplace ?? null,
