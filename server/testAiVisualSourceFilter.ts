@@ -1,5 +1,6 @@
 import { invokeLLM, type ImageContent, type TextContent, type LlmProvider } from "./_core/llm";
 import { parseAnalyzerResponse } from "./testAiResponse";
+import { diagnoseVisualResponse } from "../shared/testAiVisualFailure";
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from "../shared/testAiMetadataConflict";
 import { buildSoldReviewBudget } from "../shared/testAiSalesEvidencePolicy";
 import {
@@ -54,6 +55,14 @@ export type MetadataFieldComparison = {
     awards?: RankingAward[];
     awardedPoints?: number;
     sources?: RankingAward['source'][];
+    /** Exact selected witnesses, not reconstructed candidate field values. */
+    scoringEvidence?: Array<{
+      awardField: string;
+      source: RankingAward['source'];
+      awardedPoints: number;
+      shared: boolean;
+      evidence: RankingAwardEvidence[];
+    }>;
   };
 };
 export type VisualDifference = {
@@ -617,6 +626,7 @@ function recordVisualExecutionError(attempt: VisualExecutionAttempt, error: unkn
   if (attempt.outcome !== "started") return;
   attempt.outcome = error instanceof VisualReviewTimeoutError ? "timed_out" : "error";
   attempt.errorCode = error instanceof VisualReviewTimeoutError ? "candidate_timeout" : "provider_error";
+  attempt.failureCode = error instanceof VisualReviewTimeoutError ? "candidate_timeout" : "provider_request_failed";
 }
 
 async function invokeVisualReview(
@@ -2201,7 +2211,7 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 	if (/^(?:year|releaseYear)$/i.test(key)) {
 		return title.match(/\b(?:17|18|19|20)\d{2}\b/)?.[0] ?? "Unknown";
 	}
-	if (/^(?:grade|numericGrade)$/i.test(key)) {
+	if (/^(?:grade|numericGrade|professionalGrade|finalGrade|gameGrade)$/i.test(key)) {
 		return titleGradeEvidence(title, category)?.grade ?? "Unknown";
 	}
 		if (/^(?:certificationCompany|gradingCompany|grader)$/i.test(key)) {
@@ -2233,9 +2243,14 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
     if (category === "vintage_toys" && /^(?:setNumber|pieceCount|numberOfPieces)$/i.test(key)) {
       return readToyNumericTitleEvidence(title, key as ToyNumericField)?.raw ?? "Unknown";
     }
-		const normalizedTarget = comparisonValue(targetValue);
-		return normalizedTarget !== "Unknown" && titleContainsValue(title, normalizedTarget)
-				? `${normalizedTarget} (detected in title)`
+		// Generic target-token overlap is not a field parser. Only established
+		// identity/text fields may retain the independent detected-in-title hint;
+		// quantities, economics, unknown fields and other numbers need a real
+		// parser or a separately labeled selected scoring witness below.
+		if (!/^(?:gameTitle|movieTitle|boxSetName|seriesName|gamePuzzleName|toyName|toyNameCharacter|vehicleName|accessoryName|accessoryType|consoleName|cardName|pinName|comicTitle|releaseTitle|albumTitle|artist|performer|player|athlete|signer|setName|series|franchise|character|brand|manufacturer|publisherBrand|publisher|recordLabel|platform|console|system|compatiblePlatform|compatibleSystem|format|mediaFormat|edition|releaseType|region|regionCode|country|language)$/i.test(key)) return "Unknown";
+			const normalizedTarget = comparisonValue(targetValue);
+			return normalizedTarget !== "Unknown" && titleContainsValue(title, normalizedTarget)
+					? `${normalizedTarget} (detected in title)`
 			: "Unknown";
 }
 function normalizedRankingReason(value: unknown): string {
@@ -2251,9 +2266,20 @@ function compactRankingReason(value: unknown): string {
 function rankingContributionForField(listing: VisualSourceCandidate, key: string, _fieldLabel: string, candidateValue: string, titleDerivedValue: string, category = "", itemType = ""): MetadataFieldComparison["rankingContribution"] {
   const contribution = rankingAwardContribution(listing.metadataScoreAwards, key, category, itemType);
   if (/^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key)) && key !== 'isGraded') {
-    return { ...contribution, matched: false, structured: false, titleDerived: false, awardedPoints: 0, awards: [], sources: [] };
+    return { ...contribution, matched: false, structured: false, titleDerived: false, awardedPoints: 0, awards: [], sources: [], scoringEvidence: [] };
   }
   const rowKey = rankingAwardFieldKey(key, category, itemType);
+  const scoringEvidence = contribution.awards.map((award) => {
+    const shared = rankingAwardFieldKey(award.field, category, itemType) !== rowKey;
+    return {
+      awardField: award.field, source: award.source, awardedPoints: award.awardedPoints, shared,
+      // A direct term can select a differently named alias (boxSetName/title,
+      // numberOfMovies/quantity, isGraded/grade). Keep that actual witness.
+      // A composite's child row may show only its own selected evidence.
+      evidence: (award.evidence ?? []).filter((evidence) => !shared
+        || rankingAwardFieldKey(evidence.field, category, itemType) === rowKey).map((evidence) => ({ ...evidence })),
+    };
+  });
   const columnAwarded = (source: "structured" | "title", value: string): boolean => {
     if (!meaningfulMetadataText(value)) return false;
     const displayed = value.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, "");
@@ -2280,7 +2306,19 @@ function rankingContributionForField(listing: VisualSourceCandidate, key: string
     titleDerived: contribution.titleDerived && columnAwarded("title", titleDerivedValue),
     awardedPoints: contribution.awards.reduce((sum, award) => sum + award.awardedPoints, 0),
     sources: [...new Set(contribution.awards.map((award) => award.source))],
+    scoringEvidence,
   };
+}
+/** Preserve the transport's existing 40-row cap, retaining scored fields first. */
+function boundedMetadataComparisonRows(rows: MetadataFieldComparison[]): MetadataFieldComparison[] {
+  if (rows.length <= 40) return rows;
+  const selected = new Set(rows.filter((row) => row.rankingContribution?.matched));
+  selected.add(rows[0]);
+  for (const row of rows) {
+    if (selected.size >= 40) break;
+    selected.add(row);
+  }
+  return rows.filter((row) => selected.has(row)).slice(0, 40);
 }
 function comparisonStatus(targetValue: string, candidateValue: string, category = "", key = ""): MetadataFieldComparison["status"] {
   if (!meaningfulMetadataText(targetValue) || !meaningfulMetadataText(candidateValue)) return "unknown";
@@ -2333,6 +2371,9 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
       || listing.metadataScoreAwards?.some(award => award.field === 'isGraded') ? ['isGraded'] : []),
     ...Object.keys(targetDetails),
     ...Object.keys(candidateDetails),
+    // Rule/composite terms may have no structured target/candidate key at all.
+    // Their points still need a visible row without inventing a field value.
+    ...(listing.metadataScoreAwards ?? []).filter((award) => award.awardedPoints > 0).map((award) => award.field),
     "itemType",
     "condition",
     "grade",
@@ -2378,7 +2419,7 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 						rankingContribution,
 				});
   }
-		return ([{
+		return boundedMetadataComparisonRows([{
 		fieldKey: "title",
 			targetField: "Target listing title",
     targetValue: comparisonValue(extractTargetTitle(targetMetadata)),
@@ -2389,7 +2430,7 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 			titleDerivedValue: comparisonValue(listing.title),
 			titleDerivedStatus: "unknown",
 			rankingContribution: rankingContributionForField(listing, "title", "Target listing title", comparisonValue(listing.title), comparisonValue(listing.title), category, targetType),
-		}, ...rows].slice(0, 40)) as MetadataFieldComparison[];
+		}, ...rows]);
 }
 
 /**
@@ -2416,7 +2457,7 @@ export function withMetadataFieldComparisons<T extends Record<string, any>>(targ
   for (const row of fresh) {
     if (!present.has(normalizedFieldKey(row.fieldKey ?? row.targetField))) rows.push(row);
   }
-  return { ...listing, metadataFieldComparisons: rows.slice(0, 40) } as T & { metadataFieldComparisons: MetadataFieldComparison[] };
+  return { ...listing, metadataFieldComparisons: boundedMetadataComparisonRows(rows) } as T & { metadataFieldComparisons: MetadataFieldComparison[] };
 }
 
 type ExplicitState = "yes" | "no" | "unknown";
@@ -7242,6 +7283,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       let text = "";
       let candidateError: unknown;
       let initialResponseAttempt: VisualExecutionAttempt | undefined;
+      let initialResponse: unknown;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
         const attempt = beginAttempt(candidate.candidateIndex, "initial", responseFormat.type);
         try {
@@ -7250,6 +7292,10 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
           text = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
           attempt.outcome = "no_decision";
           initialResponseAttempt = attempt;
+          initialResponse = response;
+          if (!text.trim()) Object.assign(attempt, diagnoseVisualResponse({ response, content: text,
+            parsedPayload: null, normalizedReviewCount: 0, listingCount: preparedListings.length,
+            expectedCandidateIndex: candidate.candidateIndex }));
           if (text.trim()) break;
           throw new Error("The vision model returned no structured content");
         } catch (error) {
@@ -7258,12 +7304,18 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
         }
       }
       if (!text.trim()) return { reviews: [] as VisualSourceReview[], error: candidateError };
-	      const primaryReviews = normalizeSingleCandidateVisualReview(
-        parseAnalyzerResponse(text),
-	        preparedListings.length,
+      const primaryPayload = parseAnalyzerResponse(text);
+      const primaryReviews = normalizeSingleCandidateVisualReview(
+        primaryPayload,
+        preparedListings.length,
         candidate.candidateIndex,
       );
-      if (initialResponseAttempt) initialResponseAttempt.outcome = primaryReviews.length ? "usable_review" : "no_decision";
+      if (initialResponseAttempt) {
+        initialResponseAttempt.outcome = primaryReviews.length ? "usable_review" : "no_decision";
+        Object.assign(initialResponseAttempt, diagnoseVisualResponse({ response: initialResponse, content: text,
+          parsedPayload: primaryPayload, normalizedReviewCount: primaryReviews.length,
+          listingCount: preparedListings.length, expectedCandidateIndex: candidate.candidateIndex }));
+      }
       // Reconcile a holder-cropped coin result with an exact completed-sale
       // title before calculating the retry. The reconciliation only unlocks
       // the independent second visual pass; it does not itself admit a sale.
@@ -7378,9 +7430,13 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
           const raw = response.choices[0]?.message?.content;
           const galleryText = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
           attempt.outcome = "no_decision";
+          if (!galleryText.trim()) Object.assign(attempt, diagnoseVisualResponse({ response, content: galleryText,
+            parsedPayload: null, normalizedReviewCount: 0, listingCount: preparedListings.length,
+            expectedCandidateIndex: candidate.candidateIndex }));
           if (!galleryText.trim()) throw new Error("The gallery visual review returned no structured content");
+          const galleryPayload = parseAnalyzerResponse(galleryText);
           galleryReviews = normalizeSingleCandidateVisualReview(
-            parseAnalyzerResponse(galleryText),
+            galleryPayload,
             preparedListings.length,
             candidate.candidateIndex,
           );
@@ -7393,6 +7449,9 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
             );
           }
           attempt.outcome = galleryReviews.length ? "usable_review" : "no_decision";
+          Object.assign(attempt, diagnoseVisualResponse({ response, content: galleryText,
+            parsedPayload: galleryPayload, normalizedReviewCount: galleryReviews.length,
+            listingCount: preparedListings.length, expectedCandidateIndex: candidate.candidateIndex }));
           if (galleryReviews.length) break;
           galleryError = new Error("The high-resolution visual-review call returned a structured reply without the required review decision.");
         } catch (error) {
@@ -7426,13 +7485,20 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
           const raw = response.choices[0]?.message?.content;
           const thirdText = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
           attempt.outcome = "no_decision";
+          if (!thirdText.trim()) Object.assign(attempt, diagnoseVisualResponse({ response, content: thirdText,
+            parsedPayload: null, normalizedReviewCount: 0, listingCount: preparedListings.length,
+            expectedCandidateIndex: candidate.candidateIndex }));
           if (!thirdText.trim()) throw new Error("The third Disney visual confirmation returned no structured content");
+          const thirdPayload = parseAnalyzerResponse(thirdText);
           galleryReviews = normalizeSingleCandidateVisualReview(
-            parseAnalyzerResponse(thirdText),
+            thirdPayload,
             preparedListings.length,
             candidate.candidateIndex,
           );
           attempt.outcome = galleryReviews.length ? "usable_review" : "no_decision";
+          Object.assign(attempt, diagnoseVisualResponse({ response, content: thirdText,
+            parsedPayload: thirdPayload, normalizedReviewCount: galleryReviews.length,
+            listingCount: preparedListings.length, expectedCandidateIndex: candidate.candidateIndex }));
           if (!galleryReviews.length) {
             galleryError = new Error("The third Disney visual confirmation returned no usable review decision.");
           }

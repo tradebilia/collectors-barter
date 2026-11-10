@@ -1,5 +1,6 @@
-import type { VisualExecution } from './testAiVisualExecution';
+import type { VisualExecution, VisualExecutionAttempt, VisualExecutionFailureCode } from './testAiVisualExecution';
 import type { CandidateDisplayRow, CandidateDisplayScope } from './testAiCandidateLedger';
+import { sanitizeVisualExecutionAttemptDiagnostics } from './testAiVisualFailure';
 
 export type CandidateDisplayFact = { label: string; className: string; code: string; reason?: string };
 const neutral = 'text-gray-300', amber = 'text-amber-300', red = 'text-red-300', green = 'text-emerald-300';
@@ -10,9 +11,50 @@ const executionReasons: Record<string, string> = {
   target_image_unavailable: 'Target image unavailable', candidate_image_unavailable: 'Candidate image unavailable',
   adaptive_window_limit: 'Adaptive review window stopped', adaptive_match_target: 'Match target reached',
   overall_deadline: 'Overall review deadline reached', selected_not_dispatched: 'Selected but not dispatched',
+  outer_identity_filter: 'Outer identity filter hold', outer_metadata_hold: 'Outer metadata hold', outer_replica_hold: 'Outer replica hold',
   review_returned: 'Usable response returned', no_usable_decision: 'No usable decision returned',
   candidate_timeout: 'Candidate call timed out', provider_error: 'Provider failure', legacy_unknown: 'Execution provenance unavailable',
 };
+export const visualExecutionFailureLabels: Record<VisualExecutionFailureCode, string> = {
+  empty_content: 'Empty response content', provider_refusal: 'Provider refusal recorded',
+  response_truncated: 'Response truncated — output limit reached', invalid_json: 'Invalid JSON response',
+  invalid_response_shape: 'JSON response is not an object', missing_reviews: 'Reviews field missing',
+  invalid_reviews: 'Reviews field is not an array', empty_reviews: 'Reviews array empty',
+  invalid_verdict: 'Invalid review verdict', invalid_confidence: 'Invalid review confidence',
+  invalid_candidate_binding: 'Invalid dispatched candidate binding', missing_rationale: 'Review rationale missing or empty',
+  provider_request_failed: 'Provider request failed', candidate_timeout: 'Candidate call timed out',
+  reason_not_recorded: 'Failure reason not recorded',
+};
+function safeLabel(labels: Record<string, string>, value: unknown, fallback: string): string {
+  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(labels, value) ? labels[value] : fallback;
+}
+/** No provider body, error message, image URL or arbitrary enum value is rendered. */
+export function candidateAttemptFailureFact(attempt: VisualExecutionAttempt): CandidateDisplayFact {
+  const diagnostic = sanitizeVisualExecutionAttemptDiagnostics(attempt);
+  if (diagnostic.failureCode) return { label: visualExecutionFailureLabels[diagnostic.failureCode], code: diagnostic.failureCode, className: amber };
+  return { label: attempt.failureCode === undefined ? 'Legacy detail not recorded' : 'Failure reason not recorded',
+    code: attempt.failureCode === undefined ? 'legacy_detail_not_recorded' : 'reason_not_recorded', className: amber };
+}
+export function candidateExecutionAttemptFacts(row: CandidateDisplayRow) {
+  return (candidateExecutionReceipt(row)?.attempts ?? []).map((attempt, index) => {
+    const diagnostic = sanitizeVisualExecutionAttemptDiagnostics(attempt);
+    const failed = ['no_decision', 'timed_out', 'error'].includes(attempt.outcome);
+    const metadata = [
+      diagnostic.finishReason && safeLabel({ stop: 'Finish: normal stop', length: 'Finish: output limit reached', content_filter: 'Finish: content filter',
+        tool_calls: 'Finish: tool calls', function_call: 'Finish: function call', other: 'Finish: other recorded reason', not_recorded: 'Finish reason not recorded' }, diagnostic.finishReason, 'Finish reason not recorded'),
+      diagnostic.refusal && safeLabel({ present: 'Provider refusal recorded', absent: 'No explicit refusal recorded', not_recorded: 'Refusal detail not recorded' }, diagnostic.refusal, 'Refusal detail not recorded'),
+      diagnostic.candidateBinding && safeLabel({ bound_to_request: 'Bound to dispatched candidate', rebound_to_request: 'Model index rebound to dispatched candidate', not_recorded: 'Candidate binding detail not recorded' }, diagnostic.candidateBinding, 'Candidate binding detail not recorded'),
+    ].filter((value): value is string => Boolean(value));
+    return {
+      ordinal: Number.isInteger(attempt.ordinal) && attempt.ordinal > 0 && attempt.ordinal <= 100 ? attempt.ordinal : index + 1,
+      stage: safeLabel({ initial: 'Initial review', high_resolution_retry: 'High-resolution retry', disney_third_confirmation: 'Disney third confirmation' }, attempt.stage, 'Stage not recorded'),
+      format: safeLabel({ json_schema: 'JSON schema', json_object: 'JSON object' }, attempt.format, 'Format not recorded'),
+      outcome: safeLabel({ started: 'Started — terminal result not recorded', usable_review: 'Usable review returned', no_decision: 'No usable review returned', timed_out: 'Timed out', error: 'Attempt ended with error' }, attempt.outcome, 'Outcome not recorded'),
+      failure: failed ? candidateAttemptFailureFact(attempt) : undefined,
+      metadata,
+    };
+  });
+}
 export function candidateExecutionReceipt(row: CandidateDisplayRow): VisualExecution | undefined {
   const value = row.visualExecution;
   return value?.version === 1 && Array.isArray(value.attempts) ? value as VisualExecution : undefined;
@@ -32,22 +74,27 @@ export function isHardCandidateDisplayException(row: CandidateDisplayRow): boole
 export function candidateExecutionFact(row: CandidateDisplayRow, scope: CandidateDisplayScope = {}): CandidateDisplayFact {
   const receipt = candidateExecutionReceipt(row);
   if (!receipt || receipt.state === 'unknown') return { label: 'Legacy / unknown', code: 'legacy_unknown', className: neutral };
-  const reason = executionReasons[receipt.reasonCode] ?? receipt.reasonCode;
+  const reason = safeLabel(executionReasons, receipt.reasonCode, 'Execution reason not recorded');
+  const code = Object.prototype.hasOwnProperty.call(executionReasons, receipt.reasonCode) ? receipt.reasonCode : 'legacy_unknown';
   if (!hasActualVisualDispatch(row)) {
     if (receipt.selectedForReview || receipt.state === 'selected_pending') return {
       label: scope.activeRequest ? 'Selected — active request' : 'Not reviewed — selected but not dispatched',
-      code: receipt.reasonCode, className: amber, reason,
+      code, className: amber, reason,
     };
-    return { label: receipt.hardExclusion ? 'Not dispatched — hard exclusion' : 'Not dispatched', code: receipt.reasonCode, className: receipt.hardExclusion ? red : amber, reason };
+    return { label: receipt.hardExclusion ? 'Not dispatched — hard exclusion' : 'Not dispatched', code, className: receipt.hardExclusion ? red : amber, reason };
   }
   const last = receipt.attempts[receipt.attempts.length - 1];
   const hasResponse = hasActualVisualResponse(row);
-  const retryFailed = hasResponse && last?.stage !== 'initial' && ['timed_out', 'error'].includes(last?.outcome);
-  if (retryFailed) return { label: `Response retained; retry ${last.outcome === 'timed_out' ? 'timed out' : 'failed'}`, code: receipt.reasonCode, className: amber, reason };
-  if (hasResponse) return { label: receipt.attempts.some((attempt) => attempt.outcome === 'timed_out') ? 'Completed response — recovered timeout' : 'Completed response', code: receipt.reasonCode, className: green, reason };
-  if (receipt.state === 'timed_out') return { label: 'Timed out — no usable response', code: receipt.reasonCode, className: amber, reason };
-  if (receipt.reasonCode === 'provider_error' || last?.outcome === 'error') return { label: 'Provider failure — dispatched', code: receipt.reasonCode, className: amber, reason };
-  return { label: scope.activeRequest && last?.outcome === 'started' ? 'Dispatched — active request' : 'Dispatched — no usable response', code: receipt.reasonCode, className: amber, reason };
+  const failure = last && ['no_decision', 'timed_out', 'error'].includes(last.outcome) ? candidateAttemptFailureFact(last) : undefined;
+  const retryFailed = hasResponse && last?.stage !== 'initial' && Boolean(failure);
+  if (retryFailed) return { label: `Response retained; retry ${last.outcome === 'timed_out' ? 'timed out' : 'failed'}`, code, className: amber, reason: failure?.label };
+  if (hasResponse) return { label: receipt.attempts.some((attempt) => attempt.outcome === 'timed_out') ? 'Completed response — recovered timeout'
+    : receipt.attempts.some((attempt) => ['no_decision', 'error'].includes(attempt.outcome)) ? 'Completed response — recovered failed attempt' : 'Completed response', code, className: green, reason };
+  if (receipt.state === 'timed_out' || last?.outcome === 'timed_out') return { label: 'Timed out — no usable response', code, className: amber, reason: failure?.label ?? reason };
+  const knownFailure = last && sanitizeVisualExecutionAttemptDiagnostics(last).failureCode;
+  if (failure && knownFailure && knownFailure !== 'reason_not_recorded') return { label: `Dispatched — ${failure.label}`, code, className: amber, reason: 'No usable response returned' };
+  if (receipt.reasonCode === 'provider_error' || last?.outcome === 'error') return { label: 'Provider failure — dispatched', code, className: amber, reason: failure?.label ?? reason };
+  return { label: scope.activeRequest && last?.outcome === 'started' ? 'Dispatched — active request' : 'Dispatched — no usable response', code, className: amber, reason: failure?.label ?? reason };
 }
 export function candidateIdentityFact(row: CandidateDisplayRow): CandidateDisplayFact {
   const receipt = candidateExecutionReceipt(row);

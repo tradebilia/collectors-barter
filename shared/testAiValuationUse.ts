@@ -1,5 +1,6 @@
 import type { MetadataRankingBinding } from './testAiRankingPopulation';
 import type { VisualExecution, VisualExecutionAttempt, VisualExecutionReasonCode } from './testAiVisualExecution';
+import { sanitizeVisualExecutionAttemptDiagnostics } from './testAiVisualFailure';
 
 /** Reporting only. None of these fields is a signing, identity or pricing input. */
 export const FINAL_VALUATION_USE_VERSION = 'stage5-final-use-v1' as const;
@@ -167,7 +168,8 @@ export function boundedDiagnosticVisualExecution(input: unknown): VisualExecutio
       || !['initial', 'high_resolution_retry', 'disney_third_confirmation'].includes(stage)
       || !['json_schema', 'json_object'].includes(format) || !['started', 'usable_review', 'no_decision', 'timed_out', 'error'].includes(outcome)) continue;
     attempts.push({ ordinal: attempt.ordinal, stage, format, outcome,
-      ...(attempt.errorCode === 'candidate_timeout' || attempt.errorCode === 'provider_error' ? { errorCode: attempt.errorCode } : {}) });
+      ...(attempt.errorCode === 'candidate_timeout' || attempt.errorCode === 'provider_error' ? { errorCode: attempt.errorCode } : {}),
+      ...sanitizeVisualExecutionAttemptDiagnostics(attempt) });
   }
   const reviewVerdict = identity.reviewVerdict as VisualExecution['identity']['reviewVerdict'];
   return { version: 1, state, reasonCode: row.reasonCode as VisualExecutionReasonCode,

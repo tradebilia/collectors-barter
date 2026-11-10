@@ -2,6 +2,16 @@
 export type VisualExecutionStage = "initial" | "high_resolution_retry" | "disney_third_confirmation";
 export type VisualExecutionFormat = "json_schema" | "json_object";
 export type VisualExecutionOutcome = "started" | "usable_review" | "no_decision" | "timed_out" | "error";
+/** Diagnostics only: these fixed codes never grant identity or valuation authority. */
+export type VisualExecutionFailureCode =
+  | "empty_content" | "provider_refusal" | "response_truncated" | "invalid_json"
+  | "invalid_response_shape" | "missing_reviews" | "invalid_reviews" | "empty_reviews"
+  | "invalid_verdict" | "invalid_confidence" | "invalid_candidate_binding" | "missing_rationale"
+  | "provider_request_failed" | "candidate_timeout" | "reason_not_recorded";
+export type VisualExecutionFinishReason = "stop" | "length" | "content_filter" | "tool_calls" | "function_call" | "other" | "not_recorded";
+export type VisualExecutionRefusal = "present" | "absent" | "not_recorded";
+/** Returned indexes may be rebound by the existing one-candidate normalizer. */
+export type VisualExecutionCandidateBinding = "bound_to_request" | "rebound_to_request" | "not_recorded";
 export type VisualExecutionReasonCode =
   | "workflow_context_only" | "universal_pre_visual_hold" | "universal_duplicate_hold"
   | "multi_item_hold" | "declared_identity_conflict" | "selection_excluded"
@@ -16,6 +26,11 @@ export type VisualExecutionAttempt = {
   format: VisualExecutionFormat;
   outcome: VisualExecutionOutcome;
   errorCode?: "candidate_timeout" | "provider_error";
+  /** Optional for legacy receipts. Never copy provider text, errors or URLs here. */
+  failureCode?: VisualExecutionFailureCode;
+  finishReason?: VisualExecutionFinishReason;
+  refusal?: VisualExecutionRefusal;
+  candidateBinding?: VisualExecutionCandidateBinding;
 };
 export type VisualExecutionIdentity = {
   result: "match" | "mismatch" | "manual_unknown" | "not_established";
