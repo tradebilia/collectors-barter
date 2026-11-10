@@ -2017,6 +2017,7 @@ export const testAIRouter = router({
         const visualActiveFilter = input.includeVisualReview || autographMarketContext
           ? await filterVisualSourceCandidates({
               sourceRole: 'ebay',
+              reviewBudgetRole: 'context',
               sourceLabel: 'eBay active listings',
               targetImageUrl: input.imageUrl,
               targetMetadata,
@@ -2027,6 +2028,7 @@ export const testAIRouter = router({
             })
           : await filterVisualSourceCandidates({
               sourceRole: 'ebay',
+              reviewBudgetRole: 'context',
               sourceLabel: 'eBay active listings',
               targetImageUrl: null,
               targetMetadata,
@@ -2247,6 +2249,7 @@ export const testAIRouter = router({
       })), 'ebay_active_subset', input.targetMetadata);
       const visualFilter = await filterVisualSourceCandidates({
               sourceRole: 'ebay',
+        reviewBudgetRole: 'context',
         sourceLabel: 'eBay active listings',
         targetImageUrl: input.targetImageUrl,
         targetMetadata: input.targetMetadata,
@@ -3227,6 +3230,7 @@ export const testAIRouter = router({
         const sharedVisualFilter = await filterVisualSourceCandidates({
           visualProvider: input.visualProvider,
               sourceRole: 'ebay',
+          reviewBudgetRole: 'sold_source',
           sourceLabel: 'eBay Sold-Comps',
           targetImageUrl: safeTargetImage,
           targetMetadata: soldCompsTargetMetadata,

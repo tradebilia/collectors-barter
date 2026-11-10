@@ -1,6 +1,7 @@
 import { invokeLLM, type ImageContent, type TextContent, type LlmProvider } from "./_core/llm";
 import { parseAnalyzerResponse } from "./testAiResponse";
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from "../shared/testAiMetadataConflict";
+import { buildSoldReviewBudget } from "../shared/testAiSalesEvidencePolicy";
 import {
   buildMarketplaceTitleEvidence,
   classifyMarketplaceProductRole,
@@ -197,6 +198,9 @@ export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
   deadlineReached?: boolean;
   reviews: VisualSourceReview[];
   visualExecutionCounts?: VisualExecutionCounts;
+  /** Review opportunity only; never completed-sale, identity or pricing authority. */
+  reviewBudget?: ReturnType<typeof buildSoldReviewBudget> & { targetItemType: string; existingScoreBandCap: number; minimumMetadataScore: number;
+    queuedCount: number; dispatchedCount: number; deadlineHeldCount: number };
   note: string;
 };
 
@@ -4460,6 +4464,7 @@ export function prioritizeVisualSourceCandidates<T extends VisualSourceCandidate
   candidates: Array<{ item: T; candidateIndex: number; imageUrl: string; imageUrls: string[] }>,
   targetMetadata: string,
   declaredReviews: VisualSourceReview[],
+  preserveCategoryScoreOrder = false,
 ) {
   const declaredConflicts = new Set(declaredReviews.filter(review => review.verdict === "mismatch").map(review => review.candidateIndex));
   return candidates
@@ -4468,7 +4473,9 @@ export function prioritizeVisualSourceCandidates<T extends VisualSourceCandidate
     // are the strongest available pre-vision identity signals. They must reach
     // vision before merely exact-tier rows; otherwise a clearly graded match
     // can remain outside the bounded review window behind weaker results.
-    .sort((a, b) => visualPriorityScore(b.item, targetMetadata) - visualPriorityScore(a.item, targetMetadata) || visualQueryTierPriority(b.item) - visualQueryTierPriority(a.item) || a.candidateIndex - b.candidateIndex)
+    .sort((a, b) => preserveCategoryScoreOrder
+      ? Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex
+      : visualPriorityScore(b.item, targetMetadata) - visualPriorityScore(a.item, targetMetadata) || visualQueryTierPriority(b.item) - visualQueryTierPriority(a.item) || a.candidateIndex - b.candidateIndex)
     .slice(0, VISUAL_REVIEW_MAX_CANDIDATES);
 }
 
@@ -5945,8 +5952,15 @@ function selectPokemonVisualCandidates<T extends VisualSourceCandidate>(candidat
     return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown, metadataScoreAwards: scoring.awards } as T };
   }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex);
   const cap = pokemonVisualCap(Number(ranked[0]?.item.metadataMatchScore ?? 0));
-  const selected = ranked.slice(0, cap);
-  return { ranked, selected, excluded: ranked.slice(cap).map((entry) => entry.item) };
+  const selected = ranked.filter(candidate => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 60).slice(0, cap);
+  const selectedKeys = new Set(selected.map(candidate => candidate.candidateIndex));
+  return { ranked, selected, cap, excluded: ranked.filter(candidate => !selectedKeys.has(candidate.candidateIndex)).map(entry => ({
+    ...entry.item, evidenceDisposition: 'pre_vision_score_excluded', visualReviewStatus: 'not_reviewed',
+    visualReviewRationale: entry.imageUrls.length === 0 ? 'Pokémon candidate image unavailable; retained as context-only.'
+      : Number(entry.item.metadataMatchScore ?? 0) < 60 ? 'Pokémon metadata score below visual-review minimum (60).'
+      : `Pokémon visual cap reached (${cap}); higher-scoring candidates selected first.`,
+    evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available' : Number(entry.item.metadataMatchScore ?? 0) < 60 ? 'metadata score below minimum (60)' : `visual-review cap reached (${cap})`],
+  } as T)) };
 }
 const VINTAGE_TOY_SCORE_FIELDS = {
   "action figure/doll": [
@@ -6536,11 +6550,13 @@ export function annotatePreVisualComparableScores<T extends VisualSourceCandidat
 
 type VisualSourceFilterArguments<T extends VisualSourceCandidate> = {
 	  /** Marketplace/eBay candidates only. Grading and reference sources use separate evidence contracts. */
-	  sourceRole: 'marketplace' | 'ebay';
-	  sourceLabel: string;
-	  targetImageUrl?: string | null;
-	  targetMetadata: string;
-	  visualProvider?: LlmProvider;
+		  sourceRole: 'marketplace' | 'ebay';
+		  sourceLabel: string;
+  /** Owned route literal only; do not accept from browser DTOs or infer from labels. */
+  reviewBudgetRole?: 'sold_source' | 'context';
+		  targetImageUrl?: string | null;
+		  targetMetadata: string;
+		  visualProvider?: LlmProvider;
 		  listings: T[];
 		  ignoreSubjectiveConditionDifferences?: boolean;
 		  reviewDeadlineAt?: number;
@@ -6579,8 +6595,9 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
 	    ...listing,
 	    metadataFieldComparisons: buildMetadataFieldComparisons(targetMetadata, listing),
 		  } as T));
-		  const universalPreparation = prepareUniversalVisualCandidates(comparisonListings, targetMetadata);
-		  const preparedListings = universalPreparation.listings;
+			  const universalPreparation = prepareUniversalVisualCandidates(comparisonListings, targetMetadata);
+			  const preparedListings = universalPreparation.listings;
+  let reviewBudget: VisualSourceFilterResult<T>['reviewBudget'];
   // Invocation-owned reporting lives outside the provider try/catch. No receipt
   // is inferred from required/status/audit or inherited from another invocation.
   const executionReceipts = new Map<number, VisualExecution>(preparedListings.map((_, index) => [index, undispatchedVisualExecution("selected_not_dispatched")]));
@@ -6614,11 +6631,15 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
     });
     const listings = project(result.listings);
     const contextListings = result.contextListings ? project(result.contextListings) : undefined;
+    const visualExecutionCounts = summarizeVisualExecutionOccurrences([...listings, ...(contextListings ?? [])], preparedListings.length,
+      args.rankingPopulation ? { populationId: args.rankingPopulation.populationId, sourceId: args.rankingPopulation.sourceId } : undefined);
     return { ...result, listings, ...(contextListings ? { contextListings } : {}),
-      visualExecutionCounts: summarizeVisualExecutionOccurrences([...listings, ...(contextListings ?? [])], preparedListings.length,
-        args.rankingPopulation ? { populationId: args.rankingPopulation.populationId, sourceId: args.rankingPopulation.sourceId } : undefined) };
+      note: reviewBudget ? `${result.note} Bounded sold-source review opportunity: ${reviewBudget.requestedSelectionBudget} requested, ${reviewBudget.eligibleImageBearingCount} eligible image-bearing candidates, ${reviewBudget.selectedCount} selected, ${reviewBudget.queuedCount} queued, ${visualExecutionCounts.dispatchedCandidateCount} actually dispatched; opportunity shortfall ${reviewBudget.opportunityShortfall}. Already-admitted current sales and the financial evidence deficit are unmeasured here; visual matches are not admitted sales.` : result.note,
+      ...(reviewBudget ? { reviewBudget: { ...reviewBudget, dispatchedCount: visualExecutionCounts.dispatchedCandidateCount,
+        deadlineHeldCount: [...executionReceipts.values()].filter(receipt => receipt.reasonCode === 'overall_deadline').length } } : {}),
+      visualExecutionCounts };
   };
-		  const isOriginalArtTarget = /(?:^|;\s*)category=comics(?:;|$)/i.test(targetMetadata)
+			  const isOriginalArtTarget = /(?:^|;\s*)category=comics(?:;|$)/i.test(targetMetadata)
 		    && /(?:^|;\s*)itemType=original_art(?:;|$)/i.test(targetMetadata);
 		  if (isOriginalArtTarget) {
 		    preparedListings.forEach((_, index) => holdAt(index, "workflow_context_only"));
@@ -6784,7 +6805,28 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
   const vintageToySelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'vintage_toys' && vintageToyType && vintageToyType !== 'collection/lot'
     ? selectVintageToyVisualCandidates(allCandidates, targetMetadata)
     : null;
-  const rankedSelection = pokemonSelection ?? sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection ?? disneyPinsSelection ?? musicSelection ?? vintageToySelection;
+  let rankedSelection = pokemonSelection ?? sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection ?? disneyPinsSelection ?? musicSelection ?? vintageToySelection;
+  if (args.reviewBudgetRole === 'sold_source' && rankedSelection) {
+    const minimum = rankedSelection === videoGameSelection || rankedSelection === comicsSelection ? 50
+      : rankedSelection === sportsCardSelection ? sportsCardUnopenedTarget(targetMetadata) ? 55 : 50
+      : rankedSelection === disneyPinsSelection ? 40 : 60;
+    const eligible = rankedSelection.ranked.filter(candidate => candidate.imageUrls.length > 0
+      && Number(candidate.item.metadataMatchScore ?? 0) >= minimum)
+      .sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex);
+    const budget = buildSoldReviewBudget(metadataValue(targetMetadata, 'category'), rankedSelection.cap, eligible.length, VISUAL_REVIEW_MAX_CANDIDATES);
+    reviewBudget = { ...budget, targetItemType: targetItemTypeValue(targetMetadata), existingScoreBandCap: rankedSelection.cap,
+      minimumMetadataScore: minimum, queuedCount: 0, dispatchedCount: 0, deadlineHeldCount: 0 };
+    const selected = eligible.slice(0, budget.selectedCount);
+    const selectedKeys = new Set(selected.map(candidate => candidate.candidateIndex));
+    const excluded = rankedSelection.ranked.filter(candidate => !selectedKeys.has(candidate.candidateIndex)).map(candidate => {
+      const reason = candidate.imageUrls.length === 0 ? 'no candidate image available; retained as context-only'
+        : Number(candidate.item.metadataMatchScore ?? 0) < minimum ? `metadata score below minimum (${minimum})`
+        : `bounded sold-source review budget reached (${budget.selectedCount} selected; ${budget.requestedSelectionBudget} requested)`;
+      return { ...candidate.item, evidenceDisposition: 'pre_vision_score_excluded', visualReviewStatus: 'not_reviewed',
+        visualReviewRationale: reason, evidenceReasons: [reason] } as T;
+    });
+    rankedSelection = { ...rankedSelection, selected, excluded, cap: budget.selectedCount } as typeof rankedSelection;
+  }
   if (rankedSelection) {
     const selectedCandidateIndexes = new Set(rankedSelection.selected.map((candidate) => candidate.candidateIndex));
     preVisualScoreExcludedIndexes = new Set<number>(
@@ -6952,7 +6994,8 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
         .filter((candidate) => candidate.imageUrls.length > 0)
         .map((candidate) => ({ ...candidate, imageUrl: candidate.imageUrl as string }))
       : candidates;
-    const reviewQueue = prioritizeVisualSourceCandidates(reviewCandidates, targetMetadata, declaredReviews);
+    const reviewQueue = prioritizeVisualSourceCandidates(reviewCandidates, targetMetadata, declaredReviews, Boolean(reviewBudget));
+    if (reviewBudget) reviewBudget.queuedCount = reviewQueue.length;
     const queuedIndexes = new Set(reviewQueue.map((candidate) => candidate.candidateIndex));
     reviewCandidates.filter((candidate) => !queuedIndexes.has(candidate.candidateIndex))
       .forEach((candidate) => selectAt(candidate.candidateIndex, "adaptive_window_limit"));
@@ -7265,7 +7308,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
           ), preparedListings, targetMetadata),
           targetMetadata,
         ).filter((review) => review.verdict === 'match' || review.verdict === 'rough_match').length;
-      if (acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) {
+      if (!reviewBudget && acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) {
         markUnreachedQueue("adaptive_match_target");
         break;
       }
@@ -7357,6 +7400,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
           visualRequirement: "not_required_pre_visual",
           visualReviewStatus: "not_reviewed",
           visualReviewRationale: scored?.visualReviewRationale ?? "Candidate was omitted by the item-type visual-review score cap.",
+          evidenceReasons: scored?.evidenceReasons ?? displayListing.evidenceReasons,
           evidenceDisposition: "context_only",
         } as T;
       }
@@ -7413,7 +7457,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       reviews: uniqueReviews,
       timedOutCount,
       deadlineReached,
-	      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Adaptive visual review sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates in batches of ${VISUAL_REVIEW_BATCH_SIZE}, stopping after ${VISUAL_REVIEW_TARGET_MATCHES} accepted visual matches, the ${VISUAL_REVIEW_MAX_CANDIDATES}-image maximum, or the ${VISUAL_REVIEW_OVERALL_DEADLINE_MS / 1000}-second overall deadline; ${timedOutCount} candidate${timedOutCount === 1 ? "" : "s"} timed out; ${preVisualUniversalReasons.size} universal duplicate, quantity, state, grade, component, or image-readiness record${preVisualUniversalReasons.size === 1 ? " was" : "s were"} retained as context-only; ${preVisualLotReasons.size} multi-item listing${preVisualLotReasons.size === 1 ? " was" : "s were"} excluded before vision and retained as context-only; ${declaredConflictIndexes.size} other explicit identity conflict${declaredConflictIndexes.size === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.${completedWithTimeout ? " Remaining candidates are retained for manual review and cannot enter valuation implicitly." : ""}`,
+	      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Adaptive visual review sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates in batches of ${VISUAL_REVIEW_BATCH_SIZE}, stopping after ${reviewBudget ? "the bounded selected sold-source queue has been visited" : `${VISUAL_REVIEW_TARGET_MATCHES} accepted visual matches`}, the ${VISUAL_REVIEW_MAX_CANDIDATES}-image maximum, or the ${VISUAL_REVIEW_OVERALL_DEADLINE_MS / 1000}-second overall deadline; ${timedOutCount} candidate${timedOutCount === 1 ? "" : "s"} timed out; ${preVisualUniversalReasons.size} universal duplicate, quantity, state, grade, component, or image-readiness record${preVisualUniversalReasons.size === 1 ? " was" : "s were"} retained as context-only; ${preVisualLotReasons.size} multi-item listing${preVisualLotReasons.size === 1 ? " was" : "s were"} excluded before vision and retained as context-only; ${declaredConflictIndexes.size} other explicit identity conflict${declaredConflictIndexes.size === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.${completedWithTimeout ? " Remaining candidates are retained for manual review and cannot enter valuation implicitly." : ""}`,
     });
   } catch {
 	    executionReceipts.forEach((receipt) => {
@@ -7422,10 +7466,10 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       if (receipt.attempts.length) receipt.identity = { result: "manual_unknown", origin: "unknown" };
       else if (receipt.selectedForReview && receipt.reasonCode === "selected_not_dispatched") receipt.reasonCode = "provider_error";
     });
-		    const unavailableContextListings = [
+			    const unavailableContextListings = [
       ...preVisualContextListings,
       ...preVisualScoreExcludedListings,
-      ...preparedListings.flatMap((listing, index) => imageLessIndexes.has(index)
+      ...preparedListings.flatMap((listing, index) => imageLessIndexes.has(index) && !preVisualExcludedIndexes.has(index) && !preVisualScoreExcludedIndexes.has(index)
         ? [{
             ...listing,
             ...(rankedItems.get(index) ?? {}),
@@ -7446,7 +7490,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
             visualReviewRationale: "The visual provider was unavailable; manual image review is required.",
             evidenceDisposition: "warning_review",
           } as T
-	        : { ...listing, ...(rankedItems.get(index) ?? {}) }).map((listing) => withMetadataFieldComparisons(targetMetadata, listing)).filter((_, index) => !preVisualExcludedIndexes.has(index) && !imageLessIndexes.has(index)),
+		        : { ...listing, ...(rankedItems.get(index) ?? {}) }).map((listing) => withMetadataFieldComparisons(targetMetadata, listing)).filter((_, index) => !preVisualExcludedIndexes.has(index) && !preVisualScoreExcludedIndexes.has(index) && !imageLessIndexes.has(index)),
       contextListings: unavailableContextListings,
       preVisualExcludedCount: unavailableContextListings.length,
       status: "provider_unavailable",

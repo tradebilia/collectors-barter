@@ -1151,8 +1151,10 @@ describe("visual source filter", () => {
       ],
     });
     expect(result.listings[0]).toMatchObject({ metadataMatchRank: 1, metadataMatchScore: 50 });
-    expect(result.listings[1]).toMatchObject({ metadataMatchRank: 2, metadataMatchScore: 20 });
-    expect(result.listings).toHaveLength(2);
+    expect(result.contextListings?.[0]).toMatchObject({ metadataMatchRank: 2, metadataMatchScore: 20, evidenceDisposition: "context_only" });
+    expect(result.listings).toHaveLength(1);
+    expect(result.contextListings).toHaveLength(1);
+    expect(result.contextListings?.[0]?.visualExecution?.attempts).toHaveLength(0);
   });
 
   it("scores Sports Cards single-card candidates on explicit identity signals", () => {

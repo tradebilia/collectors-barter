@@ -245,3 +245,32 @@ describe('Stage 4 ACTUAL source route population and display projections', () =>
     expect(boundaries.mercari).not.toHaveBeenCalled();
   });
 });
+
+describe('approved follow-up sold review opportunity at actual route boundaries', () => {
+  it('ordinary sold route retains an eight-review Video Game opportunity and existing signed A/B authority', async () => {
+    soldRows = providerRows(12).map((row, index) => ({ ...row, title: 'The Legend of Zelda NES CIB PSA 7.5',
+      itemSpecifics: { Platform: 'NES' }, saleForm: 'single_game', soldPrice: String(100 + index) }));
+    allowVisual = true;
+    const result = await caller().getSoldCompsData(buildSoldCompsApprovalInput({ ...ZELDA, imageUrl: PRIMARY, statedTradeValue: 100 }, ZELDA)) as unknown as Row;
+    expect(result.error).toBeNull();
+    expect(result.visualFilter.reviewBudget).toMatchObject({ singleMarketplaceSalesRequirement: 6, requestedSelectionBudget: 8,
+      selectedCount: 8, queuedCount: 8, dispatchedCount: 8, admittedCurrentSalesCount: null, verifiedCurrentSalesDeficit: null });
+    expect(result.listings).toHaveLength(8); expect(result.audit.ledger).toHaveLength(12);
+    expect(result.listings.every((row: Row) => row.identityApproval && verifyCanonicalObservation(wire(row), { now: NOW }).verified)).toBe(true);
+    const itemA = buildSoldCompsAnalysisSales(result, true), itemB = buildSoldCompsAnalysisSales(wire(result), true);
+    expect(itemA).toEqual(itemB); expect(itemA).toHaveLength(8);
+    expect(result.audit.ledger.filter((row: Row) => row.visualExecution?.attempts?.length).map((row: Row) => row.metadataMatchRank)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+  it('browser Active subset cannot opt into a sold-source opportunity or identity approval', async () => {
+    allowVisual = true;
+    const listings = providerRows(12).map((row, index) => ({ ...row, title: 'The Legend of Zelda NES CIB PSA 7.5',
+      itemDetails: ZELDA.itemDetails, sourceLabel: 'eBay Sold-Comps', reviewBudgetRole: 'sold_source', metadataMatchScore: 1000000,
+      saleStatus: 'completed', priceBasis: 'sold', itemSpecifics: { Platform: 'NES' }, id: `browser-budget-${index}` }));
+    const result = await caller().reviewEbayVisualData({ targetImageUrl: PRIMARY,
+      targetMetadata: 'title=The Legend of Zelda NES PSA 7.5; category=video_games; itemType=game; grade=7.5; certificationCompany=PSA; isGraded=Yes; fullItemDetails={"gameTitle":"The Legend of Zelda","platform":"NES","completeInBox":"Yes","sealed":"No"}',
+      listings, reviewBudgetRole: 'sold_source' } as any) as unknown as Row;
+    expect(result.visualFilter.reviewBudget).toBeUndefined();
+    expect(result.visualFilter.visualExecutionCounts.selectedCandidateCount).toBeLessThan(8);
+    expect([...result.listings, ...(result.visualFilter.contextListings ?? [])].every((row: Row) => !row.identityApproval)).toBe(true);
+  });
+});

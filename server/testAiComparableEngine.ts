@@ -17,6 +17,10 @@ import type { MetadataRankingBinding } from '../shared/testAiRankingPopulation';
 import { comparePokemonCardNumbers, parsePokemonCardNumber, readPokemonCardNumbersFromTitle,
   type PokemonCardNumberComparison } from '../shared/testAiPokemonCardNumber';
 
+import { getCategoryEvidenceThresholds, type CategoryEvidenceThresholds } from '../shared/testAiSalesEvidencePolicy';
+export { getCategoryEvidenceThresholds } from '../shared/testAiSalesEvidencePolicy';
+export type { CategoryEvidenceThresholds } from '../shared/testAiSalesEvidencePolicy';
+
 export type EvidenceState =
   | 'no_market_evidence'
   | 'poor_item_identification'
@@ -203,14 +207,6 @@ export type ComparableSourceDiagnostic = {
 };
 
 export type SourceReliabilityLevel = 'high' | 'medium' | 'low' | 'unavailable';
-
-export type CategoryEvidenceThresholds = {
-  category: string;
-  minimumSelectedSales: number;
-  minimumIndependentMarketplaces: number;
-  maximumSpreadPct: number;
-  rationale: string;
-};
 
 export type AdapterReliabilityHistory = {
   adapterId: string;
@@ -631,26 +627,6 @@ const KNOWN_SERVER_ADAPTERS = new Set([
   'ngc', 'hakes', 'morphy', 'theriaults', 'bertoia', 'rumsey',
   'cherrystone', 'raritan', 'poster_auctions', 'hipstamp', 'pricecharting', 'lcg',
 ]);
-
-const CATEGORY_EVIDENCE_THRESHOLDS: Record<string, Omit<CategoryEvidenceThresholds, 'category'>> = {
-  comics: { minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Issue, grade, variant, and slab differences can materially change comic values.' },
-  sports_cards: { minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Grade, parallel, and certification differences can materially change card values.' },
-  pokemon: { minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Set, card number, language, and grade need multiple independent confirmations.' },
-  coins: { minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Mint, denomination, grade, and variety evidence is often thinner but still requires source breadth.' },
-  stamps: { minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Country, catalog number, denomination, and hinge/use state can fragment the market.' },
-  video_games: { minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Platform, edition, completeness, and grading state drive condition-sensitive prices.' },
-  music: { minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Pressing, format, release year, and autograph state can differ across records.' },
-  movies: { minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Format, release year, region, and graded/raw state must be cross-checked.' },
-  vintage_toys: { minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Completeness, edition, packaging, and condition vary substantially.' },
-  disney_pins: { minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Release, edition, set, and authenticity details can affect comparability.' },
-  autographs: { minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Signer, item type, authentication, and inscription details require corroboration.' },
-};
-
-export function getCategoryEvidenceThresholds(category: string): CategoryEvidenceThresholds {
-  const normalized = String(category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
-  const thresholds = CATEGORY_EVIDENCE_THRESHOLDS[normalized] ?? { minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Unmapped categories use the conservative general evidence standard.' };
-  return { category: normalized || 'unknown', ...thresholds };
-}
 
 function adapterKey(sale: MarketSale): string {
   return normalizeFingerprintText(sale.sourceAdapter || sale.sourceId || sale.sourceLabel || sale.marketplace || 'unattributed') || 'unattributed';
