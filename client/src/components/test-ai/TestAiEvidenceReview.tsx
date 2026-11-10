@@ -33,6 +33,17 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
   const valuationNotRun = !context.outcome;
   return <section className="space-y-4 rounded-xl border border-cyan-800/40 bg-slate-950/40 p-4" aria-label={`${scopeSide === 'item_a' ? 'Item A' : 'Item B'} evidence review`}>
     <header><h2 className="text-base font-semibold text-cyan-200">Evidence Review — candidate decisions</h2><p className="mt-1 text-xs text-slate-400">Each candidate has one outcome and its reason. Metadata and visual differences are available beneath each image pair.</p></header>
+    <div className="rounded-lg border border-cyan-800/40 bg-slate-900/70 p-3" aria-label="Evidence review terminology key">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-cyan-200">Terminology key</h3>
+      <div className="mt-2 grid gap-2 text-xs text-slate-300 sm:grid-cols-2 lg:grid-cols-3">
+        <p><strong className="text-emerald-200">Accepted for valuation</strong> — the final analysis selected this candidate as usable valuation evidence.</p>
+        <p><strong className="text-amber-200">Valuation not run</strong> — the candidate has not been through final valuation analysis yet; this is not a rejection.</p>
+        <p><strong className="text-rose-200">Not accepted</strong> — a hard identity, evidence, or safety rule prevented valuation use.</p>
+        <p><strong className="text-slate-200">Not used</strong> — final analysis ran, but this candidate was not selected for the valuation result.</p>
+        <p><strong className="text-cyan-200">Candidate</strong> — a retained marketplace record shown for review; appearing here does not automatically make it a comparable.</p>
+        <p><strong className="text-slate-200">Unknown</strong> — the source did not provide that field; it is not automatically treated as a mismatch.</p>
+      </div>
+    </div>
     <div className="grid gap-3 md:grid-cols-[1fr_1fr]">
       <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-3"><h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Target item · {side === 'left' ? 'Item A' : 'Item B'}</h3><div className="flex gap-3">
         {item.primaryPhotoUrl ? <TestAiSafeImage src={item.primaryPhotoUrl} alt="Target item reference" className="h-24 w-20 rounded border border-cyan-800/40 bg-slate-950 object-contain" /> : <div className="flex h-24 w-20 items-center justify-center rounded border border-slate-700 text-center text-xs text-slate-500">Target image unavailable</div>}

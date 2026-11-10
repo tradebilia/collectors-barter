@@ -15,6 +15,17 @@ describe('Evidence Review is the complete candidate decision view', () => {
     expect(html).toContain('Visible rejected candidate'); expect(html).toContain('Wrong format: DVD versus LaserDisc');
     expect(html).toContain('Evidence Review — candidate decisions'); expect(html).toContain('Target item'); expect(html).not.toContain('AI Field Completion');
   });
+  it('shows a plain-English terminology key for final decision labels', () => {
+    const html = review([]);
+    expect(html).toContain('Terminology key');
+    expect(html).toContain('Accepted for valuation');
+    expect(html).toContain('Valuation not run');
+    expect(html).toContain('Not accepted');
+    expect(html).toContain('Not used');
+    expect(html).toContain('Candidate');
+    expect(html).toContain('Unknown');
+    expect(html).toContain('aria-label="Evidence review terminology key"');
+  });
   it('retains raw, pre-vision excluded, visual and context records without narrowing to matches', () => {
     const candidates = evidenceReviewCandidates({ id: 'sold_comps', label: 'eBay Sold', packet: { listings: [{ title: 'Primary row' }], preVisionExcludedListings: [{ title: 'Excluded row' }], visualReviewListings: [{ title: 'Visual row' }], context: [{ title: 'Context row' }] } });
     expect(candidates.map(row => row.title)).toEqual(expect.arrayContaining(['Primary row', 'Excluded row', 'Visual row', 'Context row'])); expect(candidates).toHaveLength(4);
