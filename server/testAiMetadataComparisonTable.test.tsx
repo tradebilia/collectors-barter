@@ -53,8 +53,11 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     expect(html).toContain('Title-derived scored field');
     expect(html).not.toContain('excluded before');
   });
-  it('does not create an empty comparison panel', () => {
-    expect(renderToStaticMarkup(createElement(MetadataComparisonTable, { listing: {} }))).toBe('');
+  it('keeps the metadata dropdown with an honest missing-field notice', () => {
+    const html = renderToStaticMarkup(createElement(MetadataComparisonTable, { listing: {} }));
+    expect(html).toContain('Full metadata comparison');
+    expect(html).toContain('No field comparison was returned');
+    expect(html).not.toContain('<table');
   });
 });
 

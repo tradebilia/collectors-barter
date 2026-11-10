@@ -67,7 +67,7 @@ describe('Stage 5 actual status render component', () => {
     const html = renderToStaticMarkup(<TestAiCandidateMasterList listings={mergeCandidateDisplayGroups([[ranked], [{ ...ranked, visualExecution: receipt() }]])} sourceLabel="Fixture" targetImageUrl="https://example.test/target.jpg" scope={{ side: 'item_a' }} />);
     expect((html.match(/<th /g) ?? []).length).toBe(6); expect((html.match(/<img /g) ?? []).length).toBe(2);
     expect(html).toContain('20 awarded points'); expect(html).toContain('Candidate title-derived value'); expect(html).toContain('Final decisions — ranked candidates (1)');
-    expect(html).toContain('NOT ACCEPTED'); expect(html).toContain('Full metadata comparison'); expect(html).not.toContain('Hard exception — not sent to AI');
+    expect(html).toContain('VALUATION NOT RUN'); expect(html).not.toContain('NOT ACCEPTED'); expect(html).toContain('Full metadata comparison'); expect(html).not.toContain('Hard exception — not sent to AI');
   });
   it('currency-unknown records and source aggregate summaries never assume dollars or add overlapping populations', () => {
     expect(formatCandidateDisplayPrice({ price: 12 })).toBe('Currency unknown 12');

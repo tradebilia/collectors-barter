@@ -1,5 +1,5 @@
 import React from 'react';
-import { candidateExecutionReceipt, hasActualVisualResponse } from '../../../shared/testAiCandidateStatus';
+import { candidateExecutionReceipt, candidateExecutionFact, hasActualVisualResponse } from '../../../shared/testAiCandidateStatus';
 
 type ScoringEvidence = {
   awardField: string;
@@ -48,7 +48,10 @@ export function metadataSelectedScoringEvidence(contribution?: RankingContributi
 
 export function MetadataComparisonTable({ listing }: { listing: any }) {
   const comparisons = Array.isArray(listing?.metadataFieldComparisons) ? listing.metadataFieldComparisons : [];
-  if (comparisons.length === 0) return null;
+  if (comparisons.length === 0) return <details className="mt-1 rounded border border-cyan-700/30 bg-cyan-950/20 p-2">
+    <summary className="cursor-pointer text-[12px] font-semibold text-cyan-200">Full metadata comparison</summary>
+    <p className="mt-2 text-xs text-slate-400">No field comparison was returned for this candidate. Missing metadata is not an image mismatch.</p>
+  </details>;
   const statusClass: Record<string, string> = { match: 'text-emerald-300', different: 'text-red-300', unknown: 'text-amber-200' };
   const termClass = (contribution?: RankingContribution) => contribution?.matched
     ? 'rounded bg-sky-900/50 px-1 text-sky-100 ring-1 ring-sky-400/50' : 'text-gray-300';
@@ -56,17 +59,14 @@ export function MetadataComparisonTable({ listing }: { listing: any }) {
     ? 'rounded bg-cyan-900/60 px-1 text-cyan-100 ring-1 ring-cyan-400/60' : 'text-gray-300';
   const titleClass = (contribution?: RankingContribution) => contribution?.matched && contribution.titleDerived
     ? 'rounded bg-violet-900/60 px-1 text-violet-100 ring-1 ring-violet-400/60' : 'text-gray-200';
-  const visualDifferences = Array.isArray(listing.visualDifferences) ? listing.visualDifferences : [];
-  const receipt = candidateExecutionReceipt(listing);
-  const visualMismatch = hasActualVisualResponse(listing) && receipt?.identity?.origin === 'visual' && receipt.identity.result === 'mismatch';
   return <details className="mt-1 rounded border border-cyan-700/30 bg-cyan-950/20 p-1.5">
-    <summary className="cursor-pointer text-[8px] font-bold uppercase tracking-wide text-cyan-200">Full metadata comparison</summary>
-    <div className="mt-1 flex flex-wrap items-center gap-1 text-[8px] text-gray-400" aria-label="Ranking highlight legend">
+    <summary className="cursor-pointer text-[11px] font-bold uppercase tracking-wide text-cyan-200">Full metadata comparison</summary>
+    <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-gray-400" aria-label="Ranking highlight legend">
       <span className="rounded bg-cyan-900/60 px-1 text-cyan-100 ring-1 ring-cyan-400/60">Scored field</span>
       <span className="rounded bg-violet-900/60 px-1 text-violet-100 ring-1 ring-violet-400/60">Title-derived scored field</span>
       <span>Highlighted field names contributed to the ranking score. Selected scoring evidence is separate from structured values and independent title parsing; it does not confirm identity or valuation.</span>
     </div>
-    <div className="mt-1 overflow-x-auto"><table className="w-full min-w-[520px] border-collapse text-[8px] leading-snug">
+    <div className="mt-1 overflow-x-auto"><table className="w-full min-w-[520px] border-collapse text-[11px] leading-snug">
       <thead><tr className="border-b border-cyan-800/50 text-left text-cyan-200/80"><th className="p-1">Target field</th><th className="p-1">Target value</th><th className="p-1">Candidate field</th><th className="p-1">Candidate value</th><th className="p-1">Candidate title-derived value / scoring evidence</th><th className="p-1">Result</th></tr></thead>
       <tbody>{comparisons.map((comparison: any, comparisonIndex: number) => {
         const contribution = comparison.rankingContribution as RankingContribution | undefined;
@@ -90,10 +90,28 @@ export function MetadataComparisonTable({ listing }: { listing: any }) {
           <td className={`p-1 font-semibold uppercase ${statusClass[comparison.status] ?? statusClass.unknown}`}>{comparison.status || 'unknown'}</td>
         </tr>;
       })}</tbody></table></div>
-    {visualDifferences.length > 0 && <div className={`mt-2 rounded border p-1.5 ${visualMismatch ? 'border-red-700/40 bg-red-950/20' : 'border-amber-700/30 bg-slate-900/30'}`} aria-label="Visual comparison differences">
-      <p className={`text-[8px] font-bold uppercase tracking-wide ${visualMismatch ? 'text-red-200' : 'text-amber-200'}`}>Visual comparison — observed differences</p>
-      <p className="mt-0.5 text-[8px] text-gray-400">Only differences recorded by the visual review are shown here. Metadata similarities and ranking points are not visual proof.</p>
-      <ul className="mt-1 space-y-1">{visualDifferences.map((difference: any, differenceIndex: number) => <li key={`${difference.field}-${differenceIndex}`} className="text-[8px] leading-snug text-gray-300"><strong className={visualMismatch ? 'text-red-200' : 'text-slate-200'}>{difference.field}:</strong> target “{difference.targetObservation}” vs candidate “{difference.candidateObservation}”<span className="text-gray-500"> — {difference.impact}</span></li>)}</ul>
-    </div>}
+  </details>;
+}
+
+/** Visual observations only. Never manufactures a mismatch from metadata or a missing call. */
+export function TestAiVisualComparison({ listing }: { listing: any }) {
+  const receipt = candidateExecutionReceipt(listing);
+  const reviewed = hasActualVisualResponse(listing);
+  const differences = reviewed && Array.isArray(listing.visualDifferences) ? listing.visualDifferences.filter((difference: any) => difference && typeof difference === 'object') : [];
+  const execution = candidateExecutionFact(listing);
+  return <details className="mt-2 rounded border border-slate-700/60 bg-slate-950/40 p-2" aria-label="Candidate visual comparison">
+    <summary className="cursor-pointer text-[12px] font-semibold text-cyan-200">Visual comparison</summary>
+    <div className="mt-2 space-y-2 text-[12px] text-slate-300">
+      {differences.length > 0 ? <ul className="space-y-2">{differences.map((difference: any, index: number) => <li key={index} className="rounded bg-slate-900/60 p-2">
+        <p className="font-semibold text-slate-100">{difference.field || 'Visual detail'}</p>
+        <p><span className="text-cyan-200">Target:</span> {difference.targetObservation || 'Observation not recorded'}</p>
+        <p><span className="text-emerald-200">Candidate:</span> {difference.candidateObservation || 'Observation not recorded'}</p>
+        {difference.impact && <p className="mt-1 text-amber-200">{difference.impact}</p>}
+      </li>)}</ul> : <p>{!reviewed ? `No completed visual comparison. ${execution.label}${execution.reason ? ` — ${execution.reason}` : ''}.`
+        : receipt?.identity?.reviewVerdict === 'rough_match' || receipt?.identity?.reviewVerdict === 'unreadable'
+          ? 'Visual identity was not confirmed; no specific visual differences were recorded.'
+          : receipt?.identity?.result === 'mismatch' ? 'The reviewer reported a mismatch but did not record specific visual differences.'
+            : receipt?.identity?.result === 'match' ? 'No specific visual differences were recorded.' : 'No visual differences were recorded; identity remains unconfirmed.'}</p>}
+    </div>
   </details>;
 }

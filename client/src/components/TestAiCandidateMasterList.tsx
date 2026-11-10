@@ -1,33 +1,70 @@
+import React from 'react';
 import { mergeCandidateDisplayGroups, reconcileCandidateFinalUse, candidateDisplayKey, type CandidateDisplayRow, type CandidateDisplayScope } from '../../../shared/testAiCandidateLedger';
-import { candidateIdentityFact, candidatePricingFact, formatCandidateDisplayPrice, hasActualVisualResponse, isHardCandidateDisplayException } from '../../../shared/testAiCandidateStatus';
-import { MetadataComparisonTable } from './TestAiMetadataComparisonTable';
-import { TestAiCandidateImagePair, useTestAiCandidateDisplay } from './TestAiCandidateStatus';
+import { formatCandidateDisplayPrice } from '../../../shared/testAiCandidateStatus';
+import { MetadataComparisonTable, TestAiVisualComparison } from './TestAiMetadataComparisonTable';
+import { TestAiCandidateStatus, useTestAiCandidateDisplay } from './TestAiCandidateStatus';
+import { TestAiSafeImage } from './TestAiSafeImage';
+import { candidateFinalDecision } from './test-ai/candidateFinalDecision';
 
-function finalDecision(listing: CandidateDisplayRow): { label: string; reason: string; className: string } {
-  const useCode = listing.valuationUse?.use?.code;
-  if (useCode === 'CURRENT_SALES_PRIMARY') return { label: 'ACCEPTED FOR VALUATION', reason: 'Approved as primary current-sales evidence.', className: 'border-emerald-500/50 bg-emerald-950/40 text-emerald-200' };
-  if (useCode === 'FINAL_HARD_EXCLUDED' || isHardCandidateDisplayException(listing)) return { label: 'NOT ACCEPTED', reason: 'Hard exclusion: objective identity or source conflict.', className: 'border-red-500/50 bg-red-950/40 text-red-200' };
-  const identity = candidateIdentityFact(listing);
-  if (identity.code === 'mismatch' || identity.code === 'deterministic_conflict') return { label: 'NOT ACCEPTED', reason: identity.label, className: 'border-red-500/50 bg-red-950/40 text-red-200' };
-  if (hasActualVisualResponse(listing) && identity.code === 'match') return { label: 'NOT ACCEPTED FOR VALUATION', reason: 'Visual match recorded, but no final valuation-use approval was recorded.', className: 'border-amber-500/50 bg-amber-950/40 text-amber-200' };
-  const pricing = candidatePricingFact(listing);
-  if (pricing.code === 'NOT_SUBMITTED_NOT_ASSESSED') return { label: 'NOT REVIEWED', reason: pricing.label, className: 'border-slate-500/50 bg-slate-900/60 text-slate-200' };
-  return { label: 'NOT ACCEPTED', reason: identity.label === 'Not image reviewed' ? 'No final visual identity decision was recorded.' : identity.label, className: 'border-amber-500/50 bg-amber-950/40 text-amber-200' };
+function candidateImageUrl(listing: CandidateDisplayRow): string | undefined {
+  const image = listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0];
+  return typeof image === 'string' ? image : undefined;
+}
+function CandidateImage({ src, label, url }: { src?: string | null; label: string; url?: string }) {
+  const image = src
+    ? <TestAiSafeImage src={src} alt={`${label} item`} loading="lazy" referrerPolicy="no-referrer" unavailableLabel={`${label} image unavailable`} className="h-20 w-20 rounded-md border border-slate-700 bg-slate-950 object-contain !text-[11px]" />
+    : <span role="img" aria-label={`${label} image unavailable`} className="flex h-20 w-20 items-center justify-center rounded-md border border-dashed border-slate-700 bg-slate-950 px-1 text-center text-[11px] leading-snug text-slate-400">{label} image unavailable</span>;
+  return <figure className="w-20 shrink-0">
+    {url ? <a href={url} target="_blank" rel="noopener noreferrer" title={`Open ${label.toLowerCase()} listing`} aria-label={`Open ${label.toLowerCase()} listing`} className="block rounded-md hover:ring-2 hover:ring-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">{image}</a> : image}
+    <figcaption className="mt-1 text-center text-[11px] font-medium text-slate-400">{label}</figcaption>
+  </figure>;
 }
 
-/** The existing master-list layout, not a second exclusion panel or rank engine. */
+/** One card per retained occurrence; the ledger remains the authority for joins and rank order. */
 export function TestAiCandidateMasterList({ listings, sourceLabel, targetImageUrl, scope: suppliedScope }: {
   listings: CandidateDisplayRow[]; sourceLabel: string; targetImageUrl?: string | null; scope?: CandidateDisplayScope;
 }) {
   const context = useTestAiCandidateDisplay();
   const scope = suppliedScope ?? context.scope;
   const candidates = reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);
-  if (!candidates.length) return null;
-  return <section className="rounded border border-violet-700/35 bg-violet-950/15 p-2" aria-label={`${sourceLabel} ranked candidate master list`}>
-    <div className="flex items-start justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-wide text-violet-200">Final decisions — ranked candidates ({candidates.length})</p><p className="mt-0.5 text-[9px] text-violet-100/70">Every retained candidate appears once. The badge below is the final user-facing outcome; expand metadata only when you need the supporting comparison.</p></div><span className="shrink-0 text-[8px] text-violet-200/70">{scope.side === 'item_a' ? 'Item A · ' : scope.side === 'item_b' ? 'Item B · ' : ''}{sourceLabel}</span></div>
-    <div className="mt-1 max-h-96 space-y-1 overflow-y-auto pr-1">{candidates.map((listing, index) => <div key={candidateDisplayKey(listing, scope, String(index))} className="rounded bg-gray-950/40 p-1.5">
-      <div className="flex items-start gap-2"><TestAiCandidateImagePair listing={listing} targetImageUrl={targetImageUrl} /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><p className="break-words text-[9px] font-semibold text-gray-100">{listing.itemUrl || listing.url ? <a href={listing.itemUrl || listing.url} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:underline">{listing.title || 'Untitled candidate'}</a> : listing.title || 'Untitled candidate'}</p><span className="shrink-0 text-[8px] text-gray-300">{formatCandidateDisplayPrice(listing)}</span></div><p className="text-[8px] text-cyan-200">{listing.metadataMatchLabel ?? 'Metadata ranking'} · {listing.metadataMatchRank ? `Rank #${listing.metadataMatchRank}` : 'Unranked'} · {listing.metadataMatchScore !== undefined && listing.metadataMatchScore !== null ? `${listing.metadataMatchScore}/100` : 'Score unavailable'}</p><div className={`mt-1 rounded border px-2 py-1 ${finalDecision(listing).className}`}><p className="text-[9px] font-bold tracking-wide">{finalDecision(listing).label}</p><p className="mt-0.5 text-[8px]">{finalDecision(listing).reason}</p></div></div></div>
-      <MetadataComparisonTable listing={listing} />
-    </div>)}</div>
+  return <section className="rounded-lg border border-slate-700/70 bg-slate-950/30 p-3 text-[12px]" aria-label={`${sourceLabel} ranked candidate master list`}>
+    <header className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-700/60 pb-3">
+      <div><h3 className="text-[12px] font-semibold text-slate-100">Final decisions — ranked candidates ({candidates.length})</h3>
+        <p className="mt-1 text-[11px] leading-relaxed text-slate-400">Every retained candidate appears once. Ranking and image matches are not final valuation approval.</p></div>
+      <span className="text-[11px] text-slate-400">{scope.side === 'item_a' ? 'Item A · ' : scope.side === 'item_b' ? 'Item B · ' : ''}{sourceLabel}</span>
+    </header>
+    {!candidates.length ? <p className="py-6 text-center text-[12px] text-slate-400" role="status">No retained candidate rows were returned for {sourceLabel}. Source retrieval and review coverage are not inferred from this empty list.</p>
+      : <ol className="mt-3 space-y-3">{candidates.map((listing, index) => {
+        const decision = candidateFinalDecision(listing);
+        const url = typeof listing.itemUrl === 'string' && listing.itemUrl ? listing.itemUrl : typeof listing.url === 'string' ? listing.url : undefined;
+        const title = typeof listing.title === 'string' && listing.title ? listing.title : 'Untitled candidate';
+        return <li key={candidateDisplayKey(listing, scope, String(index))} className="rounded-lg border border-slate-700/60 bg-slate-900/40 p-3 hover:border-slate-500/70" data-candidate-card="true">
+          <div className="flex flex-col items-start gap-3 sm:flex-row">
+            <div className="flex shrink-0 gap-2" aria-label="Target and candidate images">
+              <CandidateImage src={targetImageUrl} label="Target" />
+              <CandidateImage src={candidateImageUrl(listing)} label="Candidate" url={url} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <h4 className="min-w-0 flex-1 break-words text-[12px] font-semibold leading-relaxed text-slate-100">{url ? <a href={url} target="_blank" rel="noopener noreferrer" title="Open original candidate listing" className="rounded-sm text-sky-300 hover:text-sky-200 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">{title}</a> : title}</h4>
+                <p className="shrink-0 text-[12px] font-semibold tabular-nums text-slate-100">{formatCandidateDisplayPrice(listing)}</p>
+              </div>
+              <p className="mt-1 text-[11px] leading-relaxed text-slate-400">{listing.sourceLabel || listing.sourceId || sourceLabel} · {listing.metadataMatchRank ? `Rank #${listing.metadataMatchRank}` : 'Unranked'} · {listing.metadataMatchScore !== undefined && listing.metadataMatchScore !== null ? `Score ${listing.metadataMatchScore}/100` : 'Score unavailable'}{listing.metadataMatchLabel ? ` · ${listing.metadataMatchLabel}` : ''}</p>
+              <div className="mt-2" data-final-decision-code={decision.code}>
+                <span className={`inline-block rounded-md border px-2 py-1 text-[11px] font-semibold leading-snug ${decision.className}`}>{decision.label}</span>
+                <p className="mt-1.5 break-words text-[12px] leading-relaxed text-slate-300">{decision.reason}</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 space-y-2 border-t border-slate-700/50 pt-2" aria-label="Supporting candidate comparisons">
+            <MetadataComparisonTable listing={listing} />
+            <TestAiVisualComparison listing={listing} />
+          </div>
+          <details className="mt-2 rounded-md border border-slate-700/40 px-2 py-1.5">
+            <summary className="cursor-pointer rounded-sm text-[11px] font-medium text-slate-400 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">Technical details</summary>
+            <div className="pt-2 [&_p]:!text-[11px] [&_li]:!text-[11px] [&_div]:!text-[11px]"><TestAiCandidateStatus listing={listing} scope={scope} reconciled /></div>
+          </details>
+        </li>;
+      })}</ol>}
   </section>;
 }

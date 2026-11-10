@@ -13,6 +13,7 @@ import { TestAiPricingSummary, hasUsableTestAiPrimary, boundedTestAiSourceMessag
 import { MetadataComparisonTable } from '@/components/TestAiMetadataComparisonTable';
 import { sortMetadataRankedCandidates, buildEbayVisualReviewListings } from '@shared/testAiRankingDisplay';
 import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';
+import { TestAiEvidenceReview } from '@/components/test-ai/TestAiEvidenceReview';
 import { TestAiSourceStatusBadges, TestAiSourceRelevanceSummary, TestAiCandidateDisplayProvider, TestAiCandidateStatus, TestAiVisualReviewRow, TestAiExecutionSummary, TestAiFinalUseSummary, TestAiSourcePopulationSummary, TestAiFinalLedgerRow, TestAiProcessCompleteNotice as ProcessCompleteNotice, TestAiSourceMetricSummary, TestAiSourceCurrentWindowCount, selectTestAiVisualDisplayRows } from '@/components/TestAiCandidateStatus';
 import { TestAiSafeImage } from '@/components/TestAiSafeImage';
 import { candidateDisplayKey, collectEbayCandidateDisplayOccurrences, mergeCandidateDisplayGroups, mergeVisualReviewDisplayBatches, mergeEbayCandidateDisplayData, stampCandidateDisplayIntake, type CandidateFinalDisplayOutcome } from '@shared/testAiCandidateLedger';
@@ -2808,7 +2809,7 @@ function factualFields(data: any, source: 'tcgdex' | 'rawg' | 'igdb' | 'wikidata
   };
 }
 
-function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, mercariSoldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, comicConnectData, pcgsAuctionData, oneThirtyPointData, specialistObservations, onSummaryChange }: {
+function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, mercariSoldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, comicConnectData, pcgsAuctionData, oneThirtyPointData, specialistObservations, extraReviewPackets = {}, onSummaryChange }: {
   item: SelectedItem;
   marketItem: SelectedItem;
   side: 'left' | 'right';
@@ -2829,6 +2830,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   pcgsAuctionData: any;
   oneThirtyPointData: any;
   specialistObservations?: EvidenceSourceObservation[];
+  extraReviewPackets?: Record<string, any>;
   onSummaryChange?: (summary: NormalizedEvidenceSummary) => void;
 }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
@@ -3294,84 +3296,31 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     onSummaryChange?.(summary);
   }, [onSummaryChange, summary]);
 
-  const statusLabel = (status: string) => status === 'success' ? 'available' : status === 'idle' ? 'not searched or not completed' : status.replace('_', ' ');
-  const sourceDecisions = summary.sourceDecisions ?? [];
-  const preferredGuideAnchor = selectPreferredGuideAnchor(summary.guideAnchors);
-  return <section className="rounded-xl border border-violet-700/40 bg-violet-950/20 p-3 space-y-3" aria-label={`${side === 'left' ? 'Item A' : 'Item B'} normalized evidence review`}>
-    <div className="flex flex-wrap items-start justify-between gap-2"><div><p className={`text-[11px] font-bold uppercase ${accentColor}`}>Evidence review</p><p className="mt-0.5 text-[10px] text-gray-500">Deterministic identity and evidence check. It preserves source facts and does not calculate a value.</p></div><Badge variant="outline" className="border-violet-600/50 text-[9px] text-violet-200">{summary.category}</Badge></div>
-    <div className="grid gap-1 rounded-md border border-violet-700/25 bg-gray-950/30 p-2 text-[9px] text-gray-400 sm:grid-cols-3" aria-label="Evidence Review flag legend">
-      <p><span className="font-semibold text-amber-300">Material:</span> a selected source differs on a key identity field. Review before comparing.</p>
-      <p><span className="font-semibold text-sky-300">Contextual:</span> both facts may be valid, such as global versus regional release dates.</p>
-      <p><span className="font-semibold text-gray-300">Coverage:</span> no result or service issue; it is not negative proof about the item.</p>
-    </div>
-    {summary.identity.length > 0 && <div className="flex flex-wrap gap-1.5">{summary.identity.map((field) => <span key={field.key} className="rounded bg-gray-900/60 px-2 py-1 text-[10px] text-gray-300"><span className="text-gray-500">{field.label}:</span> {field.value}</span>)}</div>}
-    <div className="grid gap-2 sm:grid-cols-2">
-      <div className={`rounded border p-2 ${summary.identityReadiness.readiness === 'ready' ? 'border-emerald-700/30 bg-emerald-950/15' : 'border-amber-700/30 bg-amber-950/15'}`}>
-        <p className={`text-[9px] font-semibold uppercase ${summary.identityReadiness.readiness === 'ready' ? 'text-emerald-300' : 'text-amber-300'}`}>P0 identity readiness · {summary.identityReadiness.readiness.replace(/_/g, ' ')}</p>
-        <p className="mt-1 text-[10px] text-gray-300">{summary.identityReadiness.itemType} · {summary.identityReadiness.missingCriticalFields.length ? `Missing critical: ${summary.identityReadiness.missingCriticalFields.join(', ')}` : 'All category-critical identifiers are supplied.'}</p>
-        <p className="mt-1 text-[9px] text-gray-500">Missing identifiers are a request for review—not evidence that the listing is wrong.</p>
-      </div>
-      <div className={`rounded border p-2 ${summary.evidenceSufficiency.status === 'sufficient' ? 'border-sky-700/30 bg-sky-950/15' : 'border-orange-700/30 bg-orange-950/15'}`}>
-        <p className={`text-[9px] font-semibold uppercase ${summary.evidenceSufficiency.status === 'sufficient' ? 'text-sky-300' : 'text-orange-300'}`}>P0 evidence sufficiency · {summary.evidenceSufficiency.status}</p>
-        <p className="mt-1 text-[10px] text-gray-300">{summary.evidenceSufficiency.message}</p>
-        <p className="mt-1 text-[9px] text-gray-500">Completed sales are valuation candidates; asking, reference, certification, population, and news data remain context.</p>
-      </div>
-    </div>
-    {sportsUnopenedSearchCriteria.isUnopenedProduct && <div className="rounded border border-amber-700/30 bg-amber-950/15 p-2">
-      <p className="text-[9px] font-semibold uppercase text-amber-300">Sports Cards Unopened Product search criteria</p>
-      <div className="mt-1 grid gap-1 text-[10px] text-gray-300 sm:grid-cols-3">
-        <p><span className="text-gray-500">Year:</span> {sportsUnopenedSearchCriteria.year || 'Missing'}</p>
-        <p><span className="text-gray-500">Manufacturer:</span> {sportsUnopenedSearchCriteria.manufacturer || 'Missing'}</p>
-        <p><span className="text-gray-500">Sport:</span> {sportsUnopenedSearchCriteria.sport || 'Missing'}</p>
-        <p><span className="text-gray-500">Product Format:</span> {sportsUnopenedSearchCriteria.productFormat || 'Missing'}</p>
-        {sportsUnopenedSearchCriteria.isAuthenticated && <p><span className="text-gray-500">Authentication Company:</span> {sportsUnopenedSearchCriteria.authenticationCompany || 'Not supplied'}</p>}
-        {sportsUnopenedSearchCriteria.fromSealedCase && <p><span className="text-gray-500">From a Sealed Case:</span> Yes → FASC</p>}
-      </div>
-      <p className="mt-1 text-[9px] text-gray-500">Sport and Product Format are included in the search; Condition and Product Name are not used. Authentication Company is included only when Authenticated is Yes; the exact token FASC is included only when From a Sealed Case is Yes.</p>
-    </div>}
-    {enabledSources.has('discogs') && discogsSearchCriteria.isMusic && <div className="rounded border border-emerald-700/30 bg-emerald-950/15 p-2">
-      <p className="text-[9px] font-semibold uppercase text-emerald-300">Discogs search criteria</p>
-      <div className="mt-1 grid gap-1 text-[10px] text-gray-300 sm:grid-cols-3">
-        <p><span className="text-gray-500">Album / Release Title:</span> {discogsSearchCriteria.releaseTitle || 'Missing'}</p>
-        <p><span className="text-gray-500">Artist / Performer:</span> {discogsSearchCriteria.artist || 'Not supplied'}</p>
-        <p><span className="text-gray-500">Release Year:</span> {discogsSearchCriteria.releaseYear || 'Not supplied'}</p>
-      </div>
-      <p className="mt-1 text-[9px] text-gray-500">Primary request uses Album / Release Title and Artist / Performer{discogsSearchCriteria.releaseYear ? `, narrowed first by ${discogsSearchCriteria.releaseYear}` : ''}. If the year returns no candidate, Discogs retries without it. Listing title, format, label, catalog number, and country are not used as filters.</p>
-      {discogsCandidates.length > 1 && <div className="mt-2 border-t border-emerald-800/30 pt-2">
-        <label className="block text-[9px] font-semibold uppercase text-emerald-200">Confirm exact release / pressing</label>
-        <select value={selectedDiscogsReleaseId ?? ''} onChange={(event) => setSelectedDiscogsReleaseId(event.target.value ? Number(event.target.value) : null)} className="mt-1 w-full rounded border border-emerald-800/40 bg-gray-950/70 px-2 py-1 text-[10px] text-gray-200 outline-none">
-          <option value="">Select a matching Discogs release — no metadata alignment until selected</option>
-          {discogsCandidates.map((release) => <option key={release.id} value={release.id}>{[release.artist, release.releaseTitle, release.year, release.country, release.format.join(', '), release.catalogNumber.join(', ')].filter(Boolean).join(' · ')}</option>)}
-        </select>
-        <p className="mt-1 text-[9px] text-emerald-100/70">Selection applies only to this sandbox run. Discogs is reference metadata, not valuation or authentication evidence.</p>
-      </div>}
-      {discogsCandidates.length === 1 && <p className="mt-2 text-[9px] text-emerald-100/70">One Discogs candidate returned and is included as reference metadata for this sandbox run.</p>}
-    </div>}
-    {summary.alignedSources.length > 0 && <div className="rounded bg-emerald-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-emerald-300">Aligned specialist fields</p>{summary.alignedSources.map((source) => <p key={source.id} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-emerald-200">{source.label}:</span> {source.fields.join(', ')}</p>)}</div>}
-    <div className="rounded-lg border border-sky-700/30 bg-sky-950/15 p-2.5 space-y-2">
-      <div><p className="text-[10px] font-semibold uppercase tracking-wide text-sky-200">Source-stage treatment of selected sources</p><p className="mt-0.5 text-[9px] text-gray-400">Each source appears once. These overlapping source classifications are not final request or pricing-use counts.</p></div>
-      <div className="grid gap-1 text-[9px] sm:grid-cols-2 lg:grid-cols-4"><p className="rounded border border-emerald-700/30 bg-emerald-950/20 px-2 py-1 text-emerald-200"><strong>Source eligible</strong><br />Sale candidates eligible at source; actual final intake and use are assessed separately.</p><p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1 text-cyan-200"><strong>Asking-price context</strong><br />Identity-matched active asking listings; useful market context, not completed sales.</p><p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-amber-200"><strong>Historical trend</strong><br />Older sale context; actual historical prompt inclusion is reported after analysis.</p><p className="rounded border border-gray-700/40 bg-gray-950/30 px-2 py-1 text-gray-300"><strong>Context only</strong><br />Asking prices, references, unavailable data, mismatches, and excluded records.</p></div>
-      <div className="space-y-1.5">
-        {sourceDecisions.map((decision) => {
-          const unavailable = decision.status === 'error' || decision.status === 'not_found';
-          const nonMarket = !decision.completed && !decision.accepted && !decision.currentValue && !decision.historicalTrend && !decision.context;
-          return <div key={decision.id} className="rounded border border-slate-700/50 bg-gray-950/35 p-2">
-            <div className="flex flex-wrap items-center justify-between gap-1"><p className="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold text-gray-200">{decision.label}{decision.id === 'lcg' && <span className="rounded border border-red-500/60 bg-red-950/50 px-1.5 py-0.5 text-[8px] font-semibold tracking-wide text-red-200">403 error</span>}</p><span className={`rounded px-1.5 py-0.5 text-[8px] uppercase ${unavailable ? 'bg-red-950/50 text-red-300' : nonMarket ? 'bg-gray-800 text-gray-400' : 'bg-sky-950/50 text-sky-200'}`}>{unavailable ? decision.status.replace('_', ' ') : nonMarket ? 'context source' : 'market source'}</span></div>
-            {decision.id === 'mercari_sold_comps' && <MercariPopulationLine data={mercariSoldCompsData} />}
-            {unavailable ? <p className="mt-1 text-[9px] text-red-200/80">{decision.message || 'No usable result was returned. This is a coverage issue, not proof the item is wrong.'}</p> : <><p className={`mt-1 text-[9px] ${decision.treatment === 'valuation_guide' || decision.treatment === 'valuation_candidate' ? 'text-emerald-200' : 'text-gray-400'}`}><strong>Analyzer treatment: {decision.treatment.replace(/_/g, ' ')}</strong>{decision.analyzerWeightPct !== null ? ` · configured guide weight ${decision.analyzerWeightPct}%` : ' · 0% direct guide weight'} · {decision.treatmentReason}</p>{nonMarket ? <p className="mt-1 text-[9px] text-gray-400">No market-record count is created by this source classification.</p> : <div className="mt-1 grid gap-1 text-[9px] sm:grid-cols-5"><p className="text-emerald-200"><strong>{decision.accepted}</strong> source eligible</p><TestAiSourceCurrentWindowCount count={decision.currentValue} kind={decision.kind} /><p className="text-amber-200"><strong>{decision.historicalTrend}</strong> historical source eligible</p><p className="text-gray-300"><strong>{decision.context}</strong> context only</p><p className="text-slate-300"><strong>{decision.completed}</strong> completed sales returned</p></div>}</>}
-            {decision.acceptedPrices.length > 0 && <p className="mt-1 text-[9px] text-emerald-100/80">Source-stage price observations (currency unspecified; not final prices): {decision.acceptedPrices.map((price) => Math.round(price).toLocaleString()).join(' · ')}</p>}
-            <AnalyzerRecordPanel records={decision.analyzerRecords} acceptedCount={decision.accepted} sourceLabel={decision.label} sourceKind={decision.kind} />
-          </div>;
-        })}
-      </div>
-    </div>
-    {summary.guideAnchors.length > 0 && <div className="rounded border border-sky-700/30 bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Guide-value anchors retained</p>{summary.guideAnchors.map((anchor) => {
-      const selected = anchor === preferredGuideAnchor;
-      return <p key={`${anchor.sourceId}-${anchor.grade}`} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-sky-200">{anchor.sourceLabel}:</span> grade {anchor.grade || 'unknown'} · ${anchor.value.toLocaleString()} · {anchor.recordedSales ?? 'recorded-sale count unavailable'} provider-recorded sales{anchor.lastSaleDate ? ` · provider last sale ${anchor.lastSaleDate}` : ''}. {selected ? 'Preferred guide reference; the server must verify target-bound provenance and insufficient current sales before using a fallback.' : 'Retained as reference information; not a completed-sale vote.'}</p>;
-    })}</div>}
-    {summary.reviewFlags.length > 0 && <div className="space-y-1 rounded bg-amber-950/25 p-2"><p className="text-[9px] font-semibold uppercase text-amber-300">Review before comparing</p>{summary.reviewFlags.map((flag, index) => <p key={`${flag.sourceId ?? 'flag'}-${index}`} className="text-[10px] text-amber-100/90">• {flag.message}</p>)}</div>}
-    <p className="text-[9px] text-gray-600">{summary.sources.map((source) => `${source.label}: ${source.role.replace(/_/g, ' ')} · ${statusLabel(source.status)}`).join(' · ') || 'No selected source has a summary contract.'}</p>
-  </section>;
+  const reviewPackets: Record<string, any> = {
+    ebay_active: ebayData, sold_comps: soldCompsData, mercari_sold_comps: mercariSoldCompsData,
+    hipstamp: hipstampData, hipstamp_sold: hipstampSoldData, pokemon_price_tracker: pokemonPriceTrackerData,
+    the_card_api: theCardApiData, cardsight_ai: cardsightAiData, lelands: lelandsData,
+    pristine_auction: pristineAuctionData, collect_auction: collectAuctionData,
+    sirius_sports_auctions: siriusSportsAuctionData, comicconnect: comicConnectData,
+    pcgs_auction_results: pcgsAuctionData, one_thirty_point: oneThirtyPointData,
+    pwcc: pwccEvidenceData, pricecharting: item.category === 'coins' ? priceChartingCoinEvidenceData : priceChartingEvidenceData,
+  };
+  const reviewSources = [...summary.sources, ...Object.keys(extraReviewPackets)
+    .filter(id => !summary.sources.some(source => source.id === id) && enabledSources.has(id as SourceId))
+    .map(id => ({ id, label: DATA_SOURCES[id as SourceId]?.label || id, status: evidenceStatus(extraReviewPackets[id]) }))];
+  return <>
+    <TestAiEvidenceReview item={item} side={side} summary={summary}
+      sources={reviewSources.map(source => ({ ...source, packet: extraReviewPackets[source.id] ?? reviewPackets[source.id] }))} />
+    {enabledSources.has('discogs') && discogsSearchCriteria.isMusic && discogsCandidates.length > 1 && <details className="rounded border border-slate-800 p-3">
+      <summary className="cursor-pointer text-xs text-slate-300">Discogs reference selection</summary>
+      <label className="mt-2 block text-xs text-slate-300">Confirm exact release / pressing</label>
+      <select value={selectedDiscogsReleaseId ?? ''} onChange={event => setSelectedDiscogsReleaseId(event.target.value ? Number(event.target.value) : null)} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 p-2 text-xs text-slate-200">
+        <option value="">Select a matching Discogs release — no metadata alignment until selected</option>
+        {discogsCandidates.map(release => <option key={release.id} value={release.id}>{[release.artist, release.releaseTitle, release.year, release.country, release.format.join(', '), release.catalogNumber.join(', ')].filter(Boolean).join(' · ')}</option>)}
+      </select>
+      <p className="mt-2 text-xs text-slate-400">Selection applies to this sandbox run only; Discogs is reference metadata, not valuation evidence.</p>
+    </details>}
+  </>;
 }
 
 function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'left' | 'right' }) {
@@ -3518,7 +3467,7 @@ function ComicBookRealmSection({
     </div>
   );
 }
-function SandboxSpecialistSection({ source, item, side, visualProvider, onEvidenceObservation, onSales: onSourceSales }: { source: SandboxSpecialistSource; item: SelectedItem; side: 'left' | 'right'; visualProvider: 'manus_forge' | 'openai'; onEvidenceObservation?: (observation: EvidenceSourceObservation) => void; onSales?: (sourceId: string, sales: any[]) => void }) {
+function SandboxSpecialistSection({ source, item, side, visualProvider, onEvidenceObservation, onCandidatePacket, onSales: onSourceSales }: { source: SandboxSpecialistSource; item: SelectedItem; side: 'left' | 'right'; visualProvider: 'manus_forge' | 'openai'; onEvidenceObservation?: (observation: EvidenceSourceObservation) => void; onCandidatePacket?: (sourceId: string, packet: any) => void; onSales?: (sourceId: string, sales: any[]) => void }) {
   const onSales = useCallback((sales: any[]) => onSourceSales?.(source.id, sales), [onSourceSales, source.id]);
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const automatic = source.searchContract === 'automatic_title_search';
@@ -3581,6 +3530,7 @@ function SandboxSpecialistSection({ source, item, side, visualProvider, onEviden
       : providerContext;
     return [...authoritativeSales, ...contextOnly].slice(0, data?.recordCap ?? 12);
   }, [authoritativeSales, data, source.id]);
+  useEffect(() => { onCandidatePacket?.(source.id, data); }, [onCandidatePacket, source.id, data]);
   useEffect(() => { onSales?.(authoritativeSales); }, [authoritativeSales, onSales]);
   useEffect(() => {
     const completed = records.filter((record: any) => record.completed === true || record.sold === true || /completed|closed|sold/i.test(String(record.saleStatus ?? record.status ?? '')));
@@ -3785,58 +3735,6 @@ function MarketNewsSection({ item }: { item: SelectedItem }) {
       {marketNewsQuery.data.feedErrors?.length > 0 && <div className="rounded bg-amber-950/30 p-2 text-[9px] text-amber-200"><span className="font-semibold">Unavailable feeds:</span> {marketNewsQuery.data.feedErrors.join(' · ')}</div>}
       <p className="text-gray-600 text-[9px]">Significance is an item-matching research summary. It does not change the item’s value or trade verdict; completed sales remain authoritative.</p>
     </>}
-  </section>;
-}
-
-function FieldCompletionPanel({ leftItem, rightItem }: { leftItem: SelectedItem | null; rightItem: SelectedItem | null }) {
-  const [results, setResults] = useState<Record<string, any>>({});
-  const scanMutation = trpc.testAI.extractFieldsFromImage.useMutation({
-    onSuccess: (data, variables) => setResults((current) => ({ ...current, [variables.item.title]: data })),
-    onError: (error) => toast.error(error.message),
-  });
-  const scan = (item: SelectedItem) => {
-    if (!item.primaryPhotoUrl) {
-      toast.error('This listing has no primary image to scan.');
-      return;
-    }
-    scanMutation.mutate({ item: { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade, condition: item.condition, itemDetails: item.itemDetails, imageUrl: item.primaryPhotoUrl } });
-  };
-  const cards = [
-    { label: 'Item A', item: leftItem, color: 'cyan' },
-    { label: 'Item B', item: rightItem, color: 'amber' },
-  ].filter(({ item }) => item);
-  if (!cards.length) return null;
-  return <section className="rounded-xl border border-fuchsia-700/40 bg-fuchsia-950/10 p-4 space-y-3">
-    <div className="flex items-start justify-between gap-3">
-      <div>
-        <p className="text-fuchsia-300 font-bold text-sm uppercase tracking-wide">🔎 AI Field Completion · Sandbox</p>
-        <p className="text-gray-500 text-xs mt-1">Scans the listing image against the category/item-type field table. Suggestions are review-only and never overwrite listing data.</p>
-      </div>
-      <span className="rounded bg-fuchsia-900/50 px-2 py-1 text-[9px] text-fuchsia-200">Not authentication · Not valuation</span>
-    </div>
-    <div className="grid grid-cols-2 gap-3">
-      {cards.map(({ label, item, color }) => {
-        const result = results[item!.title];
-        return <div key={label} className="rounded-lg bg-gray-950/50 p-3 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <div><p className={`text-${color}-300 text-xs font-semibold`}>{label}</p><p className="text-gray-300 text-[10px] line-clamp-1">{item!.title}</p></div>
-            <button onClick={() => scan(item!)} disabled={scanMutation.isPending || !item!.primaryPhotoUrl} className="rounded bg-fuchsia-700/80 hover:bg-fuchsia-600 disabled:opacity-40 px-2 py-1 text-[10px] font-semibold text-white">{scanMutation.isPending ? 'Scanning…' : 'Scan Image'}</button>
-          </div>
-          {!item!.primaryPhotoUrl && <p className="text-amber-300 text-[10px]">No primary image available.</p>}
-          {result && <>
-            <p className="text-gray-500 text-[9px]">{result.fields.length} proposed field{result.fields.length === 1 ? '' : 's'} · review before use</p>
-            <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
-              {result.fields.length === 0 ? <p className="text-gray-500 text-[10px]">No safe fields could be extracted from this image.</p> : result.fields.map((field: any) => <div key={`${field.field}-${field.value}`} className="rounded border border-gray-800 bg-gray-900/70 p-2">
-                <div className="flex items-center justify-between gap-2"><span className="text-gray-300 text-[10px] font-semibold">{field.label}</span><span className={`rounded px-1 py-0.5 text-[8px] ${field.status === 'conflict' ? 'bg-amber-900/60 text-amber-200' : field.status === 'inferred' ? 'bg-violet-900/60 text-violet-200' : 'bg-emerald-900/60 text-emerald-200'}`}>{field.status} · {field.confidence}</span></div>
-                <p className="text-white text-[10px] mt-1">{field.value}</p><p className="text-gray-500 text-[9px] mt-1">{field.evidence}{field.needsVerification ? ' · verify before accepting' : ''}</p>
-              </div>)}
-            </div>
-            {result.missingImageRequests?.length > 0 && <p className="text-amber-200 text-[9px]"><span className="font-semibold">Additional photos:</span> {result.missingImageRequests.join(' · ')}</p>}
-            <p className="text-fuchsia-200/80 text-[9px]">{result.note}</p>
-          </>}
-        </div>;
-      })}
-    </div>
   </section>;
 }
 
@@ -4566,6 +4464,10 @@ function DataColumn({ item, searchItem, side, visualProvider, enabledSources, eb
 }) {
   const specialistScope = JSON.stringify([side, item, searchItem, Array.from(enabledSources).sort(), visualProvider]);
   const [specialistObservations, setSpecialistObservations] = useTestAiContentState<Record<string, EvidenceSourceObservation>>({}, specialistScope);
+  const [specialistPackets, setSpecialistPackets] = useTestAiContentState<Record<string, any>>({}, specialistScope);
+  const onCandidatePacket = useCallback((sourceId: string, packet: any) => {
+    setSpecialistPackets(current => current[sourceId] === packet ? current : { ...current, [sourceId]: packet });
+  }, [setSpecialistPackets]);
   const onSpecialistObservation = useCallback((observation: EvidenceSourceObservation) => {
     setSpecialistObservations((current) => ({ ...current, [observation.id]: observation }));
   }, [setSpecialistObservations]);
@@ -4593,7 +4495,10 @@ function DataColumn({ item, searchItem, side, visualProvider, enabledSources, eb
 
   return (
     <TestAiCandidateDisplayProvider side={side === 'left' ? 'item_a' : 'item_b'} outcome={finalDisplayOutcome}><div className="space-y-3">
-      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayEvidenceData ?? ebayData} soldCompsData={soldCompsData} mercariSoldCompsData={mercariSoldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={specialistObservationList} onSummaryChange={onEvidenceSummary} />
+      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayEvidenceData ?? ebayData} soldCompsData={soldCompsData} mercariSoldCompsData={mercariSoldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={specialistObservationList} extraReviewPackets={{ ...specialistPackets, comc_parse: comcData, tcgplayer_sold_comps: tcgplayerSoldCompsData }} onSummaryChange={onEvidenceSummary} />
+      <details className="rounded-xl border border-slate-800 bg-slate-950/40 p-3" aria-label="Source and technical audit">
+        <summary className="cursor-pointer text-sm font-semibold text-slate-300">Source and technical audit — queries, retrieval and provider details</summary>
+        <div className="mt-3 space-y-3">
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'
           ? <EbayActiveSection item={queryItem} side={side} data={ebayData} isLoading={ebayLoading} onVisualReviewData={onEbayVisualReview} />
@@ -4643,7 +4548,9 @@ function DataColumn({ item, searchItem, side, visualProvider, enabledSources, eb
       {enabledSources.has('comic_book_realm') && <ComicBookRealmSection item={queryItem} side={side} />}
       {enabledSources.has('pwcc') && <PwccSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('gocollect') && <PlaceholderSection sourceId="gocollect" side={side} />}
-      {SANDBOX_SPECIALIST_SOURCES.filter((source) => source.id !== 'comicconnect' && source.id !== 'comic_book_realm' && enabledSources.has(source.id)).map((source) => <SandboxSpecialistSection key={source.id} source={source} item={queryItem} side={side} visualProvider={visualProvider} onEvidenceObservation={onSpecialistObservation} onSales={onSpecialistSales} />)}
+      {SANDBOX_SPECIALIST_SOURCES.filter((source) => source.id !== 'comicconnect' && source.id !== 'comic_book_realm' && enabledSources.has(source.id)).map((source) => <SandboxSpecialistSection key={source.id} source={source} item={queryItem} side={side} visualProvider={visualProvider} onEvidenceObservation={onSpecialistObservation} onCandidatePacket={onCandidatePacket} onSales={onSpecialistSales} />)}
+        </div>
+      </details>
     </div></TestAiCandidateDisplayProvider>
   );
 }
