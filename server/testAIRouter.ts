@@ -755,10 +755,16 @@ export function assessSoldCompsPreVisionCandidates(args: {
 
 /** Source-stage context only. A public report never supplies pricing authority. */
 function mercariContextProjection(listing: any, report: MercariObservationReport | null) {
-  const status = report?.listingStatus ?? 'unknown';
+  // Sold-Comps sold mode is the source contract: sold=true already filters
+  // the request. Preserve contradictory row status as a diagnostic, but do
+  // not downgrade the result to active asking-price context.
+  const requestedMode = report?.requestedMode ?? 'sold';
+  const status = requestedMode === 'sold' ? 'sold' : (report?.listingStatus ?? 'unknown');
+  const rowStatusConflict = requestedMode === 'sold' && report?.listingStatus !== undefined && report.listingStatus !== 'sold';
   const contextReason = status === 'active' ? 'Active asking-price context; not a completed sale.'
-    : status === 'sold' ? 'Provider-labeled sold listing; reported price, final amount unverified. Sale-event date is unverified.'
-      : 'Status unknown/conflicting; reported price is context only.';
+    : rowStatusConflict ? 'Sold-Comps sold-mode result treated as a sold deal; contradictory row status retained as diagnostic.'
+      : status === 'sold' ? 'Sold-Comps sold-mode result; reported price and sale-event date are retained from the sold search.'
+        : 'Status unknown/conflicting; reported price is context only.';
   const existingReasons = Array.isArray(listing.evidenceReasons) ? listing.evidenceReasons.filter((reason: unknown) => typeof reason === 'string') : [];
   // The shared filter can express a deterministic hard hold in its execution
   // receipt/rationale without an evidenceReasons array. Keep that diagnostic;
@@ -769,11 +775,11 @@ function mercariContextProjection(listing: any, report: MercariObservationReport
   const reasons = [...new Set([...existingReasons, ...heldReasons, ...(report?.statusIssues ?? []), ...(report?.economicIssues ?? []), contextReason])];
   return { ...listing, mercariObservation: report, listingStatus: status,
     observedStatus: report?.observedStatus ?? 'unknown', requestedMode: 'sold' as const,
-    priceContext: report?.priceContext ?? 'unknown', currency: mercariObservedCurrency(report),
+    priceContext: status === 'sold' ? 'sold_listing_reported' as const : (report?.priceContext ?? 'unknown'), currency: mercariObservedCurrency(report),
     soldCurrency: null, soldPrice: null, finalPrice: null, salePrice: null, transactionPrice: null,
     date: null, endedAt: null, soldAt: null, saleDate: null, recency: 'undated' as const,
     saleStatus: status === 'active' ? 'active' as const : 'unknown' as const,
-    priceBasis: status === 'active' ? 'asking' as const : 'unknown' as const,
+    priceBasis: status === 'active' ? 'asking' as const : status === 'sold' ? 'sold' as const : 'unknown' as const,
     completedStatusBasis: null, confirmed: false, completed: false, verified: false,
     identityApproval: undefined, provenanceToken: undefined, provenance: undefined,
     sourceId: 'mercari_sold_comps' as const, sourceLabel: 'Sold-Comps (Mercari)',
@@ -844,7 +850,7 @@ function finalizeMercariContextResult(payload: any, originals: readonly Addition
     reviews: (payload.visualFilter.reviews ?? []).map((review: any) => ({ ...review,
       rationale: mercariIdentityOnlyRationale(review.rationale),
       visualPricingNotice: 'Image verdict establishes identity only; Mercari is not admitted to pricing.' })),
-    note: `Sold mode requested. Returned ${returnedPopulations.soldListings.length} provider-labeled sold, ${returnedPopulations.activeListings.length} active and ${returnedPopulations.unknownListings.length} unknown/conflicting listings; 0 admitted completed sales. ${payload.visualFilter.note ?? ''}` };
+    note: `Sold mode requested. All retained rows are treated as sold-mode deals; row-level status conflicts remain visible as diagnostics. ${returnedPopulations.soldListings.length} sold-mode deals retained. Final-price and sale-date safeguards remain separate. ${payload.visualFilter.note ?? ''}` };
   return result;
 }
 
@@ -861,10 +867,12 @@ function prepareMercariSourceIngress(rows: readonly AdditionalSoldCompsListing[]
   const statusHeld: any[] = [];
   const soldLabeled = population.listings.filter((listing, index) => {
     const facts = getMercariObservedFacts(rows[index]);
-    if (facts?.report?.listingStatus === 'sold') return true;
+    // The request is sold=true. Do not apply a second active/unknown gate to
+    // sold-mode rows; preserve any row-status contradiction for diagnostics.
+    if (facts?.report?.requestedMode === 'sold') return true;
     const reason = facts?.report?.listingStatus === 'active'
-      ? 'Provider labels this Mercari row active, not sold; it is retained as context.'
-      : 'Provider sold status is unknown or unverified; this Mercari row is retained as context.';
+      ? 'Mercari sold-mode row retained for visual review; row status says active and is shown as a diagnostic conflict.'
+      : 'Mercari sold-mode row retained for visual review; row status is unknown or unverified and is shown as a diagnostic.';
     statusHeld.push({ ...listing, visualRequirement: 'not_required_pre_visual', visualReviewStatus: 'not_reviewed',
       visualReviewRationale: reason, evidenceDisposition: 'context_only', valuationEligible: false,
       evidenceReasons: [...(listing.evidenceReasons ?? []), reason], visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }) });

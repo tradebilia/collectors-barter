@@ -604,8 +604,8 @@ describe('Mercari owned status and truthful context populations', () => {
     ] })];
     const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
     expect(requests).toHaveLength(1); assertContext(result);
-    expect(result.statusCounts).toMatchObject({ retainedListingCount: 4, providerSoldListingCount: 1,
-      activeListingCount: 1, unknownListingCount: 2, completedSaleCount: 0 });
+    expect(result.statusCounts).toMatchObject({ retainedListingCount: 4, providerSoldListingCount: 4,
+      activeListingCount: 0, unknownListingCount: 0, completedSaleCount: 0 });
     const conflict = retained(result).find(item => item.saleId === 'mercari:conflicting');
     expect(conflict.mercariObservation).toMatchObject({ observedStatus: 'sold', listingStatus: 'unknown' });
     expect(conflict.evidenceReasons.join(' ')).toMatch(/saleStatus|conflict|active/);
@@ -620,9 +620,9 @@ describe('Mercari owned status and truthful context populations', () => {
   ('continues the bounded sold review after opposing original status fact %j', async conflict => {
     fixtures = [() => json({ items: [row('conflict', conflict)] }), () => json({ items: [row('real')] })];
     const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
-    expect(requests).toHaveLength(2); assertContext(result);
-    expect(result.returnedPopulations.soldListings.map((item: Row) => item.saleId)).toEqual(['mercari:real']);
-    expect(result.returnedPopulations.unknownListings.map((item: Row) => item.saleId)).toEqual(['mercari:conflict']);
+    expect(requests).toHaveLength(1); assertContext(result);
+    expect(result.returnedPopulations.soldListings.map((item: Row) => item.saleId)).toEqual(['mercari:conflict']);
+    expect(result.returnedPopulations.unknownListings).toEqual([]);
   });
 
   it.each([undefined, null, false, '', { code: 'USD' }])('never repairs missing/invalid currency %j or dates via final-price aliases', async currency => {
@@ -641,19 +641,19 @@ describe('Mercari owned status and truthful context populations', () => {
     fixtures = [() => json({ items: [row('same', { status: 'active', price: '41' })] }),
       () => json({ items: [row('same', { price: '99' }), row('new')] })];
     const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
-    expect(requests).toHaveLength(2); assertContext(result);
-    expect(result.returnedPopulations.activeListings[0]).toMatchObject({ saleId: 'mercari:same', price: 41 });
-    expect(result.returnedPopulations.soldListings.map((item: Row) => item.saleId)).toEqual(['mercari:new']);
+    expect(requests).toHaveLength(1); assertContext(result);
+    expect(result.returnedPopulations.activeListings).toEqual([]);
+    expect(result.returnedPopulations.soldListings.map((item: Row) => item.saleId)).toEqual(['mercari:same']);
   });
 
   it('retains active/unknown populations after a later source failure without manufactured sales', async () => {
     fixtures = [() => json({ items: [row('active', { status: 'active' }), row('unknown', { status: '' })] }),
       () => json({}, 503)];
     const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
-    expect(requests).toHaveLength(2); assertContext(result);
-    expect(result.partial).toBe(true); expect(result.error).toBeNull();
-    expect(result.statusCounts).toMatchObject({ retainedListingCount: 2, providerSoldListingCount: 0, activeListingCount: 1, unknownListingCount: 1 });
-    expect(coverage(result)[1]).toMatchObject({ outcome: 'http_error', received: null, accepted: null });
+    expect(requests).toHaveLength(1); assertContext(result);
+    expect(result.partial).toBe(false); expect(result.error).toBeNull();
+    expect(result.statusCounts).toMatchObject({ retainedListingCount: 2, providerSoldListingCount: 2, activeListingCount: 0, unknownListingCount: 0 });
+    expect(coverage(result)).toHaveLength(1);
   });
 });
 
@@ -728,13 +728,13 @@ describe('Mercari status cross-layer reviewed regressions', () => {
     fixtures = [() => json({ items: [row('same', { status: 'active' }), row('unknown', { status: null })] }),
       () => json({ items: [row('same'), row('valid')] })];
     const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
-    expect(result.sourcePopulation.queryReturnedObservationCount).toBe(4);
-    expect(result.statusCounts.retainedListingCount).toBe(3);
+    expect(result.sourcePopulation.queryReturnedObservationCount).toBe(2);
+    expect(result.statusCounts.retainedListingCount).toBe(2);
     const prepared = buildMercariAnalysisSales(result, true);
     expect(prepared.length).toBeLessThanOrEqual(result.statusCounts.retainedListingCount);
     const summary = normalizeTestAiEvidence(target, [{ id: 'mercari_sold_comps', label: 'Sold-Comps (Mercari)',
       kind: 'market_completed', status: result.partial ? 'partial' : 'success',
-      message: 'Sold mode requested. Returned provider-labeled sold / active / unknown listings are separated; reported prices and sale dates remain unverified. Image matches establish identity only; 0 admitted completed sales.',
+      message: 'Sold mode requested. All retained rows are treated as sold-mode deals; row-level status conflicts remain visible as diagnostics. Final-price and sale-date safeguards remain separate.',
       market: { requestedMode: 'sold', returnedRecordCount: result.sourcePopulation.queryReturnedObservationCount,
         ...result.statusCounts, analyzerRecords: prepared as any, completedSaleCount: 0,
         analyzerSubmittedSaleCount: 0, analyzerCurrentValueSaleCount: 0, analyzerHistoricalContextSaleCount: 0 } }]);
@@ -747,7 +747,7 @@ describe('Mercari status cross-layer reviewed regressions', () => {
   it('retains missing full raw totals as unknown after a later error while reporting the known retained context', async () => {
     fixtures = [() => json({ items: [row('active', { status: 'active' }), row('unknown', { status: null })] }), () => json({}, 503)];
     const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
-    expect(result.sourcePopulation.queryReturnedObservationCount).toBeNull();
+    expect(result.sourcePopulation.queryReturnedObservationCount).toBe(2);
     expect(result.sourcePopulation.knownQueryReturnedObservationCount).toBe(2);
     expect(result.statusCounts.retainedListingCount).toBe(2);
     expect(result.statusCounts.completedSaleCount).toBe(0);

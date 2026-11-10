@@ -74,7 +74,9 @@ describe('Mercari Video Game pre-visual filtering', () => {
     const end = routerSource.indexOf('// SoldComps TCGplayer coverage', start);
     const section = routerSource.slice(start, end);
 
-    expect(routerSource).toContain('Provider-labeled sold listing; reported price, final amount unverified.');
+    expect(routerSource).toContain('Sold-Comps sold-mode result; reported price and sale-event date are retained from the sold search.');
+    expect(routerSource).toContain('The request is sold=true. Do not apply a second active/unknown gate');
+    expect(routerSource).toContain('All retained rows are treated as sold-mode deals; row-level status conflicts remain visible as diagnostics.');
     expect(section).toContain('filterVisualSourceCandidates');
     expect(section).toContain("targetImageUrl: safeTargetImage");
     expect(section).toContain("visualReviewRequired: true");
