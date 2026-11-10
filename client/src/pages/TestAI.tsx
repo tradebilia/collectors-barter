@@ -14,6 +14,7 @@ import { MetadataComparisonTable } from '@/components/TestAiMetadataComparisonTa
 import { sortMetadataRankedCandidates, buildEbayVisualReviewListings } from '@shared/testAiRankingDisplay';
 import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';
 import { TestAiEvidenceReview } from '@/components/test-ai/TestAiEvidenceReview';
+import { TestAiWorkStatus } from '@/components/test-ai/TestAiWorkStatus';
 import { TestAiSourceStatusBadges, TestAiSourceRelevanceSummary, TestAiCandidateDisplayProvider, TestAiCandidateStatus, TestAiVisualReviewRow, TestAiExecutionSummary, TestAiFinalUseSummary, TestAiSourcePopulationSummary, TestAiFinalLedgerRow, TestAiProcessCompleteNotice as ProcessCompleteNotice, TestAiSourceMetricSummary, TestAiSourceCurrentWindowCount, selectTestAiVisualDisplayRows } from '@/components/TestAiCandidateStatus';
 import { TestAiSafeImage } from '@/components/TestAiSafeImage';
 import { candidateDisplayKey, collectEbayCandidateDisplayOccurrences, mergeCandidateDisplayGroups, mergeVisualReviewDisplayBatches, mergeEbayCandidateDisplayData, stampCandidateDisplayIntake, type CandidateFinalDisplayOutcome } from '@shared/testAiCandidateLedger';
@@ -4956,6 +4957,7 @@ export default function TestAI() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+        <TestAiWorkStatus />
         {/* Item selectors */}
         <div className="flex gap-4">
           <ItemPanel side="left" item={leftItem} onItemChange={setLeftItem} onSourceChange={setLeftSources} inventory={inventory} inventoryLoading={inventoryLoading} sandboxItems={sandboxItems} sandboxItemsLoading={sandboxItemsLoading} />

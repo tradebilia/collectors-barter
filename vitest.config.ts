@@ -15,7 +15,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["server/**/*.test.ts", "server/**/*.spec.ts", "client/**/*.test.ts", "client/**/*.spec.ts", "shared/**/*.test.ts", "shared/**/*.spec.ts", "server/testAiSafeImage.test.tsx", "server/testAiUiStability.test.tsx", "server/testAiTitleEvidenceDisplay.test.tsx", "server/testAiVisualFailureDisplay.test.tsx", "server/testAiObservedDifferences.test.tsx", "server/testAiCandidateStatus.test.tsx", "server/testAiMetadataComparisonTable.test.tsx", "server/testAiDecisionCards.test.tsx", "server/testAiEvidenceReview.test.tsx"],
+    include: ["server/**/*.test.ts", "server/**/*.spec.ts", "client/**/*.test.ts", "client/**/*.spec.ts", "shared/**/*.test.ts", "shared/**/*.spec.ts", "server/testAiSafeImage.test.tsx", "server/testAiUiStability.test.tsx", "server/testAiTitleEvidenceDisplay.test.tsx", "server/testAiVisualFailureDisplay.test.tsx", "server/testAiObservedDifferences.test.tsx", "server/testAiCandidateStatus.test.tsx", "server/testAiMetadataComparisonTable.test.tsx", "server/testAiDecisionCards.test.tsx", "server/testAiEvidenceReview.test.tsx", "server/testAiWorkStatus.test.tsx"],
     setupFiles: ["./vitest.setup.ts"],
   },
 });
