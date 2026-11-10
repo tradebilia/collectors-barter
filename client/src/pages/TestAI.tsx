@@ -2,6 +2,7 @@ import { TestAiRetrievalLadder } from '../components/TestAiRetrievalLadder';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { skipToken } from '@tanstack/react-query';
 import { trpc } from "@/lib/trpc";
+import { useTestAiContentState, useTestAiSourceDisplayData } from '@/hooks/useTestAiUiStability';
 import { formatTrackingDate } from "@/lib/formatTrackingDate";
 import { formatGrade, formatItemValue, formatWholeDollar } from '@/lib/tradebilia';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -13,9 +14,10 @@ import { MetadataComparisonTable } from '@/components/TestAiMetadataComparisonTa
 import { sortMetadataRankedCandidates, buildEbayVisualReviewListings } from '@shared/testAiRankingDisplay';
 import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';
 import { TestAiSourceStatusBadges, TestAiSourceRelevanceSummary, TestAiCandidateDisplayProvider, TestAiCandidateStatus, TestAiVisualReviewRow, TestAiExecutionSummary, TestAiFinalUseSummary, TestAiSourcePopulationSummary, TestAiFinalLedgerRow, TestAiProcessCompleteNotice as ProcessCompleteNotice, TestAiSourceMetricSummary, TestAiSourceCurrentWindowCount, selectTestAiVisualDisplayRows } from '@/components/TestAiCandidateStatus';
+import { TestAiSafeImage } from '@/components/TestAiSafeImage';
 import { candidateDisplayKey, collectEbayCandidateDisplayOccurrences, mergeCandidateDisplayGroups, mergeVisualReviewDisplayBatches, mergeEbayCandidateDisplayData, stampCandidateDisplayIntake, type CandidateFinalDisplayOutcome } from '@shared/testAiCandidateLedger';
 import { testAiAnalysisLifecycleKey, isCurrentTestAiFinalRequest } from '@shared/testAiAnalysisLifecycle';
-import { sourceRequestDisplayData, sourceRetainedDisplayGroups, sourceRetainedEmptyMessage, sourceEvidenceStatus, sourceEvidenceMessage, sourceVisualDisplayGroups, sourceReviewedGoldinSales, sourceRecordBucketLabel, sourceMetricDisplay } from '@shared/testAiSourceDisplay';
+import { sourceRetainedDisplayGroups, sourceRetainedEmptyMessage, sourceEvidenceStatus, sourceEvidenceMessage, sourceVisualDisplayGroups, sourceReviewedGoldinSales, sourceRecordBucketLabel, sourceMetricDisplay } from '@shared/testAiSourceDisplay';
 import { hasActualVisualResponse, formatCandidateDisplayPrice } from '@shared/testAiCandidateStatus';
 import { toast } from 'sonner';
 import { buildComicsOriginalArtQueries, buildStructuredItemQuery, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
@@ -1016,7 +1018,7 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
           {rankedListings.map((l: any, i: number) => (
             <div key={i} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
               <div className="flex items-center gap-2 min-w-0">
-                {l.imageUrl && <img src={l.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />}
+                <TestAiSafeImage src={l.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />
                 <div className="min-w-0">
                   <a href={l.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{l.title}</a>
                   <p className="text-[10px] text-gray-500">{l.condition} · {l.endedAt ? `Sold ${l.endedAt}` : ''}</p>
@@ -1090,7 +1092,7 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
       {rankedListings.length > 0 && <div className="space-y-1 max-h-64 overflow-y-auto">{rankedListings.map((listing: any, index: number) => (
         <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
           <div className="flex items-center gap-2 min-w-0">
-            {listing.imageUrl && <img src={listing.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />}
+            <TestAiSafeImage src={listing.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />
             <div className="min-w-0"><a href={listing.itemUrl || undefined} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{listing.title}</a><p className="text-[10px] text-gray-500">{listing.condition || 'Condition unavailable'} · {listing.endedAt ? `Sold ${listing.endedAt}` : 'Date unavailable'}</p><MetadataMatchLine listing={listing} /><MetadataComparisonTable listing={listing} /><TestAiCandidateStatus listing={listing} /><VisualDifferenceList listing={listing} /><AnalyzerUseLine eligible={listing.evidenceDisposition === 'valuation_eligible'} reason={(listing.evidenceReasons ?? (listing.evidenceDisposition === 'valuation_eligible' ? ['Strict visual identity gate passed; final comparable selection still applies.'] : ['Context-only provider result'])).join('; ')} /></div>
           </div>
           <p className="text-amber-300 font-semibold text-sm flex-shrink-0">{formatCandidateDisplayPrice(listing)}</p>
@@ -1357,7 +1359,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   const renderListing = (l: any, i: number) => (
     <div key={`${l.id || l.saleId || l.itemUrl || l.title}-${i}`} className="flex items-start justify-between gap-2 py-1.5 border-b border-gray-700/20 last:border-b-0">
       <div className="flex min-w-0 flex-1 items-start gap-2">
-        {l.imageUrl && <img src={l.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />}
+        <TestAiSafeImage src={l.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />
         <div className="min-w-0 flex-1">
           <a href={l.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline break-words block">{l.title}</a>
           <p className="text-[10px] text-gray-500">{[l.listingType === 'AUCTION' ? 'Auction' : 'Fixed price', l.condition, l.seller, l.bidCount != null ? `${l.bidCount} bids` : null, l.uniqueBidderCount != null ? `${l.uniqueBidderCount} unique bidders` : null].filter(Boolean).join(' · ')}</p>
@@ -1384,6 +1386,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       <ProcessCompleteNotice data={data} /><TestAiSourcePopulationSummary packet={data?.sourcePopulation} />
       <p className="text-gray-500 text-[10px]">Data type: Current fixed-price and auction listings · {showingVisualMatchMetrics ? 'Visual-match-only current-market metrics' : 'Full-market current-market context'}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
+      {!data?.error && data?.retrievalWarning && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] text-amber-200">Partial eBay retrieval: {data.retrievalWarning}</p>}
       {data?.marketContextOnly && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[10px] text-amber-200">Autographs / Signed Item market context only — ranked by relevance, with no visual cap because these candidates are never sent to visual analysis.</p>}
       {effectiveVisualReviewData?.error && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not complete: {effectiveVisualReviewData.error}</p>}
       {visualReviewErrorMessage && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">{effectiveVisualReviewData ? 'AI image checks stopped after returning partial results' : 'AI image checks could not start'}: {visualReviewErrorMessage}</p>}
@@ -1411,7 +1414,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
         {autographValuationListings.length > 0 && <section className="rounded border border-emerald-700/40 bg-emerald-950/15 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Source-stage Asking Context</p><p className="mt-0.5 text-[9px] text-emerald-100/70">These listings passed the Autographs source identity and score rules. Legacy source metrics are separate from final pricing use; currency-unproven aggregates are withheld.</p><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1">{autographValuationListings.map(renderListing)}</div></section>}
         {autographContextListings.length > 0 && <section className="rounded border border-amber-700/40 bg-amber-950/15 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-amber-300">Context Only — Not Used in Valuation</p><p className="mt-0.5 text-[9px] text-amber-100/70">These listings remain visible for transparency but do not affect the current-value metrics.</p><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1">{autographContextListings.map(renderListing)}</div></section>}
       </> : rankedDisplayListings.length > 0 && <div className="space-y-1 max-h-72 overflow-y-auto pr-1">{rankedDisplayListings.map(renderListing)}</div>}
-      {displayData && !displayData.listings.length && !displayData.error && <p className="text-gray-500 text-xs">No listings found.</p>}
+      {displayData && !displayData.listings.length && !displayData.error && <p className="text-gray-500 text-xs">{sourceRetainedEmptyMessage(data, activeMasterListings.length, 'eBay')}</p>}
     </div>
   );
 }
@@ -1453,7 +1456,7 @@ function HipstampSection({ item, side }: { item: SelectedItem; side: 'left' | 'r
           {data.listings.map((listing: any) => (
             <div key={listing.id || `${listing.title}-${listing.price}`} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
               <div className="flex items-center gap-2 min-w-0">
-                {listing.imageUrl && <img src={listing.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />}
+                <TestAiSafeImage src={listing.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />
                 <div className="min-w-0">
                   <a href={listing.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{listing.title}</a>
                   <p className="text-[10px] text-gray-500">{[listing.country, listing.catalogNumber, listing.condition, listing.seller].filter(Boolean).join(' · ')}</p>
@@ -1501,7 +1504,7 @@ function HipstampSoldSection({ item, side }: { item: SelectedItem; side: 'left' 
       {data?.debug?.targetFormat && <p className="text-cyan-200 text-[10px]">Comparable format: <strong>{data.debug.targetFormat.label}</strong>{(data.debug.formatExcluded ?? 0) > 0 ? ` · ${data.debug.formatExcluded} format-mismatched sold listing${data.debug.formatExcluded === 1 ? '' : 's'} excluded` : ''}</p>}
       {data?.debug && data.debug.nonUsdListings > 0 && <p className="text-gray-500 text-[10px]">{data.debug.nonUsdListings} non-USD sold listing{data.debug.nonUsdListings === 1 ? '' : 's'} excluded from USD metrics.</p>}
       {data?.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/30 p-2 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
-      {data?.listings?.length ? <div className="space-y-1 max-h-48 overflow-y-auto">{data.listings.map((listing: any) => <div key={listing.id || `${listing.title}-${listing.price}`} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0"><div className="flex items-center gap-2 min-w-0">{listing.imageUrl && <img src={listing.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" />}<div className="min-w-0"><a href={listing.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{listing.title}</a><p className="text-[10px] text-gray-500">{[listing.country, listing.catalogNumber, listing.condition, listing.storeUsername].filter(Boolean).join(' · ')}</p></div></div><p className="text-green-400 font-semibold text-sm flex-shrink-0">{listing.currency} {formatPrice(listing.price)}</p></div>)}</div> : data && !data.error ? <p className="text-gray-500 text-xs">No store-scoped HIPStamp sold listings matched the selected stamp identity.</p> : null}
+      {data?.listings?.length ? <div className="space-y-1 max-h-48 overflow-y-auto">{data.listings.map((listing: any) => <div key={listing.id || `${listing.title}-${listing.price}`} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0"><div className="flex items-center gap-2 min-w-0"><TestAiSafeImage src={listing.imageUrl} alt="" className="w-8 h-8 object-contain rounded flex-shrink-0" /><div className="min-w-0"><a href={listing.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{listing.title}</a><p className="text-[10px] text-gray-500">{[listing.country, listing.catalogNumber, listing.condition, listing.storeUsername].filter(Boolean).join(' · ')}</p></div></div><p className="text-green-400 font-semibold text-sm flex-shrink-0">{listing.currency} {formatPrice(listing.price)}</p></div>)}</div> : data && !data.error ? <p className="text-gray-500 text-xs">No store-scoped HIPStamp sold listings matched the selected stamp identity.</p> : null}
     </div>
   );
 }
@@ -3124,7 +3127,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     // from CoinFacts in marketItem. Use that identity for readiness so the UI
     // and the final analyzer evaluate the same target fields.
     return normalizeTestAiEvidence(marketItem, [...observations, ...(specialistObservations ?? [])]);
-  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, comicConnectData, pcgsAuctionData, oneThirtyPointData, specialistObservations, pwccQuery.data, comicBookRealmQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingSlugQuery.data, priceChartingMoversQuery.data, discogsSearchCriteria.isMusic, discogsQuery.data, discogsCandidates, selectedDiscogsReleaseId, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+  }, [item, marketItem, enabledSources, ebayData, soldCompsData, mercariSoldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, comicConnectData, pcgsAuctionData, oneThirtyPointData, specialistObservations, pwccQuery.data, comicBookRealmQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingVideoGameCandidateQuery.data, priceChartingVideoGameUpc, priceChartingSlugQuery.data, priceChartingMoversQuery.data, discogsSearchCriteria.isMusic, discogsQuery.data, discogsCandidates, selectedDiscogsReleaseId, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, numistaQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
 
   useEffect(() => {
     onSummaryChange?.(summary);
@@ -3353,7 +3356,8 @@ function ComicBookRealmSection({
     </div>
   );
 }
-function SandboxSpecialistSection({ source, item, side, visualProvider, onEvidenceObservation, onSales }: { source: SandboxSpecialistSource; item: SelectedItem; side: 'left' | 'right'; visualProvider: 'manus_forge' | 'openai'; onEvidenceObservation?: (observation: EvidenceSourceObservation) => void; onSales?: (sales: any[]) => void }) {
+function SandboxSpecialistSection({ source, item, side, visualProvider, onEvidenceObservation, onSales: onSourceSales }: { source: SandboxSpecialistSource; item: SelectedItem; side: 'left' | 'right'; visualProvider: 'manus_forge' | 'openai'; onEvidenceObservation?: (observation: EvidenceSourceObservation) => void; onSales?: (sourceId: string, sales: any[]) => void }) {
+  const onSales = useCallback((sales: any[]) => onSourceSales?.(source.id, sales), [onSourceSales, source.id]);
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const automatic = source.searchContract === 'automatic_title_search';
   const locatorRequired = source.searchContract === 'public_locator_required';
@@ -3468,7 +3472,7 @@ function SandboxSpecialistSection({ source, item, side, visualProvider, onEviden
       {source.id === 'goldin' && (data as any)?.visualFilter && <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel="Goldin specialist records" />}
       {records.length > 0 && <div className="space-y-1.5">
         <p className="text-[9px] text-gray-400">✓ {data?.sales?.length ?? 0} identity-matched completed context record{(data?.sales?.length ?? 0) === 1 ? '' : 's'} · ✕ {data?.context?.length ?? 0} retained mismatch/incomplete record{(data?.context?.length ?? 0) === 1 ? '' : 's'}</p>
-        {records.map((record: any, index: number) => <div key={`${record.lotId ?? record.url ?? record.title}-${index}`} className="rounded border border-slate-700/50 bg-slate-950/40 p-2"><div className="flex items-start justify-between gap-2"><div className="flex min-w-0 items-start gap-2">{record.imageUrl && <img src={record.imageUrl} alt="" className="h-8 w-8 shrink-0 rounded object-contain" />}<div className="min-w-0"><p className="truncate text-[10px] font-medium text-slate-100">{record.title}</p><MetadataMatchLine listing={record} /><MetadataComparisonTable listing={record} /><TestAiCandidateStatus listing={record} /><VisualDifferenceList listing={record} /></div></div><span className="shrink-0 text-[10px] text-emerald-300">{formatPrice(record.price)}</span></div><p className="mt-0.5 text-[9px] text-slate-500">{record.lotId ? `Lot ${record.lotId} · ` : ''}{record.date ? new Date(record.date).toLocaleDateString() : 'Date unavailable'} · {record.priceBasis.replace(/_/g, ' ')}</p>{record.winningBid != null && <p className="mt-0.5 text-[9px] text-slate-400">Winning bid {formatPrice(record.winningBid)}{record.buyerPremiumPercentage != null ? ` + ${record.buyerPremiumPercentage}% buyer premium = all-in context` : ''}</p>}<p className={`mt-0.5 text-[9px] ${record.identityMatched ? 'text-emerald-300/80' : 'text-rose-300/90'}`}>{record.identityMatched && record.completed ? '✓ Identity matched — retained for admission review' : `✕ ${record.exclusionReason ?? 'Identity or completed-sale state not confirmed'}`}</p>{record.url && <a className="mt-1 inline-block text-[9px] text-sky-400 underline" href={record.url} target="_blank" rel="noreferrer">Open public record</a>}</div>)}
+        {records.map((record: any, index: number) => <div key={`${record.lotId ?? record.url ?? record.title}-${index}`} className="rounded border border-slate-700/50 bg-slate-950/40 p-2"><div className="flex items-start justify-between gap-2"><div className="flex min-w-0 items-start gap-2"><TestAiSafeImage src={record.imageUrl} alt="" className="h-8 w-8 shrink-0 rounded object-contain" /><div className="min-w-0"><p className="truncate text-[10px] font-medium text-slate-100">{record.title}</p><MetadataMatchLine listing={record} /><MetadataComparisonTable listing={record} /><TestAiCandidateStatus listing={record} /><VisualDifferenceList listing={record} /></div></div><span className="shrink-0 text-[10px] text-emerald-300">{formatPrice(record.price)}</span></div><p className="mt-0.5 text-[9px] text-slate-500">{record.lotId ? `Lot ${record.lotId} · ` : ''}{record.date ? new Date(record.date).toLocaleDateString() : 'Date unavailable'} · {record.priceBasis.replace(/_/g, ' ')}</p>{record.winningBid != null && <p className="mt-0.5 text-[9px] text-slate-400">Winning bid {formatPrice(record.winningBid)}{record.buyerPremiumPercentage != null ? ` + ${record.buyerPremiumPercentage}% buyer premium = all-in context` : ''}</p>}<p className={`mt-0.5 text-[9px] ${record.identityMatched ? 'text-emerald-300/80' : 'text-rose-300/90'}`}>{record.identityMatched && record.completed ? '✓ Identity matched — retained for admission review' : `✕ ${record.exclusionReason ?? 'Identity or completed-sale state not confirmed'}`}</p>{record.url && <a className="mt-1 inline-block text-[9px] text-sky-400 underline" href={record.url} target="_blank" rel="noreferrer">Open public record</a>}</div>)}
       </div>}
       <p className="text-[9px] text-amber-200/80">{source.id === 'goldin' ? 'Only records marked as valuation candidates affect valuation, recommended trade terms, or the final AI conclusion; mismatches and incomplete records remain context-only.' : 'No specialist record from this panel affects valuation, recommended trade terms, or the final AI conclusion.'}</p>
     </div>
@@ -4396,10 +4400,11 @@ function DataColumn({ item, searchItem, side, visualProvider, enabledSources, eb
   onSpecialistSales?: (sourceId: string, sales: any[]) => void;
   finalDisplayOutcome?: CandidateFinalDisplayOutcome | null;
 }) {
-  const [specialistObservations, setSpecialistObservations] = useState<Record<string, EvidenceSourceObservation>>({});
+  const specialistScope = JSON.stringify([side, item, searchItem, Array.from(enabledSources).sort(), visualProvider]);
+  const [specialistObservations, setSpecialistObservations] = useTestAiContentState<Record<string, EvidenceSourceObservation>>({}, specialistScope);
   const onSpecialistObservation = useCallback((observation: EvidenceSourceObservation) => {
     setSpecialistObservations((current) => ({ ...current, [observation.id]: observation }));
-  }, []);
+  }, [setSpecialistObservations]);
   const specialistObservationList = useMemo(() => Object.values(specialistObservations), [specialistObservations]);
   if (!item) return (
     <div className="rounded-xl border border-gray-700/30 bg-gray-800/20 p-8 text-center text-gray-500 text-sm">
@@ -4474,7 +4479,7 @@ function DataColumn({ item, searchItem, side, visualProvider, enabledSources, eb
       {enabledSources.has('comic_book_realm') && <ComicBookRealmSection item={queryItem} side={side} />}
       {enabledSources.has('pwcc') && <PwccSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('gocollect') && <PlaceholderSection sourceId="gocollect" side={side} />}
-      {SANDBOX_SPECIALIST_SOURCES.filter((source) => source.id !== 'comicconnect' && source.id !== 'comic_book_realm' && enabledSources.has(source.id)).map((source) => <SandboxSpecialistSection key={source.id} source={source} item={queryItem} side={side} visualProvider={visualProvider} onEvidenceObservation={onSpecialistObservation} onSales={(sales) => onSpecialistSales?.(source.id, sales)} />)}
+      {SANDBOX_SPECIALIST_SOURCES.filter((source) => source.id !== 'comicconnect' && source.id !== 'comic_book_realm' && enabledSources.has(source.id)).map((source) => <SandboxSpecialistSection key={source.id} source={source} item={queryItem} side={side} visualProvider={visualProvider} onEvidenceObservation={onSpecialistObservation} onSales={onSpecialistSales} />)}
     </div></TestAiCandidateDisplayProvider>
   );
 }
@@ -4487,12 +4492,6 @@ export default function TestAI() {
   const [rightItem, setRightItem] = useState<SelectedItem | null>(null);
   const [leftSources, setLeftSources] = useState<Set<SourceId>>(new Set());
   const [rightSources, setRightSources] = useState<Set<SourceId>>(new Set());
-  const [leftEvidenceSummary, setLeftEvidenceSummary] = useState<NormalizedEvidenceSummary | null>(null);
-  const [leftEbayVisualReview, setLeftEbayVisualReview] = useState<any | null>(null);
-  const [leftGoldinSales, setLeftGoldinSales] = useState<any[]>([]);
-  const [rightGoldinSales, setRightGoldinSales] = useState<any[]>([]);
-  const [rightEvidenceSummary, setRightEvidenceSummary] = useState<NormalizedEvidenceSummary | null>(null);
-  const [rightEbayVisualReview, setRightEbayVisualReview] = useState<any | null>(null);
   const [visualProvider, setVisualProvider] = useState<'manus_forge' | 'openai'>('manus_forge');
   const [finalDisplayOutcomes, setFinalDisplayOutcomes] = useState<{ left: CandidateFinalDisplayOutcome; right: CandidateFinalDisplayOutcome } | null>(null);
   const leftIsCollectionLot = isCollectionLotItemType(leftItem?.itemType);
@@ -4501,18 +4500,30 @@ export default function TestAI() {
   const rightSourcesEnabled = rightIsCollectionLot ? new Set<SourceId>() : rightSources;
   const leftSourceKey = useMemo(() => Array.from(leftSources).sort().join('|'), [leftSources]);
   const rightSourceKey = useMemo(() => Array.from(rightSources).sort().join('|'), [rightSources]);
+  const leftEvidenceScope = useMemo(() => JSON.stringify(['left', leftItem, leftSourceKey, visualProvider]), [leftItem, leftSourceKey, visualProvider]);
+  const rightEvidenceScope = useMemo(() => JSON.stringify(['right', rightItem, rightSourceKey, visualProvider]), [rightItem, rightSourceKey, visualProvider]);
+  const [leftEvidenceSummary, setLeftEvidenceSummary] = useTestAiContentState<NormalizedEvidenceSummary | null>(null, leftEvidenceScope);
+  const [rightEvidenceSummary, setRightEvidenceSummary] = useTestAiContentState<NormalizedEvidenceSummary | null>(null, rightEvidenceScope);
+  const [leftEbayVisualReview, setLeftEbayVisualReview] = useTestAiContentState<any | null>(null, leftEvidenceScope);
+  const [rightEbayVisualReview, setRightEbayVisualReview] = useTestAiContentState<any | null>(null, rightEvidenceScope);
+  const [leftGoldinSales, setLeftGoldinSales] = useTestAiContentState<any[]>([], leftEvidenceScope);
+  const [rightGoldinSales, setRightGoldinSales] = useTestAiContentState<any[]>([], rightEvidenceScope);
+  const onLeftSpecialistSales = useCallback((sourceId: string, sales: any[]) => {
+    if (sourceId === 'goldin') setLeftGoldinSales(sales);
+  }, [setLeftGoldinSales]);
+  const onRightSpecialistSales = useCallback((sourceId: string, sales: any[]) => {
+    if (sourceId === 'goldin') setRightGoldinSales(sales);
+  }, [setRightGoldinSales]);
 
   useEffect(() => {
-    setLeftEvidenceSummary(null);
+    if (!leftItem || leftSourcesEnabled.size === 0) setLeftEvidenceSummary(null);
     setFinalDisplayOutcomes(null);
-    setLeftEbayVisualReview(null);
-  }, [leftItem?.id, leftItem?.title, leftItem?.category, leftSourceKey]);
+  }, [leftEvidenceScope]);
 
   useEffect(() => {
-    setRightEvidenceSummary(null);
+    if (!rightItem || rightSourcesEnabled.size === 0) setRightEvidenceSummary(null);
     setFinalDisplayOutcomes(null);
-    setRightEbayVisualReview(null);
-  }, [rightItem?.id, rightItem?.title, rightItem?.category, rightSourceKey]);
+  }, [rightEvidenceScope]);
   useEffect(() => {
     if (leftIsCollectionLot && leftSources.size > 0) setLeftSources(new Set());
     if (rightIsCollectionLot && rightSources.size > 0) setRightSources(new Set());
@@ -4664,8 +4675,8 @@ export default function TestAI() {
 
   }
 
-  const leftSearchItem = buildSearchableItem(leftItem, leftPSAQuery, leftBeckettQuery, leftCgcQuery, leftPcgsCoinFactsQuery.data);
-  const rightSearchItem = buildSearchableItem(rightItem, rightPSAQuery, rightBeckettQuery, rightCgcQuery, rightPcgsCoinFactsQuery.data);
+  const leftSearchItem = useMemo(() => buildSearchableItem(leftItem, { data: leftPSAQuery.data }, { data: leftBeckettQuery.data }, { data: leftCgcQuery.data }, leftPcgsCoinFactsQuery.data), [leftItem, leftPSAQuery.data, leftBeckettQuery.data, leftCgcQuery.data, leftPcgsCoinFactsQuery.data]);
+  const rightSearchItem = useMemo(() => buildSearchableItem(rightItem, { data: rightPSAQuery.data }, { data: rightBeckettQuery.data }, { data: rightCgcQuery.data }, rightPcgsCoinFactsQuery.data), [rightItem, rightPSAQuery.data, rightBeckettQuery.data, rightCgcQuery.data, rightPcgsCoinFactsQuery.data]);
   // Match AIAnalysisSection's analysis-item fallback, including PCGS augmentation.
   const effectiveLeftItem = leftSearchItem ?? leftItem;
   const effectiveRightItem = rightSearchItem ?? rightItem;
@@ -4813,6 +4824,13 @@ export default function TestAI() {
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('one_thirty_point') },
   );
 
+  const leftEbayDisplay = useTestAiSourceDisplayData(leftEbayQuery.data, Boolean(leftEbayQuery.error), leftEbayVisualReview);
+  const rightEbayDisplay = useTestAiSourceDisplayData(rightEbayQuery.data, Boolean(rightEbayQuery.error), rightEbayVisualReview);
+  const leftSoldCompsDisplay = useTestAiSourceDisplayData(leftSoldCompsQuery.data, Boolean(leftSoldCompsQuery.error));
+  const rightSoldCompsDisplay = useTestAiSourceDisplayData(rightSoldCompsQuery.data, Boolean(rightSoldCompsQuery.error));
+  const leftMercariSoldCompsDisplay = useTestAiSourceDisplayData(leftMercariSoldCompsQuery.data, Boolean(leftMercariSoldCompsQuery.error));
+  const rightMercariSoldCompsDisplay = useTestAiSourceDisplayData(rightMercariSoldCompsQuery.data, Boolean(rightMercariSoldCompsQuery.error));
+
   if (authLoading) return <div className="flex items-center justify-center min-h-screen"><Spinner /></div>;
   if (!user || user.role !== 'admin') { navigate('/'); return null; }
 
@@ -4859,8 +4877,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {leftItem && !leftIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.left} item={leftItem} searchItem={leftSearchItem} side="left" visualProvider={visualProvider} enabledSources={leftSourcesEnabled} ebayData={sourceRequestDisplayData(leftEbayQuery.data, Boolean(leftEbayQuery.error))} ebayEvidenceData={leftEbayVisualReview ? { ...sourceRequestDisplayData(leftEbayQuery.data, Boolean(leftEbayQuery.error)), ...leftEbayVisualReview } : sourceRequestDisplayData(leftEbayQuery.data, Boolean(leftEbayQuery.error))} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isFetching} soldCompsData={sourceRequestDisplayData(leftSoldCompsQuery.data, Boolean(leftSoldCompsQuery.error))} soldCompsLoading={leftSoldCompsQuery.isFetching} mercariSoldCompsData={sourceRequestDisplayData(leftMercariSoldCompsQuery.data, Boolean(leftMercariSoldCompsQuery.error))} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={leftTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isFetching} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isFetching} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isFetching} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isFetching} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isFetching} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isFetching} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isFetching} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isFetching} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isFetching} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isFetching} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isFetching} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />}
-            {rightItem && !rightIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.right} item={rightItem} searchItem={rightSearchItem} side="right" visualProvider={visualProvider} enabledSources={rightSourcesEnabled} ebayData={sourceRequestDisplayData(rightEbayQuery.data, Boolean(rightEbayQuery.error))} ebayEvidenceData={rightEbayVisualReview ? { ...sourceRequestDisplayData(rightEbayQuery.data, Boolean(rightEbayQuery.error)), ...rightEbayVisualReview } : sourceRequestDisplayData(rightEbayQuery.data, Boolean(rightEbayQuery.error))} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isFetching} soldCompsData={sourceRequestDisplayData(rightSoldCompsQuery.data, Boolean(rightSoldCompsQuery.error))} soldCompsLoading={rightSoldCompsQuery.isFetching} mercariSoldCompsData={sourceRequestDisplayData(rightMercariSoldCompsQuery.data, Boolean(rightMercariSoldCompsQuery.error))} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={rightTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isFetching} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isFetching} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isFetching} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isFetching} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isFetching} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isFetching} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isFetching} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isFetching} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isFetching} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isFetching} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isFetching} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
+            {leftItem && !leftIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.left} item={leftItem} searchItem={leftSearchItem} side="left" visualProvider={visualProvider} enabledSources={leftSourcesEnabled} ebayData={leftEbayDisplay.data} ebayEvidenceData={leftEbayDisplay.evidenceData} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isFetching} soldCompsData={leftSoldCompsDisplay.data} soldCompsLoading={leftSoldCompsQuery.isFetching} mercariSoldCompsData={leftMercariSoldCompsDisplay.data} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={leftTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isFetching} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isFetching} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isFetching} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isFetching} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isFetching} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isFetching} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isFetching} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isFetching} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isFetching} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isFetching} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isFetching} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={onLeftSpecialistSales} />}
+            {rightItem && !rightIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.right} item={rightItem} searchItem={rightSearchItem} side="right" visualProvider={visualProvider} enabledSources={rightSourcesEnabled} ebayData={rightEbayDisplay.data} ebayEvidenceData={rightEbayDisplay.evidenceData} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isFetching} soldCompsData={rightSoldCompsDisplay.data} soldCompsLoading={rightSoldCompsQuery.isFetching} mercariSoldCompsData={rightMercariSoldCompsDisplay.data} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={rightTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isFetching} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isFetching} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isFetching} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isFetching} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isFetching} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isFetching} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isFetching} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isFetching} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isFetching} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isFetching} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isFetching} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={onRightSpecialistSales} />}
           </div>
         )}
 
@@ -4875,14 +4893,14 @@ export default function TestAI() {
             rightItem={rightItem}
             leftAnalysisItem={leftSearchItem}
             rightAnalysisItem={rightSearchItem}
-            leftEbayData={sourceRequestDisplayData(leftEbayQuery.data, Boolean(leftEbayQuery.error))}
-            rightEbayData={sourceRequestDisplayData(rightEbayQuery.data, Boolean(rightEbayQuery.error))}
+            leftEbayData={leftEbayDisplay.data}
+            rightEbayData={rightEbayDisplay.data}
              leftSources={leftSourcesEnabled}
              rightSources={rightSourcesEnabled}
-             leftSoldCompsData={sourceRequestDisplayData(leftSoldCompsQuery.data, Boolean(leftSoldCompsQuery.error))}
-             rightSoldCompsData={sourceRequestDisplayData(rightSoldCompsQuery.data, Boolean(rightSoldCompsQuery.error))}
-             leftMercariSoldCompsData={sourceRequestDisplayData(leftMercariSoldCompsQuery.data, Boolean(leftMercariSoldCompsQuery.error))}
-             rightMercariSoldCompsData={sourceRequestDisplayData(rightMercariSoldCompsQuery.data, Boolean(rightMercariSoldCompsQuery.error))}
+             leftSoldCompsData={leftSoldCompsDisplay.data}
+             rightSoldCompsData={rightSoldCompsDisplay.data}
+             leftMercariSoldCompsData={leftMercariSoldCompsDisplay.data}
+             rightMercariSoldCompsData={rightMercariSoldCompsDisplay.data}
              leftHipstampData={leftHipstampQuery.data}
              rightHipstampData={rightHipstampQuery.data}
              leftTheCardApiData={leftTheCardApiQuery.data}

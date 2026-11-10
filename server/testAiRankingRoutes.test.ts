@@ -12,11 +12,12 @@ vi.mock('./soldCompsAdditionalMarketData', () => ({ lookupMercariSoldComps: boun
   // Explicit fake owned-facts seam for this display test; real ownership is tested in the dedicated adapter process.
   getMercariObservedFacts: (row: { status?: string }) => ({ status: row.status === 'sold' ? 'sold' : 'unknown' }),
   lookupTcgplayerSoldComps: () => { boundaries.denied.push('TCGplayer'); throw new Error('Unconfigured provider forbidden'); } }));
-import { testAIRouter } from './testAIRouter';
+import { testAIRouter, readEbayBrowseItemSummaries, EBAY_ACTIVE_EXACT_PAGE_LIMIT, EBAY_ACTIVE_QUERY_TIER_LIMIT } from './testAIRouter';
 import { buildSoldCompsAnalysisSales, buildSoldCompsApprovalInput } from '../shared/testAiSoldCompsTransport';
 import { retainOriginDisplayRanking } from '../shared/testAiRankingPopulation';
 import { buildEbayVisualReviewListings } from '../shared/testAiRankingDisplay';
 import { verifyCanonicalObservation } from './testAiCanonicalObservation';
+import { sourceRetrievalCoverage, sourceRetainedEmptyMessage } from '../shared/testAiSourceDisplay';
 
 const API_KEY = 'stage4-synthetic-sold-comps-api-key-not-a-service-credential';
 const PRIMARY = 'https://example.test/stage4/target.jpg';
@@ -107,6 +108,221 @@ beforeEach(() => {
 afterEach(() => {
   try { expect(boundaries.denied).toEqual([]); }
   finally { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.useRealTimers(); }
+});
+
+describe('Approved eBay Browse unreadable-response and partial-retention repair', () => {
+  function activeProviderRows(count: number): Row[] {
+    return providerRows(count).map((row) => ({ ...row, itemId: row.id, itemWebUrl: row.url,
+      price: { value: row.soldPrice, currency: 'USD' }, buyingOptions: ['FIXED_PRICE'], image: { imageUrl: row.thumbnailUrl } }));
+  }
+  function overrideBrowse(reply: (url: URL) => any) {
+    const ordinary = boundaries.fetch.getMockImplementation()!;
+    boundaries.fetch.mockImplementation(async (input: string | URL, init?: RequestInit) => {
+      const url = new URL(String(input));
+      if (url.origin === 'https://api.ebay.com' && url.pathname === '/buy/browse/v1/item_summary/search'
+        && new Headers(init?.headers).get('Authorization') === 'Bearer stage4-synthetic-ebay-access'
+        && url.searchParams.get('limit') === '40') return reply(url);
+      return ordinary(input, init);
+    });
+  }
+  const browseCalls = () => boundaries.fetch.mock.calls.map((call) => new URL(String(call[0])))
+    .filter((url) => url.pathname === '/buy/browse/v1/item_summary/search');
+  const SENSITIVE = 'UNIQUE_SENSITIVE_EBAY_PROVIDER_DETAIL_20261110';
+  const failedKinds = ['null-json', 'invalid-json', 'null-field', 'structured-errors', 'positive-total-missing',
+    'all-invalid', 'timeout', 'http', 'sensitive-error', 'non-error'] as const;
+  function failedReply(kind: typeof failedKinds[number]) {
+    if (kind === 'timeout') throw Object.assign(new Error(SENSITIVE), { name: 'TimeoutError' });
+    if (kind === 'sensitive-error') throw new Error(SENSITIVE);
+    if (kind === 'non-error') throw { detail: SENSITIVE };
+    return { ok: kind !== 'http', status: kind === 'http' ? 503 : 200, json: async () => {
+      if (kind === 'invalid-json') throw new SyntaxError(SENSITIVE);
+      if (kind === 'null-field') return { itemSummaries: null };
+      if (kind === 'structured-errors') return { errors: [{ errorId: 1, message: SENSITIVE }] };
+      if (kind === 'positive-total-missing') return { total: 40 };
+      if (kind === 'all-invalid') return { itemSummaries: [null, false, []] };
+      return null;
+    } };
+  }
+  function assertAttempts(result: Row, failed: number, known: number, raw: number | null) {
+    const attempts = result.retrievalCoverage as Row[];
+    expect(attempts).toHaveLength(browseCalls().length);
+    expect(attempts.map((attempt) => attempt.attempt)).toEqual(attempts.map((_, index) => index + 1));
+    expect(attempts.every((attempt) => attempt.executed && attempt.stage === 'search')).toBe(true);
+    expect(attempts.filter((attempt) => attempt.status === 'error')).toHaveLength(failed);
+    expect(attempts.filter((attempt) => attempt.status === 'error').every((attempt) => attempt.received === null)).toBe(true);
+    expect(result.sourcePopulation).toMatchObject({ knownQueryReturnedObservationCount: known,
+      queryReturnedObservationCount: raw, queryCoverage: { measured: true, rawCountsComplete: raw !== null,
+        executedQueryCount: attempts.length, failedQueryCount: failed } });
+    for (const packet of [result, result.sourcePopulation]) {
+      expect(sourceRetrievalCoverage(packet)).toMatchObject({ executedQueryCount: attempts.length, failedQueryCount: failed,
+        partialRetrieval: failed > 0 || attempts.some((attempt) => (attempt.rejected ?? 0) > 0) });
+    }
+    expect(JSON.stringify(result)).not.toContain(SENSITIVE);
+    expect(browseCalls().length).toBeLessThanOrEqual(EBAY_ACTIVE_EXACT_PAGE_LIMIT + EBAY_ACTIVE_QUERY_TIER_LIMIT - 1);
+    expect(boundaries.llm).not.toHaveBeenCalled();
+  }
+  function assertRetained(result: Row, expected: Row[]) {
+    const retained = [...result.visualFilter.listings, ...result.visualFilter.contextListings] as Row[];
+    expect(retained).toHaveLength(expected.length);
+    expect(new Set(retained.map((row) => row.itemId))).toEqual(new Set(expected.map((row) => row.itemId)));
+    expect(result.sourcePopulation.retainedIngressCount).toBe(expected.length);
+    expect(result.debug.totalFetched).toBe(expected.length);
+    expect(result.listings).toHaveLength(Math.min(20, expected.length));
+    const retainedUrls = new Set(expected.map((row) => row.itemWebUrl));
+    expect(result.listings.every((row: Row) => retainedUrls.has(row.itemUrl))).toBe(true);
+    expect(result.listings.map((row: Row) => row.itemUrl)).toEqual(retained.slice(0, 20).map((row) => row.itemWebUrl));
+    expect(retained.every((row) => !row.identityApproval)).toBe(true);
+  }
+
+  it.each([null, undefined, 'not-json-object', 123, [], { itemSummaries: 'wrong-shape' },
+    { itemSummaries: null }, { itemSummaries: undefined }, { total: 40 }, { total: 40, itemSummaries: null },
+    { errors: [{ message: SENSITIVE }] }, { error: { message: SENSITIVE } }, { itemSummaries: [null, false, []] }])
+    ('rejects unreadable response %j instead of reporting zero results', (body) => {
+      expect(() => readEbayBrowseItemSummaries(body)).toThrow(/unreadable/i);
+    });
+  it('recognizes genuinely omitted/empty results and retains valid mixed-page siblings', () => {
+    expect(readEbayBrowseItemSummaries({})).toEqual([]);
+    expect(readEbayBrowseItemSummaries({ total: 0 })).toEqual([]);
+    expect(readEbayBrowseItemSummaries({ itemSummaries: [] })).toEqual([]);
+    expect(readEbayBrowseItemSummaries({ itemSummaries: [null, false, [], { itemId: 'valid' }] })).toEqual([{ itemId: 'valid' }]);
+  });
+  it.each(failedKinds)('first-page %s is a safely reported unmeasured failure, never zero matches', async (kind) => {
+    overrideBrowse(() => failedReply(kind));
+    const result = await caller().getEbayData({ ...KOBE, includeVisualReview: false }) as Row;
+    expect(result.listings).toEqual([]);
+    expect(result.error).toMatch(/^eBay Browse lookup (?:returned|timed out|failed)/);
+    expect(result.error).not.toMatch(/Cannot read|itemSummaries.*null/i);
+    expect(result.partialRetrieval).toBe(true);
+    expect(result.debug).toMatchObject({ failedQueryCount: 1, exactTierPageCount: 0, exactTierOffsets: [],
+      exactTierAttemptedOffsets: [0], exactTierFailedOffsets: [0] });
+    if (kind === 'all-invalid') expect(result.retrievalCoverage[0]).toMatchObject({ rejected: 3, rejectionCounts: { row_not_object: 3 } });
+    assertAttempts(result, 1, 0, null);
+    expect(browseCalls()).toHaveLength(1);
+    expect(sourceRetainedEmptyMessage(result, 0, 'eBay')).toMatch(/do not establish zero marketplace matches/i);
+  });
+  it.each([{}, { itemSummaries: [] }])('genuine empty success %j measures zero failures and returned rows', async (body) => {
+    overrideBrowse(() => ({ ok: true, status: 200, json: async () => body }));
+    const result = await caller().getEbayData({ ...KOBE, includeVisualReview: false }) as Row;
+    expect(result.error).toBeNull(); expect(result.listings).toEqual([]);
+    expect(result.partialRetrieval).toBe(false); expect(result.retrievalWarning).toBeNull();
+    expect(result.debug.failedQueryCount).toBe(0);
+    expect(result.retrievalCoverage.every((attempt: Row) => attempt.received === 0 && attempt.outcome === 'not_found')).toBe(true);
+    assertAttempts(result, 0, 0, 0);
+    expect(browseCalls()).toHaveLength(result.debug.queryTierCount);
+    expect(sourceRetainedEmptyMessage(result, 0, 'eBay')).toMatch(/No completed eBay records found/i);
+  });
+  it.each(failedKinds)('keeps all 40 first-page ingress rows and the 20-row public cap when offset 40 fails (%s)', async (kind) => {
+    const rows = activeProviderRows(40);
+    overrideBrowse((url) => {
+      if (Number(url.searchParams.get('offset')) === 0) return { ok: true, status: 200, json: async () => ({ itemSummaries: wire(rows) }) };
+      return failedReply(kind);
+    });
+    const result = await caller().getEbayData({ ...KOBE, includeVisualReview: false }) as Row;
+    expect(result.error).toBeNull(); assertRetained(result, rows);
+    expect(result.debug.failedQueryCount).toBe(1);
+    expect(result.debug.failedQueries[0]).toMatchObject({ tier: 0, offset: 40 });
+    expect(result.debug.failedQueries[0].error).toMatch(/^eBay Browse lookup/);
+    expect(result.debug).toMatchObject({ exactTierPageCount: 1, exactTierOffsets: [0],
+      exactTierAttemptedOffsets: [0, 40], exactTierFailedOffsets: [40], queryTierCount: 1 });
+    expect(result.retrievalCoverage[0]).toMatchObject({ received: 40, accepted: 40, rejected: 0 });
+    if (kind === 'all-invalid') expect(result.retrievalCoverage[1]).toMatchObject({ rejected: 3, rejectionCounts: { row_not_object: 3 } });
+    expect(result.partialRetrieval).toBe(true); expect(result.retrievalWarning).toMatch(/incomplete/i);
+    assertAttempts(result, 1, 40, null);
+    expect(browseCalls()).toHaveLength(2);
+  });
+  it.each(failedKinds)('keeps exact rows through failed fallback replies (%s) and measures every attempted tier', async (kind) => {
+    const rows = activeProviderRows(1); let exactQuery: string | null = null;
+    overrideBrowse((url) => {
+      exactQuery ??= url.searchParams.get('q');
+      if (url.searchParams.get('q') === exactQuery) return { ok: true, status: 200,
+        json: async () => ({ itemSummaries: Number(url.searchParams.get('offset')) === 0 ? wire(rows) : [] }) };
+      return failedReply(kind);
+    });
+    const result = await caller().getEbayData({ ...KOBE, includeVisualReview: false }) as Row;
+    expect(result.error).toBeNull(); assertRetained(result, rows);
+    const failed = result.debug.queryTierCount - 1;
+    expect(failed).toBeGreaterThan(0); expect(result.debug.failedQueryCount).toBe(failed);
+    expect(result.debug.failedQueries.every((failure: Row) => failure.tier > 0 && failure.offset === 0)).toBe(true);
+    expect(result.partialRetrieval).toBe(true); expect(result.debug.queryTierCount).toBeLessThanOrEqual(EBAY_ACTIVE_QUERY_TIER_LIMIT);
+    expect(result.debug.executedQueries.length).toBe(result.debug.queryTierCount);
+    expect(result.debug).toMatchObject({ exactTierPageCount: 2, exactTierOffsets: [0, 40], exactTierFailedOffsets: [] });
+    expect(result.retrievalCoverage.filter((attempt: Row) => attempt.tier > 0).every((attempt: Row) => attempt.offset === 0 && attempt.status === 'error')).toBe(true);
+    assertAttempts(result, failed, 1, null);
+    expect(browseCalls()).toHaveLength(2 + failed);
+  });
+  it.each(['first-page', 'later-page', 'fallback'])('retains mixed-array valid siblings and measures rejections on the actual %s reply', async (where) => {
+    const rows = activeProviderRows(40); let exactQuery: string | null = null;
+    overrideBrowse((url) => {
+      exactQuery ??= url.searchParams.get('q');
+      const exact = url.searchParams.get('q') === exactQuery;
+      const offset = Number(url.searchParams.get('offset'));
+      const mixed = where === 'first-page' ? exact && offset === 0
+        : where === 'later-page' ? exact && offset === 40 : !exact;
+      const items = mixed ? [...wire(rows.slice(1)), null, false, []]
+        : exact && offset === 0 ? wire(where === 'first-page' ? [] : rows.slice(0, 1)) : [];
+      return { ok: true, status: 200, json: async () => ({ itemSummaries: items }) };
+    });
+    const result = await caller().getEbayData({ ...KOBE, includeVisualReview: false }) as Row;
+    expect(result.error).toBeNull(); expect(result.partialRetrieval).toBe(true);
+    assertRetained(result, where === 'first-page' ? rows.slice(1) : rows);
+    const mixedAttempts = result.retrievalCoverage.filter((attempt: Row) => attempt.rejected > 0);
+    expect(mixedAttempts).toHaveLength(1);
+    expect(mixedAttempts[0]).toMatchObject({ status: 'success', outcome: 'success_records', received: 42, accepted: 39,
+      rejected: 3, rejectionCounts: { row_not_object: 3 }, offset: where === 'later-page' ? 40 : 0 });
+    expect(where === 'fallback' ? mixedAttempts[0].tier > 0 : mixedAttempts[0].tier === 0).toBe(true);
+    expect(result.debug.rejectedRowCount).toBe(3);
+    expect(result.debug.failedQueryCount).toBe(0);
+    expect(result.retrievalWarning).toMatch(/3 rejected malformed rows/i);
+    const known = where === 'first-page' ? 42 : 43;
+    assertAttempts(result, 0, known, known);
+    // A short mixed page is not an empty page: the next exact offset is read.
+    expect(result.debug.exactTierOffsets).toEqual(where === 'later-page' ? [0, 40, 80] : [0, 40]);
+  });
+  it('continues to a later bounded fallback after a failed tier, retaining both earlier and later valid rows', async () => {
+    const rows = activeProviderRows(2); let exactQuery: string | null = null; let failedQuery: string | null = null;
+    overrideBrowse((url) => {
+      exactQuery ??= url.searchParams.get('q');
+      if (url.searchParams.get('q') === exactQuery) return { ok: true, status: 200,
+        json: async () => ({ itemSummaries: Number(url.searchParams.get('offset')) === 0 ? wire(rows.slice(0, 1)) : [] }) };
+      failedQuery ??= url.searchParams.get('q');
+      if (url.searchParams.get('q') === failedQuery) return failedReply('sensitive-error');
+      return { ok: true, status: 200, json: async () => ({ itemSummaries: wire(rows.slice(1)) }) };
+    });
+    const result = await caller().getEbayData({ ...KOBE, includeVisualReview: false }) as Row;
+    expect(result.error).toBeNull(); assertRetained(result, rows);
+    expect(result.retrievalCoverage.some((attempt: Row) => attempt.tier > 1 && attempt.status === 'success')).toBe(true);
+    assertAttempts(result, 1, result.retrievalCoverage.reduce((sum: number, attempt: Row) => sum + (attempt.received ?? 0), 0), null);
+  });
+  it('bounds all-fallback failures by the exact-page allowance plus one request per fallback tier', async () => {
+    const rows = activeProviderRows(1); let exactQuery: string | null = null;
+    overrideBrowse((url) => {
+      exactQuery ??= url.searchParams.get('q');
+      return url.searchParams.get('q') === exactQuery
+        ? { ok: true, status: 200, json: async () => ({ itemSummaries: wire(rows) }) } : failedReply('non-error');
+    });
+    const result = await caller().getEbayData({ ...KOBE, includeVisualReview: false }) as Row;
+    expect(result.error).toBeNull(); assertRetained(result, rows);
+    const failed = result.debug.queryTierCount - 1;
+    expect(failed).toBeGreaterThan(0);
+    expect(result.debug.exactTierPageCount).toBe(EBAY_ACTIVE_EXACT_PAGE_LIMIT);
+    expect(browseCalls()).toHaveLength(EBAY_ACTIVE_EXACT_PAGE_LIMIT + failed);
+    assertAttempts(result, failed, EBAY_ACTIVE_EXACT_PAGE_LIMIT, null);
+  });
+  it('exact-empty plus failed fallback is partial-empty copy, never an unqualified no-listings claim', async () => {
+    let exactQuery: string | null = null;
+    overrideBrowse((url) => {
+      exactQuery ??= url.searchParams.get('q');
+      return url.searchParams.get('q') === exactQuery
+        ? { ok: true, status: 200, json: async () => ({ itemSummaries: [] }) } : failedReply('structured-errors');
+    });
+    const result = await caller().getEbayData({ ...KOBE, includeVisualReview: false }) as Row;
+    expect(result.error).toBeNull(); expect(result.listings).toEqual([]);
+    expect(result.partialRetrieval).toBe(true); expect(result.retrievalWarning).toMatch(/incomplete/i);
+    assertAttempts(result, result.debug.queryTierCount - 1, 0, null);
+    const emptyCopy = sourceRetainedEmptyMessage(result, 0, 'eBay');
+    expect(emptyCopy).toMatch(/No usable retained candidates.*do not establish zero marketplace matches/i);
+    expect(emptyCopy).not.toMatch(/No listings found|No completed eBay records found/i);
+  });
 });
 
 describe('Stage 4 ACTUAL source route population and display projections', () => {

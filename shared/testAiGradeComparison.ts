@@ -21,6 +21,13 @@ const GRADE_TOKEN = `(?:(?:${DESIGNATIONS})\\s*)?\\d{1,3}(?:\\.\\d+)?\\+?`;
 const SUFFIX_TOKEN = `(?:${QUALIFIERS}|${SOFT_SUFFIX}|${UNCERTAIN})`;
 const SUFFIX_SEPARATOR = '(?:\\s*[-/,]\\s*|\\s+|\\s*\\(\\s*|(?=[A-Z?]))';
 const GRADE_OBSERVATION = `${GRADE_TOKEN}(?:${SUFFIX_SEPARATOR}${SUFFIX_TOKEN}(?![A-Z+])\\s*\\)?)*`;
+/** Shared bounded syntax for title readers; not a bare-number/query parser. */
+export const TITLE_GRADE_OBSERVATION_PATTERN = GRADE_OBSERVATION;
+
+export function hasExcludedSourceTitleGradeClaim(title: string): boolean {
+  return /\b(?:raw|ungraded|not\s+(?:professionally\s+)?graded|not\s+certified|no\s+grade|grade\s+(?:unknown|unreadable)|(?:PSA|CGC|BGS|PCGS|NGC|WATA|VGA)\s+(?:style|like|candidate|ready))\b/i.test(title)
+    || new RegExp(`\\b(?:not|no|non|without)\\s+(?:an?\\s+)?(?:${GRADERS})(?=\\b|\\d)`, 'i').test(title);
+}
 
 function isVideoGames(category = ''): boolean {
   return category.toLowerCase().replace(/[^a-z0-9]+/g, '') === 'videogames';
@@ -71,13 +78,12 @@ function parseObservedGrade(value: string, options: ComparableGradeOptions): Com
  */
 export function readSourceGradeClaimsFromTitle(value: unknown, options: Pick<ComparableGradeOptions, 'category'> = {}): SourceTitleGrade[] {
   const title = stripPresentationNote(meaningfulMetadataText(value));
-  if (!title || /\b(?:raw|ungraded|not\s+(?:professionally\s+)?graded|not\s+certified|no\s+grade|grade\s+(?:unknown|unreadable)|(?:PSA|CGC|BGS|PCGS|NGC|WATA|VGA)\s+(?:style|like|candidate|ready))\b/i.test(title)
-    || new RegExp(`\\b(?:not|no|non|without)\\s+(?:an?\\s+)?(?:${GRADERS})\\b`, 'i').test(title)) return [];
+  if (!title || hasExcludedSourceTitleGradeClaim(title)) return [];
   const claims: SourceTitleGrade[] = [];
   const patterns = [
-    new RegExp(`\\b(${GRADERS})\\b\\s*[:=-]?\\s*(?:graded\\s*)?(?:grade\\s*[:=-]?\\s*)?\\(?\\s*((?:[QC]\\s*)?${GRADE_OBSERVATION})(?![\\d.+])`, 'gi'),
+    new RegExp(`\\b(${GRADERS})(?=\\b|\\d)\\s*[:=-]?\\s*(?:graded\\s*)?(?:grade\\s*[:=-]?\\s*)?\\(?\\s*((?:[QC]\\s*)?${GRADE_OBSERVATION})(?![\\d.+])`, 'gi'),
     new RegExp(`\\b(?:grade|graded|score|rating)\\b\\s*(?:(?:is|of)\\s*)?[:=-]?\\s*\\(?\\s*(${GRADE_OBSERVATION})(?![\\d.+])`, 'gi'),
-    new RegExp(`\\b((?:${DESIGNATIONS})\\s*\\d{1,3}(?:\\.\\d+)?\\+?(?:${SUFFIX_SEPARATOR}${SUFFIX_TOKEN}(?![A-Z+])\\s*\\)?)*)`, 'gi'),
+    new RegExp(`\\b((?:${DESIGNATIONS})\\s*\\d{1,3}(?:\\.\\d+)?\\+?(?:${SUFFIX_SEPARATOR}${SUFFIX_TOKEN}(?![A-Z+])\\s*\\)?)*)(?![\\d.+])`, 'gi'),
   ];
   for (const [index, pattern] of patterns.entries()) {
     for (const match of title.matchAll(pattern)) {
@@ -105,7 +111,7 @@ export function readSourceGradeClaimsFromTitle(value: unknown, options: Pick<Com
       if (!comparable) continue;
       // Prefix recognition alone must not consume model-code fragments.
       const after = title[(match.index ?? 0) + match[0].length] ?? '';
-      if (/[A-Za-z0-9+]/.test(after) && !/\s$/.test(match[0])) continue;
+      if (/[A-Za-z0-9_+]/.test(after) && !/\s$/.test(match[0])) continue;
       const following = title.slice((match.index ?? 0) + match[0].length);
       if (/^\s*(?:grade\s+)?qualifiers?\s*[:=-]?\s*(?:unknown|unreadable|unspecified|\?)/i.test(following)) comparable.qualifierUncertain = true;
       // A directly attached parenthesis not consumed by the known suffix

@@ -62,6 +62,7 @@ import { getMercariObservedFacts, lookupMercariSoldComps, lookupTcgplayerSoldCom
 import { retrieveItemsAttempt, retrievalIssue, unavailableRetrievalAttempt, type RetrievalAttempt, type RetrievalIssue } from '../shared/testAiRetrievalAttempt';
 import { collectionLotGuard, collectionLotNotComparable, isCollectionLotItemType } from '../shared/testAiItemType';
 import { bindMetadataRankingPopulation, freezeMetadataRankingPopulation, overlayMetadataRankingPopulation, type MetadataRankingPopulation, type MetadataScorerRole } from '../shared/testAiRankingPopulation';
+import { compareComparableGrades, hasExcludedSourceTitleGradeClaim, parseComparableGrade, readSourceGradeClaimsFromTitle, TITLE_GRADE_OBSERVATION_PATTERN, type ComparableGrade } from '../shared/testAiGradeComparison';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 // eBay can take several seconds to return a Browse response even for a bounded
@@ -135,17 +136,76 @@ async function getEbayAppToken(): Promise<EbayAppTokenResult> {
   }
 }
 
-async function fetchEbayListings(query: string, token: string, limit = 25, offset = 0) {
-  const res = await fetch(
-    `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&filter=buyingOptions%3A%7BFIXED_PRICE%7CAUCTION%7D`,
-    {
-      headers: { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' },
-      signal: AbortSignal.timeout(EBAY_BROWSE_TIMEOUT_MS),
-    }
-  );
-  const data = await res.json().catch(() => null) as any;
-  if (!res.ok) throw new Error(`eBay Browse lookup returned HTTP ${res.status}`);
-  return data.itemSummaries ?? [];
+type EbayRetrievalAttempt = RetrievalAttempt & { tier: number; offset: number; [key: string]: unknown };
+
+/** Only application-owned categories may retain a public error message. */
+class EbayBrowseResponseError extends Error {
+  constructor(readonly reason: 'body' | 'field' | 'provider' | 'missing' | 'rows' | 'http', readonly httpStatus: number | null = null, readonly rejected: number | null = null) {
+    super(reason === 'http' ? `eBay Browse lookup returned HTTP ${httpStatus}.`
+      : reason === 'provider' ? 'eBay Browse lookup returned an unreadable response (provider error).'
+      : reason === 'missing' ? 'eBay Browse lookup returned an unreadable response (results missing).'
+      : reason === 'field' ? 'eBay Browse lookup returned an unreadable itemSummaries field.'
+      : reason === 'rows' ? 'eBay Browse lookup returned unreadable itemSummaries members.'
+      : 'eBay Browse lookup returned an unreadable response (no JSON object).');
+  }
+}
+
+/**
+ * Honor Browse's omitted-field empty contract only without contrary evidence.
+ * Retain valid mixed-page siblings, but measure every rejected array member.
+ */
+function readEbayBrowsePage(data: unknown) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new EbayBrowseResponseError('body');
+  }
+  const body = data as Record<string, unknown>;
+  const nonemptyError = (value: unknown) => Array.isArray(value) ? value.length > 0
+    : value !== null && typeof value === 'object' ? Object.keys(value).length > 0
+    : typeof value === 'string' ? value.trim().length > 0 : Boolean(value);
+  if (nonemptyError(body.errors) || nonemptyError(body.error)) throw new EbayBrowseResponseError('provider');
+  if (!Object.prototype.hasOwnProperty.call(body, 'itemSummaries')) {
+    if (Number(body.total) > 0) throw new EbayBrowseResponseError('missing');
+    return { items: [], received: 0, rejected: 0, providerEmpty: true };
+  }
+  if (!Array.isArray(body.itemSummaries)) throw new EbayBrowseResponseError('field');
+  const items = body.itemSummaries.filter((item) => Boolean(item) && typeof item === 'object' && !Array.isArray(item));
+  const rejected = body.itemSummaries.length - items.length;
+  if (body.itemSummaries.length > 0 && items.length === 0) throw new EbayBrowseResponseError('rows', null, rejected);
+  return { items, received: body.itemSummaries.length, rejected, providerEmpty: body.itemSummaries.length === 0 };
+}
+
+export function readEbayBrowseItemSummaries(data: unknown): any[] {
+  return readEbayBrowsePage(data).items;
+}
+
+async function fetchEbayListings(query: string, token: string, limit = 25, offset = 0, attempts?: EbayRetrievalAttempt[], tier = 0) {
+  let httpStatus: number | null = null;
+  const context = { query, tier, offset, stage: 'search' as const, attempt: (attempts?.length ?? 0) + 1, executed: true };
+  try {
+    const res = await fetch(
+      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&filter=buyingOptions%3A%7BFIXED_PRICE%7CAUCTION%7D`,
+      {
+        headers: { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' },
+        signal: AbortSignal.timeout(EBAY_BROWSE_TIMEOUT_MS),
+      }
+    );
+    httpStatus = res.status;
+    if (!res.ok) throw new EbayBrowseResponseError('http', httpStatus);
+    const page = readEbayBrowsePage(await res.json().catch(() => null));
+    attempts?.push({ ...context, status: 'success', outcome: page.providerEmpty ? 'not_found' : 'success_records', httpStatus,
+      received: page.received, accepted: page.items.length, rejected: page.rejected, normalized: null, normalizationRejected: null,
+      rejectionCounts: page.rejected ? { row_not_object: page.rejected } : {},
+      message: page.rejected ? 'eBay Browse lookup rejected malformed array members; valid siblings are retained.' : null });
+    return page.items;
+  } catch (error) {
+    const rejected = error instanceof EbayBrowseResponseError ? error.rejected : null;
+    attempts?.push({ ...context, status: 'error', outcome: error instanceof EbayBrowseResponseError
+      ? error.reason === 'http' ? 'http_error' : error.reason === 'rows' ? 'row_rejection' : 'unexpected_shape'
+      : error instanceof Error && error.name === 'TimeoutError' ? 'timeout' : 'network_error', httpStatus,
+      received: null, accepted: null, rejected, normalized: null, normalizationRejected: null,
+      rejectionCounts: rejected ? { row_not_object: rejected } : {}, message: ebayRetrievalErrorMessage(error) });
+    throw error;
+  }
 }
 
 function collectEbayImageUrls(item: any): string[] {
@@ -169,16 +229,33 @@ function collectEbayImageUrls(item: any): string[] {
     .filter((url): url is string => Boolean(url)))).slice(0, 8);
 }
 
-async function fetchEbayExactTierPages(query: string, token: string) {
+export type EbayRetrievalFailure = { query: string; tier: number; offset: number; error: string };
+
+function ebayRetrievalErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.name === 'TimeoutError') return 'eBay Browse lookup timed out.';
+  return error instanceof EbayBrowseResponseError ? error.message : 'eBay Browse lookup failed. Please try the lookup again.';
+}
+
+async function fetchEbayExactTierPages(query: string, token: string, failures: EbayRetrievalFailure[], attempts: EbayRetrievalAttempt[]) {
   const pages: Array<{ items: any[]; offset: number }> = [];
   for (let page = 0; page < EBAY_ACTIVE_EXACT_PAGE_LIMIT; page += 1) {
     const offset = page * EBAY_ACTIVE_RESULTS_PER_TIER;
-    const items = await fetchEbayListings(query, token, EBAY_ACTIVE_RESULTS_PER_TIER, offset);
+    let items: any[];
+    try {
+      items = await fetchEbayListings(query, token, EBAY_ACTIVE_RESULTS_PER_TIER, offset, attempts);
+    } catch (error) {
+      // The first exact page has nothing to keep, so its failure still fails
+      // the lookup. A later page keeps the pages already retrieved and is
+      // reported as partial retrieval instead of discarding them.
+      failures.push({ query, tier: 0, offset, error: ebayRetrievalErrorMessage(error) });
+      if (page === 0) throw error;
+      break;
+    }
     pages.push({ items, offset });
     // Some provider responses are short pages even when a subsequent offset
-    // still contains listings. Stop only on an empty page or the explicit
-    // safety limit, not merely because page one has fewer than 40 results.
-    if (items.length === 0) break;
+    // still contains listings. Stop only on a genuine provider empty page or
+    // the explicit safety limit, never on a filtered usable-row count.
+    if (attempts[attempts.length - 1]?.outcome === 'not_found') break;
   }
   return pages;
 }
@@ -271,8 +348,45 @@ export function extractGradeFromQuery(query: string): ExtractedGrade | null {
 }
 
 export function extractGradeFromTitle(title: string): ExtractedGrade | null {
-  const match = title.match(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?(?:\\(\\s*)?(?:([A-Za-z]{1,8})\\s*)?([QC]?\\d+\\.?\\d*)([+]?)`, "i"));
-  return match ? normalizeExtractedGrade(match[2], match[3], match[4]) : null;
+  if (hasExcludedSourceTitleGradeClaim(title)) return null;
+  const pattern = new RegExp(`\\b(${gradeProviderPattern})(?=\\b|\\d)\\s*[:=-]?\\s*(?:graded?\\s*)?\\(?\\s*((?:[QC]\\s*)?${TITLE_GRADE_OBSERVATION_PATTERN})(?![\\d.+])`, 'gi');
+  const claims: Array<{ grade: ExtractedGrade; comparable: ComparableGrade }> = [];
+  for (const match of title.matchAll(pattern)) {
+    const before = title.slice(Math.max(0, (match.index ?? 0) - 48), match.index);
+    if (/\b(?:not|no|non|without|fake|faux|replica|reproduction)(?:[-\s]+(?:a|an|by|for|grade|graded))?[-\s]*$/i.test(before)) continue;
+    const following = title.slice((match.index ?? 0) + match[0].length);
+    if (/^[A-Za-z0-9_+]/.test(following) && !/\s$/.test(match[0])) continue;
+    // Unknown attached suffixes are uncertainty, not permission to use a
+    // numeric prefix. Known label A++/coin/card qualifiers remain consumed.
+    if (/^\s*(?:-\s*[A-Z?]|\()/i.test(following)
+      || /^\s*(?:grade\s+)?qualifiers?\s*[:=-]?\s*(?:unknown|unreadable|unspecified|\?)/i.test(following)) return null;
+    let observed = match[2].trim();
+    while (observed.endsWith(')') && (observed.match(/\)/g)?.length ?? 0) > (observed.match(/\(/g)?.length ?? 0)) observed = observed.slice(0, -1).trim();
+    if ((observed.match(/\(/g)?.length ?? 0) > (observed.match(/\)/g)?.length ?? 0)) return null;
+    // Preserve the existing router's AFA Q/C display aliases, without making
+    // an arbitrary letter prefix (PSAX10) a recognized grade designation.
+    const afaPrefix = /^AFA$/i.test(match[1]) ? observed.match(/^([QC])\s*(?=\d)/i)?.[1] : undefined;
+    if (/^[QC]\s*\d/i.test(observed) && !afaPrefix) continue;
+    const comparable = parseComparableGrade(afaPrefix ? observed.replace(/^[QC]\s*/i, '') : observed, { allowBareNumeric: true });
+    if (!comparable) continue;
+    if (comparable.qualifierUncertain) return null;
+    const numeric = observed.match(/\d{1,3}(?:\.\d+)?/)?.[0];
+    if (!numeric) continue;
+    claims.push({ comparable, grade: afaPrefix
+      ? `${afaPrefix.toUpperCase()}${numeric}${comparable.plus ? '+' : ''}`
+      : normalizeExtractedGrade(comparable.designation ?? undefined, numeric, comparable.plus ? '+' : '') });
+  }
+  // Do not select a first-provider winner from independent opposed claims.
+  const first = claims[0];
+  // The legacy router admits AFA toy Q/C aliases without a category argument;
+  // retain that scope (including G1 generation words), not arbitrary prefixes.
+  const category = /\bAFA(?=\b|\d)/i.test(title) || claims.some(claim => /^[QC]\d/.test(String(claim.grade))) ? 'vintage_toys' : undefined;
+  const independent = readSourceGradeClaimsFromTitle(title, { category });
+  // This legacy number/string API has always projected descriptive A labels
+  // away; exact category-sensitive qualifier consumers use the shared parser.
+  const projected = (grade: ComparableGrade): ComparableGrade => ({ ...grade, qualifiers: grade.qualifiers.filter(qualifier => !/^A\+{0,3}$/.test(qualifier)) });
+  return first && [...claims.slice(1), ...independent].every(claim => compareComparableGrades(projected(first.comparable), projected(claim.comparable)) === 'match')
+    ? first.grade : null;
 }
 
 function extractExplicitComicDecimalGrade(title: string): number | null {
@@ -290,7 +404,10 @@ export function buildEbayBrowseQuery(query: string, options?: { preserveGrade?: 
   ).trim();
 }
 
-const certificationProviderPattern = /\b(CGC|CBCS|PSA|BGS|PCGS|NGC|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|REWIND)\b/i;
+const certificationProviderPattern = new RegExp(
+  `\\b(CGC|CBCS|PSA|BGS|PCGS|NGC|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|REWIND)(?=\\b|(?=\\d)${TITLE_GRADE_OBSERVATION_PATTERN}(?![A-Za-z0-9_.+]))`,
+  'i',
+);
 
 function normalizeCertificationCompany(value: string | undefined): string {
   return String(value ?? '')
@@ -341,6 +458,16 @@ const explicitGradedListingPattern = new RegExp(
   'i',
 );
 
+function hasPositiveTitleGradedEvidence(title: string): boolean {
+  if (positiveCertificationProviders(title).length > 0) return true;
+  // A negated compact grader does not establish grading. Keep independently
+  // affirmative holder/graded wording effective rather than bypassing the title.
+  return [...title.matchAll(/\b(?:graded|slab(?:bed)?|encapsulated|certified)\b/gi)].some((match) => {
+    const prefix = title.slice(0, match.index ?? 0);
+    return !/\b(?:not|no|without|non)(?:[-\s]+(?:a|an|professionally|currently|ever))?[-\s]*$/i.test(prefix);
+  });
+}
+
 /**
  * Raw/ungraded targets must not display listings that explicitly identify a
  * grading company or graded/slabbed packaging. Unknown titles remain eligible
@@ -351,7 +478,7 @@ export function filterListingsByTargetGradingState(
   targetIsGraded: boolean,
 ): any[] {
   if (targetIsGraded) return summaries;
-  return summaries.filter((item: any) => !explicitGradedListingPattern.test(String(item?.title ?? '')));
+  return summaries.filter((item: any) => !hasPositiveTitleGradedEvidence(String(item?.title ?? '')));
 }
 
 const conditionOnlyPattern = /\b(?:mint|near mint|very good|excellent|good|acceptable|like new|raw|loose|ungraded|tested)\b/i;
@@ -359,7 +486,7 @@ const explicitRawOrUngradedPattern = /\b(?:raw|ungraded|un[- ]slabbed|no\s+(?:sl
 
 function hasExplicitGradedEvidence(item: any, metadata: Record<string, string>): boolean {
   const title = String(item?.title ?? '');
-  return Boolean(metadata.gradingCompany || metadata.grade || explicitGradedListingPattern.test(title));
+  return Boolean(metadata.gradingCompany || metadata.grade || hasPositiveTitleGradedEvidence(title));
 }
 
 function hasConditionOnlyEvidence(item: any): boolean {
@@ -1095,7 +1222,7 @@ export function annotateSoldComparableCandidate(
   const title = String(item?.title ?? '');
   const reasons: string[] = [];
   const targetProvider = normalizeCertificationCompany(context.certificationCompany);
-  const observedProvider = title.match(certificationProviderPattern)?.[1] ?? null;
+  const observedProvider = positiveCertificationProviders(title)[0] ?? null;
   const observedGrade = extractGradeFromTitle(title);
   const lotQuantity = extractSoldCompLotQuantity(title);
   // The shared visual filter attaches a review directly to the original
@@ -1875,6 +2002,8 @@ export const testAIRouter = router({
         itemDetails: details,
       });
       query = standardSearchDefinition.query || query || input.title;
+      const retrievalFailures: EbayRetrievalFailure[] = [];
+      const retrievalCoverage: EbayRetrievalAttempt[] = [];
       try {
         // Build bounded complementary eBay query tiers. Direct eBay search can
         // rank abbreviated titles, exact-grade phrases, and provider-less forms
@@ -1916,7 +2045,7 @@ export const testAIRouter = router({
             .sort((a: any, b: any) => Number(a.__tradebiliaQueryTier ?? 0) - Number(b.__tradebiliaQueryTier ?? 0));
           return { byYear, byNumber, bySport, byTargetGradingState, filteredSummaries };
         };
-        const exactPages = await fetchEbayExactTierPages(exactCandidateQuery, token);
+        const exactPages = await fetchEbayExactTierPages(exactCandidateQuery, token, retrievalFailures, retrievalCoverage);
         const exactResults = exactPages.flatMap((page) => page.items)
           .map((item: any) => ({ ...item, __tradebiliaQueryTier: 0 }));
         const queryResults: any[][] = [exactResults];
@@ -1932,8 +2061,17 @@ export const testAIRouter = router({
         for (let index = 1; index < boundedSearchQueries.length && eligibility.filteredSummaries.length < EBAY_ACTIVE_DISPLAY_TARGET; index += 1) {
           const candidate = boundedSearchQueries[index];
           const candidateQuery = buildEbayBrowseQuery(candidate, { preserveGrade: true });
-          const results = (await fetchEbayListings(candidateQuery || candidate, token, EBAY_ACTIVE_RESULTS_PER_TIER))
-            .map((item: any) => ({ ...item, __tradebiliaQueryTier: index }));
+          let tierItems: any[];
+          try {
+            tierItems = await fetchEbayListings(candidateQuery || candidate, token, EBAY_ACTIVE_RESULTS_PER_TIER, 0, retrievalCoverage, index);
+          } catch (error) {
+            // Keep every earlier tier. An unreadable or failed fallback reply
+            // is a retrieval gap, not proof that the marketplace has no match.
+            fallbackQueries.push(candidate);
+            retrievalFailures.push({ query: candidate, tier: index, offset: 0, error: ebayRetrievalErrorMessage(error) });
+            continue;
+          }
+          const results = tierItems.map((item: any) => ({ ...item, __tradebiliaQueryTier: index }));
           fallbackQueries.push(candidate);
           queryResults.push(results);
           addResults(results);
@@ -2120,10 +2258,19 @@ export const testAIRouter = router({
         // Legacy performance contract: const metrics = computeMetrics(displaySummaries);
         const visualMatchMetrics = visualActiveFilter && !autographMarketContext ? computeVisualMatchMetrics(displaySummaries) : null;
         const activeMarketContextOnly = autographMarketContext;
+        const rejectedRowCount = retrievalCoverage.reduce((total, attempt) => total + (attempt.rejected ?? 0), 0);
+        const partialRetrieval = retrievalFailures.length > 0 || rejectedRowCount > 0;
         return {
           query,
           marketContextOnly: activeMarketContextOnly,
-          sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...displaySummaries, ...preVisionExcludedListings]),
+          // Failed replies and rejected mixed-page members keep valid siblings,
+          // but never establish complete marketplace coverage.
+          partialRetrieval,
+          retrievalWarning: partialRetrieval
+            ? `eBay retrieval had ${retrievalFailures.length} failed or unreadable search replies and ${rejectedRowCount} rejected malformed rows; valid returned candidates are kept, but marketplace coverage is incomplete.`
+            : null,
+          retrievalCoverage,
+          sourcePopulation: buildSourcePopulationReport(rankingPopulation, [...displaySummaries, ...preVisionExcludedListings], retrievalCoverage),
           debug: {
             totalFetched: summaries.length,
             afterYearFilter: byYear.length,
@@ -2141,6 +2288,8 @@ export const testAIRouter = router({
             executedQueries: [exactQuery, ...fallbackQueries],
             exactTierPageCount: exactPages.length,
             exactTierOffsets: exactPages.map((page) => page.offset),
+            exactTierAttemptedOffsets: retrievalCoverage.filter((attempt) => attempt.tier === 0).map((attempt) => attempt.offset),
+            exactTierFailedOffsets: retrievalFailures.filter((failure) => failure.tier === 0).map((failure) => failure.offset),
             exactTierUsedFallbacks: fallbackQueries.length > 0,
             exactTierResultCount: summaries.filter((item: any) => Number(item.__tradebiliaQueryTier) === 0).length,
             exactTierFilteredCount: filteredSummaries.filter((item: any) => Number(item.__tradebiliaQueryTier) === 0).length,
@@ -2148,6 +2297,9 @@ export const testAIRouter = router({
             targetIsGraded,
             queryTierCount: 1 + fallbackQueries.length,
             resultsPerTier: EBAY_ACTIVE_RESULTS_PER_TIER,
+            failedQueryCount: retrievalFailures.length,
+            rejectedRowCount,
+            failedQueries: retrievalFailures,
           },
           visualReviewTargetMetadata: targetMetadata,
           // Keep the separately transported review payload within the same
@@ -2261,8 +2413,15 @@ export const testAIRouter = router({
           },
           error: null,
         };
-      } catch (err: any) {
-        return { query, listings: [], metrics: null, error: err.message };
+      } catch (error) {
+        return { query, listings: [], metrics: null, error: ebayRetrievalErrorMessage(error), partialRetrieval: true,
+          retrievalCoverage,
+          sourcePopulation: buildEmittedSourcePopulationReport('ebay_active', 0, [], retrievalCoverage),
+          debug: { totalFetched: 0, failedQueryCount: retrievalFailures.length, failedQueries: retrievalFailures,
+            exactTierPageCount: retrievalCoverage.filter((attempt) => attempt.tier === 0 && attempt.status === 'success').length,
+            exactTierOffsets: retrievalCoverage.filter((attempt) => attempt.tier === 0 && attempt.status === 'success').map((attempt) => attempt.offset),
+            exactTierAttemptedOffsets: retrievalCoverage.filter((attempt) => attempt.tier === 0).map((attempt) => attempt.offset),
+            exactTierFailedOffsets: retrievalFailures.filter((failure) => failure.tier === 0).map((failure) => failure.offset) } };
       }
     }),
 

@@ -2,6 +2,7 @@ import { createContext, useContext, type ReactNode } from 'react';
 import { candidateExecutionFact, candidateIdentityFact, candidatePricingFact, formatCandidateDisplayPrice, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException } from '../../../shared/testAiCandidateStatus';
 import { candidateDisplayKey, mergeCandidateDisplayGroups, reconcileCandidateFinalUse, type CandidateDisplayRow, type CandidateDisplayScope, type CandidateFinalDisplayOutcome } from '../../../shared/testAiCandidateLedger';
 import { MetadataComparisonTable } from './TestAiMetadataComparisonTable';
+import { TestAiSafeImage } from './TestAiSafeImage';
 import { sourceCurrentWindowLabel, sourceMetricDisplay, sourceRetrievalCoverage } from '../../../shared/testAiSourceDisplay';
 
 const CandidateDisplayContext = createContext<{ scope: CandidateDisplayScope; outcome?: CandidateFinalDisplayOutcome | null }>({ scope: {} });
@@ -28,7 +29,7 @@ export function TestAiVisualDifferenceList({ listing }: { listing: CandidateDisp
 }
 export function TestAiCandidateImagePair({ listing, targetImageUrl }: { listing: CandidateDisplayRow; targetImageUrl?: string | null }) {
   const image = listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0];
-  return <div className="grid w-24 shrink-0 grid-cols-2 gap-1">{[[targetImageUrl, 'Target', 'border-cyan-700/50', 'text-cyan-200'], [image, 'Candidate', 'border-emerald-700/50', 'text-emerald-200']].map(([url, label, border, color]) => url ? <figure key={label}><img src={url} alt={label === 'Target' ? 'Target item' : 'Marketplace candidate'} loading="lazy" referrerPolicy="no-referrer" className={`h-12 w-full rounded ${border} border bg-gray-950 object-contain`} /><figcaption className={`text-center text-[7px] uppercase ${color}`}>{label}</figcaption></figure> : <div key={label} className="flex h-12 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">{label} unavailable</div>)}</div>;
+  return <div className="grid w-24 shrink-0 grid-cols-2 gap-1">{[[targetImageUrl, 'Target', 'border-cyan-700/50', 'text-cyan-200'], [image, 'Candidate', 'border-emerald-700/50', 'text-emerald-200']].map(([url, label, border, color]) => url ? <figure key={label}><TestAiSafeImage src={url} alt={label === 'Target' ? 'Target item' : 'Marketplace candidate'} loading="lazy" referrerPolicy="no-referrer" className={`h-12 w-full rounded ${border} border bg-gray-950 object-contain`} /><figcaption className={`text-center text-[7px] uppercase ${color}`}>{label}</figcaption></figure> : <div key={label} className="flex h-12 items-center justify-center rounded border border-gray-700 bg-gray-950 text-center text-[7px] text-gray-500">{label} unavailable</div>)}</div>;
 }
 export function TestAiVisualReviewRow({ listing, targetImageUrl }: { listing: CandidateDisplayRow; targetImageUrl?: string | null }) {
   const rationale = listing.visualReviewRationale || 'No additional visual rationale supplied.';

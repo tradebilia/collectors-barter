@@ -2180,6 +2180,10 @@ function titleGradeEvidence(title: string, category = ""): { grader: string; gra
   return { grader: observed.grader ?? "", grade };
 }
 function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string, targetValue: string, category = "", identityValues: readonly unknown[] = []): string {
+  if (category === "music" && /^(?:condition|mediaCondition)$/i.test(key)) {
+    const condition = musicTitleMediaCondition(listing, identityValues);
+    return condition ? `${condition.replace(/_/g, " ")} (inferred from title)` : "Unknown";
+  }
   const details = candidateStructuredDetails(listing);
   const title = firstCandidateText(
     listing.normalizedListingTitle,
@@ -2280,6 +2284,11 @@ function rankingContributionForField(listing: VisualSourceCandidate, key: string
 }
 function comparisonStatus(targetValue: string, candidateValue: string, category = "", key = ""): MetadataFieldComparison["status"] {
   if (!meaningfulMetadataText(targetValue) || !meaningfulMetadataText(candidateValue)) return "unknown";
+  if (category === "music" && /^(?:condition|mediaCondition)$/i.test(key)) {
+    const target = musicMediaCondition(targetValue);
+    const candidate = musicMediaCondition(candidateValue.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, ""));
+    return target && candidate ? target === candidate ? "match" : "different" : "unknown";
+  }
   if (/^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key))) {
     const bare = (value: string) => value.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, '');
     const a = determineExplicitGradingState({ isGraded: bare(targetValue) }).state;
@@ -2348,7 +2357,8 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 				const titleDerivedValue = isBoardGameTarget
           && /^(?:year|releaseYear)$/i.test(key)
           ? "Unknown" : comparisonTitleDerivedValue(listing, key, targetValue, category,
-            /^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key)) ? explicitScoreGradingStates(targetMetadata, listing).candidateIdentityValues : []);
+            /^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key)) ? explicitScoreGradingStates(targetMetadata, listing).candidateIdentityValues
+              : category === "music" && /^(?:condition|mediaCondition)$/i.test(key) ? musicTargetConditionIdentityValues(targetMetadata) : []);
 			const fieldLabel = comparisonFieldLabel(key);
 			const normalizedFieldLabel = fieldLabel.trim().toLowerCase();
 				if (emittedFieldLabels.has(normalizedFieldLabel)) continue;
@@ -3238,24 +3248,63 @@ function musicMediaCondition(value: unknown): MusicMediaCondition {
   return null;
 }
 
-function musicCandidateMediaCondition(listing: VisualSourceCandidate): MusicMediaCondition {
+function musicTargetConditionIdentityValues(targetMetadata: string): unknown[] {
+  const details = extractTargetItemDetails(targetMetadata);
+  return [details.artist, details.performer, details.artistName, details.releaseTitle, details.album, details.albumTitle,
+    !readMetadataValue(details, ["releaseTitle", "album", "albumTitle"]) ? extractTargetTitle(targetMetadata) : ""];
+}
+
+function musicTitleMediaCondition(listing: VisualSourceCandidate, targetIdentityValues: readonly unknown[] = []): MusicMediaCondition {
   const details = candidateStructuredDetails(listing);
-  const structured = musicMediaCondition(listing.condition ?? details.condition ?? details.mediaCondition);
-  if (structured) return structured;
-  const title = canonicalCandidateTitle(listing);
-  if (/\b(?:factory\s+sealed|new\s*[/|]?\s*sealed|sealed)\b/i.test(title)) return "sealed";
-  if (/\bfor\s+parts\b|\bparts\s+only\b/i.test(title)) return "for_parts";
-  if (/\bexcellent\b/i.test(title)) return "excellent";
-  if (/\bgood\s+condition\b/i.test(title)) return "good";
-  if (/\bfair\s+condition\b/i.test(title)) return "fair";
+  const normalize = (value: unknown) => meaningfulMetadataText(value).toLowerCase()
+    .replace(/\b(?:isn['’]t|aren['’]t|wasn['’]t|weren['’]t)\b/g, "not")
+    .replace(/[^a-z0-9]+/g, " ").trim();
+  let title = normalize(canonicalCandidateTitle(listing));
+  // A known artist or album (e.g. "Sealed With a Kiss") is identity,
+  // not a seller declaration. Mask one occurrence, leaving a separate
+  // trailing condition declaration available as independent evidence.
+  const identityKeys = ["artist", "performer", "artistName", "releaseTitle", "album", "albumTitle"];
+  const identities = [...new Set([
+    ...identityKeys.map((key) => details[key]), ...targetIdentityValues,
+  ].map(normalize).filter((value) => /\b(?:sealed|excellent|good\s+condition|fair\s+condition|for\s+parts|parts\s+only)\b/.test(value)))].sort((a, b) => b.length - a.length);
+  for (const identity of identities) {
+    const pattern = new RegExp(`\\b${identity}\\b`, "g");
+    for (const match of title.matchAll(pattern)) {
+      const index = match.index ?? 0;
+      // A bare album name "Sealed" must not consume "Factory Sealed".
+      if (identity === "sealed" && /\b(?:factory|new)\s+$/.test(title.slice(0, index))) continue;
+      title = title.slice(0, index) + " ".repeat(match[0].length) + title.slice(index + match[0].length);
+      break;
+    }
+  }
+  const declares = (pattern: RegExp) => [...title.matchAll(pattern)].some((match) => {
+    const prefix = title.slice(0, match.index ?? 0);
+    return !/\b(?:not|no|never|without|un|non|no\s+longer|not\s+for|not\s+(?:sold|selling|listed|intended|just|only|available)(?:\s+(?:as|for))?)\s+$/.test(prefix);
+  });
+  if (declares(/\b(?:factory\s+sealed|new\s+sealed|sealed)\b/g)) return "sealed";
+  if (declares(/\b(?:for\s+parts|parts\s+only)\b/g)) return "for_parts";
+  if (declares(/\bexcellent\b/g)) return "excellent";
+  if (declares(/\bgood\s+condition\b/g)) return "good";
+  if (declares(/\bfair\s+condition\b/g)) return "fair";
   return null;
+}
+
+function musicCandidateMediaCondition(listing: VisualSourceCandidate, targetMetadata = ""): MusicMediaCondition {
+  const details = candidateStructuredDetails(listing);
+  const structured = musicMediaCondition(candidateMetadataValue(listing, details, ["condition", "mediaCondition"]));
+  // Keep an explicit structured hard state authoritative, including a
+  // contradiction with the title. Only subjective grades yield to title states.
+  if (structured === "sealed" || structured === "for_parts") return structured;
+  const titleCondition = musicTitleMediaCondition(listing, targetMetadata ? musicTargetConditionIdentityValues(targetMetadata) : []);
+  if (titleCondition === "sealed" || titleCondition === "for_parts") return titleCondition;
+  return structured ?? titleCondition;
 }
 
 function musicMediaConditionConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "music") return null;
   const details = extractTargetItemDetails(targetMetadata);
   const targetCondition = musicMediaCondition(details.condition ?? details.mediaCondition ?? metadataValue(targetMetadata, "condition"));
-  const candidateCondition = musicCandidateMediaCondition(listing);
+  const candidateCondition = musicCandidateMediaCondition(listing, targetMetadata);
   if (!targetCondition || !candidateCondition || targetCondition === candidateCondition) return null;
   // Marketplace condition labels such as Excellent, Good, and Fair are
   // subjective and frequently inconsistent across sellers. They should be
