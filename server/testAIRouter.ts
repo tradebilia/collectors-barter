@@ -808,8 +808,7 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
   const report = getMercariObservedFacts(original)?.report;
   const fallback = mercariContextProjection(row, report ?? null);
   if (!report || report.requestedMode !== 'sold' || row.visualReviewStatus !== 'match'
-    || !row.visualAudit || row.visualExecution?.hardExclusion === true
-    || row.evidenceDisposition !== 'valuation_eligible') return fallback;
+    || !row.visualAudit || row.visualExecution?.hardExclusion === true) return fallback;
   const originalPrice = report.fields.price;
   const price = originalPrice?.present && (originalPrice.type === 'number'
     || originalPrice.type === 'string' && typeof originalPrice.value === 'string' && /^\d+(?:\.\d+)?$/.test(originalPrice.value))

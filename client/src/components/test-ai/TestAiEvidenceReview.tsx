@@ -30,6 +30,7 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
   const displayed = groups.flatMap(source => reconcileCandidateFinalUse(source.candidates, context.outcome, { side: scopeSide, sourceId: source.id }));
   const used = displayed.filter(row => row.valuationUse?.use?.code === 'CURRENT_SALES_PRIMARY').length;
   const resolved = displayed.filter(row => row.valuationUse?.use?.code).length;
+  const valuationNotRun = !context.outcome;
   return <section className="space-y-4 rounded-xl border border-cyan-800/40 bg-slate-950/40 p-4" aria-label={`${scopeSide === 'item_a' ? 'Item A' : 'Item B'} evidence review`}>
     <header><h2 className="text-base font-semibold text-cyan-200">Evidence Review — candidate decisions</h2><p className="mt-1 text-xs text-slate-400">Each candidate has one outcome and its reason. Metadata and visual differences are available beneath each image pair.</p></header>
     <div className="grid gap-3 md:grid-cols-[1fr_1fr]">
@@ -39,9 +40,9 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
       </div></div>
       <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-3"><h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Run summary · displayed candidates only</h3><div className="grid grid-cols-3 gap-2 text-center">
         <div><p className="text-xl font-semibold text-cyan-200">{displayed.length}</p><p className="text-xs text-slate-400">Candidates</p></div>
-        <div><p className="text-xl font-semibold text-emerald-200">{context.outcome ? used : 'Not run'}</p><p className="text-xs text-slate-400">Used in valuation</p></div>
-        <div><p className="text-xl font-semibold text-amber-200">{context.outcome ? displayed.length - used : 'Not run'}</p><p className="text-xs text-slate-400">Not used</p></div>
-      </div>{context.outcome && resolved < displayed.length && <p className="mt-2 text-xs text-amber-200">{displayed.length - resolved} candidate decisions have no resolved final valuation record; their cards explain what is known.</p>}</div>
+        <div><p className="text-xl font-semibold text-emerald-200">{used}</p><p className="text-xs text-slate-400">Used in valuation</p></div>
+        <div><p className="text-xl font-semibold text-amber-200">{Math.max(0, displayed.length - used)}</p><p className="text-xs text-slate-400">Not used</p></div>
+      </div>{valuationNotRun ? <p className="mt-2 text-xs text-amber-200">Final valuation analysis has not run yet; current valuation counts are 0.</p> : resolved < displayed.length && <p className="mt-2 text-xs text-amber-200">{displayed.length - resolved} candidate decisions have no resolved final valuation record; their cards explain what is known.</p>}</div>
     </div>
     <div aria-label="Evidence review candidate results" className="space-y-4">
       {groups.filter(source => source.candidates.length > 0).map(source => <TestAiCandidateMasterList key={source.id} listings={source.candidates} sourceLabel={source.label} targetImageUrl={item.primaryPhotoUrl} scope={{ side: scopeSide, sourceId: source.id }} />)}

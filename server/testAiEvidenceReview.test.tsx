@@ -28,7 +28,7 @@ describe('Evidence Review is the complete candidate decision view', () => {
   });
   it('does not display source-stage eligibility as actual valuation use', () => {
     const html = review([{ id: 'sold_comps', label: 'eBay Sold', packet: { listings: [{ title: 'Eligible', evidenceDisposition: 'valuation_eligible' }] } }]);
-    expect(html).toContain('VALUATION NOT RUN'); expect(html).not.toContain('USED IN VALUATION'); expect(html).toContain('Not run');
+    expect(html).toContain('VALUATION NOT RUN'); expect(html).not.toContain('USED IN VALUATION'); expect(html).toContain('Final valuation analysis has not run yet; current valuation counts are 0.');
   });
   it('shows an explicit no-record state and source failure instead of a blank page', () => {
     const html = review([{ id: 'sold_comps', label: 'eBay Sold', status: 'error', message: 'Provider failed' }]);
