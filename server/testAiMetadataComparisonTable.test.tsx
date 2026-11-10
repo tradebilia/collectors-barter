@@ -48,7 +48,7 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
   it('keeps the six columns, details and legend without another exclusion panel', () => {
     const html = renderToStaticMarkup(createElement(MetadataComparisonTable, { listing: { metadataFieldComparisons: [baseRow] } }));
     expect([...html.matchAll(/<th\b/g)]).toHaveLength(6);
-    expect(html).toContain('Target vs candidate fields');
+    expect(html).toContain('Full metadata comparison');
     expect(html).toContain('Ranking highlight legend');
     expect(html).toContain('Title-derived scored field');
     expect(html).not.toContain('excluded before');

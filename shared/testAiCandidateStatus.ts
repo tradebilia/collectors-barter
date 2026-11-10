@@ -143,6 +143,31 @@ export function candidatePricingFact(row: CandidateDisplayRow): CandidateDisplay
   if (row.evidenceDisposition === 'valuation_eligible') return { label: 'Source eligible — final analysis not run', code: 'SOURCE_ELIGIBLE_BEFORE_ANALYSIS', className: neutral };
   return { label: 'Source context / review — final analysis not run', code: 'SOURCE_CONTEXT_BEFORE_ANALYSIS', className: neutral };
 }
+
+export type CandidateFinalDecision = {
+  label: string;
+  reason: string;
+  className: string;
+  code: 'used_in_valuation' | 'visual_mismatch' | 'visual_unresolved' | 'hard_exclusion' | 'context_only' | 'pricing_rule' | 'pre_review_exclusion';
+};
+
+/** Presentation-only terminal decision; it never creates or changes admission. */
+export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinalDecision {
+  const use = row.valuationUse?.use;
+  const execution = candidateExecutionFact(row);
+  const identity = candidateIdentityFact(row);
+  const evidenceReason = Array.isArray(row.evidenceReasons) ? row.evidenceReasons.filter(Boolean).join('; ') : '';
+  if (use?.code === 'CURRENT_SALES_PRIMARY') return { label: 'USED IN VALUATION', reason: 'Accepted completed-sale evidence passed final identity and pricing safeguards.', className: green, code: 'used_in_valuation' };
+  if (isHardCandidateDisplayException(row)) return { label: 'NOT USED — HARD EXCLUSION', reason: evidenceReason || execution.reason || 'Objective identity conflict prevented valuation use.', className: red, code: 'hard_exclusion' };
+  if (identity.code === 'mismatch' || identity.code === 'deterministic_conflict') return { label: 'NOT USED — VISUAL MISMATCH', reason: row.visualReviewRationale || identity.reason || 'The reviewed item identity did not match the target.', className: red, code: 'visual_mismatch' };
+  if (hasActualVisualDispatch(row) && !hasActualVisualResponse(row)) return { label: 'NOT USED — VISUAL REVIEW UNRESOLVED', reason: execution.reason || 'The visual review did not return a usable decision.', className: amber, code: 'visual_unresolved' };
+  if (hasActualVisualResponse(row) && ['rough_match', 'unreadable', 'manual_unknown'].includes(identity.code)) return { label: 'NOT USED — VISUAL REVIEW UNRESOLVED', reason: identity.reason || 'The visual response was not a confirmed identity match.', className: amber, code: 'visual_unresolved' };
+  if (!hasActualVisualDispatch(row)) return { label: 'NOT USED — PRE-REVIEW EXCLUSION', reason: execution.reason || 'The candidate did not reach visual review.', className: amber, code: 'pre_review_exclusion' };
+  if (use?.code === 'CONTEXT_ONLY' || use?.code === 'UNSUPPORTED_CURRENCY' || use?.code === 'SECONDARY_ONLY' || use?.code === 'SOURCE_ELIGIBLE_NOT_SELECTED' || row.candidatePricingLink === 'not_submitted') return { label: 'NOT USED — CONTEXT ONLY', reason: finalPricingUseLabels[use?.code ?? 'CONTEXT_ONLY'] || 'Source context is not valuation evidence.', className: amber, code: 'context_only' };
+  if (use?.code) return { label: 'NOT USED — PRICING RULE', reason: finalPricingUseLabels[use.code] ?? `Final pricing rule: ${use.code}`, className: amber, code: 'pricing_rule' };
+  return { label: 'NOT USED — CONTEXT ONLY', reason: 'No completed-sale valuation authority was established for this candidate.', className: neutral, code: 'context_only' };
+}
+
 export function formatCandidateDisplayPrice(row: CandidateDisplayRow): string {
   const raw = row.price ?? row.soldPrice ?? row.salePrice ?? row.finalPrice ?? row.currentPrice ?? row.current_price;
   const amount = Number(typeof raw === 'object' ? raw?.value : raw);
