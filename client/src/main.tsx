@@ -1,9 +1,9 @@
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, TRPCClientError } from "@trpc/client";
+import { TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
-import superjson from "superjson";
+import { createTestAiRpcLinks } from './lib/testAiRpcTransport';
 import App from "./App";
 import { getLoginUrl } from "./const";
 import { getPreviewSessionToken } from "./lib/previewSession";
@@ -40,12 +40,7 @@ queryClient.getMutationCache().subscribe(event => {
 });
 
 const trpcClient = trpc.createClient({
-  links: [
-    httpBatchLink({
-      url: "/api/trpc",
-      transformer: superjson,
-      maxURLLength: 2000, // Prevent 414 errors by using POST for large batches
-      async fetch(input, init) {
+  links: createTestAiRpcLinks(async (input, init) => {
         const headers = new Headers(init?.headers);
         try {
           const mobileSessionToken = getPreviewSessionToken();
@@ -73,9 +68,7 @@ const trpcClient = trpc.createClient({
         }
 
         return response;
-      },
-    }),
-  ],
+  }),
 });
 
 createRoot(document.getElementById("root")!).render(

@@ -34,6 +34,13 @@ describe('Evidence Review is the complete candidate decision view', () => {
     const html = review([{ id: 'sold_comps', label: 'eBay Sold', status: 'error', message: 'Provider failed' }]);
     expect(html).toContain('No candidate records are available yet'); expect(html).toContain('Request failed'); expect(html).toContain('Provider failed'); expect(html).not.toContain('zero marketplace matches');
   });
+  it('shows the failure reason once in Source Results, not buried in a closed dropdown', () => {
+    const message = 'The source request was not sent because it exceeded the client request-size limit.';
+    const html = review([{ id: 'mercari_sold_comps', label: 'Mercari Sold', status: 'error', message }]);
+    expect(html.split(message)).toHaveLength(2);
+    expect(html.indexOf(message)).toBeGreaterThan(html.indexOf('Source results'));
+    expect(html.indexOf(message)).toBeLessThan(html.indexOf('Evidence diagnostics'));
+  });
   it('keeps source diagnostics collapsed by default', () => {
     const html = review([]); expect(html).toContain('Evidence diagnostics'); expect(html).not.toMatch(/<details[^>]*\sopen(?:=|\s|>)/);
   });

@@ -100,12 +100,23 @@ export function sourceReviewedGoldinSales(data: any): any[] {
   return reviewed.filter((record) => record.completed === true && record.evidenceDisposition === 'valuation_eligible');
 }
 
+const SOURCE_DISPATCH_OVERFLOW_MESSAGE = 'The source request was not sent because it exceeded the client request-size limit. Refresh this development page and retry the source search.';
+
+/** Only expose bounded, known-safe transport wording; never serialize an error object. */
+export function sourceRequestSafeErrorMessage(error: unknown): string | null {
+  const descriptor = error && typeof error === 'object' ? Object.getOwnPropertyDescriptor(error, 'message') : undefined;
+  const text = typeof error === 'string' ? error : descriptor && 'value' in descriptor && typeof descriptor.value === 'string'
+    ? descriptor.value : '';
+  return /input is too big for a single dispatch/i.test(text) ? SOURCE_DISPATCH_OVERFLOW_MESSAGE : null;
+}
+
 /** Error objects are not displayed or serialized; retain known rows and label the
  * transport failure. An equivalent successful query keeps the original object.
  */
-export function sourceRequestDisplayData<T>(data: T | undefined, requestFailed: boolean): T | undefined {
+export function sourceRequestDisplayData<T>(data: T | undefined, requestFailed: boolean, error?: unknown): T | undefined {
   if (!requestFailed) return data;
-  return { ...(data && typeof data === 'object' ? data : { listings: [], sales: [], context: [] }), error: 'Source request failed; known returned rows are retained, and missing counts remain unmeasured.', partial: true } as T;
+  const safeError = sourceRequestSafeErrorMessage(error) ?? 'Source request failed before a complete response; known returned rows are retained, and missing counts remain unmeasured.';
+  return { ...(data && typeof data === 'object' ? data : { listings: [], sales: [], context: [] }), error: safeError, partial: true } as T;
 }
 
 export function sourceRetainedDisplayGroups(data: any): any[][] {
@@ -127,10 +138,11 @@ export function sourceEvidenceStatus(data: any): 'success' | 'partial' | 'not_fo
   return 'success';
 }
 export function sourceEvidenceMessage(data: any): string | null {
+  if (typeof data?.error === 'string' && data.error.trim()) return data.error;
   if (sourceRetrievalCoverage(data).partialRetrieval || data?.status === 'partial') {
     return 'Partial/error retrieval; known source observations are retained. See actual attempt outcomes; unreadable responses are not zero matches.';
   }
-  return typeof data?.error === 'string' ? data.error : null;
+  return null;
 }
 
 export function sourceRetainedEmptyMessage(data: any, retainedCount: number, marketplace: string): string {

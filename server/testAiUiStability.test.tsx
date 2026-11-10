@@ -313,7 +313,7 @@ describe('TestAI actual source/callback wiring', () => {
       expect(columns[index].soldCompsData).toBe(`${side}SoldCompsDisplay.data`);
       expect(columns[index].mercariSoldCompsData).toBe(`${side}MercariSoldCompsDisplay.data`);
       expect(columns[index].onSpecialistSales).toBe(`on${side === 'left' ? 'Left' : 'Right'}SpecialistSales`);
-      expect(declaration(`${side}EbayDisplay`).initializer?.getText(page)).toBe(`useTestAiSourceDisplayData(${side}EbayQuery.data, Boolean(${side}EbayQuery.error), ${side}EbayVisualReview)`);
+      expect(declaration(`${side}EbayDisplay`).initializer?.getText(page)).toBe(`useTestAiSourceDisplayData(${side}EbayQuery.data, Boolean(${side}EbayQuery.error), ${side}EbayVisualReview, ${side}EbayQuery.error)`);
       expect(props('AIAnalysisSection')[0][`${side}EbayData`]).toBe(`${side}EbayDisplay.data`);
       const searchMemo = declaration(`${side}SearchItem`).initializer as ts.CallExpression;
       expect(searchMemo.expression.getText(page)).toBe('useMemo');

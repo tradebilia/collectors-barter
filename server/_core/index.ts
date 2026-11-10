@@ -70,6 +70,9 @@ async function startServer() {
     createExpressMiddleware({
       router: appRouter,
       createContext,
+      // Large sandbox query inputs travel in POST bodies, not oversized URLs.
+      // This permits POST for queries; procedure authorization is unchanged.
+      allowMethodOverride: true,
     })
   );
   // development mode uses Vite, production mode uses static files

@@ -51,8 +51,8 @@ export function useTestAiContentState<T>(initialValue: T, scope = ''): [T, Dispa
  * packets and eBay visual merges must not allocate on every parent render.
  * Keep all existing source/visual fields and the original merge precedence.
  */
-export function useTestAiSourceDisplayData<T>(data: T | undefined, requestFailed: boolean, visualReview?: Record<string, unknown> | null) {
-  const displayData = useMemo(() => sourceRequestDisplayData(data, requestFailed), [data, requestFailed]);
+export function useTestAiSourceDisplayData<T>(data: T | undefined, requestFailed: boolean, visualReview?: Record<string, unknown> | null, requestError?: unknown) {
+  const displayData = useMemo(() => sourceRequestDisplayData(data, requestFailed, requestError), [data, requestFailed, requestError]);
   return useMemo(() => {
     return { data: displayData, evidenceData: visualReview ? { ...displayData, ...visualReview } : displayData };
   }, [displayData, visualReview]);

@@ -2772,7 +2772,7 @@ function evidenceMessage(data: any, existing?: string | null, lifecycle?: { isFe
 
 /** Reporting-only lifecycle packet; keeps the existing memoized failure/row wrapper. */
 function useSourceOutcomeData<T>(query: { data: T | undefined; error: unknown; isFetching: boolean }, notSearchedReason?: string) {
-  const wrapped = useTestAiSourceDisplayData(query.data, Boolean(query.error));
+  const wrapped = useTestAiSourceDisplayData(query.data, Boolean(query.error), undefined, query.error);
   return useMemo(() => ({ data: wrapped.data ?? ({ status: 'idle', message: query.isFetching ? 'Search not completed.'
     : notSearchedReason ? `Not searched: ${notSearchedReason}` : 'Not searched or not completed.' } as unknown as T) }),
   [wrapped.data, query.isFetching, notSearchedReason]);
@@ -4913,12 +4913,12 @@ export default function TestAI() {
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('one_thirty_point') },
   );
 
-  const leftEbayDisplay = useTestAiSourceDisplayData(leftEbayQuery.data, Boolean(leftEbayQuery.error), leftEbayVisualReview);
-  const rightEbayDisplay = useTestAiSourceDisplayData(rightEbayQuery.data, Boolean(rightEbayQuery.error), rightEbayVisualReview);
-  const leftSoldCompsDisplay = useTestAiSourceDisplayData(leftSoldCompsQuery.data, Boolean(leftSoldCompsQuery.error));
-  const rightSoldCompsDisplay = useTestAiSourceDisplayData(rightSoldCompsQuery.data, Boolean(rightSoldCompsQuery.error));
-  const leftMercariSoldCompsDisplay = useTestAiSourceDisplayData(leftMercariSoldCompsQuery.data, Boolean(leftMercariSoldCompsQuery.error));
-  const rightMercariSoldCompsDisplay = useTestAiSourceDisplayData(rightMercariSoldCompsQuery.data, Boolean(rightMercariSoldCompsQuery.error));
+  const leftEbayDisplay = useTestAiSourceDisplayData(leftEbayQuery.data, Boolean(leftEbayQuery.error), leftEbayVisualReview, leftEbayQuery.error);
+  const rightEbayDisplay = useTestAiSourceDisplayData(rightEbayQuery.data, Boolean(rightEbayQuery.error), rightEbayVisualReview, rightEbayQuery.error);
+  const leftSoldCompsDisplay = useTestAiSourceDisplayData(leftSoldCompsQuery.data, Boolean(leftSoldCompsQuery.error), undefined, leftSoldCompsQuery.error);
+  const rightSoldCompsDisplay = useTestAiSourceDisplayData(rightSoldCompsQuery.data, Boolean(rightSoldCompsQuery.error), undefined, rightSoldCompsQuery.error);
+  const leftMercariSoldCompsDisplay = useTestAiSourceDisplayData(leftMercariSoldCompsQuery.data, Boolean(leftMercariSoldCompsQuery.error), undefined, leftMercariSoldCompsQuery.error);
+  const rightMercariSoldCompsDisplay = useTestAiSourceDisplayData(rightMercariSoldCompsQuery.data, Boolean(rightMercariSoldCompsQuery.error), undefined, rightMercariSoldCompsQuery.error);
   const leftHipstampDisplay = useSourceOutcomeData(leftHipstampQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
   const rightHipstampDisplay = useSourceOutcomeData(rightHipstampQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
   const leftHipstampSoldDisplay = useSourceOutcomeData(leftHipstampSoldQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
