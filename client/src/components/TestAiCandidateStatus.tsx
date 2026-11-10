@@ -1,5 +1,5 @@
 import React, { createContext, useContext, type ReactNode } from 'react';
-import { candidateExecutionAttemptFacts, candidateExecutionFact, candidateIdentityFact, candidatePricingFact, formatCandidateDisplayPrice, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException } from '../../../shared/testAiCandidateStatus';
+import { candidateExecutionAttemptFacts, candidateExecutionFact, candidateExecutionReceipt, candidateIdentityFact, candidatePricingFact, formatCandidateDisplayPrice, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException } from '../../../shared/testAiCandidateStatus';
 import { candidateDisplayKey, mergeCandidateDisplayGroups, reconcileCandidateFinalUse, type CandidateDisplayRow, type CandidateDisplayScope, type CandidateFinalDisplayOutcome } from '../../../shared/testAiCandidateLedger';
 import { MetadataComparisonTable } from './TestAiMetadataComparisonTable';
 import { TestAiSafeImage } from './TestAiSafeImage';
@@ -34,7 +34,11 @@ export function TestAiCandidateStatus({ listing, scope: suppliedScope, reconcile
 export function TestAiVisualDifferenceList({ listing }: { listing: CandidateDisplayRow }) {
   const differences = Array.isArray(listing.visualDifferences) ? listing.visualDifferences : [];
   if (!differences.length) return null;
-  return <div className="mt-1 rounded border border-red-700/30 bg-red-950/20 p-1.5"><p className="text-[8px] font-bold uppercase tracking-wide text-red-200">Why mismatch — all detected differences</p><ul className="mt-1 space-y-1">{differences.map((difference: any, index: number) => <li key={`${difference.field}-${index}`} className="text-[8px] leading-snug text-gray-300"><strong className="text-red-200">{difference.field}:</strong> target “{difference.targetObservation}” vs candidate “{difference.candidateObservation}”<span className="text-gray-500"> — {difference.impact}</span></li>)}</ul></div>;
+  const receipt = candidateExecutionReceipt(listing);
+  const authoritativeMismatch = receipt
+    ? hasActualVisualResponse(listing) && receipt.identity?.origin === 'visual' && receipt.identity?.result === 'mismatch'
+    : !listing.visualExecution && listing.visualReviewStatus === 'mismatch';
+  return <div className={`mt-1 rounded border p-1.5 ${authoritativeMismatch ? 'border-red-700/30 bg-red-950/20' : 'border-amber-700/30 bg-slate-900/30'}`}><p className={`text-[8px] font-bold uppercase tracking-wide ${authoritativeMismatch ? 'text-red-200' : 'text-amber-200'}`}>{authoritativeMismatch ? 'Why mismatch — all detected differences' : 'Observed differences — all detected differences'}</p><ul className="mt-1 space-y-1">{differences.map((difference: any, index: number) => <li key={`${difference.field}-${index}`} className="text-[8px] leading-snug text-gray-300"><strong className={authoritativeMismatch ? 'text-red-200' : 'text-slate-200'}>{difference.field}:</strong> target “{difference.targetObservation}” vs candidate “{difference.candidateObservation}”<span className="text-gray-500"> — {difference.impact}</span></li>)}</ul></div>;
 }
 export function TestAiCandidateImagePair({ listing, targetImageUrl }: { listing: CandidateDisplayRow; targetImageUrl?: string | null }) {
   const image = listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0];
