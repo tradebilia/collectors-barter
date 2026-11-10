@@ -1,6 +1,45 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import ts from 'typescript';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+
+function extractCoverageRuntime(source: string) {
+  const file = ts.createSourceFile('TestAI.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const wanted = new Set(['SOURCE_TEST_RESULTS', 'SOURCE_COVERAGE_CONFIRMED_MATCHES', 'SOURCE_COVERAGE_CATEGORY_ORDER', 'SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS', 'normalizeCoverageCategory', 'formatCoverageCategory', 'SourceCoverageTracker']);
+  const statements = file.statements.filter((statement) => {
+    if (ts.isFunctionDeclaration(statement)) return Boolean(statement.name && wanted.has(statement.name.text));
+    if (ts.isVariableStatement(statement)) return statement.declarationList.declarations.some((declaration) => ts.isIdentifier(declaration.name) && wanted.has(declaration.name.text));
+    return false;
+  });
+  const extracted = statements.map((statement) => source.slice(statement.getFullStart(), statement.end)).join('\n');
+  const javascript = ts.transpileModule(extracted, {
+    compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None },
+    fileName: 'coverage-runtime.tsx',
+  }).outputText;
+  const universalSources = [
+    { sourceId: 'ebay_active', categories: '*', label: 'eBay Active' },
+    { sourceId: 'sold_comps', categories: '*', label: 'eBay Sold' },
+    { sourceId: 'mercari_sold_comps', categories: '*', label: 'Mercari Sold' },
+  ];
+  const applicability = universalSources.map(({ sourceId, categories }) => ({ sourceId, categories }));
+  const specialistSources = [
+    { id: 'goldin', categories: ['autographs'], evidenceMode: 'context_only_until_adapter', label: 'Goldin' },
+    { id: 'ngc', categories: ['coins'], evidenceMode: 'context_only_until_adapter', label: 'NGC Auction Central' },
+  ];
+  const dataSources = Object.fromEntries(universalSources.map(({ sourceId, label }) => [sourceId, { label }]));
+  const moduleFactory = new Function(
+    'React', 'TEST_AI_SOURCE_APPLICABILITY', 'SANDBOX_SPECIALIST_SOURCES', 'DATA_SOURCES',
+    'PERMISSION_PENDING_SOURCE_REGISTRY', 'isSandboxSiteBlockedSource',
+    `${javascript}\nreturn { SOURCE_TEST_RESULTS, SOURCE_COVERAGE_CONFIRMED_MATCHES, SourceCoverageTracker };`,
+  );
+  return moduleFactory(React, applicability, specialistSources, dataSources, {}, () => false) as {
+    SOURCE_TEST_RESULTS: Record<string, string>;
+    SOURCE_COVERAGE_CONFIRMED_MATCHES: Set<string>;
+    SourceCoverageTracker: () => React.ReactElement;
+  };
+}
 
 describe('manual Test AI selector boundary', () => {
   const source = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
@@ -78,36 +117,73 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("'autographs:ebay_active': 'match'");
     expect(source).toContain("'autographs:sold_comps': 'match'");
     expect(source).toContain("'autographs:goldin': 'match'");
-    expect(source).toContain('const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set([');
+    expect(source).toContain('const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set<string>([]);');
     expect(source).toContain('SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key)');
     expect(source).toContain('!SOURCE_COVERAGE_CONFIRMED_MATCHES.has(`${category}:${source.sourceId}`)');
     expect(source).toContain('const categories = SOURCE_COVERAGE_CATEGORY_ORDER.map((category) => {');
   });
 
-  it('keeps the clean-start policy limited to the explicitly approved category/source paths', () => {
+  it('keeps historical source results separate from the new Rich-confirmation run', () => {
     expect(source).not.toContain('SOURCE_COVERAGE_RESET_TO_PENDING');
-    expect(source).toContain('historical match results remain above for');
-    expect(source).toContain('auditability, but only explicitly approved category/source paths');
-    expect(source).toContain('category/source pairs remain Pending');
+    expect(source).toContain('Historical match results remain above for');
+    expect(source).toContain('Historical manual source-test outcomes, retained for audit only.');
+    expect(source).toContain('const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set<string>([]);');
+    expect(source).toContain('All category/source pairs remain Pending until Rich explicitly confirms them');
     expect(source).toContain("return SOURCE_TEST_RESULTS[key] === 'match' && SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key);");
+    const runtime = extractCoverageRuntime(source);
+    expect(Object.keys(runtime.SOURCE_TEST_RESULTS).length).toBeGreaterThan(0);
+    expect(runtime.SOURCE_COVERAGE_CONFIRMED_MATCHES.size).toBe(0);
   });
 
-  it('places the three approved Disney Pins source tests in Matching', () => {
+  it('keeps historical Disney Pins results pending until this run confirms them', () => {
     expect(source).toContain("'disney pins:ebay_active': 'match'");
     expect(source).toContain("'disney pins:sold_comps': 'match'");
     expect(source).toContain("'disney pins:mercari_sold_comps': 'match'");
-    expect(source).toContain("'disney pins:ebay_active'");
-    expect(source).toContain("'disney pins:sold_comps'");
-    expect(source).toContain("'disney pins:mercari_sold_comps'");
+    expect(source).toContain('const testResult = coverageKey && SOURCE_COVERAGE_CONFIRMED_MATCHES.has(coverageKey) ? SOURCE_TEST_RESULTS[coverageKey] : undefined;');
   });
 
-  it('places the three approved Music source tests in Matching', () => {
+  it('keeps historical Music results pending until this run confirms them', () => {
     expect(source).toContain("'music:ebay_active': 'match'");
     expect(source).toContain("'music:sold_comps': 'match'");
     expect(source).toContain("'music:mercari_sold_comps': 'match'");
-    expect(source).toContain("'music:ebay_active'");
-    expect(source).toContain("'music:sold_comps'");
-    expect(source).toContain("'music:mercari_sold_comps'");
+    expect(source).toContain('const coverageKey = item ? `${normalizeCoverageCategory(item.category)}:${source.id}` : undefined;');
+  });
+
+  it('executes the current source coverage tracker with isolated fixtures and only Rich confirmations promote matches', () => {
+    const runtime = extractCoverageRuntime(source);
+    const initialMarkup = renderToStaticMarkup(React.createElement(runtime.SourceCoverageTracker));
+    expect(initialMarkup).toContain('0 matched');
+    expect(initialMarkup).not.toContain('Matched');
+    expect(initialMarkup).toContain('Movies');
+    expect(initialMarkup).toContain('Music');
+    expect(initialMarkup).toContain('Autographs');
+    expect(initialMarkup).toContain('Disney Pins');
+    expect(initialMarkup).toContain('34 pending');
+    expect((initialMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(34);
+    expect((initialMarkup.match(/eBay Active/g) ?? []).length).toBe(11);
+    expect((initialMarkup.match(/eBay Sold/g) ?? []).length).toBe(11);
+    expect((initialMarkup.match(/Mercari Sold/g) ?? []).length).toBe(11);
+    expect(initialMarkup).toContain('Goldin');
+    expect(initialMarkup).not.toContain('NGC Auction Central');
+
+    runtime.SOURCE_COVERAGE_CONFIRMED_MATCHES.add('music:ebay_active');
+    const confirmedMarkup = renderToStaticMarkup(React.createElement(runtime.SourceCoverageTracker));
+    expect(confirmedMarkup).toContain('1 matched');
+    expect(confirmedMarkup).toContain('eBay Active');
+    expect(confirmedMarkup).toContain('Matched');
+    expect(confirmedMarkup).toContain('33 pending');
+    expect((confirmedMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(33);
+    expect((confirmedMarkup.match(/eBay Active/g) ?? []).length).toBe(11);
+    expect((confirmedMarkup.match(/eBay Sold/g) ?? []).length).toBe(11);
+    expect((confirmedMarkup.match(/Mercari Sold/g) ?? []).length).toBe(11);
+    expect(confirmedMarkup).toContain('Goldin');
+    expect(runtime.SOURCE_TEST_RESULTS['music:ebay_active']).toBe('match');
+  });
+
+  it('gates selector coverage results on the current-run confirmation set so historical matches cannot leak green state', () => {
+    expect(source).toMatch(/const coverageKey = item \? `\$\{normalizeCoverageCategory\(item\.category\)\}:\$\{source\.id\}` : undefined;\s+const testResult = coverageKey && SOURCE_COVERAGE_CONFIRMED_MATCHES\.has\(coverageKey\) \? SOURCE_TEST_RESULTS\[coverageKey\] : undefined;/);
+    expect(source).toContain("const applicableResultBorderClassName = testResult === 'match'");
+    expect(source).toContain("${testResult === 'match' ? ' — confirmed match' : ''}${testResult === 'mismatch' ? ' — confirmed mismatch' : ''}");
   });
 
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {

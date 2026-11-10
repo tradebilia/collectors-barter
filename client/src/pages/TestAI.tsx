@@ -441,9 +441,9 @@ function isCgcCompany(company?: string | null): boolean {
   return (company ?? '').trim().toUpperCase().replace(/\s+(COMICS|CARDS)$/, '') === 'CGC';
 }
 
-// Manual source-test outcomes recorded from the category/source test matrix.
-// Untested applicable sources remain yellow; confirmed matches are green;
-// confirmed mismatches are red. Keep keys normalized as category:sourceId.
+// Historical manual source-test outcomes, retained for audit only.
+// Current-run confirmations below govern both the tracker and selector badges;
+// keep keys normalized as category:sourceId. Never infer manual approval from AI results.
 const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'comics:ebay_active': 'match',
   'sports cards:ebay_active': 'match',
@@ -482,24 +482,11 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'music:mercari_sold_comps': 'match',
 };
 
-// Clean-start coverage policy: historical match results remain above for
-// auditability, but only explicitly approved category/source paths below are
-// allowed to appear in the Matching column. All other category/source pairs remain Pending
-// until retested after recent changes.
-const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set([
-  'movies:ebay_active',
-  'movies:sold_comps',
-  'movies:mercari_sold_comps',
-  'autographs:ebay_active',
-  'autographs:sold_comps',
-  'autographs:goldin',
-  'disney pins:ebay_active',
-  'disney pins:sold_comps',
-  'disney pins:mercari_sold_comps',
-  'music:ebay_active',
-  'music:sold_comps',
-  'music:mercari_sold_comps',
-]);
+// New testing run, reset by Rich on November 10, 2026 at 14:54 EST.
+// Historical match results remain above for auditability, not current approval.
+// All category/source pairs remain Pending until Rich explicitly confirms them
+// during this run. Only add explicitly approved category:sourceId keys here.
+const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set<string>([]);
 
 const SOURCE_COVERAGE_CATEGORY_ORDER = ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'] as const;
 
@@ -549,7 +536,7 @@ function SourceCoverageTracker() {
     <div>
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Source coverage tracker</p>
       <h2 id="source-coverage-heading" className="mt-1 text-xl font-bold text-white">Which sources apply to each category?</h2>
-      <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-400">This reference is generated from the sandbox source registries. A source can appear under more than one category. The matching section is reserved for confirmed test matches; every other applicable source is listed as pending until it is confirmed.</p>
+      <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-400">This reference is generated from the sandbox source registries. A source can appear under more than one category. New testing run: previous confirmations have been reset. Sources remain pending until you explicitly confirm a match for this run; an AI match does not automatically update this checklist.</p>
     </div>
     <div className="grid gap-5 xl:grid-cols-2">
       <div className="rounded-xl border border-emerald-800/50 bg-emerald-950/10 p-4">
@@ -622,7 +609,8 @@ function SourceSelector({ enabled, onChange, side, item }: {
                 const isEnabled = enabled.has(source.id as SourceId);
                 const isLive = source.status === 'live';
                 const isApplicable = applicableSourceIds.has(source.id as TestAiSourceId);
-                const testResult = item ? SOURCE_TEST_RESULTS[`${item.category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ')}:${source.id}`] : undefined;
+                const coverageKey = item ? `${normalizeCoverageCategory(item.category)}:${source.id}` : undefined;
+                const testResult = coverageKey && SOURCE_COVERAGE_CONFIRMED_MATCHES.has(coverageKey) ? SOURCE_TEST_RESULTS[coverageKey] : undefined;
                 const isPermissionPending = source.status === 'permission_pending';
                 const isDeferred = source.status === 'deferred';
                 const missingPriceChartingVideoGameIdentity = source.id === 'pricecharting'
