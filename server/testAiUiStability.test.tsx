@@ -328,7 +328,7 @@ describe('TestAI actual source/callback wiring', () => {
     const summary = declarations.find((node) => node.name.getText(page) === 'summary' && node.initializer && ts.isCallExpression(node.initializer) && node.initializer.arguments.length === 2)!;
     const memo = summary.initializer as ts.CallExpression;
     const dependencies = (memo.arguments[1] as ts.ArrayLiteralExpression).elements.map((element) => element.getText(page));
-    for (const required of ['marketItem', 'mercariSoldCompsData', 'numistaQuery.data', 'priceChartingVideoGameCandidateQuery.data', 'ebayData', 'specialistObservations']) expect(dependencies).toContain(required);
+    for (const required of ['marketItem', 'mercariSoldCompsData', 'numistaEvidenceData', 'priceChartingVideoGameCandidateEvidenceData', 'ebayData', 'specialistObservations']) expect(dependencies).toContain(required);
     for (const state of ['leftEvidenceSummary', 'rightEvidenceSummary', 'leftGoldinSales', 'rightGoldinSales', 'leftEbayVisualReview', 'rightEbayVisualReview', 'specialistObservations']) {
       const declarationNode = declarations.find((node) => ts.isArrayBindingPattern(node.name) && node.name.elements[0].getText(page) === state)!;
       expect((declarationNode.initializer as ts.CallExpression).expression.getText(page)).toBe('useTestAiContentState');

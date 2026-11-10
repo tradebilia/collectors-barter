@@ -1,4 +1,4 @@
-import { selectPreferredGuideAnchor, type NormalizedEvidenceSummary } from '../shared/testAiEvidenceNormalization';
+import { selectPreferredGuideAnchor, TEST_AI_VALUE_UNAVAILABLE_MESSAGE, type NormalizedEvidenceSummary } from '../shared/testAiEvidenceNormalization';
 import { verifyGuideAnchors } from './testAiGuideEvidence';
 import type { FinalUseReport, ValuationUseSide } from '../shared/testAiValuationUse';
 import {
@@ -12,7 +12,7 @@ import {
   type ConfidenceLevel,
 } from './testAiComparableEngine';
 
-export const ANALYZER_SNAPSHOT_VERSION = '2.11.0';
+export const ANALYZER_SNAPSHOT_VERSION = '2.12.0';
 
 export type AnalysisCashAdjustment = {
   amount: number;
@@ -124,6 +124,17 @@ export function buildAnalysisSnapshot(input: {
   );
   profile.valuationWarnings.push(...verifiedGuides.warnings);
   const summary = input.evidenceSummary;
+  const sourceStatuses = (summary?.sources ?? []).map((source) => ({
+    id: source.id, label: source.label, kind: source.kind, role: source.role,
+    status: source.status, message: source.message ?? null,
+  }));
+  if (typeof profile.primaryValue !== 'number' || !Number.isFinite(profile.primaryValue) || profile.primaryValue <= 0) {
+    const count = (status: string) => sourceStatuses.filter((source) => source.status === status).length;
+    const coverage = sourceStatuses.length
+      ? `Reported source outcomes: ${count('error')} failed/unavailable; ${count('partial')} partial; ${count('idle')} not searched or not completed; ${count('not_found')} without a usable result or requiring unresolved review. These reported outcomes do not prove zero marketplace matches or that every source was searched.`
+      : 'No source outcomes were included in this analysis; search coverage is unknown, not proof of zero marketplace matches.';
+    profile.valuationBasisReason = `${profile.valuationBasisReason} ${coverage}`;
+  }
   return {
     version: ANALYZER_SNAPSHOT_VERSION,
     generatedAt: now.toISOString(),
@@ -132,14 +143,7 @@ export function buildAnalysisSnapshot(input: {
     finalUseReport: profile.finalUseReport!,
     evidence: {
       identityReadiness: summary?.identityReadiness.readiness ?? null,
-      sourceStatuses: (summary?.sources ?? []).map((source) => ({
-        id: source.id,
-        label: source.label,
-        kind: source.kind,
-        role: source.role,
-        status: source.status,
-        message: source.message ?? null,
-      })),
+      sourceStatuses,
       reviewFlags: [...(summary?.reviewFlags ?? []).map((flag) => flag.message), ...verifiedGuides.warnings],
       visualReview: sourceReviewCounts(sales),
       visualReviewPopulation: { population: 'normalized_submitted_attached_visual_status_observations',
@@ -180,9 +184,15 @@ export function buildCashAwareTradeTerms(
     ...right.valuationWarnings,
   ];
   if (!hasDefensibleCurrentSaleValue(left) || !hasDefensibleCurrentSaleValue(right)
-    || left.valuationBasis !== 'market_sales' || right.valuationBasis !== 'market_sales') {
+    || left.valuationBasis !== 'market_sales' || right.valuationBasis !== 'market_sales'
+    || comparison.rangeRelationship === 'unsupported') {
+    const missingSides = [
+      typeof left.primaryValue !== 'number' || !Number.isFinite(left.primaryValue) || left.primaryValue <= 0 ? 'Item A' : null,
+      typeof right.primaryValue !== 'number' || !Number.isFinite(right.primaryValue) || right.primaryValue <= 0 ? 'Item B' : null,
+    ].filter((side): side is string => side !== null);
+    const notice = missingSides.length ? `${missingSides.join(' and ')}: ${TEST_AI_VALUE_UNAVAILABLE_MESSAGE}. ` : '';
     return {
-      evidenceStrength: strength,
+      evidenceStrength: 'unavailable',
       baseVerdict: comparison.verdict,
       termsStatus: 'insufficient_evidence',
       cashAdjustment: cash,
@@ -190,7 +200,7 @@ export function buildCashAwareTradeTerms(
       adjustedMidpointDifference: null,
       adjustedRangeOverlap: null,
       suggestedCashRange: null,
-      summary: 'Cash guidance is withheld because one or both sides lack a defensible completed-sale range meeting the existing definitive category evidence requirements. Guide fallback and preliminary sale evidence do not authorize cash suggestions.',
+      summary: `${notice}Cash guidance is withheld because one or both sides lack a defensible completed-sale range meeting the existing definitive category evidence requirements. Guide fallback and preliminary sale evidence do not authorize cash suggestions. Entered cash remains a proposed term without a fairness evaluation.`,
       warnings,
     };
   }

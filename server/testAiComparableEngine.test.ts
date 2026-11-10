@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildMarketProfile, deduplicateMarketSales, deterministicTradeComparison, getCategoryEvidenceThresholds, normalizeCanonicalSaleUrl, scoreComparable, selectBalancedComparableSales } from './testAiComparableEngine';
+import { buildMarketProfile, deduplicateMarketSales, deterministicTradeComparison, getCategoryEvidenceThresholds, hasDefensibleCurrentSaleValue, normalizeCanonicalSaleUrl, scoreComparable, selectBalancedComparableSales, type MarketProfile, type MarketSale } from './testAiComparableEngine';
+import { TEST_AI_VALUE_UNAVAILABLE_MESSAGE } from '../shared/testAiEvidenceNormalization';
 
 const target = {
   title: '1996 Topps Kobe Bryant #138 PSA 10',
@@ -25,6 +26,43 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(wrongGrade.valuationRelationship).toBe('grade_adjacent_comparable');
     expect(wrongGrade.exclusionReason).toContain('secondary evidence');
     expect(wrongGrade.reasons).toContain('grade differs');
+  });
+
+  it.each([undefined, null, '', ' \t ', NaN, Infinity, -Infinity, 'not a price', 'Infinity'])
+  ('retains an unavailable raw comparable amount as null (%s), never a zero value', (price) => {
+    const match = scoreComparable(target, { ...sale(target.title, 1200, '2026-09-01'), price });
+    expect(match.price).toBeNull();
+    expect(match.accepted).toBe(false);
+    expect(match.identityAdmission?.blockerCodes).toContain('INVALID_PRICE');
+  });
+
+  it('preserves observed zero and negative prices but never admits them to the selected financial population', () => {
+    const now = new Date('2026-09-22T00:00:00Z');
+    const observations: MarketSale[] = [0, -10, null, '', '  '].map((price, index) => ({
+      ...sale(target.title, 1200, '2026-09-01'), price, saleId: `invalid-price-${index}`, sourceId: 'sold_comps',
+    }));
+    const profile = buildMarketProfile(target, observations, null, now);
+    expect(profile.comparables.map((match) => match.price)).toEqual([0, -10, null, null, null]);
+    expect(profile.comparables.every((match) => !match.accepted)).toBe(true);
+    expect(profile.selectionDiagnostics.selectedForValuation).toBe(0);
+    expect(profile.authoritativeSaleCount).toBe(0);
+    expect(profile.weightedValue).toBeNull();
+    expect(profile.saleMedianValue).toBeNull();
+    expect(profile.primaryValue).toBeNull();
+  });
+
+  it('keeps historical-prompt reported-price groups nullable without losing a real observed zero', () => {
+    const now = new Date('2026-09-22T00:00:00Z');
+    const observations: MarketSale[] = [null, undefined, '', ' \t ', NaN, Infinity, 0, '1200'].map((price, index) => ({
+      ...sale(target.title, 1200, '2026-09-01'), price, saleId: `reported-price-${index}`, sourceId: 'sold_comps',
+    }));
+    const profile = buildMarketProfile(target, observations, null, now, null, null, { historicalPromptSales: observations });
+    const groups = profile.finalUseReport!.priceGroups.filter((group) => group.population === 'historical_prompt');
+    expect(groups).toHaveLength(1);
+    expect(groups[0].prices).toEqual([null, null, null, null, null, null, 0, 1200]);
+    expect(groups[0].count).toBe(8);
+    expect(profile.authoritativeSaleCount).toBe(1);
+    expect(profile.primaryValue).toBeNull();
   });
 
   it('rejects a known sale from a different grading company even when title identity is strong', () => {
@@ -339,7 +377,10 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     const right = buildMarketProfile(target, [sale(target.title, 1600, '2026-09-15'), sale(target.title, 1700, '2026-09-10')], null, new Date('2026-09-22T00:00:00Z'));
     const comparison = deterministicTradeComparison(left, right);
     expect(comparison.verdict).toBe('Insufficient Evidence');
-    expect(comparison.difference).toBe(0);
+    expect(comparison.leftValue).toBeNull();
+    expect(comparison.rightValue).toBeNull();
+    expect(comparison.difference).toBeNull();
+    expect(comparison.differencePercentage).toBeNull();
     expect(left.saleMedianValue).not.toBeNull();
     expect(right.saleMedianValue).not.toBeNull();
     expect(comparison.rangeRelationship).toBe('unsupported');
@@ -356,11 +397,62 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
       sale(target.title, 300, '2026-09-10'),
     ], null, new Date('2026-09-22T00:00:00Z'));
     const comparison = deterministicTradeComparison(left, right);
-    expect(comparison.difference).toBe(0);
+    expect(comparison.difference).toBeNull();
+    expect(comparison.differencePercentage).toBeNull();
     expect(comparison.verdict).toBe('Insufficient Evidence');
     expect(comparison.rangeRelationship).toBe('unsupported');
     expect(comparison.overlapBand).toBeNull();
     expect(comparison.decisionBasis).toContain('lack sufficient current');
+  });
+
+  it('preserves a measured zero difference only when both primary values have definitive sale support', () => {
+    const now = new Date('2026-09-22T00:00:00Z');
+    const observations = [100, 101, 102, 103, 104].map((price, index) => ({
+      ...sale(target.title, price, '2026-09-15'), sourceId: 'sold_comps', sourceAdapter: 'sold_comps',
+      originMarketplace: index % 2 === 0 ? 'ebay' : 'heritage', saleId: `supported-zero-${index}`,
+    }));
+    const left = buildMarketProfile(target, observations, null, now);
+    const right = buildMarketProfile(target, observations, null, now);
+    expect(hasDefensibleCurrentSaleValue(left)).toBe(true);
+    expect(left.primaryValue).toBe(102);
+    const comparison = deterministicTradeComparison(left, right);
+    expect(comparison.leftValue).toBe(102);
+    expect(comparison.rightValue).toBe(102);
+    expect(comparison.difference).toBe(0);
+    expect(comparison.differencePercentage).toBe(0);
+    expect(comparison.midpointDifference).toBe(0);
+    expect(comparison.rangeGap).toBe(0);
+    expect(comparison.rangeRelationship).toBe('overlap');
+    expect(comparison.verdict).toBe('Ranges Overlap — Evidence is Indeterminate');
+    expect(comparison.decisionBasis).not.toContain(TEST_AI_VALUE_UNAVAILABLE_MESSAGE);
+    expect(left.valuationBasisReason).not.toContain(TEST_AI_VALUE_UNAVAILABLE_MESSAGE);
+  });
+
+  it.each([null, undefined, NaN, Infinity, -Infinity, 0, -1, '', '102', false])
+  ('fails closed for a malformed primary despite an otherwise supported sale range (%s)', (primaryValue) => {
+    const now = new Date('2026-09-22T00:00:00Z');
+    const supported = buildMarketProfile(target, [100, 101, 102, 103, 104].map((price, index) => ({
+      ...sale(target.title, price, '2026-09-15'), sourceId: 'sold_comps', sourceAdapter: 'sold_comps',
+      originMarketplace: index % 2 === 0 ? 'ebay' : 'heritage', saleId: `malformed-primary-${index}`,
+    })), null, now);
+    const malformed = { ...supported, primaryValue } as MarketProfile;
+    expect(hasDefensibleCurrentSaleValue(malformed)).toBe(true);
+    for (const [left, right, unavailableSide] of [[malformed, supported, 'Item A'], [supported, malformed, 'Item B']] as const) {
+      const comparison = deterministicTradeComparison(left, right, 50000, 1);
+      expect(comparison.leftValue).toBe(left === malformed ? null : 102);
+      expect(comparison.rightValue).toBe(right === malformed ? null : 102);
+      expect(comparison.difference).toBeNull();
+      expect(comparison.differencePercentage).toBeNull();
+      expect(comparison.midpointDifference).toBeNull();
+      expect(comparison.rangeGap).toBeNull();
+      expect(comparison.overlapAmount).toBeNull();
+      expect(comparison.overlapRatio).toBeNull();
+      expect(comparison.overlapBand).toBeNull();
+      expect(comparison.typicalBandOverlap).toBeNull();
+      expect(comparison.rangeRelationship).toBe('unsupported');
+      expect(comparison.verdict).toBe('Insufficient Evidence');
+      expect(comparison.decisionBasis).toContain(`${unavailableSide}: ${TEST_AI_VALUE_UNAVAILABLE_MESSAGE}`);
+    }
   });
 
   it('does not issue a definitive verdict from owner estimates alone', () => {
@@ -400,6 +492,7 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     });
     expect(profile.marketRange.supported).toBe(false);
     expect(profile.valuationMethod).toContain('material identity evidence conflict');
+    expect(profile.valuationBasisReason).toBe(`${TEST_AI_VALUE_UNAVAILABLE_MESSAGE}. An unresolved material identity conflict blocks pricing, including guide fallback.`);
     expect(profile.valuationWarnings).toContain('Identity review: Source reports a different card number.');
   });
 

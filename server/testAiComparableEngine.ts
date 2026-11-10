@@ -2,7 +2,7 @@ import { buildTestAiP0Identity } from '../shared/testAiP0Evidence';
 import { classifyStampFormat, stampFormatsCompatible } from './stampFormat';
 import { extractIdentityState, identityStateConflicts } from './testAiIdentityState';
 import { isVerifiedGuideAnchor } from './testAiGuideEvidence';
-import type { GuideValueAnchor } from '../shared/testAiEvidenceNormalization';
+import { TEST_AI_VALUE_UNAVAILABLE_MESSAGE, nullableTestAiPrice, type GuideValueAnchor } from '../shared/testAiEvidenceNormalization';
 import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
 import { getVerifiedIdentityApproval, transferVerifiedIdentityApproval } from './testAiCanonicalObservation';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
@@ -133,7 +133,7 @@ export interface ComparableCategoryIdentity {
 }
 export interface ComparableMatch {
   title: string;
-  price: number;
+  price: number | null;
   date: string | null;
   currency: string;
   score: number;
@@ -325,10 +325,10 @@ export interface ComparableIdentityGate {
 
 export type RangeRelationship = 'overlap' | 'item_a_higher_band' | 'item_b_higher_band' | 'unsupported';
 export interface DeterministicTradeComparison {
-  leftValue: number;
-  rightValue: number;
-  difference: number;
-  differencePercentage: number;
+  leftValue: number | null;
+  rightValue: number | null;
+  difference: number | null;
+  differencePercentage: number | null;
   verdict: 'Insufficient Evidence' | 'Ranges Overlap — Evidence is Indeterminate' | 'Item A Worth More' | 'Item B Worth More';
   rangeRelationship: RangeRelationship;
   overlapBand: { low: number; high: number } | null;
@@ -1822,7 +1822,7 @@ export function signedComparableFormConflicts(target: ComparableTarget, saleForm
 
 export function scoreComparable(target: ComparableTarget, sale: MarketSale): ComparableMatch {
   const title = String(sale.title ?? '').trim();
-  const price = Number(sale.price);
+  const price = nullableTestAiPrice(sale.price);
   const details = parseDetails(target);
   const categoryKey = String(target.category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
   const isDisneyPins = categoryKey === 'disney_pins';
@@ -1979,7 +1979,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   }
 
   const boundedScore = Math.max(0, Math.min(100, score));
-  const priceIsUsable = Number.isFinite(price) && price > 0;
+  const priceIsUsable = price !== null && Number.isFinite(price) && price > 0;
   const categoryHardConflict = categoryIdentity.status === 'objective_conflict';
   if (universalIdentityConflicts.length) {
     reasons.push(...universalIdentityConflicts.map((reason) => `identity state conflict: ${reason}`));
@@ -2136,7 +2136,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   };
   return {
     title: title || 'Untitled comparable',
-    price: Number.isFinite(price) ? price : 0,
+    price,
     date: sale.date ?? null,
     currency: String(sale.currency ?? 'UNKNOWN').toUpperCase(),
     score: boundedScore,
@@ -2262,7 +2262,8 @@ export function buildMarketProfile(
     duplicateOf,
     reasons: ['duplicate sale observation suppressed', `canonical record ${duplicateOf}`],
   }));
-  const selectedAccepted = selected.map(({ match }) => match).filter((match) => match.price > 0);
+  const selectedAccepted = selected.map(({ match }) => match)
+    .filter((match): match is ComparableMatch & { price: number } => typeof match.price === 'number' && Number.isFinite(match.price) && match.price > 0);
   const selectedSales = selected.map(({ sale }) => sale);
   const evidenceCoverage = assessMarketEvidenceCoverage(sales, selectedSales, deduplicated.duplicates.length, nowMs);
   const categoryEvidenceThresholds = getCategoryEvidenceThresholds(target.category);
@@ -2300,8 +2301,8 @@ export function buildMarketProfile(
   const canApplyIqr = selectedAcceptedWithAge.length >= 10 && iqr !== null;
   const canFlagSmallSampleOutliers = selectedAcceptedWithAge.length >= 5 && selectedAcceptedWithAge.length < 10 && iqr !== null;
   const filtered = canApplyIqr ? selectedAcceptedWithAge.filter(({ match }) => match.price >= q1 - 1.5 * iqr && match.price <= q3 + 1.5 * iqr) : selectedAcceptedWithAge;
-  const outlierMatches = new Set(selectedAcceptedWithAge.filter(({ match }) => !filtered.some(({ match: kept }) => kept === match)).map(({ match }) => match));
-  const flaggedSmallSampleOutliers = new Set(canFlagSmallSampleOutliers
+  const outlierMatches = new Set<ComparableMatch>(selectedAcceptedWithAge.filter(({ match }) => !filtered.some(({ match: kept }) => kept === match)).map(({ match }) => match));
+  const flaggedSmallSampleOutliers = new Set<ComparableMatch>(canFlagSmallSampleOutliers
     ? selectedAcceptedWithAge.filter(({ match }) => match.price < q1 - 1.5 * iqr || match.price > q3 + 1.5 * iqr).map(({ match }) => match)
     : []);
   const valuationMatchRecordsAfterOutliers = valuationMatchRecords.map((match) => outlierMatches.has(match)
@@ -2404,10 +2405,10 @@ export function buildMarketProfile(
   // Compatibility fields now express an exclusive fallback, never a blend.
   const guideAnchorWeightPct = guideProvisional ? 100 : 0;
   const guideAdjustedValue = primaryValue;
-  const valuationBasisReason = materialReviewRequired ? 'An unresolved material identity conflict blocks pricing, including guide fallback.'
+  const valuationBasisReason = materialReviewRequired ? `${TEST_AI_VALUE_UNAVAILABLE_MESSAGE}. An unresolved material identity conflict blocks pricing, including guide fallback.`
     : sufficientCurrentSales ? `${currentWindowSaleCount} accepted current-window sales meet the existing category quality, spread, and independence requirements; the value uses sales alone.`
     : guideProvisional ? `Guide fallback — limited market evidence: ${currentWindowSaleCount} accepted current-window sales do not meet the existing category evidence requirements; the verified applicable ${valuationGuideAnchor?.sourceLabel ?? 'guide'} value is used alone.`
-    : `Insufficient evidence: ${currentWindowSaleCount} accepted current-window sales do not meet the existing category evidence requirements and no verified applicable guide is available.`;
+    : `${TEST_AI_VALUE_UNAVAILABLE_MESSAGE}. Insufficient evidence: ${currentWindowSaleCount} accepted current-window sales do not meet the existing category evidence requirements and no verified applicable guide is available.`;
   const valuationWarnings: string[] = [];
   if (aggregateMetrics && accepted.length === 0 && (aggregateMetrics.count ?? 0) > 0) valuationWarnings.push('Aggregate market data exists, but no individual comparable titles were available for identity matching.');
   valuationWarnings.push(valuationBasisReason);
@@ -2464,8 +2465,8 @@ export function buildMarketProfile(
   const side = reportingOptions?.side ?? existingReceipt?.auditRef.side ?? undefined;
   const historicalPromptKnown = reportingOptions?.historicalPromptSales !== undefined;
   const historicalPromptSet = new Set(reportingOptions?.historicalPromptSales ?? []);
-  const postPolicySet = new Set(filtered.map(({ match }) => match));
-  const currentSet = new Set(currentSales.map(({ match }) => match));
+  const postPolicySet = new Set<ComparableMatch>(filtered.map(({ match }) => match));
+  const currentSet = new Set<ComparableMatch>(currentSales.map(({ match }) => match));
   const representedSales = new Set([...valuationMatches.map(({ sale }) => sale), ...contextualSales]);
   const ledgerOnlySales = deduplicated.unique.filter((sale) => !representedSales.has(sale));
   // Direct-engine USD filtering can leave a raw non-USD candidate unrepresented.
@@ -2588,7 +2589,7 @@ export function buildMarketProfile(
         priceBasis: match.priceBasis ?? null, buyerPremium: match.buyerPremium ?? null, shipping: match.shipping ?? null,
         tax: match.tax ?? null, semantics: 'as_reported_no_fx_or_fee_recomputation', count: 0, memberRefs: [], prices: [] };
       const actualAmount = sales[match.valuationUse!.auditRef.intakeOrdinal].price;
-      const reportedAmount = actualAmount === null || actualAmount === undefined || !Number.isFinite(Number(actualAmount)) ? null : Number(actualAmount);
+      const reportedAmount = nullableTestAiPrice(actualAmount);
       group.count += 1; group.memberRefs.push(match.valuationUse!.auditRef.intakeRef); group.prices.push(reportedAmount); groups.set(key, group);
     }
     priceGroups.push(...groups.values());
@@ -2677,20 +2678,19 @@ export function deterministicTradeComparison(
   leftFallback = 0,
   rightFallback = 0,
 ): DeterministicTradeComparison {
-  // Unknown values use the legacy numeric sentinel, never a browser aggregate,
-  // weighted diagnostic, stated value, or fallback argument as pricing evidence.
-  const leftValue = left.primaryValue ?? 0;
-  const rightValue = right.primaryValue ?? 0;
-  const difference = rightValue - leftValue;
+  // Keep each independently established value; missing or malformed primaries
+  // never become zero, a range midpoint, a diagnostic, or a fallback argument.
+  const leftValue = typeof left.primaryValue === 'number' && Number.isFinite(left.primaryValue) && left.primaryValue > 0 ? left.primaryValue : null;
+  const rightValue = typeof right.primaryValue === 'number' && Number.isFinite(right.primaryValue) && right.primaryValue > 0 ? right.primaryValue : null;
   const hasDefensibleLeftValue = left.valuationBasis === 'market_sales' && hasDefensibleCurrentSaleValue(left);
   const hasDefensibleRightValue = right.valuationBasis === 'market_sales' && hasDefensibleCurrentSaleValue(right);
   const hasSufficientEvidence = hasDefensibleLeftValue && hasDefensibleRightValue;
-  if (!hasSufficientEvidence) {
+  if (!hasSufficientEvidence || leftValue === null || rightValue === null) {
     return {
       leftValue,
       rightValue,
-      difference,
-      differencePercentage: leftValue > 0 ? Math.round((difference / leftValue) * 1000) / 10 : 0,
+      difference: null,
+      differencePercentage: null,
       verdict: 'Insufficient Evidence',
       rangeRelationship: 'unsupported',
       overlapBand: null,
@@ -2699,9 +2699,10 @@ export function deterministicTradeComparison(
       midpointDifference: null,
       typicalBandOverlap: null,
       rangeGap: null,
-      decisionBasis: `One or both sides lack sufficient current completed-sale evidence for a definitive range-based trade conclusion. Item A uses ${left.valuationBasis}; Item B uses ${right.valuationBasis}. Any guide fallback is a provisional estimate, not market support.`,
+      decisionBasis: `One or both sides lack sufficient current completed-sale evidence for a definitive range-based trade conclusion. Item A uses ${left.valuationBasis}; Item B uses ${right.valuationBasis}. Any guide fallback is a provisional estimate, not market support.${leftValue === null ? ` Item A: ${TEST_AI_VALUE_UNAVAILABLE_MESSAGE}.` : ''}${rightValue === null ? ` Item B: ${TEST_AI_VALUE_UNAVAILABLE_MESSAGE}.` : ''}`,
     };
   }
+  const difference = rightValue - leftValue;
   // The defensive clause above proves these values are present; bind them once
   // so unsupported null ranges can never enter trade-comparison arithmetic.
   const leftLow = left.marketRange.low!;
@@ -2744,7 +2745,7 @@ export function deterministicTradeComparison(
     leftValue,
     rightValue,
     difference,
-    differencePercentage: leftValue > 0 ? Math.round((difference / leftValue) * 1000) / 10 : 0,
+    differencePercentage: Math.round((difference / leftValue) * 1000) / 10,
     verdict,
     rangeRelationship,
     overlapBand: rangesOverlap ? { low: overlapLow, high: overlapHigh } : null,

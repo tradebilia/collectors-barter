@@ -2,6 +2,7 @@ import type { ComparableTarget, MarketSale } from './testAiComparableEngine';
 import { isCompletedSaleCandidate, scoreComparable } from './testAiComparableEngine';
 import { evaluateAdapterEconomicPolicy, hasMeaningfulTransactionIdentity, signedTransactionLotConflict, transactionIdentity } from './testAiEconomicIntegrity';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
+import { nullableTestAiPrice } from '../shared/testAiEvidenceNormalization';
 import { getVerifiedIdentityApproval, transferVerifiedIdentityApproval, verifyCanonicalObservation } from './testAiCanonicalObservation';
 import { randomUUID } from 'node:crypto';
 import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAuditRef,
@@ -119,7 +120,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     ...options,
     allowIlliquidExtension: Boolean(options?.allowIlliquidExtension && !isPcgsAuctionResult),
   });
-  const price = Number(trustedInput.price);
+  const price = nullableTestAiPrice(trustedInput.price);
   const currency = knownCurrency(trustedInput.currency);
   const declaredStatus = trustedInput.saleStatus;
   const saleStatus: NonNullable<MarketSale['saleStatus']> = declaredStatus === 'completed' || declaredStatus === 'closed'
@@ -143,7 +144,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     buyerPremium, recency: dateInfo.recency });
   const statedTradeValue = options?.target?.statedTradeValue;
   const priceSafety = evaluateSoldCompPriceSafety(typeof statedTradeValue === 'number' && Number.isFinite(statedTradeValue)
-    && statedTradeValue >= 0 ? statedTradeValue : undefined, price);
+    && statedTradeValue >= 0 ? statedTradeValue : undefined, price ?? NaN);
   const highValuePriceConflict = priceSafety.applies && priceSafety.status !== 'accepted';
   const inputReasons = Array.isArray(trustedInput.evidenceReasons) ? trustedInput.evidenceReasons.map((reason) => safeText(reason, 300)).filter((reason): reason is string => Boolean(reason)) : [];
   const restrictiveInputDisposition = RESTRICTIVE_DISPOSITIONS.has(trustedInput.evidenceDisposition as NonNullable<MarketSale['evidenceDisposition']>)
@@ -153,7 +154,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
 
   if (!verification.verified) reasons.push('server provenance is not verified; browser-carried source facts cannot influence valuation');
   if (!safeText(trustedInput.title, 600)) reasons.push('missing marketplace title');
-  if (!Number.isFinite(price) || price <= 0) reasons.push('missing or non-positive realized price');
+  if (price === null || !Number.isFinite(price) || price <= 0) reasons.push('missing or non-positive realized price');
   if (!currency) reasons.push('sale currency is unknown; retained as context only');
   else if (currency !== 'USD') reasons.push(`unsupported currency ${currency}; retained as context only`);
   if (saleStatus !== 'completed') reasons.push(saleStatus === 'active' ? 'active asking listing is not a completed sale' : 'completed-sale status is not verifiable for this source');
@@ -171,6 +172,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
 
   const valuationEligible = verification.verified
     && !restrictiveInputDisposition
+    && price !== null
     && Number.isFinite(price)
     && price > 0
     && currency === 'USD'
@@ -188,7 +190,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   const blockerCodes: NormalizationBlockerCode[] = [];
   if (!verification.verified) blockerCodes.push('PROVENANCE_UNVERIFIED');
   if (restrictiveInputDisposition) blockerCodes.push('SOURCE_DISPOSITION_RESTRICTIVE');
-  if (!Number.isFinite(price) || price <= 0) blockerCodes.push('INVALID_PRICE');
+  if (price === null || !Number.isFinite(price) || price <= 0) blockerCodes.push('INVALID_PRICE');
   if (!currency) blockerCodes.push('UNKNOWN_CURRENCY');
   else if (currency !== 'USD') blockerCodes.push('UNSUPPORTED_CURRENCY');
   if (saleStatus !== 'completed') blockerCodes.push('NOT_COMPLETED');
@@ -239,7 +241,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
 
   const sale: MarketSale = {
     title: safeText(trustedInput.title, 600),
-    price: Number.isFinite(price) ? price : null,
+    price,
     currency,
     date: dateInfo.date,
     recency: dateInfo.recency,

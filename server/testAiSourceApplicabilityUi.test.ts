@@ -352,7 +352,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("const accepted = listings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);");
     expect(source).toContain('const contextRecords = buildMercariAnalysisSales({ listings: retained }, true)');
     expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),\n        oneThirtyPointData');
-    expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),\n        pwccQuery.data');
+    expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),\n        pwccEvidenceData');
     expect(source).toContain('Identity-matched active asking price; not a completed sale.');
     expect(source).toContain('AI image checks are required before visually supported eBay Active listings can enter current-value evidence');
     expect(source).toContain('const recordCount = records.length > 0 ? records.length : acceptedCount;');
@@ -567,8 +567,8 @@ describe('manual Test AI selector boundary', () => {
   });
 
   it('shows Numista catalogue estimates as a verified-guide fallback while preserving sale classification', () => {
-    expect(source).toContain("id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: numistaQuery.data?.data?.guideValue ? 'valuation_guide' : 'reference_context'");
-    expect(source).toContain('guideRecordedSales: 0, guideTotalRecordedSales: 0, ...guideAnchorFields(numistaQuery.data?.guideAnchor)');
+    expect(source).toContain("id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: numistaEvidenceData?.data?.guideValue ? 'valuation_guide' : 'reference_context'");
+    expect(source).toContain('guideRecordedSales: 0, guideTotalRecordedSales: 0, ...guideAnchorFields(numistaEvidenceData?.guideAnchor)');
     expect(source).toContain('A server-verified applicable estimate may be used alone as a guide fallback when current market evidence is insufficient; sufficient comparable sales are used alone, with no blend or added sale counts.');
     expect(source).toContain('Guide fallback not verified: {data?.guideWarnings?.join(\' \')}');
     expect(source).toContain('<p className="font-semibold uppercase text-sky-300">Catalogue reference · verified-guide fallback candidate</p>');

@@ -9,7 +9,7 @@ import { useAuth } from '@/_core/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
-import { TestAiPricingSummary } from '@/components/TestAiPricingSummary';
+import { TestAiPricingSummary, hasUsableTestAiPrimary, boundedTestAiSourceMessage, type TestAiPricingSummaryItem } from '@/components/TestAiPricingSummary';
 import { MetadataComparisonTable } from '@/components/TestAiMetadataComparisonTable';
 import { sortMetadataRankedCandidates, buildEbayVisualReviewListings } from '@shared/testAiRankingDisplay';
 import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';
@@ -22,7 +22,7 @@ import { hasActualVisualResponse, formatCandidateDisplayPrice } from '@shared/te
 import { toast } from 'sonner';
 import { buildComicsOriginalArtQueries, buildStructuredItemQuery, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, TEST_AI_SOURCE_APPLICABILITY, type TestAiSourceId } from '@shared/testAiSourceApplicability';
-import { guideAnchorFields, normalizeTestAiEvidence, selectPreferredGuideAnchor, type AnalyzerRecordDetail, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
+import { TEST_AI_VALUE_UNAVAILABLE_MESSAGE, nullableTestAiPrice, guideAnchorFields, normalizeTestAiEvidence, selectPreferredGuideAnchor, type AnalyzerRecordDetail, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { bucketPcgsAuctionRows } from '@shared/testAiPcgsAuctionBuckets';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
 import { selectExactPriceChartingCoinGuide } from '@shared/priceChartingCoinGuide';
@@ -933,11 +933,11 @@ function AnalyzerRecordPanel({ records, acceptedCount, sourceLabel, sourceKind }
 
 function toAnalyzerRecord(record: any, index: number, bucket: AnalyzerRecordDetail['bucket'], note?: string): AnalyzerRecordDetail {
   const rawPrice = record?.price ?? record?.finalPrice ?? record?.salePrice ?? record?.soldPrice ?? record?.amount;
-  const numericPrice = Number(rawPrice);
+  const numericPrice = nullableTestAiPrice(rawPrice);
   return {
     id: String(record?.saleId ?? record?.listingId ?? record?.id ?? record?.itemUrl ?? record?.url ?? `local-record-occurrence-${index}`),
     title: String(record?.title ?? record?.name ?? record?.subject ?? 'Untitled analyzer record'),
-    price: Number.isFinite(numericPrice) && numericPrice > 0 ? numericPrice : null,
+    price: hasUsableTestAiPrimary(numericPrice) ? numericPrice : null,
     currency: record?.currency ?? record?.soldCurrency ?? null,
     date: record?.date ?? record?.endedAt ?? record?.soldDate ?? record?.saleDate ?? null,
     url: record?.itemUrl ?? record?.url ?? null,
@@ -2716,7 +2716,29 @@ function isPriceChartingCoinSearchReady(input: ReturnType<typeof buildPriceChart
 }
 
 function evidenceStatus(data: any): 'success' | 'partial' | 'not_found' | 'error' | 'idle' {
-  return sourceEvidenceStatus(data);
+  return data?.status === 'idle' ? 'idle' : sourceEvidenceStatus(data);
+}
+
+function evidenceMessage(data: any, existing?: string | null, lifecycle?: { isFetching?: boolean; notSearchedReason?: string }): string | null {
+  const guideWarnings = Array.isArray(data?.guideWarnings)
+    ? data.guideWarnings.slice(0, 3).filter((warning: unknown): warning is string => typeof warning === 'string').map((warning: string) => warning.slice(0, 100)) : [];
+  const unresolved = data?.status === 'review_required' || data?.data?.selectionRequired === true;
+  const idle = evidenceStatus(data) === 'idle' || data?.status === 'idle';
+  return boundedTestAiSourceMessage(
+    sourceEvidenceMessage(data),
+    guideWarnings.length ? `Guide fallback not verified: ${guideWarnings.join(' ')}` : null,
+    unresolved ? 'Unresolved review or selection; this is not a completed empty lookup.' : null,
+    idle ? lifecycle?.isFetching ? 'Search not completed.' : lifecycle?.notSearchedReason ? `Not searched: ${lifecycle.notSearchedReason}` : 'Not searched or not completed.' : null,
+    existing, data?.message, data?.messages,
+  );
+}
+
+/** Reporting-only lifecycle packet; keeps the existing memoized failure/row wrapper. */
+function useSourceOutcomeData<T>(query: { data: T | undefined; error: unknown; isFetching: boolean }, notSearchedReason?: string) {
+  const wrapped = useTestAiSourceDisplayData(query.data, Boolean(query.error));
+  return useMemo(() => ({ data: wrapped.data ?? ({ status: 'idle', message: query.isFetching ? 'Search not completed.'
+    : notSearchedReason ? `Not searched: ${notSearchedReason}` : 'Not searched or not completed.' } as unknown as T) }),
+  [wrapped.data, query.isFetching, notSearchedReason]);
 }
 
 function factValue(facts: any[], labels: string[]): string {
@@ -2866,6 +2888,26 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const pcgsQuery = trpc.testAI.getPcgsData.useQuery({ certNumber }, { enabled: enabledSources.has('pcgs') && item.gradingCompany === 'PCGS' && !!certNumber });
   const comicBookRealmQuery = trpc.testAI.getSpecialistMarketplaceData.useQuery({ sourceId: 'comic_book_realm', title: item.title, category: item.category, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? item.gradingCompany ?? undefined, itemDetails: item.itemDetails ?? undefined, sourceUrl: undefined }, { enabled: enabledSources.has('comic_book_realm') && item.category === 'comics' && !!item.title, retry: false });
   const pwccQuery = trpc.testAI.getPwccSales.useQuery({ query: marketItem.title, title: marketItem.title, category: marketItem.category, grade: marketItem.grade, certificationCompany: marketItem.certificationCompany ?? marketItem.gradingCompany ?? '', itemType: marketItem.itemType, itemDetails: marketItem.itemDetails, imageUrl: marketItem.primaryPhotoUrl }, { enabled: enabledSources.has('pwcc') && !!marketItem.title });
+  const pwccEvidenceData = useSourceOutcomeData(pwccQuery).data;
+  const comicBookRealmEvidenceData = useSourceOutcomeData(comicBookRealmQuery).data;
+  const tcgdexEvidenceData = useSourceOutcomeData(tcgdexQuery).data;
+  const priceChartingEvidenceData = useSourceOutcomeData(priceChartingQuery).data;
+  const priceChartingCoinEvidenceData = useSourceOutcomeData(priceChartingCoinQuery, !hasPriceChartingCoinQueryInput ? 'Coin year and variety prerequisites are not supplied.' : undefined).data;
+  const priceChartingVideoGameEvidenceData = useSourceOutcomeData(priceChartingVideoGameQuery).data;
+  const priceChartingVideoGameCandidateEvidenceData = useSourceOutcomeData(priceChartingVideoGameCandidateQuery).data;
+  const priceChartingSlugEvidenceData = useSourceOutcomeData(priceChartingSlugQuery).data;
+  const priceChartingMoversEvidenceData = useSourceOutcomeData(priceChartingMoversQuery).data;
+  const discogsEvidenceData = useSourceOutcomeData(discogsQuery).data;
+  const rawgEvidenceData = useSourceOutcomeData(rawgQuery).data;
+  const igdbEvidenceData = useSourceOutcomeData(igdbQuery).data;
+  const smithsonianEvidenceData = useSourceOutcomeData(smithsonianQuery).data;
+  const numistaEvidenceData = useSourceOutcomeData(numistaQuery, item.category !== 'coins' ? 'The current guide lookup supports Coins only.' : undefined).data;
+  const wikidataEvidenceData = useSourceOutcomeData(wikidataQueryResult).data;
+  const cgcEvidenceData = useSourceOutcomeData(cgcQuery).data;
+  const psaEvidenceData = useSourceOutcomeData(psaQuery).data;
+  const bgsEvidenceData = useSourceOutcomeData(bgsQuery).data;
+  const sgcEvidenceData = useSourceOutcomeData(sgcQuery).data;
+  const pcgsEvidenceData = useSourceOutcomeData(pcgsQuery).data;
   const discogsCandidates = useMemo(() => discogsQuery.data?.data?.results ?? [], [discogsQuery.data]);
 
   useEffect(() => {
@@ -2893,7 +2935,32 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
 
   const summary = useMemo(() => {
     const observations: EvidenceSourceObservation[] = [];
-    const add = (observation: EvidenceSourceObservation) => observations.push(observation);
+    const priceChartingEvidence = item.category === 'coins' ? priceChartingCoinEvidenceData
+      : item.category === 'video_games' ? priceChartingVideoGameUpc ? priceChartingVideoGameEvidenceData : priceChartingVideoGameCandidateEvidenceData
+      : priceChartingEvidenceData ?? priceChartingSlugEvidenceData;
+    const sourcePackets: Record<string, any> = {
+      ebay_active: ebayData, hipstamp: hipstampData, hipstamp_sold: hipstampSoldData,
+      pokemon_price_tracker: pokemonPriceTrackerData, the_card_api: theCardApiData, cardsight_ai: cardsightAiData,
+      lelands: lelandsData, pristine_auction: pristineAuctionData, collect_auction: collectAuctionData,
+      sirius_sports_auctions: siriusSportsAuctionData, sold_comps: soldCompsData, mercari_sold_comps: mercariSoldCompsData,
+      one_thirty_point: oneThirtyPointData, pwcc: pwccEvidenceData, comic_book_realm: comicBookRealmEvidenceData,
+      comicconnect: comicConnectData, tcgdex: tcgdexEvidenceData, pricecharting: priceChartingEvidence,
+      discogs: discogsEvidenceData, rawg: rawgEvidenceData, igdb: igdbEvidenceData, smithsonian: smithsonianEvidenceData,
+      numista: numistaEvidenceData, wikidata: wikidataEvidenceData, cgc: cgcEvidenceData, psa: psaEvidenceData,
+      bgs: bgsEvidenceData, sgc: sgcEvidenceData, pcgs: pcgsEvidenceData, pcgs_auction_results: pcgsAuctionData,
+    };
+    const add = (observation: EvidenceSourceObservation) => {
+      const lifecycle = observation.id === 'pricecharting' ? {
+        isFetching: item.category === 'coins' ? priceChartingCoinQuery.isFetching
+          : item.category === 'video_games' ? priceChartingVideoGameUpc ? priceChartingVideoGameQuery.isFetching : priceChartingVideoGameCandidateQuery.isFetching
+          : priceChartingQuery.isFetching || priceChartingSlugQuery.isFetching,
+        notSearchedReason: item.category === 'coins' && !hasPriceChartingCoinQueryInput ? 'Coin year and variety prerequisites are not supplied.'
+          : item.category === 'video_games' && !priceChartingVideoGameUpc && !canSearchPriceChartingVideoGames ? 'A UPC or title-and-platform identity is required.' : undefined,
+      } : observation.id === 'numista' ? { isFetching: numistaQuery.isFetching,
+        notSearchedReason: item.category !== 'coins' ? 'The current guide lookup supports Coins only.' : !item.title ? 'A title is required.' : undefined,
+      } : undefined;
+      observations.push({ ...observation, message: evidenceMessage(sourcePackets[observation.id], observation.message, lifecycle) });
+    };
     if (enabledSources.has('ebay_active')) {
       const autographMarketContext = item.category === 'autographs' && ebayData?.marketContextOnly === true;
       const visualMatches = (ebayData?.visualReviewListings ?? []).filter((listing: any) => listing.visualReviewStatus === 'match' && Number(listing.price) > 0);
@@ -3072,26 +3139,26 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       });
     }
     if (enabledSources.has('pwcc')) {
-      const sales = pwccQuery.data?.data?.items ?? [];
+      const sales = pwccEvidenceData?.data?.items ?? [];
       const analyzerSubmitted = visualReviewAcceptedRecords(
         sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),
-        pwccQuery.data,
+        pwccEvidenceData,
       );
-      add({ id: 'pwcc', label: 'PWCC / Fanatics Collect', kind: 'market_historical', status: evidenceStatus(pwccQuery.data), market: { returnedRecordCount: sales.length, recentSaleCount: sales.filter((sale: any) => sale.recency === 'recent').length, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length, analyzerSubmittedSaleCount: analyzerSubmitted.length, analyzerSubmittedPrices: analyzerSubmitted.map((sale: any) => Number(sale.price ?? sale.finalPrice)).filter((price: number) => Number.isFinite(price) && price > 0), analyzerRecords: analyzerSubmitted.map((sale: any, index: number) => toAnalyzerRecord(sale, index, sale.recency === 'historical' ? 'historical_trend' : 'current_value')) }, message: pwccQuery.data?.message ?? null });
+      add({ id: 'pwcc', label: 'PWCC / Fanatics Collect', kind: 'market_historical', status: evidenceStatus(pwccEvidenceData), market: { returnedRecordCount: sales.length, recentSaleCount: sales.filter((sale: any) => sale.recency === 'recent').length, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length, analyzerSubmittedSaleCount: analyzerSubmitted.length, analyzerSubmittedPrices: analyzerSubmitted.map((sale: any) => Number(sale.price ?? sale.finalPrice)).filter((price: number) => Number.isFinite(price) && price > 0), analyzerRecords: analyzerSubmitted.map((sale: any, index: number) => toAnalyzerRecord(sale, index, sale.recency === 'historical' ? 'historical_trend' : 'current_value')) }, message: pwccEvidenceData?.message ?? null });
     }
     if (enabledSources.has('comic_book_realm')) {
-      const guideRows = comicBookRealmQuery.data?.guideRows ?? [];
+      const guideRows = comicBookRealmEvidenceData?.guideRows ?? [];
       const exactGrade = guideRows.find((row: any) => String(row.grade) === String(item.grade)) ?? guideRows.find((row: any) => Number(row.grade) === Number(item.grade));
-      const guideFields = exactGrade && Number(exactGrade.estimatedValue) > 0 ? { guideGrade: exactGrade.grade, guideValue: Number(exactGrade.estimatedValue), guideRecordedSales: exactGrade.recordedSales, guideLastSaleDate: exactGrade.lastSaleDate, guideTotalRecordedSales: comicBookRealmQuery.data?.guideSummary?.totalRecordedSales } : undefined;
+      const guideFields = exactGrade && Number(exactGrade.estimatedValue) > 0 ? { guideGrade: exactGrade.grade, guideValue: Number(exactGrade.estimatedValue), guideRecordedSales: exactGrade.recordedSales, guideLastSaleDate: exactGrade.lastSaleDate, guideTotalRecordedSales: comicBookRealmEvidenceData?.guideSummary?.totalRecordedSales } : undefined;
       add({
         id: 'comic_book_realm',
         label: 'Comic Book Realm CGC Analyzer',
         kind: 'market_historical',
         role: 'historical_context',
-        status: evidenceStatus(comicBookRealmQuery.data),
+        status: evidenceStatus(comicBookRealmEvidenceData),
         market: { historicalSaleCount: guideRows.reduce((sum: number, row: any) => sum + (Number(row.recordedSales) || 0), 0) },
         fields: guideFields,
-        message: comicBookRealmQuery.data?.messages?.join(' ') ?? null,
+        message: comicBookRealmEvidenceData?.messages?.join(' ') ?? null,
       });
     }
     if (enabledSources.has('comicconnect')) {
@@ -3100,13 +3167,13 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const submitted = completed.filter((record: any) => record.identityMatched && ['current_12_months', 'extended_12_to_36_months'].includes(record.timeWindow) && Number(record.price) > 0);
       add({ id: 'comicconnect', label: 'ComicConnect Sold Archive', kind: completed.length ? 'market_completed' : 'market_historical', role: submitted.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(comicConnectData), market: { returnedRecordCount: records.length, completedSaleCount: completed.length, analyzerSubmittedSaleCount: submitted.length, analyzerSubmittedPrices: submitted.map((record: any) => Number(record.price)).filter((price: number) => Number.isFinite(price) && price > 0), analyzerRecords: submitted.map((record: any, index: number) => toAnalyzerRecord(record, index, record.timeWindow === 'current_12_months' ? 'current_value' : 'historical_trend')), currentValueSaleCount: submitted.filter((record: any) => record.timeWindow === 'current_12_months').length, historicalTrendSaleCount: submitted.filter((record: any) => record.timeWindow !== 'current_12_months').length, currentValuePrices: submitted.filter((record: any) => record.timeWindow === 'current_12_months').map((record: any) => Number(record.price)), historicalTrendPrices: submitted.filter((record: any) => record.timeWindow !== 'current_12_months').map((record: any) => Number(record.price)) }, message: comicConnectData?.messages?.join(' ') ?? null });
     }
-    if (enabledSources.has('tcgdex')) add({ id: 'tcgdex', label: 'TCGdex', kind: 'reference', status: evidenceStatus(tcgdexQuery.data), fields: factualFields(tcgdexQuery.data, 'tcgdex'), message: tcgdexQuery.data?.message ?? null });
+    if (enabledSources.has('tcgdex')) add({ id: 'tcgdex', label: 'TCGdex', kind: 'reference', status: evidenceStatus(tcgdexEvidenceData), fields: factualFields(tcgdexEvidenceData, 'tcgdex'), message: tcgdexEvidenceData?.message ?? null });
     if (enabledSources.has('pricecharting')) {
-      const automaticPriceChartingGameCandidate = !priceChartingVideoGameCandidateQuery.data?.data?.selectionRequired
-        ? priceChartingVideoGameCandidateQuery.data?.data?.compatibleCandidates?.[0] ?? null
+      const automaticPriceChartingGameCandidate = !priceChartingVideoGameCandidateEvidenceData?.data?.selectionRequired
+        ? priceChartingVideoGameCandidateEvidenceData?.data?.compatibleCandidates?.[0] ?? null
         : null;
-      const priceData = priceChartingQuery.data ?? priceChartingCoinQuery.data ?? priceChartingVideoGameQuery.data ?? priceChartingSlugQuery.data;
-      const marketMoverCount = priceChartingMoversQuery.data?.data?.movers?.length ?? 0;
+      const priceData = priceChartingEvidence;
+      const marketMoverCount = priceChartingMoversEvidenceData?.data?.movers?.length ?? 0;
       const priceFields = (automaticPriceChartingGameCandidate ?? priceData?.data ?? {}) as Record<string, any>;
       const priceChartingCoinGuide = item.category === 'coins'
         ? selectExactPriceChartingCoinGuide({ category: item.category, grade: item.grade, prices: priceFields.prices })
@@ -3116,7 +3183,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         label: 'PriceCharting',
         kind: 'market_current',
         role: priceChartingCoinGuide ? 'valuation_guide' : 'asking_price_context',
-        status: evidenceStatus(item.category === 'video_games' && !priceChartingVideoGameUpc ? priceChartingVideoGameCandidateQuery.data : priceData),
+        status: evidenceStatus(item.category === 'video_games' && !priceChartingVideoGameUpc ? priceChartingVideoGameCandidateEvidenceData : priceData),
         fields: {
           cardName: priceFields.name,
           title: priceFields.title,
@@ -3128,11 +3195,11 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
           guideGrade: priceChartingCoinGuide?.grade,
           guideSelectedGrade: priceChartingCoinGuide?.selectedGrade,
           guideMatchType: priceChartingCoinGuide?.matchType,
-          ...guideAnchorFields(item.category === 'coins' ? priceChartingCoinQuery.data?.guideAnchor : null),
+          ...guideAnchorFields(item.category === 'coins' ? priceChartingCoinEvidenceData?.guideAnchor : null),
         },
         message: item.category === 'video_games' && !priceChartingVideoGameUpc
-          ? priceChartingVideoGameCandidateQuery.data?.data?.selectionMessage ?? priceChartingVideoGameCandidateQuery.data?.message ?? null
-          : priceData?.message ?? priceChartingMoversQuery.data?.message ?? null,
+          ? priceChartingVideoGameCandidateEvidenceData?.data?.selectionMessage ?? priceChartingVideoGameCandidateEvidenceData?.message ?? null
+          : priceData?.message ?? priceChartingMoversEvidenceData?.message ?? null,
       });
     }
     if (enabledSources.has('discogs') && discogsSearchCriteria.isMusic) {
@@ -3141,7 +3208,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         id: 'discogs',
         label: 'Discogs Music Catalog',
         kind: 'reference',
-        status: evidenceStatus(discogsQuery.data),
+        status: evidenceStatus(discogsEvidenceData),
         // Multiple Discogs candidates are intentionally not treated as a match.
         // A release/pressing must be selected or otherwise confirmed before it
         // can align a listing's material Music fields.
@@ -3154,21 +3221,21 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
           releaseYear: release.year,
           format: release.format.join(', '),
         } : undefined,
-        message: discogsQuery.data?.message
+        message: discogsEvidenceData?.message
           ?? (discogsCandidates.length > 1 ? `${discogsCandidates.length} Discogs release candidates were returned; select the exact release/pressing before treating catalog fields as aligned.` : null),
       });
     }
-    if (enabledSources.has('rawg')) add({ id: 'rawg', label: 'RAWG', kind: 'reference', status: evidenceStatus(rawgQuery.data), fields: factualFields(rawgQuery.data, 'rawg'), message: rawgQuery.data?.message ?? null });
-    if (enabledSources.has('igdb')) add({ id: 'igdb', label: 'IGDB', kind: 'reference', status: evidenceStatus(igdbQuery.data), fields: factualFields(igdbQuery.data, 'igdb'), message: igdbQuery.data?.message ?? null });
-    if (enabledSources.has('smithsonian')) add({ id: 'smithsonian', label: 'Smithsonian', kind: 'reference', status: evidenceStatus(smithsonianQuery.data), fields: factualFields(smithsonianQuery.data, 'smithsonian'), message: smithsonianQuery.data?.message ?? null });
-    if (enabledSources.has('numista')) add({ id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: numistaQuery.data?.data?.guideValue ? 'valuation_guide' : 'reference_context', status: evidenceStatus(numistaQuery.data), fields: { ...factualFields(numistaQuery.data, 'numista'), guideValue: numistaQuery.data?.data?.guideValue, guideGrade: numistaQuery.data?.data?.guideGrade, guideSelectedGrade: numistaQuery.data?.data?.guideSelectedGrade, guideMatchType: numistaQuery.data?.data?.guideMatchType, guideRecordedSales: 0, guideTotalRecordedSales: 0, ...guideAnchorFields(numistaQuery.data?.guideAnchor) }, message: numistaQuery.data?.message ?? null });
-    if (enabledSources.has('wikidata')) add({ id: 'wikidata', label: 'Wikidata', kind: 'reference', status: evidenceStatus(wikidataQueryResult.data), fields: factualFields(wikidataQueryResult.data, 'wikidata'), message: wikidataQueryResult.data?.message ?? null });
-    if (enabledSources.has('cgc')) add({ id: 'cgc', label: 'Parse.bot CGC Comics', kind: 'certification', status: evidenceStatus(cgcQuery.data), fields: { title: cgcQuery.data?.data?.title, issueNumber: cgcQuery.data?.data?.issueNumber, year: cgcQuery.data?.data?.year, publisher: cgcQuery.data?.data?.publisher, certificationCompany: 'CGC', grade: cgcQuery.data?.data?.grade, labelCategory: cgcQuery.data?.data?.labelCategory }, message: cgcQuery.data?.message ?? null });
-    if (enabledSources.has('psa')) add({ id: 'psa', label: 'Parse.bot PSA', kind: 'certification', status: evidenceStatus(psaQuery.data), fields: { title: psaQuery.data?.data?.cardTitle, player: psaQuery.data?.data?.subject, year: psaQuery.data?.data?.year, manufacturer: psaQuery.data?.data?.brand, cardNumber: psaQuery.data?.data?.cardNumber, certificationCompany: 'PSA', grade: psaQuery.data?.data?.grade }, message: psaQuery.data?.message ?? null });
-    if (enabledSources.has('bgs')) add({ id: 'bgs', label: 'Parse.bot BGS', kind: 'certification', status: evidenceStatus(bgsQuery.data), fields: { title: bgsQuery.data?.data?.playerName, player: bgsQuery.data?.data?.playerName, set: bgsQuery.data?.data?.setName, cardNumber: bgsQuery.data?.data?.cardNumber, year: bgsQuery.data?.data?.year, manufacturer: bgsQuery.data?.data?.manufacturer, certificationCompany: 'BGS', grade: bgsQuery.data?.data?.finalGrade }, message: bgsQuery.data?.message ?? null });
-    if (enabledSources.has('sgc')) add({ id: 'sgc', label: 'Parse.bot SGC', kind: 'certification', status: evidenceStatus(sgcQuery.data), fields: { title: sgcQuery.data?.data?.subject, player: sgcQuery.data?.data?.subject, set: sgcQuery.data?.data?.cardSet, cardNumber: sgcQuery.data?.data?.cardNumber, certificationCompany: 'SGC', grade: sgcQuery.data?.data?.grade }, message: sgcQuery.data?.message ?? null });
+    if (enabledSources.has('rawg')) add({ id: 'rawg', label: 'RAWG', kind: 'reference', status: evidenceStatus(rawgEvidenceData), fields: factualFields(rawgEvidenceData, 'rawg'), message: rawgEvidenceData?.message ?? null });
+    if (enabledSources.has('igdb')) add({ id: 'igdb', label: 'IGDB', kind: 'reference', status: evidenceStatus(igdbEvidenceData), fields: factualFields(igdbEvidenceData, 'igdb'), message: igdbEvidenceData?.message ?? null });
+    if (enabledSources.has('smithsonian')) add({ id: 'smithsonian', label: 'Smithsonian', kind: 'reference', status: evidenceStatus(smithsonianEvidenceData), fields: factualFields(smithsonianEvidenceData, 'smithsonian'), message: smithsonianEvidenceData?.message ?? null });
+    if (enabledSources.has('numista')) add({ id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: numistaEvidenceData?.data?.guideValue ? 'valuation_guide' : 'reference_context', status: evidenceStatus(numistaEvidenceData), fields: { ...factualFields(numistaEvidenceData, 'numista'), guideValue: numistaEvidenceData?.data?.guideValue, guideGrade: numistaEvidenceData?.data?.guideGrade, guideSelectedGrade: numistaEvidenceData?.data?.guideSelectedGrade, guideMatchType: numistaEvidenceData?.data?.guideMatchType, guideRecordedSales: 0, guideTotalRecordedSales: 0, ...guideAnchorFields(numistaEvidenceData?.guideAnchor) }, message: numistaEvidenceData?.message ?? null });
+    if (enabledSources.has('wikidata')) add({ id: 'wikidata', label: 'Wikidata', kind: 'reference', status: evidenceStatus(wikidataEvidenceData), fields: factualFields(wikidataEvidenceData, 'wikidata'), message: wikidataEvidenceData?.message ?? null });
+    if (enabledSources.has('cgc')) add({ id: 'cgc', label: 'Parse.bot CGC Comics', kind: 'certification', status: evidenceStatus(cgcEvidenceData), fields: { title: cgcEvidenceData?.data?.title, issueNumber: cgcEvidenceData?.data?.issueNumber, year: cgcEvidenceData?.data?.year, publisher: cgcEvidenceData?.data?.publisher, certificationCompany: 'CGC', grade: cgcEvidenceData?.data?.grade, labelCategory: cgcEvidenceData?.data?.labelCategory }, message: cgcEvidenceData?.message ?? null });
+    if (enabledSources.has('psa')) add({ id: 'psa', label: 'Parse.bot PSA', kind: 'certification', status: evidenceStatus(psaEvidenceData), fields: { title: psaEvidenceData?.data?.cardTitle, player: psaEvidenceData?.data?.subject, year: psaEvidenceData?.data?.year, manufacturer: psaEvidenceData?.data?.brand, cardNumber: psaEvidenceData?.data?.cardNumber, certificationCompany: 'PSA', grade: psaEvidenceData?.data?.grade }, message: psaEvidenceData?.message ?? null });
+    if (enabledSources.has('bgs')) add({ id: 'bgs', label: 'Parse.bot BGS', kind: 'certification', status: evidenceStatus(bgsEvidenceData), fields: { title: bgsEvidenceData?.data?.playerName, player: bgsEvidenceData?.data?.playerName, set: bgsEvidenceData?.data?.setName, cardNumber: bgsEvidenceData?.data?.cardNumber, year: bgsEvidenceData?.data?.year, manufacturer: bgsEvidenceData?.data?.manufacturer, certificationCompany: 'BGS', grade: bgsEvidenceData?.data?.finalGrade }, message: bgsEvidenceData?.message ?? null });
+    if (enabledSources.has('sgc')) add({ id: 'sgc', label: 'Parse.bot SGC', kind: 'certification', status: evidenceStatus(sgcEvidenceData), fields: { title: sgcEvidenceData?.data?.subject, player: sgcEvidenceData?.data?.subject, set: sgcEvidenceData?.data?.cardSet, cardNumber: sgcEvidenceData?.data?.cardNumber, certificationCompany: 'SGC', grade: sgcEvidenceData?.data?.grade }, message: sgcEvidenceData?.message ?? null });
     if (enabledSources.has('pcgs')) {
-      add({ id: 'pcgs', label: 'PCGS CoinFacts', kind: 'certification', status: evidenceStatus(pcgsQuery.data), fields: { title: pcgsQuery.data?.data?.name, year: pcgsQuery.data?.data?.year, denomination: pcgsQuery.data?.data?.denomination, variety: pcgsQuery.data?.data?.variety, certificationCompany: 'PCGS', grade: pcgsQuery.data?.data?.grade }, message: pcgsQuery.data?.message ?? null });
+      add({ id: 'pcgs', label: 'PCGS CoinFacts', kind: 'certification', status: evidenceStatus(pcgsEvidenceData), fields: { title: pcgsEvidenceData?.data?.name, year: pcgsEvidenceData?.data?.year, denomination: pcgsEvidenceData?.data?.denomination, variety: pcgsEvidenceData?.data?.variety, certificationCompany: 'PCGS', grade: pcgsEvidenceData?.data?.grade }, message: pcgsEvidenceData?.message ?? null });
       const auctions = pcgsAuctionData?.data?.auctions ?? [];
       const pcgsAuctionBuckets = bucketPcgsAuctionRows(auctions);
       const currentValue = pcgsAuctionBuckets.currentValueRows;
@@ -3178,14 +3245,27 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     // Certificate-mode PCGS items receive verified year/denomination/grade
     // from CoinFacts in marketItem. Use that identity for readiness so the UI
     // and the final analyzer evaluate the same target fields.
-    return normalizeTestAiEvidence(marketItem, [...observations, ...(specialistObservations ?? [])]);
-  }, [item, marketItem, enabledSources, ebayData, soldCompsData, mercariSoldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, comicConnectData, pcgsAuctionData, oneThirtyPointData, specialistObservations, pwccQuery.data, comicBookRealmQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingVideoGameCandidateQuery.data, priceChartingVideoGameUpc, priceChartingSlugQuery.data, priceChartingMoversQuery.data, discogsSearchCriteria.isMusic, discogsQuery.data, discogsCandidates, selectedDiscogsReleaseId, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, numistaQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+    const normalized = normalizeTestAiEvidence(marketItem, [...observations, ...(specialistObservations ?? [])]);
+    // Legacy not_found includes unresolved review. Keep the actual message rather
+    // than promoting that alias into a completed empty search in browser summaries.
+    const unresolved = new Map(normalized.sources.filter((source) => source.status === 'not_found'
+      && /Unresolved review or selection/i.test(source.message ?? '')).map((source) => [source.id, source.message]));
+    return { ...normalized,
+      reviewFlags: normalized.reviewFlags.map((flag) => flag.kind === 'coverage' && flag.sourceId && unresolved.has(flag.sourceId)
+        ? { ...flag, message: `${flag.sourceLabel ?? flag.sourceId}: ${unresolved.get(flag.sourceId)}` } : flag),
+      selectedSourceSummaries: normalized.selectedSourceSummaries?.map((text, index) => {
+        const source = normalized.sources[index];
+        return source && (source.status === 'idle' || unresolved.has(source.id))
+          ? `${source.label}: ${source.message ?? 'Not searched or not completed.'}` : text;
+      }),
+    };
+  }, [item, marketItem, enabledSources, ebayData, soldCompsData, mercariSoldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, comicConnectData, pcgsAuctionData, oneThirtyPointData, specialistObservations, pwccEvidenceData, comicBookRealmEvidenceData, tcgdexEvidenceData, priceChartingEvidenceData, priceChartingCoinEvidenceData, priceChartingVideoGameEvidenceData, priceChartingVideoGameCandidateEvidenceData, priceChartingVideoGameUpc, priceChartingSlugEvidenceData, priceChartingMoversEvidenceData, discogsSearchCriteria.isMusic, discogsEvidenceData, discogsCandidates, selectedDiscogsReleaseId, rawgEvidenceData, igdbEvidenceData, smithsonianEvidenceData, numistaEvidenceData, wikidataEvidenceData, cgcEvidenceData, psaEvidenceData, bgsEvidenceData, sgcEvidenceData, pcgsEvidenceData, priceChartingCoinQuery.isFetching, priceChartingVideoGameQuery.isFetching, priceChartingVideoGameCandidateQuery.isFetching, priceChartingQuery.isFetching, priceChartingSlugQuery.isFetching, numistaQuery.isFetching, hasPriceChartingCoinQueryInput, canSearchPriceChartingVideoGames]);
 
   useEffect(() => {
     onSummaryChange?.(summary);
   }, [onSummaryChange, summary]);
 
-  const statusLabel = (status: string) => status === 'success' ? 'available' : status === 'idle' ? 'checking' : status.replace('_', ' ');
+  const statusLabel = (status: string) => status === 'success' ? 'available' : status === 'idle' ? 'not searched or not completed' : status.replace('_', ' ');
   const sourceDecisions = summary.sourceDecisions ?? [];
   const preferredGuideAnchor = selectPreferredGuideAnchor(summary.guideAnchors);
   return <section className="rounded-xl border border-violet-700/40 bg-violet-950/20 p-3 space-y-3" aria-label={`${side === 'left' ? 'Item A' : 'Item B'} normalized evidence review`}>
@@ -3451,7 +3531,7 @@ function SandboxSpecialistSection({ source, item, side, visualProvider, onEviden
     },
     { enabled: enabled && !blocked, retry: false, ...(refreshOnMount ? { staleTime: 0, refetchOnMount: 'always' as const } : {}) },
   );
-  const data = lookup.data;
+  const data = useTestAiSourceDisplayData(lookup.data, Boolean(lookup.error)).data;
   const visibleQuery = omitGradingCriteria ? gradeFreeGoldinQuery : data?.query;
   const visibleMessages = data?.messages?.map((message: string) => omitGradingCriteria
     ? message.replace(/(used “)[^”]*(”)/, `$1${gradeFreeGoldinQuery}$2`)
@@ -3496,9 +3576,11 @@ function SandboxSpecialistSection({ source, item, side, visualProvider, onEviden
         currentValuePrices: recent.map((record: any) => Number(record.price ?? record.finalPrice)),
         historicalTrendPrices: historical.map((record: any) => Number(record.price ?? record.finalPrice)),
       },
-      message: data?.messages?.join(' ') ?? null,
+      message: evidenceMessage(data, null, { isFetching: lookup.isFetching,
+        notSearchedReason: blocked ? 'The public lookup contract is not sufficient; no request was sent.'
+          : !enabled ? 'A complete public HTTPS locator is required before lookup.' : undefined }),
     });
-  }, [authoritativeSales, data, records, source.id, source.label, onEvidenceObservation]);
+  }, [authoritativeSales, data, records, source.id, source.label, onEvidenceObservation, lookup.isFetching, blocked, enabled]);
   const formatPrice = (value: number | null | undefined) => value == null ? 'No realized price' : `$${Math.round(value).toLocaleString()}`;
   return (
     <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
@@ -3729,7 +3811,7 @@ function FieldCompletionPanel({ leftItem, rightItem }: { leftItem: SelectedItem 
   </section>;
 }
 
-function SimpleValuationSummary({ items }: { items: Array<{ label: string; item: SelectedItem; profile: any; evidenceSummary?: NormalizedEvidenceSummary | null }> }) {
+function SimpleValuationSummary({ items }: { items: TestAiPricingSummaryItem[] }) {
   return <TestAiPricingSummary items={items} />;
 }
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
@@ -4065,8 +4147,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
           {result.leftMarketProfile && result.rightMarketProfile && result.deterministicComparison && (
             <>
               <SimpleValuationSummary items={[
-                { label: 'Item A', item: leftItem, profile: result.leftMarketProfile, evidenceSummary: leftEvidenceSummary },
-                { label: 'Item B', item: rightItem, profile: result.rightMarketProfile, evidenceSummary: rightEvidenceSummary },
+                { label: 'Item A', item: leftItem, profile: result.leftMarketProfile, evidence: result.leftAnalysisSnapshot?.evidence },
+                { label: 'Item B', item: rightItem, profile: result.rightMarketProfile, evidence: result.rightAnalysisSnapshot?.evidence },
               ]} />
               <div className="rounded-lg border border-indigo-700/40 bg-indigo-950/20 p-3 space-y-3">
               <div className="flex items-center justify-between">
@@ -4084,7 +4166,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
                   <div key={label} className="rounded bg-gray-950/50 p-2 space-y-1">
                     <p className={`text-${color}-300 text-xs font-semibold`}>{label}</p>
                     <p className="text-gray-300 text-[10px]">Evidence: <span className="text-white">{profile.evidenceState.replace(/_/g, ' ')}</span></p>
-                    <p className="text-gray-300 text-[10px]">Estimated value: <span className="text-white">{profile.primaryValue !== null ? `$${profile.primaryValue.toLocaleString()}` : 'Not verified'}</span> · Valuation basis: {profile.valuationBasis === 'market_sales' ? 'recent comparable sales alone' : profile.valuationBasis === 'guide_fallback' ? 'Guide fallback — limited market evidence' : 'insufficient evidence'} · Guide {profile.guideProvisional ? 'fallback' : 'reference'}: {profile.guideAnchorValue !== null ? `${profile.guideAnchorSourceLabel} ${profile.guideAnchorGrade || ''} · $${profile.guideAnchorValue.toLocaleString()}${profile.guideProvisional ? ' (provisional; not market-supported)' : ' (no contribution to sale-based value)'}` : 'none verified'} · Weighted diagnostic: {profile.weightedValue !== null ? `$${profile.weightedValue.toLocaleString()}` : 'unavailable'} · Observed current-sale range: {profile.marketRange.supported ? `$${profile.marketRange.low?.toLocaleString()}–$${profile.marketRange.high?.toLocaleString()}${profile.valuationBasis !== 'market_sales' ? ' (preliminary evidence only)' : ''}` : 'unsupported'}</p>
+                    <p className="text-gray-300 text-[10px]">Estimated value: <span className="text-white whitespace-normal break-words">{hasUsableTestAiPrimary(profile.primaryValue) ? `$${profile.primaryValue.toLocaleString()}` : TEST_AI_VALUE_UNAVAILABLE_MESSAGE}</span> · Valuation basis: {profile.valuationBasis === 'market_sales' ? 'recent comparable sales alone' : profile.valuationBasis === 'guide_fallback' ? 'Guide fallback — limited market evidence' : 'insufficient evidence'} · Guide {profile.guideProvisional ? 'fallback' : 'reference'}: {hasUsableTestAiPrimary(profile.guideAnchorValue) ? `${profile.guideAnchorSourceLabel} ${profile.guideAnchorGrade || ''} · $${profile.guideAnchorValue.toLocaleString()}${profile.guideProvisional ? ' (provisional; not market-supported)' : ' (no contribution to sale-based value)'}` : 'none verified'} · Weighted diagnostic: {hasUsableTestAiPrimary(profile.weightedValue) ? `$${profile.weightedValue.toLocaleString()}` : 'unavailable'} · Observed current-sale range: {profile.marketRange.supported && hasUsableTestAiPrimary(profile.marketRange.low) && hasUsableTestAiPrimary(profile.marketRange.high) ? `$${profile.marketRange.low.toLocaleString()}–$${profile.marketRange.high.toLocaleString()}${profile.valuationBasis !== 'market_sales' ? ' (preliminary evidence only)' : ''}` : 'unsupported'}</p>
                     <p className="text-gray-400 text-[10px]">{profile.valuationBasisReason}</p>
                     <p className="text-gray-400 text-[10px]">Confidence: {profile.evidenceQuality} evidence · {profile.itemIdentificationConfidence} identity · {profile.marketStability} stability · {profile.liquidity} liquidity</p>
                     {profile.confidenceReasons?.length > 0 && <p className="text-slate-500 text-[9px] leading-snug"><span className="font-semibold text-slate-300">Confidence basis:</span> {profile.confidenceReasons.join(' ')}</p>}
@@ -4105,10 +4187,10 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
                     : 'border-emerald-700/40 bg-emerald-950/20 text-emerald-100'
               }`}>
                 <span className="font-semibold uppercase tracking-wide">Range-first decision:</span> {result.deterministicComparison.decisionBasis}
-                {result.deterministicComparison.overlapBand && <span className="text-gray-300"> Shared band: ${Number(result.deterministicComparison.overlapBand.low).toLocaleString()}–${Number(result.deterministicComparison.overlapBand.high).toLocaleString()}.</span>}
-                {result.deterministicComparison.typicalBandOverlap && <span className="text-gray-300"> Typical middle-band overlap: ${Number(result.deterministicComparison.typicalBandOverlap.low).toLocaleString()}–${Number(result.deterministicComparison.typicalBandOverlap.high).toLocaleString()}.</span>}
-                {result.deterministicComparison.midpointDifference !== null && <span className="text-gray-300"> Median midpoint difference: ${Math.abs(Number(result.deterministicComparison.midpointDifference)).toLocaleString()}.</span>}
-                {result.deterministicComparison.rangeGap !== null && result.deterministicComparison.rangeGap > 0 && <span className="text-gray-300"> Range gap: ${Number(result.deterministicComparison.rangeGap).toLocaleString()}.</span>}
+                {result.deterministicComparison.overlapBand && hasUsableTestAiPrimary(result.deterministicComparison.overlapBand.low) && hasUsableTestAiPrimary(result.deterministicComparison.overlapBand.high) && <span className="text-gray-300"> Shared band: ${result.deterministicComparison.overlapBand.low.toLocaleString()}–${result.deterministicComparison.overlapBand.high.toLocaleString()}.</span>}
+                {result.deterministicComparison.typicalBandOverlap && hasUsableTestAiPrimary(result.deterministicComparison.typicalBandOverlap.low) && hasUsableTestAiPrimary(result.deterministicComparison.typicalBandOverlap.high) && <span className="text-gray-300"> Typical middle-band overlap: ${result.deterministicComparison.typicalBandOverlap.low.toLocaleString()}–${result.deterministicComparison.typicalBandOverlap.high.toLocaleString()}.</span>}
+                {typeof result.deterministicComparison.midpointDifference === 'number' && Number.isFinite(result.deterministicComparison.midpointDifference) && <span className="text-gray-300"> Median midpoint difference: ${Math.abs(result.deterministicComparison.midpointDifference).toLocaleString()}.</span>}
+                {hasUsableTestAiPrimary(result.deterministicComparison.rangeGap) && <span className="text-gray-300"> Range gap: ${result.deterministicComparison.rangeGap.toLocaleString()}.</span>}
               </div>
               {result.tradeTerms && (
                 <div className="rounded border border-emerald-700/40 bg-emerald-950/20 p-2 space-y-1">
@@ -4117,8 +4199,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
                     <span className="rounded bg-emerald-900/50 px-1.5 py-0.5 text-[9px] text-emerald-100">{result.tradeTerms.evidenceStrength} evidence · {result.tradeTerms.termsStatus.replace(/_/g, ' ')}</span>
                   </div>
                   <p className="text-gray-300 text-[10px]">{result.tradeTerms.summary}</p>
-                  {result.tradeTerms.cashAdjustment && <p className="text-gray-500 text-[9px]">Recorded: Item {result.tradeTerms.cashAdjustment.paidBy === 'item_a' ? 'A' : 'B'} contributes ${Number(result.tradeTerms.cashAdjustment.amount).toLocaleString()}.</p>}
-                  {!result.tradeTerms.cashAdjustment && result.tradeTerms.suggestedCashRange && <p className="text-gray-500 text-[9px]">Range reference only: Item {result.tradeTerms.suggestedCashRange.payer === 'item_a' ? 'A' : 'B'} could be short by roughly ${Number(result.tradeTerms.suggestedCashRange.low).toLocaleString()}–${Number(result.tradeTerms.suggestedCashRange.high).toLocaleString()} based on the selected evidence ranges.</p>}
+                  {result.tradeTerms.cashAdjustment && hasUsableTestAiPrimary(result.tradeTerms.cashAdjustment.amount) && <p className="text-gray-500 text-[9px]">Recorded: Item {result.tradeTerms.cashAdjustment.paidBy === 'item_a' ? 'A' : 'B'} contributes ${result.tradeTerms.cashAdjustment.amount.toLocaleString()}.</p>}
+                  {!result.tradeTerms.cashAdjustment && result.tradeTerms.suggestedCashRange && typeof result.tradeTerms.suggestedCashRange.low === 'number' && Number.isFinite(result.tradeTerms.suggestedCashRange.low) && result.tradeTerms.suggestedCashRange.low >= 0 && typeof result.tradeTerms.suggestedCashRange.high === 'number' && Number.isFinite(result.tradeTerms.suggestedCashRange.high) && result.tradeTerms.suggestedCashRange.high >= 0 && <p className="text-gray-500 text-[9px]">Range reference only: Item {result.tradeTerms.suggestedCashRange.payer === 'item_a' ? 'A' : 'B'} could be short by roughly ${result.tradeTerms.suggestedCashRange.low.toLocaleString()}–${result.tradeTerms.suggestedCashRange.high.toLocaleString()} based on the selected evidence ranges.</p>}
                 </div>
               )}
               {(result.valuationWarnings?.length > 0 || result.missingInformation?.length > 0) && (
@@ -4204,7 +4286,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
                             <p className="text-gray-500 mt-0.5">{comparable.sourceLabel ?? comparable.sourceId ?? 'source unavailable'} · visual {String(comparable.visualReviewStatus ?? 'not_reviewed').replace(/_/g, ' ')}</p>
                           </div>
                         ))}
-                        {!accepted.length && !rejected.length && <p className="text-gray-500 text-[9px]">No individual comparable records were returned.</p>}
+                        {!profile.comparables.length && <p className="text-gray-500 text-[9px]">No submitted comparable records.</p>}
                         {(profile.comparables ?? []).length > 0 && (
                           <details className="rounded border border-slate-700/60 bg-slate-950/70 px-2 py-1.5">
                             <summary className="cursor-pointer select-none text-[9px] font-semibold text-slate-200">Full valuation-use ledger · {(profile.comparables ?? []).length} returned records</summary>
@@ -4883,6 +4965,34 @@ export default function TestAI() {
   const rightSoldCompsDisplay = useTestAiSourceDisplayData(rightSoldCompsQuery.data, Boolean(rightSoldCompsQuery.error));
   const leftMercariSoldCompsDisplay = useTestAiSourceDisplayData(leftMercariSoldCompsQuery.data, Boolean(leftMercariSoldCompsQuery.error));
   const rightMercariSoldCompsDisplay = useTestAiSourceDisplayData(rightMercariSoldCompsQuery.data, Boolean(rightMercariSoldCompsQuery.error));
+  const leftHipstampDisplay = useSourceOutcomeData(leftHipstampQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const rightHipstampDisplay = useSourceOutcomeData(rightHipstampQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const leftHipstampSoldDisplay = useSourceOutcomeData(leftHipstampSoldQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const rightHipstampSoldDisplay = useSourceOutcomeData(rightHipstampSoldQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const leftPokemonPriceTrackerDisplay = useSourceOutcomeData(leftPokemonPriceTrackerQuery);
+  const rightPokemonPriceTrackerDisplay = useSourceOutcomeData(rightPokemonPriceTrackerQuery);
+  const leftTheCardApiDisplay = useSourceOutcomeData(leftTheCardApiQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const rightTheCardApiDisplay = useSourceOutcomeData(rightTheCardApiQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const leftCardsightAiDisplay = useSourceOutcomeData(leftCardsightAiQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const rightCardsightAiDisplay = useSourceOutcomeData(rightCardsightAiQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const leftComcDisplay = useSourceOutcomeData(leftComcQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const rightComcDisplay = useSourceOutcomeData(rightComcQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const leftLelandsDisplay = useSourceOutcomeData(leftLelandsQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const rightLelandsDisplay = useSourceOutcomeData(rightLelandsQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const leftPristineAuctionDisplay = useSourceOutcomeData(leftPristineAuctionQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const rightPristineAuctionDisplay = useSourceOutcomeData(rightPristineAuctionQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const leftCollectAuctionDisplay = useSourceOutcomeData(leftCollectAuctionQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const rightCollectAuctionDisplay = useSourceOutcomeData(rightCollectAuctionQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const leftSiriusSportsAuctionDisplay = useSourceOutcomeData(leftSiriusSportsAuctionQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const rightSiriusSportsAuctionDisplay = useSourceOutcomeData(rightSiriusSportsAuctionQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const leftComicConnectDisplay = useSourceOutcomeData(leftComicConnectQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const rightComicConnectDisplay = useSourceOutcomeData(rightComicConnectQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const leftPcgsAuctionDisplay = useSourceOutcomeData(leftPcgsAuctionQuery);
+  const rightPcgsAuctionDisplay = useSourceOutcomeData(rightPcgsAuctionQuery);
+  const leftTcgplayerSoldCompsDisplay = useSourceOutcomeData(leftTcgplayerSoldCompsQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const rightTcgplayerSoldCompsDisplay = useSourceOutcomeData(rightTcgplayerSoldCompsQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const left130PointDisplay = useSourceOutcomeData(left130PointQuery, !leftSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
+  const right130PointDisplay = useSourceOutcomeData(right130PointQuery, !rightSearchItem ? 'A searchable item identity is required before lookup.' : undefined);
 
   if (authLoading) return <div className="flex items-center justify-center min-h-screen"><Spinner /></div>;
   if (!user || user.role !== 'admin') { navigate('/'); return null; }
@@ -4930,8 +5040,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {leftItem && !leftIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.left} item={leftItem} searchItem={leftSearchItem} side="left" visualProvider={visualProvider} enabledSources={leftSourcesEnabled} ebayData={leftEbayDisplay.data} ebayEvidenceData={leftEbayDisplay.evidenceData} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isFetching} soldCompsData={leftSoldCompsDisplay.data} soldCompsLoading={leftSoldCompsQuery.isFetching} mercariSoldCompsData={leftMercariSoldCompsDisplay.data} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={leftTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isFetching} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isFetching} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isFetching} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isFetching} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isFetching} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isFetching} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isFetching} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isFetching} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isFetching} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isFetching} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isFetching} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={onLeftSpecialistSales} />}
-            {rightItem && !rightIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.right} item={rightItem} searchItem={rightSearchItem} side="right" visualProvider={visualProvider} enabledSources={rightSourcesEnabled} ebayData={rightEbayDisplay.data} ebayEvidenceData={rightEbayDisplay.evidenceData} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isFetching} soldCompsData={rightSoldCompsDisplay.data} soldCompsLoading={rightSoldCompsQuery.isFetching} mercariSoldCompsData={rightMercariSoldCompsDisplay.data} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={rightTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isFetching} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isFetching} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isFetching} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isFetching} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isFetching} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isFetching} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isFetching} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isFetching} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isFetching} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isFetching} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isFetching} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={onRightSpecialistSales} />}
+            {leftItem && !leftIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.left} item={leftItem} searchItem={leftSearchItem} side="left" visualProvider={visualProvider} enabledSources={leftSourcesEnabled} ebayData={leftEbayDisplay.data} ebayEvidenceData={leftEbayDisplay.evidenceData} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isFetching} soldCompsData={leftSoldCompsDisplay.data} soldCompsLoading={leftSoldCompsQuery.isFetching} mercariSoldCompsData={leftMercariSoldCompsDisplay.data} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={leftTcgplayerSoldCompsDisplay.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isFetching} hipstampData={leftHipstampDisplay.data} hipstampSoldData={leftHipstampSoldDisplay.data} pokemonPriceTrackerData={leftPokemonPriceTrackerDisplay.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isFetching} theCardApiData={leftTheCardApiDisplay.data} theCardApiLoading={leftTheCardApiQuery.isFetching} cardsightAiData={leftCardsightAiDisplay.data} cardsightAiLoading={leftCardsightAiQuery.isFetching} comcData={leftComcDisplay.data} comcLoading={leftComcQuery.isFetching} lelandsData={leftLelandsDisplay.data} lelandsLoading={leftLelandsQuery.isFetching} pristineAuctionData={leftPristineAuctionDisplay.data} pristineAuctionLoading={leftPristineAuctionQuery.isFetching} collectAuctionData={leftCollectAuctionDisplay.data} collectAuctionLoading={leftCollectAuctionQuery.isFetching} siriusSportsAuctionData={leftSiriusSportsAuctionDisplay.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isFetching} comicConnectData={leftComicConnectDisplay.data} comicConnectLoading={leftComicConnectQuery.isFetching} pcgsAuctionData={leftPcgsAuctionDisplay.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isFetching} oneThirtyPointData={left130PointDisplay.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={onLeftSpecialistSales} />}
+            {rightItem && !rightIsCollectionLot && <DataColumn finalDisplayOutcome={finalDisplayOutcomes?.right} item={rightItem} searchItem={rightSearchItem} side="right" visualProvider={visualProvider} enabledSources={rightSourcesEnabled} ebayData={rightEbayDisplay.data} ebayEvidenceData={rightEbayDisplay.evidenceData} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isFetching} soldCompsData={rightSoldCompsDisplay.data} soldCompsLoading={rightSoldCompsQuery.isFetching} mercariSoldCompsData={rightMercariSoldCompsDisplay.data} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isFetching} tcgplayerSoldCompsData={rightTcgplayerSoldCompsDisplay.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isFetching} hipstampData={rightHipstampDisplay.data} hipstampSoldData={rightHipstampSoldDisplay.data} pokemonPriceTrackerData={rightPokemonPriceTrackerDisplay.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isFetching} theCardApiData={rightTheCardApiDisplay.data} theCardApiLoading={rightTheCardApiQuery.isFetching} cardsightAiData={rightCardsightAiDisplay.data} cardsightAiLoading={rightCardsightAiQuery.isFetching} comcData={rightComcDisplay.data} comcLoading={rightComcQuery.isFetching} lelandsData={rightLelandsDisplay.data} lelandsLoading={rightLelandsQuery.isFetching} pristineAuctionData={rightPristineAuctionDisplay.data} pristineAuctionLoading={rightPristineAuctionQuery.isFetching} collectAuctionData={rightCollectAuctionDisplay.data} collectAuctionLoading={rightCollectAuctionQuery.isFetching} siriusSportsAuctionData={rightSiriusSportsAuctionDisplay.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isFetching} comicConnectData={rightComicConnectDisplay.data} comicConnectLoading={rightComicConnectQuery.isFetching} pcgsAuctionData={rightPcgsAuctionDisplay.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isFetching} oneThirtyPointData={right130PointDisplay.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={onRightSpecialistSales} />}
           </div>
         )}
 
@@ -4954,28 +5064,28 @@ export default function TestAI() {
              rightSoldCompsData={rightSoldCompsDisplay.data}
              leftMercariSoldCompsData={leftMercariSoldCompsDisplay.data}
              rightMercariSoldCompsData={rightMercariSoldCompsDisplay.data}
-             leftHipstampData={leftHipstampQuery.data}
-             rightHipstampData={rightHipstampQuery.data}
-             leftTheCardApiData={leftTheCardApiQuery.data}
-             rightTheCardApiData={rightTheCardApiQuery.data}
-             leftCardsightAiData={leftCardsightAiQuery.data}
-             rightCardsightAiData={rightCardsightAiQuery.data}
-             leftLelandsData={leftLelandsQuery.data}
-             rightLelandsData={rightLelandsQuery.data}
-             leftPristineAuctionData={leftPristineAuctionQuery.data}
-             rightPristineAuctionData={rightPristineAuctionQuery.data}
-             leftCollectAuctionData={leftCollectAuctionQuery.data}
-             leftSiriusSportsAuctionData={leftSiriusSportsAuctionQuery.data}
-             rightSiriusSportsAuctionData={rightSiriusSportsAuctionQuery.data}
-             rightCollectAuctionData={rightCollectAuctionQuery.data}
-             leftPcgsAuctionData={leftPcgsAuctionQuery.data}
-             rightPcgsAuctionData={rightPcgsAuctionQuery.data}
-             leftComicConnectData={leftComicConnectQuery.data}
-             rightComicConnectData={rightComicConnectQuery.data}
+             leftHipstampData={leftHipstampDisplay.data}
+             rightHipstampData={rightHipstampDisplay.data}
+             leftTheCardApiData={leftTheCardApiDisplay.data}
+             rightTheCardApiData={rightTheCardApiDisplay.data}
+             leftCardsightAiData={leftCardsightAiDisplay.data}
+             rightCardsightAiData={rightCardsightAiDisplay.data}
+             leftLelandsData={leftLelandsDisplay.data}
+             rightLelandsData={rightLelandsDisplay.data}
+             leftPristineAuctionData={leftPristineAuctionDisplay.data}
+             rightPristineAuctionData={rightPristineAuctionDisplay.data}
+             leftCollectAuctionData={leftCollectAuctionDisplay.data}
+             leftSiriusSportsAuctionData={leftSiriusSportsAuctionDisplay.data}
+             rightSiriusSportsAuctionData={rightSiriusSportsAuctionDisplay.data}
+             rightCollectAuctionData={rightCollectAuctionDisplay.data}
+             leftPcgsAuctionData={leftPcgsAuctionDisplay.data}
+             rightPcgsAuctionData={rightPcgsAuctionDisplay.data}
+             leftComicConnectData={leftComicConnectDisplay.data}
+             rightComicConnectData={rightComicConnectDisplay.data}
              leftGoldinSales={leftGoldinSales}
              rightGoldinSales={rightGoldinSales}
-             leftHistoricalTrendData={left130PointQuery.data}
-             rightHistoricalTrendData={right130PointQuery.data}
+             leftHistoricalTrendData={left130PointDisplay.data}
+             rightHistoricalTrendData={right130PointDisplay.data}
              leftEvidenceSummary={leftEvidenceSummary}
              rightEvidenceSummary={rightEvidenceSummary}
           />

@@ -150,7 +150,12 @@ async function analyze(
     leftEvidenceState: response.leftMarketProfile.evidenceState,
     rightEvidenceState: response.rightMarketProfile.evidenceState,
   });
-  for (const [field, value] of Object.entries(fallback)) expect(response[field as keyof typeof response]).toEqual(value);
+  const missingNotices = [response.leftMarketProfile.primaryValue === null ? 'Item A: Value cannot be established from the available data.' : '',
+    response.rightMarketProfile.primaryValue === null ? 'Item B: Value cannot be established from the available data.' : ''].filter(Boolean);
+  for (const [field, value] of Object.entries(fallback)) {
+    const expected = field === 'valueSummary' ? [...missingNotices, value].join(' ') : value;
+    expect(response[field as keyof typeof response]).toEqual(expected);
+  }
   expect(boundaries.narrative).toHaveBeenCalledTimes(1);
   return response;
 }

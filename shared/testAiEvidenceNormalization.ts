@@ -9,6 +9,16 @@ import {
 import { extractCandidateStructuredMetadata, meaningfulMetadataText, readMetadataValue } from './testAiMetadataValues';
 import { compareComparableGrades } from './testAiGradeComparison';
 
+export const TEST_AI_VALUE_UNAVAILABLE_MESSAGE = 'Value cannot be established from the available data';
+
+/** Local diagnostic price reader: never coerce absence, Booleans or objects into zero. */
+export function nullableTestAiPrice(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string' || !value.trim() || value.length > 128) return null;
+  const amount = Number(value.trim());
+  return Number.isFinite(amount) ? amount : null;
+}
+
 export type EvidenceSourceStatus = 'success' | 'partial' | 'not_found' | 'error' | 'idle';
 
 export type EvidenceSourceKind = 'market_current' | 'market_completed' | 'market_historical' | 'certification' | 'reference';
@@ -716,7 +726,9 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
           sourceRecordId: text(source.fields.guideSourceRecordId), form: text(source.fields.guideForm),
           provenanceToken: source.fields.guideProvenanceToken,
         } satisfies GuideValueAnchor : null;
-    if (source.status === 'success' && (source.id === 'pricecharting' || source.id === 'numista')
+    // Retained signed candidates survive retrieval failures; the final target,
+    // time and applicability verifier, not this diagnostic status, decides use.
+    if (['success', 'partial', 'error'].includes(source.status) && (source.id === 'pricecharting' || source.id === 'numista')
       && transportedAnchor?.sourceId === source.id && typeof transportedAnchor.provenanceToken === 'string') {
       guideAnchors.push({
         sourceId: transportedAnchor.sourceId, sourceLabel: transportedAnchor.sourceLabel,
@@ -789,9 +801,9 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
         message: `${source.label} returned an exact certified-grade coin guide. It is the preferred fallback candidate only after server provenance verification, never an individual dated completed sale or a completed-sale count.`,
       });
     }
-    if (source.status === 'partial') reviewFlags.push({ kind: 'coverage', sourceId: source.id, sourceLabel: source.label, message: `${source.label} has partial/error retrieval; known observations are retained${source.message ? `: ${source.message}` : '.'}` });
+    if (source.status === 'partial') reviewFlags.push({ kind: 'coverage', sourceId: source.id, sourceLabel: source.label, message: `${source.label} has partial/error retrieval; known observations are retained${source.message ? `: ${source.message}` : '.'}`.slice(0, 600) });
     if (source.status === 'error') {
-      reviewFlags.push({ kind: 'coverage', sourceId: source.id, sourceLabel: source.label, message: `${source.label} could not be checked${source.message ? `: ${source.message}` : '.'}` });
+      reviewFlags.push({ kind: 'coverage', sourceId: source.id, sourceLabel: source.label, message: `${source.label} could not be checked${source.message ? `: ${source.message}` : '.'}`.slice(0, 600) });
       continue;
     }
     if (source.status === 'not_found') {

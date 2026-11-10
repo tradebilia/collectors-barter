@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMarketProfile } from './testAiComparableEngine';
+import { buildMarketProfile, type MarketSale } from './testAiComparableEngine';
 import { COMPLETED_SALE_SOURCE_DEFAULTS, normalizeAnalysisMarketSales, normalizeAnalysisMarketSale } from './testAiMarketEvidence';
 import { sealCanonicalObservation } from './testAiCanonicalObservation';
 
@@ -30,11 +30,11 @@ function sale(overrides: Record<string, unknown> = {}) {
   return { ...observation, provenanceToken: sealed.provenanceToken };
 }
 
-function normalizeSale(input: ReturnType<typeof sale>) {
+function normalizeSale(input: MarketSale) {
   return normalizeAnalysisMarketSale(input, now, { signingKey });
 }
 
-function normalizeSales(inputs: ReturnType<typeof sale>[]) {
+function normalizeSales(inputs: MarketSale[]) {
   return normalizeAnalysisMarketSales(inputs, now, { signingKey });
 }
 
@@ -79,6 +79,75 @@ describe('server-owned analysis market evidence normalization', () => {
       recency: 'recent',
       evidenceDisposition: 'valuation_eligible',
     });
+  });
+
+  it.each([undefined, null, '', ' \t ', NaN, Infinity, -Infinity, 'not a price', 'Infinity'])
+  ('preserves unavailable unverified raw prices as null (%s) with invalid-price blockers', (price) => {
+    const input = { ...sale(), provenanceToken: null, price };
+    const result = normalizeSale(input);
+    expect(result.sale.price).toBeNull();
+    expect(result.valuationEligible).toBe(false);
+    expect(result.sale.evidenceDisposition).toBe('context_only');
+    expect(result.sale.analysisIntake?.sourceAdmission.blockerCodes).toContain('INVALID_PRICE');
+    expect(result.reasons).toContain('missing or non-positive realized price');
+    const profile = buildMarketProfile(target, [result.sale], null, now);
+    expect(profile.comparables[0].price).toBeNull();
+    expect(profile.authoritativeSaleCount).toBe(0);
+    expect(profile.primaryValue).toBeNull();
+  });
+
+  it('preserves a signed canonical null price rather than normalizing it into a public zero', () => {
+    const result = normalizeSale(sale({ price: null }));
+    expect(result.sale.price).toBeNull();
+    expect(result.valuationEligible).toBe(false);
+    expect(result.sale.analysisIntake?.sourceAdmission.blockerCodes).toContain('INVALID_PRICE');
+    const profile = buildMarketProfile(target, [result.sale], null, now, null, null, { historicalPromptSales: [result.sale] });
+    expect(profile.comparables[0].price).toBeNull();
+    expect(profile.primaryValue).toBeNull();
+    expect(profile.finalUseReport!.priceGroups.find((group) => group.population === 'historical_prompt')?.prices).toEqual([null]);
+  });
+
+  it('does not describe an unavailable high-value comparable amount as a zero-priced sale', () => {
+    const result = normalizeAnalysisMarketSale(sale({ price: null }), now, {
+      signingKey, target: { ...target, statedTradeValue: 50000 },
+    });
+    expect(result.sale.price).toBeNull();
+    expect(result.valuationEligible).toBe(false);
+    expect(result.sale.analysisIntake?.sourceAdmission.blockerCodes).toContain('INVALID_PRICE');
+    expect(result.reasons.join(' ')).toContain('sold comp price is unavailable');
+    expect(result.reasons.join(' ')).not.toContain('sold comp $0');
+  });
+
+  it('keeps actual unverified zero and negative observed prices distinct from absence without admitting them', () => {
+    for (const price of [0, -10]) {
+      // Canonical sealing already rejects nonpositive amounts. Test the local
+      // raw diagnostic boundary without altering signing or provenance policy.
+      const result = normalizeSale({ ...sale(), provenanceToken: null, price });
+      expect(result.sale.price).toBe(price);
+      expect(result.valuationEligible).toBe(false);
+      expect(result.sale.analysisIntake?.sourceAdmission.blockerCodes).toContain('INVALID_PRICE');
+      const profile = buildMarketProfile(target, [result.sale], null, now);
+      expect(profile.comparables[0].price).toBe(price);
+      expect(profile.authoritativeSaleCount).toBe(0);
+      expect(profile.primaryValue).toBeNull();
+    }
+  });
+
+  it('keeps signed finite positive prices eligible and does not include missing or zero rows in financial statistics', () => {
+    const inputs = [sale({ saleId: 'valid-number', price: 1000 }), sale({ saleId: 'valid-numeric-string', price: '1200' }),
+      sale({ saleId: 'canonical-null', price: null }), { ...sale({ saleId: 'raw-zero' }), price: 0, provenanceToken: null },
+      { ...sale({ saleId: 'raw-blank' }), price: ' ', provenanceToken: null }];
+    const normalized = normalizeSales(inputs);
+    expect(normalized.map((record) => record.price)).toEqual([1000, 1200, null, 0, null]);
+    expect(normalized.filter((record) => record.evidenceDisposition === 'valuation_eligible')).toHaveLength(2);
+    const profile = buildMarketProfile(target, normalized, null, now);
+    expect(profile.authoritativeSaleCount).toBe(2);
+    expect(profile.currentWindowSaleCount).toBe(2);
+    expect(profile.saleMedianValue).toBe(1100);
+    expect(profile.minimum).toBe(1000);
+    expect(profile.maximum).toBe(1200);
+    expect(profile.primaryValue).toBeNull();
+    expect(profile.comparables).toHaveLength(5);
   });
 
   it('admits a signed PCGS eBay final price while preserving the PCGS adapter provenance', () => {

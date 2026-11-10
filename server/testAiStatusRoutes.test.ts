@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const boundaries = vi.hoisted(() => ({ fetch: vi.fn(), llm: vi.fn(), denied: [] as string[] }));
 vi.mock('./_core/env', () => ({ ENV: { jwtSecret: 'stage5-synthetic-status-signing-key-not-a-service-credential', appId: 'stage5-status-test' } }));
 vi.mock('./_core/llm', () => ({ invokeLLM: boundaries.llm }));
-import { testAIRouter } from './testAIRouter';
+import { testAIRouter, testAiEvidenceSummarySchema } from './testAIRouter';
+import { normalizeTestAiEvidence } from '../shared/testAiEvidenceNormalization';
 import { buildSoldCompsAnalysisSales, buildSoldCompsApprovalInput } from '../shared/testAiSoldCompsTransport';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -252,5 +253,73 @@ describe('Stage 5 final reporting authority counterexamples', () => {
       expect(html).not.toContain('Hard exclusion:'); expect(html).not.toContain('FINAL_HARD_EXCLUDED');
       expect(html).toContain('PROVENANCE_UNVERIFIED');
     }
+  });
+});
+
+
+describe('Approved Step B final analysis route: unavailable values remain deterministic', () => {
+  it.each([false, true])('guarantees both side notices with synthetic narration available=%s', async (available) => {
+    narrativeAllowed = available;
+    const result = await analyze({ listings: [] });
+    expect(result.leftMarketProfile.primaryValue).toBeNull();
+    expect(result.rightMarketProfile.primaryValue).toBeNull();
+    expect(result.valueSummary).toContain('Item A: Value cannot be established from the available data.');
+    expect(result.valueSummary).toContain('Item B: Value cannot be established from the available data.');
+    expect(result.deterministicComparison).toMatchObject({ leftValue: null, rightValue: null, difference: null,
+      differencePercentage: null, midpointDifference: null, rangeRelationship: 'unsupported', verdict: 'Insufficient Evidence' });
+    expect(result.tradeTerms).toMatchObject({ termsStatus: 'insufficient_evidence', rawMidpointDifference: null,
+      adjustedMidpointDifference: null, adjustedRangeOverlap: null, suggestedCashRange: null });
+    expect(result.leftAnalysisSnapshot.profile.valuationBasisReason).toContain('search coverage is unknown');
+    expect(result.rightAnalysisSnapshot.profile.valuationBasisReason).toContain('search coverage is unknown');
+  });
+
+  it.each(['item_a', 'item_b'] as const)('preserves only the known %s primary through symmetric final JSON transport', async (knownSide) => {
+    providerRows = rows(7);
+    const acquired = await acquire();
+    const submitted = wire(buildSoldCompsAnalysisSales(acquired, true));
+    expect(submitted).toHaveLength(7);
+    const item = { ...KOBE, estimatedValue: 250, approvalTargetImageReference: PRIMARY };
+    const response = await caller().analyzeTrade(wire({ leftItem: item, rightItem: item,
+      useImageAnalyzer: false, useVisualFieldCompletion: false,
+      leftHistoricalTrendSales: knownSide === 'item_a' ? submitted : [],
+      rightHistoricalTrendSales: knownSide === 'item_b' ? submitted : [],
+      cashAdjustment: { paidBy: 'item_a', amount: 75 },
+      marketNews: { itemA: [], itemB: [], categorySummaries: [] },
+    })) as unknown as Row;
+    const result = wire(response);
+    const knownProfile = knownSide === 'item_a' ? result.leftMarketProfile : result.rightMarketProfile;
+    const absentProfile = knownSide === 'item_a' ? result.rightMarketProfile : result.leftMarketProfile;
+    expect(knownProfile.valuationBasis).toBe('market_sales');
+    expect(knownProfile.primaryValue).toBeGreaterThan(0);
+    expect(absentProfile.primaryValue).toBeNull();
+    expect(result.deterministicComparison.leftValue).toBe(knownSide === 'item_a' ? knownProfile.primaryValue : null);
+    expect(result.deterministicComparison.rightValue).toBe(knownSide === 'item_b' ? knownProfile.primaryValue : null);
+    expect(result.deterministicComparison.difference).toBeNull();
+    expect(result.deterministicComparison.differencePercentage).toBeNull();
+    expect(result.deterministicComparison.verdict).toBe('Insufficient Evidence');
+    expect(result.tradeTerms.cashAdjustment).toEqual({ paidBy: 'item_a', amount: 75 });
+    expect(result.tradeTerms.adjustedRangeOverlap).toBeNull();
+    expect(result.tradeTerms.suggestedCashRange).toBeNull();
+    expect(result.valueSummary).toContain(`${knownSide === 'item_a' ? 'Item B' : 'Item A'}: Value cannot be established from the available data.`);
+    expect(result.valueSummary).not.toContain(`${knownSide === 'item_a' ? 'Item A' : 'Item B'}: Value cannot be established`);
+  });
+});
+
+
+describe('Step B identified handoff boundary regressions', () => {
+  it.each(['error', 'partial'] as const)('transports a maximum-length %s message after its source-label prefix', (status) => {
+    const summary = normalizeTestAiEvidence(KOBE, [{ id: 'sold_comps', label: 'Synthetic eBay Sold-Comps', kind: 'market_completed', status, message: 'x'.repeat(600) }]);
+    expect(summary.sources[0].message).toHaveLength(600);
+    expect(summary.reviewFlags.every((flag) => flag.message.length <= 600)).toBe(true);
+    expect(testAiEvidenceSummarySchema.safeParse(summary).success).toBe(true);
+  });
+
+  it('retains both deterministic no-value notices after a returned malformed narrative', async () => {
+    boundaries.llm.mockResolvedValueOnce({ choices: [{ message: { content: '{"verdict":"unrequested unsupported output"}' } }] });
+    const result = await analyze({ listings: [] });
+    expect(result.valueSummary).toContain('Item A: Value cannot be established from the available data.');
+    expect(result.valueSummary).toContain('Item B: Value cannot be established from the available data.');
+    expect(result.deterministicComparison).toMatchObject({ leftValue: null, rightValue: null, difference: null, differencePercentage: null });
+    expect(result.tradeTerms.suggestedCashRange).toBeNull();
   });
 });

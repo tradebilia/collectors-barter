@@ -44,7 +44,7 @@ describe('Analyzer 2.10 unified analysis snapshot', () => {
       evidenceSummary: evidence,
       now,
     });
-    expect(snapshot.version).toBe('2.11.0');
+    expect(snapshot.version).toBe('2.12.0');
     expect(snapshot.profile.authoritativeSaleCount).toBe(2);
     expect(snapshot.evidence.sourceStatuses.map((source) => source.id)).toEqual(['sold_comps', 'psa']);
     expect(snapshot.evidence.visualReview).toMatchObject({ match: 1, roughMatch: 1, mismatch: 1, unreadable: 0, notReviewed: 0 });
