@@ -195,6 +195,8 @@ function normalizeMercariObservedCandidate(row: unknown, report: MercariObservat
   const item = mercariOriginalMetadata(report);
   const price = Number(scalars.price);
   const currency = mercariObservedCurrency(report);
+  const providerUrl = [item.url, item.itemUrl, item.itemWebUrl, item.link, item.href]
+    .find((value): value is string => typeof value === 'string' && value.trim().length > 0) ?? null;
   const saleStatus = report.listingStatus === 'active' ? 'active' as const : 'unknown' as const;
   const priceBasis = report.listingStatus === 'active' ? 'asking' as const : 'unknown' as const;
   const imageValues = [
@@ -216,8 +218,8 @@ function normalizeMercariObservedCandidate(row: unknown, report: MercariObservat
     name: item.name,
     itemId: scalars.itemId,
     saleId: `mercari:${String(scalars.itemId)}`,
-    url: item.url,
-    itemUrl: item.itemUrl,
+    url: providerUrl,
+    itemUrl: providerUrl,
     price,
     currency,
     soldCurrency: null,
@@ -249,7 +251,7 @@ function normalizeMercariObservedCandidate(row: unknown, report: MercariObservat
   return {
     title: canonicalCandidate.title,
     titleCandidates: canonicalCandidate.titleCandidates,
-    itemUrl: canonicalCandidate.url,
+    itemUrl: canonicalCandidate.url ?? providerUrl,
     saleId: `mercari:${String(scalars.itemId)}`,
     price: canonicalCandidate.price ?? price,
     currency,

@@ -88,6 +88,13 @@ describe('Mercari undated sold=true actual route admission', () => {
     expect(profile.comparables.find(comp => comp.accepted)?.date).toBeNull();
     expect(requests.length).toBeGreaterThan(0);
   });
+  it('keeps a valid itemWebUrl provider alias through visual approval and valuation sealing', async () => {
+    rows = [providerRow(MOVIE, { url: undefined, itemWebUrl: 'https://www.mercari.com/us/item/m54069072197/' })];
+    const result: any = await caller().getMercariSoldCompsData(input());
+    const row = result.audit.ledger[0];
+    expect(row).toMatchObject({ itemUrl: 'https://www.mercari.com/us/item/m54069072197/', valuationEligible: true, evidenceDisposition: 'valuation_eligible' });
+    expect(row.provenanceToken).toBeTruthy(); expect(row.identityApproval).toBeTruthy();
+  });
   it('runs final Item A audit with the signed undated comp and no Item B or additional provider/model calls', async () => {
     const source: any = await caller().getMercariSoldCompsData(input());
     const fetchCount = mocks.fetch.mock.calls.length, modelCount = mocks.llm.mock.calls.length;

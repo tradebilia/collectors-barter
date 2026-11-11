@@ -845,10 +845,16 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
   const target = context.input.approvalTarget ?? reviewedTarget;
   const imageReference = context.input.imageUrl;
   const candidateIdentityFields = row.soldCompsMetadata ?? normalizeSoldCompsMetadata(row);
+  const originalIdentity = original as unknown as Record<string, unknown>;
+  const providerUrl = [original.itemUrl, originalIdentity.url, originalIdentity.itemWebUrl, originalIdentity.link, originalIdentity.href]
+    .find((value): value is string => typeof value === 'string' && value.trim().length > 0) ?? null;
+  const providerId = original.saleId
+    ?? (typeof original.providerMetadata?.itemId === 'string' || typeof original.providerMetadata?.itemId === 'number' ? original.providerMetadata.itemId : null)
+    ?? (typeof original.rawMetadata?.itemId === 'string' || typeof original.rawMetadata?.itemId === 'number' ? original.rawMetadata.itemId : null);
   const sale = prepareSourceTransactionIdentity({ ...row, price, currency, date: null, endedAt: null,
     soldAt: null, saleDate: null, soldDate: null, recency: 'undated' as const,
     saleDatePolicy: 'mercari_undated_sold_v1' as const,
-    saleId: original.saleId, url: original.itemUrl, sourceId: 'mercari_sold_comps', sourceAdapter: 'mercari_sold_comps',
+    saleId: providerId, url: providerUrl, sourceId: 'mercari_sold_comps', sourceAdapter: 'mercari_sold_comps',
     originMarketplace: 'mercari', marketplace: 'Mercari', sourceLabel: 'Sold-Comps (Mercari Sold)',
     requestedMode: 'sold', listingStatus: 'sold', priceBasis: 'sold' as const, saleStatus: 'completed' as const,
     completedStatusBasis: 'Sold-Comps Mercari sold=true reported sold price',

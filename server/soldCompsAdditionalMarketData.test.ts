@@ -31,7 +31,7 @@ describe('SoldComps additional marketplace adapters', () => {
     expect(requestedUrl).toContain('/v1/mercari?');
     expect(requestedUrl).toContain('sold=true');
     expect(requestedUrl).toContain(`count=${SOLD_COMPS_ADDITIONAL_LIMITS.maxMercariItems}`);
-    expect(result.listings).toMatchObject([{ sourceId: 'mercari_sold_comps', price: 185, evidenceDisposition: 'warning_review', endedAt: '2026-09-01' }]);
+    expect(result.listings).toMatchObject([{ sourceId: 'mercari_sold_comps', price: 185, evidenceDisposition: 'warning_review', endedAt: null }]);
   });
 
   it('runs the clean-title fallback when the primary Mercari query returns zero records', async () => {
@@ -102,11 +102,17 @@ describe('SoldComps additional marketplace adapters', () => {
     expect(listing?.canonicalCandidate).toMatchObject({
       sourceId: 'mercari_sold_comps',
       marketplace: 'Mercari',
-      saleStatus: 'completed',
-      priceBasis: 'sold',
+      saleStatus: 'unknown',
+      priceBasis: 'unknown',
       imageUrls: ['https://img.test/front.jpg', 'https://img.test/back.jpg'],
     });
     expect(listing?.providerMetadata).toMatchObject({ categoryName: 'Movies & TV', providerCondition: 'Pre-Owned' });
+  });
+
+  it('preserves itemWebUrl as the canonical provider identity when url is absent', () => {
+    const listing = normalizeMercariSoldCandidate({ itemId: 'm-web-url', title: 'Batman Laserdisc', price: '11', currency: 'USD', itemWebUrl: 'https://www.mercari.com/us/item/m-web-url/' });
+    expect(listing).toMatchObject({ saleId: 'mercari:m-web-url', itemUrl: 'https://www.mercari.com/us/item/m-web-url/' });
+    expect(listing?.canonicalCandidate).toMatchObject({ url: 'https://www.mercari.com/us/item/m-web-url/' });
   });
 
   it('builds Disney Pins Mercari criteria from character, pin name, and category', async () => {
@@ -243,6 +249,6 @@ describe('SoldComps additional marketplace adapters', () => {
     }, fetchMock as unknown as typeof fetch);
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(result.listings).toHaveLength(1);
-    expect(result.metrics).toMatchObject({ fallbackQueriesUsed: [expect.any(String)], retrievalCoverage: [{ received: 0, status: 'success' }, { received: 1, status: 'success' }] });
+    expect(result.metrics).toMatchObject({ fallbackQueriesUsed: [expect.any(String)], retrievalCoverage: [{ received: 0, status: 'success' }, { received: 1, status: 'success' }, { received: 1, status: 'success' }] });
   });
 });
