@@ -1749,7 +1749,13 @@ export function assessComparableCategoryIdentity(
           : null;
       const inscriptionMatches = targetInscription.state === candidateInscription.state
         && (!targetInscription.key || candidateInscription.key === targetInscription.key);
-      record('Inscription', targetInscription.key || targetInscription.state, inscriptionMatches, inscriptionConflict);
+      // Marketplace titles usually do not state that a signed item has no
+      // inscription. Treat target "No" plus candidate silence as nonblocking
+      // unknown evidence; an explicit inscription still conflicts, while an
+      // explicit matching absence remains confirmed.
+      if (!(targetInscription.state === 'absent' && candidateInscription.state === 'unknown')) {
+        record('Inscription', targetInscription.key || targetInscription.state, inscriptionMatches, inscriptionConflict);
+      }
     }
   } else if (category === 'movies') {
     const movieTitle = firstString(details, ['title', 'movieTitle', 'filmTitle']) || target.title;

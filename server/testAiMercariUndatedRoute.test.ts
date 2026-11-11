@@ -12,12 +12,12 @@ vi.mock('./_core/llm', () => ({ invokeLLM: mocks.llm }));
 import { testAIRouter } from './testAIRouter';
 import { normalizeAnalysisMarketSales } from './testAiMarketEvidence';
 import { verifyCanonicalObservation } from './testAiCanonicalObservation';
-import { isCompletedSaleCandidate, scoreComparable, buildMarketProfile } from './testAiComparableEngine';
+import { assessComparableCategoryIdentity, isCompletedSaleCandidate, scoreComparable, buildMarketProfile } from './testAiComparableEngine';
 const TARGET_IMAGE = 'https://example.test/mercari/target.jpg';
 const MOVIE = { title: 'Batman (1989) LaserDisc LD', category: 'movies', itemType: 'individual_movie',
   itemDetails: JSON.stringify({ movieTitle: 'Batman', format: 'LaserDisc', releaseYear: '1989', isGraded: 'No', sealed: 'No' }) };
 const AUTOGRAPH = { title: 'Barry Bonds Official Major League Baseball Signed Rawlings', category: 'autographs', itemType: 'signed_item',
-  itemDetails: JSON.stringify({ signer: 'Barry Bonds', signedItemType: 'baseball', autographCategory: 'Sports/Baseball', authenticationIncluded: 'No' }) };
+  itemDetails: JSON.stringify({ signer: 'Barry Bonds', signedItemType: 'baseball', autographCategory: 'Sports/Baseball', authenticationIncluded: 'No', inscriptionPresent: 'No' }) };
 const GAME = { title: 'The Legend of Zelda NES WATA 7.5 Sealed A++', category: 'video_games', itemType: 'game', grade: '7.5', certificationCompany: 'WATA',
   itemDetails: JSON.stringify({ gameTitle: 'The Legend of Zelda', platform: 'NES', releaseYear: '1987', isGraded: 'Yes', gradingCompany: 'WATA', grade: '7.5', completeInBox: 'Yes', sealed: 'Yes' }) };
 let rows: Record<string, any>[];
@@ -159,6 +159,17 @@ describe('Mercari undated sold=true actual route admission', () => {
     expect(comp.valuationUse?.sourceAdmission.blockerCodes).not.toContain('REQUIRED_APPROVAL_MISSING');
     expect(comp.valuationUse?.sourceAdmission.blockerCodes).not.toContain('PROVENANCE_UNVERIFIED');
     expect(comp.valuationUse?.use.code).toBe('CURRENT_SALES_PRIMARY');
+  });
+  it('does not treat an explicit inscription as equivalent to a target marked No inscription', () => {
+    const target = { ...AUTOGRAPH, approvalTargetImageReference: TARGET_IMAGE };
+    const identity = assessComparableCategoryIdentity(
+      target as any,
+      JSON.parse(target.itemDetails),
+      'Barry Bonds Official Major League Baseball Inscribed HOF 73',
+      null,
+    );
+    expect(identity.status).toBe('objective_conflict');
+    expect(identity.conflicts).toContain('Inscription differs (present)');
   });
   it('reports the missing ungraded deciding-evidence gate rather than blaming the Unknown Mercari date', async () => {
     imageEvidence = { identityMatches: true, artworkMatches: true, slabVisible: false };
