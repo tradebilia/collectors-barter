@@ -8,7 +8,7 @@ vi.mock('./_core/llm', () => ({ invokeLLM: vi.fn(() => { throw new Error('TITLE_
 import { invokeLLM } from './_core/llm';
 import {
   buildMetadataFieldComparisons, buildVisualTargetMetadata, moviesBoxSetVisualScore,
-  autographMarketRelevanceScore, moviesIndividualVisualScore, videoGameAccessoryVisualScore, videoGameGameVisualScore, vintageToyVisualScore, withMetadataFieldComparisons,
+  autographMarketRelevanceScore, moviesIndividualVisualScore, originalArtMarketRelevanceScore, videoGameAccessoryVisualScore, videoGameGameVisualScore, vintageToyVisualScore, withMetadataFieldComparisons,
   type MetadataFieldComparison, type VisualSourceCandidate,
 } from './testAiVisualSourceFilter';
 import {
@@ -62,6 +62,20 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
     for (const [field, value] of [['signedItemType', 'Baseball (detected in title)'], ['autographCategory', 'Sports (detected in title)'], ['authenticationCompany', 'Steiner (detected in title)']] as const) {
       expect(row(rows, field)).toMatchObject({ titleDerivedValue: value, titleDerivedStatus: 'match', rankingContribution: { awardedPoints: expect.any(Number) } });
       expect(row(rows, field).titleDerivedValue).not.toBe('Unknown');
+    }
+  });
+
+  it('keeps Original Art title-scored fields from displaying Unknown', () => {
+    const target = buildVisualTargetMetadata({ title: 'Batman Original Cover Sketch', category: 'comics', itemType: 'original_art',
+      fullItemDetails: { artistName: 'Bob Kane', artworkTitle: 'Batman', artType: 'Original Sketch', comicTitle: 'Batman', issueNumber: '1', publisher: 'DC' } });
+    const candidate = { title: 'Bob Kane Batman Original Sketch Batman #1 DC' };
+    const score = originalArtMarketRelevanceScore(candidate, target);
+    const rows = buildMetadataFieldComparisons(target, { ...candidate, metadataScoreAwards: score.awards });
+    expect(score.score).toBe(100);
+    for (const award of score.awards) {
+      const comparison = row(rows, award.field);
+      expect(comparison.titleDerivedValue).not.toBe('Unknown');
+      expect(comparison.rankingContribution).toMatchObject({ awardedPoints: award.awardedPoints });
     }
   });
 

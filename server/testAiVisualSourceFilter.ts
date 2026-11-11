@@ -2250,7 +2250,7 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
       const value = state ? movieBoolean(state) : "";
       return value ? `${value === 'yes' ? 'Yes' : 'No'} (inferred from title)` : "Unknown";
     }
-		if (category === "autographs") {
+			if (category === "autographs") {
 			if (/^(?:signedItemType|autographItemType)$/i.test(key)) {
 				const objectType = autographObjectType(title);
 				return objectType ? `${objectType.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
@@ -2271,8 +2271,20 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 				return authentication && !/^(?:authenticated|yes)$/i.test(authentication)
 					? `${authentication.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
 			}
-		}
-		if (/^(?:title|listingTitle|itemTitle)$/i.test(key)) return comparisonValue(title);
+			}
+			if (category === "original_art") {
+				if (/^(?:artistName|artist|creator|artworkTitleCharacter|artworkTitle|character|artType|comicTitle|coverSketchComicTitle|issueNumber|issueNo|number|publisher)$/i.test(key)) {
+					if (/^(?:issueNumber|issueNo|number)$/i.test(key)) {
+						const issue = comparisonValue(targetValue).match(/\d+[A-Za-z]?/)?.[0];
+						return issue && new RegExp(`(?:^|\\D)#?${issue.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\D|$)`, "i").test(title)
+							? `${issue} (detected in title)` : "Unknown";
+					}
+					const targetText = comparisonValue(targetValue);
+					return targetText !== "Unknown" && titleContainsValue(title, targetText)
+						? `${targetText} (detected in title)` : "Unknown";
+				}
+			}
+			if (/^(?:title|listingTitle|itemTitle)$/i.test(key)) return comparisonValue(title);
 	if (/^(?:year|releaseYear)$/i.test(key)) {
 		return title.match(/\b(?:17|18|19|20)\d{2}\b/)?.[0] ?? "Unknown";
 	}
@@ -2578,6 +2590,8 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   const targetType = targetItemTypeValue(targetMetadata);
   const movieContext = category === 'movies' || normalizedFieldKey(targetType).includes('movie');
+  const originalArtContext = category === 'comics' && /original(?:[_\s-]?art|artwork)/i.test(normalizedFieldKey(targetType));
+  const comparisonCategory = originalArtContext ? 'original_art' : category;
   const isBoardGameTarget = category === "vintage_toys" && vintageToyTargetItemType(targetMetadata) === "board game/puzzle";
   const excluded = new Set(["image", "imageUrl", "imageUrls", "photos", "thumbnail", "titleEvidence", "normalizedStructuredMetadata"]);
   const isGradingField = (key: string) => /^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key));
@@ -2626,6 +2640,8 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
         && movieTargetItemType(targetMetadata) === 'individual_movie';
       const targetRaw = movieIdentity
         ? firstMeaningfulValue(targetDetails.title, targetDetails.movieTitle, extractTargetTitle(targetMetadata))
+        : originalArtContext && /^(?:artworkTitleCharacter|artworkTitle|character)$/i.test(key)
+          ? firstMeaningfulValue(targetDetails.artworkTitleCharacter, targetDetails.artworkTitle, targetDetails.character)
         : firstMeaningfulValue(resolvedVisualFieldValue(metadataValue(targetMetadata, key), targetDetails, key), readMetadataValue(targetDetails, comparisonMetadataAliases(key)));
       const states = key === 'isGraded' ? explicitScoreGradingStates(targetMetadata, listing) : null;
       const stateDisplay = (state: ObservedExplicitGradingState | undefined, value: string) => state?.state === 'conflicted'
@@ -2634,9 +2650,9 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 				const targetValue = stateDisplay(states?.target, comparisonValue(targetRaw));
       const candidateValue = stateDisplay(states?.candidate, movieIdentity
         ? comparisonValue(canonicalCandidateTitle(listing)) : comparisonCandidateFieldValue(listing, candidateDetails, key));
-				const titleDerivedValue = isBoardGameTarget
+          const titleDerivedValue = isBoardGameTarget
           && /^(?:year|releaseYear)$/i.test(key)
-          ? "Unknown" : comparisonTitleDerivedValue(listing, key, targetValue, category,
+          ? "Unknown" : comparisonTitleDerivedValue(listing, key, targetValue, comparisonCategory,
             /^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key)) ? explicitScoreGradingStates(targetMetadata, listing).candidateIdentityValues
               : category === "music" && /^(?:condition|mediaCondition)$/i.test(key) ? musicTargetConditionIdentityValues(targetMetadata) : []);
           const fieldLabel = movieContext && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(key)
@@ -2644,9 +2660,9 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 			const normalizedFieldLabel = fieldLabel.trim().toLowerCase();
 				if (emittedFieldLabels.has(normalizedFieldLabel)) continue;
 				emittedFieldLabels.add(normalizedFieldLabel);
-	      const rankingContributionBase = rankingContributionForField(listing, key, fieldLabel, candidateValue, titleDerivedValue, category, targetType);
-					const titleDerivedStatus = states?.candidate.state === 'conflicted' || states?.target.state === 'conflicted'
-              ? 'unknown' : comparisonStatus(targetValue, titleDerivedValue, category, key);
+              const rankingContributionBase = rankingContributionForField(listing, key, fieldLabel, candidateValue, titleDerivedValue, comparisonCategory, targetType);
+                        const titleDerivedStatus = states?.candidate.state === 'conflicted' || states?.target.state === 'conflicted'
+              ? 'unknown' : comparisonStatus(targetValue, titleDerivedValue, comparisonCategory, key);
 					const rankingContribution = titleDerivedStatus === 'match' && rankingContributionBase?.matched && (rankingContributionBase.sources ?? []).includes('title')
               ? { ...rankingContributionBase, titleDerived: true } : rankingContributionBase;
 					rows.push({
