@@ -9,6 +9,7 @@ vi.mock('../client/src/lib/trpc', () => ({ trpc: { testAI: { auditItemValuation:
 import { TestAiItemAudit, buildItemAuditSubmission } from '../client/src/components/test-ai/TestAiItemAudit';
 import { normalizeTestAiEvidence } from '../shared/testAiEvidenceNormalization';
 import { candidateFinalDecision } from '../client/src/components/test-ai/candidateFinalDecision';
+import { TestAiCandidateMasterList } from '../client/src/components/TestAiCandidateMasterList';
 const item = { title: 'Batman LaserDisc', category: 'movies', itemType: 'individual_movie', primaryPhotoUrl: 'https://example.test/target.jpg' };
 const sources = [{ id: 'mercari_sold_comps', label: 'Mercari Sold', kind: 'market_completed', packet: { requestedMode: 'sold',
   listings: [{ title: 'Batman candidate', price: 11, currency: 'USD', requestedMode: 'sold', evidenceReasons: ['APPROVAL_UNGRADED_STATE_UNCONFIRMED: rawOrLooseVisible was not confirmed.'] }] } }];
@@ -100,6 +101,34 @@ describe('Automatic Item A-only audit', () => {
     await tick();
     expect(mocks.mutate).toHaveBeenCalledTimes(1);
     expect(mocks.mutate.mock.calls[0][0].sales).toHaveLength(1);
+  });
+  it('publishes the same final receipt to main and source-detail Batman cards, retaining stale-run rejection', async () => {
+    const row = { title: 'BATMAN (1989) Laserdisc LD', price: 19.99, sourceId: 'sold_comps',
+      metadataOriginOccurrenceKey: 'sold_comps:batman-run:occ:3', metadataMatchRank: 3, metadataMatchScore: 65,
+      visualExecution: { version: 1, state: 'completed', selectedForReview: true,
+        identity: { origin: 'visual', result: 'match', reviewVerdict: 'match' },
+        attempts: [{ ordinal: 1, stage: 'initial', format: 'json_schema', outcome: 'usable_review' }] },
+      visualReviewStatus: 'match', evidenceDisposition: 'valuation_eligible' };
+    const packets = [{ id: 'sold_comps', label: 'eBay Sold-Comps', kind: 'market_completed', status: 'success', packet: { listings: [row] } }];
+    const composedRender = async (target = item) => act(async () => root.render(createElement(QueryClientProvider, { client },
+      createElement(TestAiItemAudit, { item: target, summary: normalizeTestAiEvidence(target, []), sources: packets },
+        createElement('details', { 'aria-label': 'Source and technical audit' },
+          createElement(TestAiCandidateMasterList, { listings: [row], sourceLabel: 'eBay Sold-Comps', targetImageUrl: target.primaryPhotoUrl }))))));
+    await composedRender(); await tick();
+    const [input, callbacks] = mocks.mutate.mock.calls[0];
+    await act(async () => callbacks.onSuccess({ side: 'item_a', analysisRunId: 'server-batman', snapshot: { profile: {
+      primaryValue: 19.99, valuationBasis: 'current_sales_primary', valuationBasisReason: 'Matching completed sale selected.',
+      comparables: input.sales.map((sale: any, intakeOrdinal: number) => ({ ...sale, valuationUse: {
+        auditRef: { side: 'item_a', analysisRunId: 'server-batman', intakeOrdinal, displayCorrelation: sale.displayCorrelation },
+        use: { code: 'CURRENT_SALES_PRIMARY', reasonCodes: [] } } })) } } }));
+    const main = container.querySelector('[aria-label="Item A evidence review"] [data-final-decision-code]');
+    const details = container.querySelector('[aria-label="Source and technical audit"] [data-final-decision-code]');
+    expect(main?.getAttribute('data-final-decision-code')).toBe('CURRENT_SALES_PRIMARY');
+    expect(details?.getAttribute('data-final-decision-code')).toBe('CURRENT_SALES_PRIMARY');
+    expect(details?.textContent).not.toContain('VALUATION NOT RUN');
+    await composedRender({ ...item, title: 'Different target' });
+    expect(container.querySelector('[aria-label="Source and technical audit"] [data-final-decision-code]')?.getAttribute('data-final-decision-code'))
+      .not.toBe('CURRENT_SALES_PRIMARY');
   });
   it('retains the later trade panel behind an explicit disabled-by-default option', () => {
     const page = readFileSync(`${process.cwd()}/client/src/pages/TestAI.tsx`, 'utf8');

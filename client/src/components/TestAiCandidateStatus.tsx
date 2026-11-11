@@ -5,9 +5,9 @@ import { MetadataComparisonTable } from './TestAiMetadataComparisonTable';
 import { TestAiSafeImage } from './TestAiSafeImage';
 import { sourceCurrentWindowLabel, sourceMetricDisplay, sourceRetrievalCoverage } from '../../../shared/testAiSourceDisplay';
 
-const CandidateDisplayContext = createContext<{ scope: CandidateDisplayScope; outcome?: CandidateFinalDisplayOutcome | null }>({ scope: {} });
-export function TestAiCandidateDisplayProvider({ side, outcome, children }: { side: 'item_a' | 'item_b'; outcome?: CandidateFinalDisplayOutcome | null; children: ReactNode }) {
-  return <CandidateDisplayContext.Provider value={{ scope: { side }, outcome }}>{children}</CandidateDisplayContext.Provider>;
+const CandidateDisplayContext = createContext<{ scope: CandidateDisplayScope; outcome?: CandidateFinalDisplayOutcome | null; auditFailure?: string | null }>({ scope: {} });
+export function TestAiCandidateDisplayProvider({ side, outcome, auditFailure, children }: { side: 'item_a' | 'item_b'; outcome?: CandidateFinalDisplayOutcome | null; auditFailure?: string | null; children: ReactNode }) {
+  return <CandidateDisplayContext.Provider value={{ scope: { side }, outcome, auditFailure }}>{children}</CandidateDisplayContext.Provider>;
 }
 export function useTestAiCandidateDisplay() { return useContext(CandidateDisplayContext); }
 export function TestAiCandidateStatus({ listing, scope: suppliedScope, reconciled = false }: { listing: CandidateDisplayRow; scope?: CandidateDisplayScope; reconciled?: boolean }) {

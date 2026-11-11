@@ -559,11 +559,9 @@ export function createServerFinalIdentityApproval(options: ServerFinalIdentityAp
   if (canonical.fields.category !== 'disney_pins' && canonical.fields.gradedState === 'raw' && (evidence.rawOrLooseVisible !== true || evidence.slabVisible === true)) return reject('APPROVAL_UNGRADED_STATE_UNCONFIRMED: the target is ungraded, but deciding evidence did not confirm rawOrLooseVisible=true with no visible slab.');
   if (canonical.fields.category !== 'disney_pins' && evidence.identityMatches !== true) return reject('APPROVAL_IDENTITY_NOT_CONFIRMED: deciding visual evidence did not confirm identityMatches=true.');
   if (canonical.fields.category === 'disney_pins' && !disneyPinsEvidenceIsExact(evidence, targetMetadata)) return reject('APPROVAL_PIN_IDENTITY_INCOMPLETE: required exact pin identity evidence was not confirmed.');
-  const visualIdentityConflictKeys = canonical.fields.category === 'coins'
-    ? ['identityMatches', 'artworkMatches', 'dateMatches', 'varietyMatches', 'mintMarkMatches', 'denominationMatches']
-    : ['identityMatches', 'artworkMatches'];
-  if (visualIdentityConflictKeys.some((key) => evidence[key as keyof VisualEvidence] === false)) {
-    return reject(`APPROVAL_VISUAL_IDENTITY_CONFLICT: deciding evidence reports false for ${visualIdentityConflictKeys.filter(key => evidence[key as keyof VisualEvidence] === false).join(', ')}.`);
+  const visualIdentityConflicts = conflictingVisualIdentityFields(canonical.fields.category, evidence);
+  if (visualIdentityConflicts.length) {
+    return reject(`APPROVAL_VISUAL_IDENTITY_CONFLICT: deciding evidence reports false for ${visualIdentityConflicts.join(', ')}.`);
   }
   const decidingRationale = audit.decidingRationale ?? (isRetry ? audit.retryRationale : audit.initialRationale) ?? review.rationale;
   const reconciled = conservativeGradedVisualReviews([{ ...review, rationale: decidingRationale, candidateIndex: 0, visualEvidence: evidence }],
@@ -595,6 +593,14 @@ export function createServerFinalIdentityApproval(options: ServerFinalIdentityAp
   const handle: ServerFinalIdentityApproval = Object.freeze({ kind: 'server-final-identity-approval' });
   mintedIdentityApprovals.set(handle, { sale, facts: immutableCopy(facts), approval });
   return handle;
+}
+
+/** Minting and signed-token verification must enforce the same category policy. */
+function conflictingVisualIdentityFields(category: string, evidence: VisualEvidence): string[] {
+  const keys = category === 'coins'
+    ? ['identityMatches', 'artworkMatches', 'dateMatches', 'varietyMatches', 'mintMarkMatches', 'denominationMatches']
+    : ['identityMatches', 'artworkMatches'];
+  return keys.filter(key => evidence[key as keyof VisualEvidence] === false);
 }
 
 function validApproval(approval: IdentityApprovalV1, facts: CanonicalObservationFacts, provenance: CanonicalObservationProvenance): boolean {
@@ -645,8 +651,7 @@ function validApproval(approval: IdentityApprovalV1, facts: CanonicalObservation
     || fields.gradedState === 'raw' && (evidence.rawOrLooseVisible !== true || evidence.slabVisible === true))) return false;
   if (fields.category !== 'disney_pins' && evidence.identityMatches !== true
     || fields.category === 'disney_pins' && !disneyPinsEvidenceIsExact(evidence)) return false;
-  if (['identityMatches', 'artworkMatches', 'dateMatches', 'varietyMatches', 'mintMarkMatches', 'denominationMatches']
-    .some((key) => evidence[key as keyof VisualEvidence] === false)) return false;
+  if (conflictingVisualIdentityFields(fields.category, evidence).length) return false;
   if (typeof approval.decidingRationale !== 'string' || approval.decidingRationale.length > 600
     || !Array.isArray(approval.visualDifferences) || approval.visualDifferences.length > 30) return false;
   return approval.visualDifferences.every((difference) => difference && typeof difference === 'object'

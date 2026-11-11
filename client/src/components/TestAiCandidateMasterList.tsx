@@ -52,7 +52,8 @@ export function TestAiCandidateMasterList({ listings, sourceLabel, targetImageUr
               <p className="mt-1 text-[11px] leading-relaxed text-slate-400">{listing.sourceLabel || listing.sourceId || sourceLabel} · {listing.metadataMatchRank ? `Rank #${listing.metadataMatchRank}` : 'Unranked'} · {listing.metadataMatchScore !== undefined && listing.metadataMatchScore !== null ? `Score ${listing.metadataMatchScore}/100` : 'Score unavailable'}{listing.metadataMatchLabel ? ` · ${listing.metadataMatchLabel}` : ''}</p>
               <div className="mt-2" data-final-decision-code={decision.code}>
                 <span className={`inline-block rounded-md border px-2 py-1 text-[11px] font-semibold leading-snug ${decision.className}`}>{decision.label}</span>
-                <p className="mt-1.5 break-words text-[12px] leading-relaxed text-slate-300">{decision.reason}</p>
+                <p className="mt-1.5 break-words text-[12px] leading-relaxed text-slate-300">{!listing.valuationUse && context.auditFailure && decision.label === 'VALUATION NOT RUN' ? context.auditFailure : decision.reason}</p>
+                {!listing.valuationUse && context.auditFailure && decision.label !== 'VALUATION NOT RUN' && <p className="mt-1.5 text-[12px] leading-relaxed text-amber-200" data-audit-request-failure>{context.auditFailure}</p>}
               </div>
             </div>
           </div>

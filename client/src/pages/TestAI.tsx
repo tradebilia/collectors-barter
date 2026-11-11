@@ -2817,7 +2817,7 @@ function factualFields(data: any, source: 'tcgdex' | 'rawg' | 'igdb' | 'wikidata
   };
 }
 
-function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, mercariSoldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, comicConnectData, pcgsAuctionData, oneThirtyPointData, specialistObservations, extraReviewPackets = {}, onSummaryChange }: {
+function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, mercariSoldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, comicConnectData, pcgsAuctionData, oneThirtyPointData, specialistObservations, extraReviewPackets = {}, sourcePending = {}, onSummaryChange, children }: {
   item: SelectedItem;
   marketItem: SelectedItem;
   side: 'left' | 'right';
@@ -2839,7 +2839,9 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   oneThirtyPointData: any;
   specialistObservations?: EvidenceSourceObservation[];
   extraReviewPackets?: Record<string, any>;
+  sourcePending?: Record<string, boolean>;
   onSummaryChange?: (summary: NormalizedEvidenceSummary) => void;
+  children?: ReactNode;
 }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const details = useMemo(() => parseTestAiDetails(item.itemDetails), [item.itemDetails]);
@@ -3327,11 +3329,22 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const reviewSources = [...summary.sources, ...Object.keys(extraReviewPackets)
     .filter(id => !summary.sources.some(source => source.id === id) && enabledSources.has(id as SourceId))
     .map(id => ({ id, label: DATA_SOURCES[id as SourceId]?.label || id, status: evidenceStatus(extraReviewPackets[id]) }))];
-  return <>
-    {side === 'left' ? <TestAiItemAudit item={marketItem} displayItem={item} summary={summary}
-      sources={reviewSources.map(source => ({ ...source, packet: extraReviewPackets[source.id] ?? reviewPackets[source.id] }))} />
-      : <TestAiEvidenceReview item={item} side={side} summary={summary}
-        sources={reviewSources.map(source => ({ ...source, packet: extraReviewPackets[source.id] ?? reviewPackets[source.id] }))} />}
+  // UI-only loading: the evidence summary keeps its existing server-valid statuses.
+  // Never use a page-wide query counter or hide the entire audit behind Item B.
+  const pendingSources: Record<string, boolean> = { ...sourcePending,
+    tcgdex: tcgdexQuery.isFetching, rawg: rawgQuery.isFetching, igdb: igdbQuery.isFetching,
+    wikidata: wikidataQueryResult.isFetching, smithsonian: smithsonianQuery.isFetching, numista: numistaQuery.isFetching,
+    cgc: cgcQuery.isFetching, psa: psaQuery.isFetching, bgs: bgsQuery.isFetching, sgc: sgcQuery.isFetching, pcgs: pcgsQuery.isFetching,
+    discogs: discogsQuery.isFetching,
+    pricecharting: priceChartingQuery.isFetching || priceChartingCoinQuery.isFetching || priceChartingVideoGameQuery.isFetching
+      || priceChartingVideoGameCandidateQuery.isFetching || priceChartingSlugQuery.isFetching || priceChartingMoversQuery.isFetching,
+    pwcc: pwccQuery.isFetching, comic_book_realm: comicBookRealmQuery.isFetching,
+  };
+  const auditSources = reviewSources.map(source => ({ ...source,
+    status: pendingSources[source.id] ? 'loading' : source.status,
+    packet: extraReviewPackets[source.id] ?? reviewPackets[source.id],
+  }));
+  const sourceDetails = <>
     {enabledSources.has('discogs') && discogsSearchCriteria.isMusic && discogsCandidates.length > 1 && <details className="rounded border border-slate-800 p-3">
       <summary className="cursor-pointer text-xs text-slate-300">Discogs reference selection</summary>
       <label className="mt-2 block text-xs text-slate-300">Confirm exact release / pressing</label>
@@ -3341,7 +3354,11 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       </select>
       <p className="mt-2 text-xs text-slate-400">Selection applies to this sandbox run only; Discogs is reference metadata, not valuation evidence.</p>
     </details>}
+    {children}
   </>;
+  return side === 'left' ? <TestAiItemAudit item={marketItem} displayItem={item} summary={summary} sources={auditSources}>
+    {sourceDetails}
+  </TestAiItemAudit> : <><TestAiEvidenceReview item={item} side={side} summary={summary} sources={auditSources} />{sourceDetails}</>;
 }
 
 function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'left' | 'right' }) {
@@ -4516,7 +4533,7 @@ function DataColumn({ item, searchItem, side, visualProvider, enabledSources, eb
 
   return (
     <TestAiCandidateDisplayProvider side={side === 'left' ? 'item_a' : 'item_b'} outcome={finalDisplayOutcome}><div className="space-y-3">
-      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayEvidenceData ?? ebayData} soldCompsData={soldCompsData} mercariSoldCompsData={mercariSoldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={specialistObservationList} extraReviewPackets={{ ...specialistPackets, comc_parse: comcData, tcgplayer_sold_comps: tcgplayerSoldCompsData }} onSummaryChange={onEvidenceSummary} />
+      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayEvidenceData ?? ebayData} soldCompsData={soldCompsData} mercariSoldCompsData={mercariSoldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={specialistObservationList} extraReviewPackets={{ ...specialistPackets, comc_parse: comcData, tcgplayer_sold_comps: tcgplayerSoldCompsData }} sourcePending={{ ebay_active: ebayLoading, sold_comps: soldCompsLoading, mercari_sold_comps: mercariSoldCompsLoading, tcgplayer_sold_comps: tcgplayerSoldCompsLoading, pokemon_price_tracker: pokemonPriceTrackerLoading, the_card_api: theCardApiLoading, cardsight_ai: cardsightAiLoading, comc_parse: comcLoading, lelands: lelandsLoading, pristine_auction: pristineAuctionLoading, collect_auction: collectAuctionLoading, sirius_sports_auctions: siriusSportsAuctionLoading, comicconnect: comicConnectLoading, pcgs_auction_results: pcgsAuctionLoading }} onSummaryChange={onEvidenceSummary}>
       <details className="rounded-xl border border-slate-800 bg-slate-950/40 p-3" aria-label="Source and technical audit">
         <summary className="cursor-pointer text-sm font-semibold text-slate-300">Source and technical audit — queries, retrieval and provider details</summary>
         <div className="mt-3 space-y-3">
@@ -4572,6 +4589,7 @@ function DataColumn({ item, searchItem, side, visualProvider, enabledSources, eb
       {SANDBOX_SPECIALIST_SOURCES.filter((source) => source.id !== 'comicconnect' && source.id !== 'comic_book_realm' && enabledSources.has(source.id)).map((source) => <SandboxSpecialistSection key={source.id} source={source} item={queryItem} side={side} visualProvider={visualProvider} onEvidenceObservation={onSpecialistObservation} onCandidatePacket={onCandidatePacket} onSales={onSpecialistSales} />)}
         </div>
       </details>
+      </EvidenceNormalizationSummary>
     </div></TestAiCandidateDisplayProvider>
   );
 }

@@ -6,6 +6,7 @@ import { testAIRouter } from './testAIRouter';
 import { normalizeTestAiEvidence } from '../shared/testAiEvidenceNormalization';
 import { stampCandidateDisplayIntake } from '../shared/testAiCandidateLedger';
 import { auditItemValuation } from './testAiItemAudit';
+import { buildVisualTargetMetadata, withMetadataFieldComparisons } from './testAiVisualSourceFilter';
 const item = { title: 'Batman LaserDisc', category: 'movies', itemType: 'individual_movie', estimatedValue: 5000,
   itemDetails: JSON.stringify({ movieTitle: 'Batman', format: 'LaserDisc', isGraded: 'No' }) };
 const caller = (role: 'admin' | 'user' | null = 'admin') => testAIRouter.createCaller({ user: role ? { id: 1, role } as any : null, req: { headers: {} } as any, res: {} as any });
@@ -36,6 +37,19 @@ describe('Item A-only final valuation audit', () => {
     expect(admission.reasonDetails?.join('; ')).toContain('unsupported currency CAD');
     expect(admission.reasonDetails?.join('; ')).toContain('active asking listing');
     expect(result.snapshot.profile.comparables[0].valuationUse!.auditRef.displayCorrelation?.requestOccurrenceRef).toBe('audit-test:item_a:intake:0');
+  });
+  it('audits the actual Excellent versus Pre-Owned Movie comparison payload instead of rejecting the entire request', async () => {
+    const target = { ...item, condition: 'excellent' };
+    const candidate = withMetadataFieldComparisons(buildVisualTargetMetadata(target), { title: 'BATMAN (1989) Laserdisc LD', price: 19.99,
+      condition: 'Pre-Owned', sourceId: 'sold_comps', metadata: 'condition=Pre-Owned',
+      metadataOriginOccurrenceKey: 'sold_comps:batman-run:occ:3' });
+    expect(candidate.metadataFieldComparisons.find(row => row.targetField === 'Condition')?.status).toBe('soft_difference');
+    const sales = stampCandidateDisplayIntake([candidate], 'item_a', 'batman-soft-condition');
+    const result = await caller().auditItemValuation({ item: target, sales });
+    expect(result.snapshot.profile.comparables).toHaveLength(1);
+    expect(result.snapshot.profile.comparables[0].valuationUse?.auditRef.displayCorrelation?.requestOccurrenceRef)
+      .toBe('batman-soft-condition:item_a:intake:0');
+    expect(mocks.llm).not.toHaveBeenCalled();
   });
   it.each(['not_required_pre_visual', 'not_required_no_target_image', 'not_required_context_workflow'])('audits retained visualRequirement=%s rather than rejecting the whole request', async visualRequirement => {
     const result = await caller().auditItemValuation({ item, sales: [{ title: 'Held row', visualRequirement, price: 11, currency: 'USD', sourceId: 'mercari_sold_comps' }] });
