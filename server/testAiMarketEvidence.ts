@@ -39,6 +39,11 @@ const RESTRICTIVE_DISPOSITIONS = new Set<NonNullable<MarketSale['evidenceDisposi
 function sourceKey(value: unknown): string {
   return String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 }
+function isAutographTarget(target: ComparableTarget | undefined): boolean {
+  const category = sourceKey(target?.category);
+  const itemType = sourceKey(target?.itemType);
+  return category === 'autographs' || itemType === 'signed_item' || itemType === 'autograph';
+}
 
 function safeText(value: unknown, maximum = 600): string | null {
   const text = typeof value === 'string' ? value.trim() : value === null || value === undefined ? '' : String(value).trim();
@@ -136,12 +141,21 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     ? trustedInput.buyerPremium
     : 'unknown';
   const visualReviewStatus = normalizedVisualStatus(trustedInput.visualReviewStatus);
-  const visualRequirement = sourceId === 'mercari_sold_comps' || trustedInput.visualRequirement === 'required' ? 'required' : 'not_required';
+  // Autographs use broad market-range context, not exact-image identity. The
+  // source filter marks these rows as not required; do not re-enable a
+  // Mercari visual approval requirement at the final audit boundary.
+  const autographNoVisual = isAutographTarget(options?.target) && sourceId === 'mercari_sold_comps';
+  const visualRequirement = autographNoVisual ? 'not_required'
+    : sourceId === 'mercari_sold_comps' || trustedInput.visualRequirement === 'required' ? 'required' : 'not_required';
   const identityApproval = verification.verified && options?.target
     ? getVerifiedIdentityApproval(trustedInput, options.target, options.target.approvalTargetImageReference)
     : null;
   const mercariUndated = Boolean(identityApproval && options?.target
     && hasVerifiedMercariUndatedSale(trustedInput, options.target, options.target.approvalTargetImageReference));
+  const mercariAutographUndated = Boolean(autographNoVisual && verification.verified
+    && trustedInput.saleDatePolicy === 'mercari_undated_sold_v1'
+    && trustedInput.date === null && trustedInput.saleStatus === 'completed'
+    && trustedInput.priceBasis === 'sold' && trustedInput.evidenceDisposition === 'valuation_eligible');
   const transactionLotConflict = verification.verified && signedTransactionLotConflict(options?.target, trustedInput);
   const transactionIdentityPresent = verification.verified && hasMeaningfulTransactionIdentity(trustedInput);
   const economics = evaluateAdapterEconomicPolicy({ ...trustedInput, sourceAdapter: sourceId, priceBasis: resolvedPriceBasis,
@@ -167,7 +181,8 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   if (!transactionIdentityPresent) reasons.push('meaningful observed provider record ID or valid listing/transaction URL is missing; retained as context only');
   if (highValuePriceConflict && priceSafety.reason) reasons.push(priceSafety.reason);
   if (mercariUndated) reasons.push('Qualified undated Mercari exception: sale date remains Unknown; timing is unverified and sold=true reported sold price is used as reported, not proof of a recent sale or a private accepted-offer amount.');
-  if (dateInfo.recency === 'undated' && !mercariUndated) reasons.push('sale date is missing, invalid, or future-dated');
+  if (mercariAutographUndated) reasons.push('Qualified Autographs market-context exception: exact visual review is not required; the verified sold=true reported price remains usable market evidence while sale date remains Unknown.');
+  if (dateInfo.recency === 'undated' && !mercariUndated && !mercariAutographUndated) reasons.push('sale date is missing, invalid, or future-dated');
   if (dateInfo.recency === 'historical') reasons.push('sale date is older than one year');
   if (dateInfo.recency === 'extended') reasons.push('sale date is older than one year and is admitted only under the labeled illiquid-market extension policy');
   if (visualReviewStatus === 'mismatch') reasons.push(`visual comparison requires review${trustedInput.visualReviewRationale ? `: ${safeText(trustedInput.visualReviewRationale, 300)}` : ''}`);
@@ -186,7 +201,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     && economics.eligible
     && transactionIdentityPresent
     && !highValuePriceConflict
-    && (sourceId === 'mercari_sold_comps' ? mercariUndated : dateInfo.recency === 'recent' || dateInfo.recency === 'extended')
+    && (sourceId === 'mercari_sold_comps' ? (mercariUndated || mercariAutographUndated) : dateInfo.recency === 'recent' || dateInfo.recency === 'extended')
     && visualReviewStatus !== 'mismatch'
     && !transactionLotConflict
     && (visualRequirement !== 'required' || (visualReviewStatus === 'match' && Boolean(identityApproval)));
@@ -204,7 +219,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   if (!transactionIdentityPresent) blockerCodes.push('TRANSACTION_IDENTITY_MISSING');
   if (priceSafety.applies && priceSafety.status === 'too_low') blockerCodes.push('HIGH_VALUE_PRICE_TOO_LOW');
   if (priceSafety.applies && priceSafety.status === 'too_high') blockerCodes.push('HIGH_VALUE_PRICE_TOO_HIGH');
-  if (dateInfo.recency === 'undated' && !mercariUndated) blockerCodes.push('INVALID_DATE');
+  if (dateInfo.recency === 'undated' && !mercariUndated && !mercariAutographUndated) blockerCodes.push('INVALID_DATE');
   if (dateInfo.recency === 'historical') blockerCodes.push('HISTORICAL_DATE');
   if (visualReviewStatus === 'mismatch') blockerCodes.push('VISUAL_MISMATCH');
   if (transactionLotConflict) blockerCodes.push('TRANSACTION_LOT_CONFLICT');

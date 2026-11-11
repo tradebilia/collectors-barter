@@ -817,6 +817,51 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
   if (!report) return blocked(['MERCARI_OBSERVATION_MISSING: private original provider observation is unavailable.']);
   if (report.requestedMode !== 'sold') return blocked(['MERCARI_REQUEST_NOT_SOLD: the provider request was not sold=true.']);
   if (row.visualExecution?.hardExclusion === true) return blocked([`MERCARI_HARD_EXCLUSION: ${row.visualReviewRationale || 'A deterministic identity/safety exclusion was recorded.'}`]);
+  // Autographs intentionally use broad market-range evidence. They still need
+  // the private provider observation, sold=true contract, positive USD price,
+  // transaction identity and signed provenance, but they do not need an exact
+  // image match or a server-final visual approval.
+  if (isAutographSignedItemTarget(context.targetMetadata)) {
+    if (row.evidenceDisposition !== 'valuation_eligible') {
+      return blocked(['MERCARI_AUTOGRAPH_METADATA_GATE: the Autographs signer/object/category score did not pass the 70-point market-evidence minimum.']);
+    }
+    const originalPrice = report.fields.price;
+    const price = originalPrice?.present && (originalPrice.type === 'number'
+      || originalPrice.type === 'string' && typeof originalPrice.value === 'string' && /^\d+(?:\.\d+)?$/.test(originalPrice.value))
+      ? Number(originalPrice.value) : NaN;
+    const currency = mercariObservedCurrency(report);
+    const originalIdentity = original as unknown as Record<string, unknown>;
+    const providerUrl = [original.itemUrl, originalIdentity.url, originalIdentity.itemWebUrl, originalIdentity.link, originalIdentity.href]
+      .find((value): value is string => typeof value === 'string' && value.trim().length > 0) ?? null;
+    const providerId = original.saleId
+      ?? (typeof original.providerMetadata?.itemId === 'string' || typeof original.providerMetadata?.itemId === 'number' ? original.providerMetadata.itemId : null)
+      ?? (typeof original.rawMetadata?.itemId === 'string' || typeof original.rawMetadata?.itemId === 'number' ? original.rawMetadata.itemId : null);
+    if (!Number.isFinite(price) || price <= 0 || currency !== 'USD' || (!providerId && !providerUrl)) {
+      return blocked([
+        ...(!Number.isFinite(price) || price <= 0 ? ['MERCARI_ORIGINAL_PRICE_INVALID: positive original provider price is required.'] : []),
+        ...(currency !== 'USD' ? [`MERCARI_CURRENCY_NOT_USD: original currency is ${currency ?? 'Unknown'}, not USD.`] : []),
+        ...(!providerId && !providerUrl ? ['MERCARI_TRANSACTION_IDENTITY_MISSING: provider ID or listing URL is required.'] : []),
+      ]);
+    }
+    const sale = prepareSourceTransactionIdentity({ ...row, price, currency, date: null, endedAt: null,
+      soldAt: null, saleDate: null, soldDate: null, recency: 'undated' as const,
+      saleDatePolicy: 'mercari_undated_sold_v1' as const,
+      saleId: providerId, url: providerUrl, sourceId: 'mercari_sold_comps', sourceAdapter: 'mercari_sold_comps',
+      originMarketplace: 'mercari', marketplace: 'Mercari', sourceLabel: 'Sold-Comps (Mercari Sold)',
+      requestedMode: 'sold', listingStatus: 'sold', priceBasis: 'sold' as const, saleStatus: 'completed' as const,
+      completedStatusBasis: 'Sold-Comps Mercari sold=true reported sold price',
+      visualRequirement: 'not_required' as const, visualReviewStatus: 'not_reviewed' as const,
+      visualReviewRationale: 'Autographs market-range context does not use exact visual analysis.',
+      evidenceDisposition: 'valuation_eligible' as const, evidenceReasons: [],
+      buyerPremium: 'unknown' as const, shipping: 'unknown' as const, tax: 'unknown' as const,
+      normalizedStructuredMetadata: row.soldCompsMetadata ?? normalizeSoldCompsMetadata(row),
+      identityApproval: undefined, provenanceToken: undefined, provenance: undefined, mercariObservation: report });
+    const sealed = sealCanonicalObservation('mercari_sold_comps', sale, { acquiredAt: new Date(), query: context.input.title });
+    if (!sealed.provenanceToken) return blocked([`MERCARI_CANONICAL_SEAL_FAILED: ${sealed.validationErrors.join('; ') || 'Signed provenance was not issued.'}`]);
+    return { ...sale, ...sealed, valuationEligible: true, mercariAdmissionBlockers: [],
+      priceContext: 'sold_listing_reported',
+      visualPricingNotice: 'Reported sold price; Sale date Unknown — Autographs do not require exact visual review.' };
+  }
   if (row.visualReviewStatus !== 'match') return blocked([`MERCARI_VISUAL_NOT_MATCH: visual status is ${row.visualReviewStatus ?? 'not reviewed'}; no confirmed match was recorded.`]);
   if (!row.visualAudit) return blocked(['MERCARI_VISUAL_AUDIT_MISSING: a matched verdict has no deciding-pass audit.']);
   const originalPrice = report.fields.price;
@@ -1741,7 +1786,7 @@ export const testAiEvidenceSummarySchema = z.object({
 
 /** Lossless diagnostic transport; browser fields never establish approval or sale authority. */
 const analysisMarketSaleTransportSchema = z.object({
-        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), saleDatePolicy: z.literal('mercari_undated_sold_v1').nullable().optional(), marketplace: z.string().nullable().optional(), originMarketplace: z.string().nullable().optional(), sourceLabel: z.string().nullable().optional(), sourceAdapter: z.string().nullable().optional(), recency: z.enum(['recent', 'extended', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(), completedStatusBasis: z.string().nullable().optional(), priceBasis: z.enum(['realized', 'sold', 'closed', 'unknown']).nullable().optional(), visualRequirement: z.enum(['not_required', 'required']).nullable().optional(), visualReviewStatus: z.enum(['match', 'rough_match', 'mismatch', 'unreadable', 'not_reviewed']).nullable().optional(), visualReviewRationale: z.string().nullable().optional(), visualDifferences: z.array(z.object({ field: z.string(), targetObservation: z.string(), candidateObservation: z.string(), impact: z.string() })).max(30).nullable().optional(), metadataFieldComparisons: z.array(z.object({ targetField: z.string(), targetValue: z.string(), candidateField: z.string(), candidateValue: z.string(), status: z.enum(['match', 'different', 'soft_difference', 'unknown']), titleDerivedField: z.string().optional(), titleDerivedValue: z.string().optional(), titleDerivedStatus: z.enum(['match', 'different', 'soft_difference', 'unknown']).optional(), rankingContribution: z.unknown().optional() })).max(40).nullable().optional(), evidenceDisposition: z.enum(['valuation_eligible', 'warning_review', 'context_only', 'rejected_objective_conflict', 'omitted_by_cap', 'not_visually_reviewed_window']).nullable().optional(), evidenceReasons: z.array(z.string()).max(20).nullable().optional(), buyerPremium: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), shipping: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), tax: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), saleForm: z.string().nullable().optional(), lotQuantity: z.number().int().positive().nullable().optional(), provenanceToken: z.string().max(16_000).nullable().optional(),
+        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), saleDatePolicy: z.literal('mercari_undated_sold_v1').nullable().optional(), marketplace: z.string().nullable().optional(), originMarketplace: z.string().nullable().optional(), sourceLabel: z.string().nullable().optional(), sourceAdapter: z.string().nullable().optional(), recency: z.enum(['recent', 'extended', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(), completedStatusBasis: z.string().nullable().optional(), priceBasis: z.enum(['realized', 'sold', 'closed', 'unknown']).nullable().optional(), visualRequirement: z.union([z.enum(['not_required', 'required']), z.string().regex(/^not_required_/)]).nullable().optional(), visualReviewStatus: z.enum(['match', 'rough_match', 'mismatch', 'unreadable', 'not_reviewed']).nullable().optional(), visualReviewRationale: z.string().nullable().optional(), visualDifferences: z.array(z.object({ field: z.string(), targetObservation: z.string(), candidateObservation: z.string(), impact: z.string() })).max(30).nullable().optional(), metadataFieldComparisons: z.array(z.object({ targetField: z.string(), targetValue: z.string(), candidateField: z.string(), candidateValue: z.string(), status: z.enum(['match', 'different', 'soft_difference', 'unknown']), titleDerivedField: z.string().optional(), titleDerivedValue: z.string().optional(), titleDerivedStatus: z.enum(['match', 'different', 'soft_difference', 'unknown']).optional(), rankingContribution: z.unknown().optional() })).max(40).nullable().optional(), evidenceDisposition: z.enum(['valuation_eligible', 'warning_review', 'context_only', 'rejected_objective_conflict', 'omitted_by_cap', 'not_visually_reviewed_window']).nullable().optional(), evidenceReasons: z.array(z.string()).max(20).nullable().optional(), buyerPremium: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), shipping: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), tax: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), saleForm: z.string().nullable().optional(), lotQuantity: z.number().int().positive().nullable().optional(), provenanceToken: z.string().max(16_000).nullable().optional(),
   displayCorrelation: z.object({
     version: z.literal('stage5-display-v1'), side: z.enum(['item_a', 'item_b']),
     sourceId: z.string().max(120), runId: z.string().max(240), occurrenceKey: z.string().max(1000),

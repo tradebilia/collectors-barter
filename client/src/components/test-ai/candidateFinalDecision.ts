@@ -79,7 +79,9 @@ function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: 
   if (code === 'CURRENT_SALES_PRIMARY') return undefined;
   const visualResponse = hasActualVisualResponse(row);
   const visualDispatched = hasActualVisualDispatch(row);
-  if (row.sourceId === 'mercari_sold_comps' && !visualResponse) {
+  const autographNoVisual = row.visualRequirement === 'not_required'
+    || typeof row.visualRequirement === 'string' && row.visualRequirement.startsWith('not_required_autograph');
+  if (row.sourceId === 'mercari_sold_comps' && !visualResponse && !autographNoVisual) {
     const execution = candidateExecutionFact(row);
     const attemptFacts = candidateExecutionAttemptFacts(row);
     const attemptFailure = attemptFacts.at(-1)?.failure?.label;
@@ -155,7 +157,7 @@ function sourceDispositionExplanation(row: CandidateDisplayRow): string {
   // needs to investigate. Show only the first actionable reason in source order.
   const primaryDetail = specificDetails[0];
   return primaryDetail
-    ? `The primary reason this candidate was stopped is: ${primaryDetail}.`
+    ? `The primary reason this candidate was stopped is: ${primaryDetail}. The record remains context only.`
     : `The source did not provide the verified evidence required for final valuation (${disposition}).`;
 }
 function evidenceReasons(row: CandidateDisplayRow): string {

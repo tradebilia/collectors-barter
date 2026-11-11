@@ -18,6 +18,27 @@ const context = { title: target.title, price: 42, currency: 'USD', sourceId: 'me
   evidenceDisposition: 'context_only' as const, visualRequirement: 'required' as const };
 
 describe('Mercari status is not completed-price authority', () => {
+  it('keeps Autographs on the no-exact-visual path through final normalization', () => {
+    const autographTarget = { title: 'Barry Bonds Signed Baseball', category: 'autographs', itemType: 'signed_item',
+      itemDetails: JSON.stringify({ signer: 'Barry Bonds', signedItemType: 'baseball', autographCategory: 'Sports/Baseball' }) };
+    const sealed = sealCanonicalObservation('mercari_sold_comps', {
+      title: autographTarget.title, price: 185, currency: 'USD', date: null,
+      saleDatePolicy: 'mercari_undated_sold_v1', marketplace: 'Mercari', originMarketplace: 'mercari',
+      sourceId: 'mercari_sold_comps', sourceAdapter: 'mercari_sold_comps', saleId: 'mercari:autograph-no-visual',
+      url: 'https://www.mercari.com/us/item/m123456789/', saleStatus: 'completed',
+      completedStatusBasis: 'Sold-Comps Mercari sold=true reported sold price', priceBasis: 'sold',
+      visualRequirement: 'not_required', visualReviewStatus: 'not_reviewed', evidenceDisposition: 'valuation_eligible',
+      evidenceReasons: [], buyerPremium: 'unknown', shipping: 'unknown', tax: 'unknown',
+    } as any, { signingKey, acquiredAt: now });
+    const result = normalizeAnalysisMarketSale({ ...sealed, visualRequirement: 'required' } as any, now, {
+      signingKey, category: 'autographs', target: autographTarget as any,
+    });
+    expect(result.sale.visualRequirement).toBe('not_required');
+    expect(result.valuationEligible).toBe(true);
+    expect(result.sale.analysisIntake.sourceAdmission.blockerCodes).not.toContain('REQUIRED_APPROVAL_MISSING');
+    expect(result.sale.evidenceReasons?.join(' ')).not.toMatch(/visual identity review has no valid/i);
+  });
+
   it('registers only the exact Mercari sold=true reported-price convention; flags still confer no authority', () => {
     expect(COMPLETED_SALE_SOURCE_DEFAULTS.mercari_sold_comps).toStrictEqual({ priceBasis: 'sold',
       statusBasis: 'Sold-Comps Mercari sold=true reported sold price' });

@@ -66,7 +66,6 @@ describe('Stage 5 actual status render component', () => {
     expect(decision.label).toBe('NOT USED — REVIEW REQUIRED');
     expect(decision.reason).toContain('context only');
     expect(decision.reason).toContain('did not include a verified provider ID or valid listing URL');
-    expect(decision.reason).toContain('final identity check did not confirm that the candidate date matched the target');
     expect(decision.reason).not.toContain('dateMatches');
     expect(decision.reason).not.toContain('INVALID_PRICE');
     expect(decision.reason).not.toContain('REQUIRED_APPROVAL_MISSING');
@@ -83,6 +82,13 @@ describe('Stage 5 actual status render component', () => {
     expect(decision.reason).toContain('no visual match was confirmed');
     expect(decision.reason).not.toContain('sale date is missing');
     expect(decision.reason).not.toContain('server provenance was not verified');
+  });
+  it('does not call an intentionally unreviewed Autographs row a Mercari visual failure', () => {
+    const decision = candidateFinalDecision({ sourceId: 'mercari_sold_comps', visualRequirement: 'not_required_autograph_market_context',
+      visualReviewStatus: 'not_reviewed', requestedMode: 'sold', valuationUse: { use: { code: 'CURRENT_SALES_DIAGNOSTIC_ONLY', reasonCodes: [] },
+        sourceAdmission: { blockerCodes: [], reasonDetails: [] } } });
+    expect(decision.reason).not.toContain('visual AI review was not completed');
+    expect(decision.reason).toContain('shown for comparison only');
   });
   it('preserves eight metadata columns, Potential Points, source highlights, target/candidate images and one master list', () => {
     const frozen = freezeMetadataRankingPopulation([{ title: target.title, imageUrl: 'https://example.test/candidate.jpg', currency: 'CAD', price: 100 }], { sourceId: 'fixture', populationId: 'rank-run' });
