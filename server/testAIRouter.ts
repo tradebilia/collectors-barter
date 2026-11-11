@@ -2934,6 +2934,24 @@ export const testAIRouter = router({
       const result = await lookupLelandsAuctions(input);
       if (!result.sales.length) {
         if (result.status !== 'success' || !result.context.length) return result;
+        const targetMetadata = buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType,
+          grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails });
+        if (isAutographSignedItemTarget(targetMetadata)) {
+          const visualFilter = await filterVisualSourceCandidates({
+            visualProvider: input.visualProvider,
+            sourceRole: 'marketplace',
+            sourceLabel: 'Lelands completed auction context records',
+            targetImageUrl: input.imageUrl,
+            targetMetadata,
+            listings: result.context,
+          });
+          const contextRows = [...visualFilter.listings, ...(visualFilter.contextListings ?? [])]
+            .map((sale: any) => mapNamedSourceEconomics('lelands', sale, { partition: 'context', role: 'signed_item_relevance' }));
+          return { ...result,
+            context: attachCanonicalProvenance('lelands', contextRows, { query: input.title }),
+            visualFilter,
+          };
+        }
         return { ...result,
           context: attachCanonicalProvenance('lelands', result.context.map((sale: any) => mapNamedSourceEconomics('lelands', sale, { partition: 'context' })), { query: input.title }),
         };
@@ -2968,6 +2986,24 @@ export const testAIRouter = router({
       const result = await lookupPristineAuctions(input);
       if (!result.sales.length) {
         if (result.status !== 'success' || !result.context.length) return result;
+        const targetMetadata = buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType,
+          grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails });
+        if (isAutographSignedItemTarget(targetMetadata)) {
+          const visualFilter = await filterVisualSourceCandidates({
+            visualProvider: input.visualProvider,
+            sourceRole: 'marketplace',
+            sourceLabel: 'Pristine Auction context records',
+            targetImageUrl: input.imageUrl,
+            targetMetadata,
+            listings: result.context,
+          });
+          const contextRows = [...visualFilter.listings, ...(visualFilter.contextListings ?? [])]
+            .map((sale: any) => mapNamedSourceEconomics('pristine_auction', sale, { partition: 'context', role: 'signed_item_relevance' }));
+          return { ...result,
+            context: attachCanonicalProvenance('pristine_auction', contextRows, { query: input.title }),
+            visualFilter,
+          };
+        }
         return { ...result,
           context: attachCanonicalProvenance('pristine_auction', result.context.map((sale: any) => mapNamedSourceEconomics('pristine_auction', sale, { partition: 'context' })), { query: input.title }),
         };

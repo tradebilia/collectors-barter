@@ -2597,7 +2597,10 @@ export function buildMarketProfile(
     const outlierExcluded = Boolean(rawMatch && outlierMatches.has(rawMatch));
     const unsupportedCurrency = sourceAdmission.blockerCodes.includes('UNSUPPORTED_CURRENCY')
       || (ledgerOnly && String(sale.currency ?? 'UNKNOWN').toUpperCase() !== 'USD');
-    const hardExcluded = sourceAdmission.verification !== 'unverified' && (
+    // `unmeasured` means the server did not obtain an authoritative receipt.
+    // It must never be promoted to a verified terminal exclusion merely because
+    // the inbound row carried a conflict-looking field.
+    const hardExcluded = sourceAdmission.verification === 'verified' && (
       identityAdmission.blockerCodes.some((code) => hardIdentityCodes.has(code))
       || sourceAdmission.verifiedSourceDisposition === 'rejected_objective_conflict');
     const reviewRequired = sourceAdmission.blockerCodes.some((code) => ['PROVENANCE_UNVERIFIED', 'REQUIRED_APPROVAL_MISSING', 'VISUAL_MISMATCH'].includes(code))

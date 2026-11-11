@@ -62,31 +62,31 @@ describe('Evidence Review is the complete candidate decision view', () => {
   });
   it('summarizes only final primary-sales rows for the run-summary prices', () => {
     expect(summarizeUsedValuationPrices([
-      { price: 11, valuationUse: { use: { code: 'CURRENT_SALES_PRIMARY' } } },
-      { price: 25, valuationUse: { use: { code: 'CURRENT_SALES_PRIMARY' } } },
-      { price: 999, valuationUse: { use: { code: 'CURRENT_SALES_DIAGNOSTIC_ONLY' } } },
+      { price: 11, currency: 'USD', valuationUse: { use: { code: 'CURRENT_SALES_PRIMARY' } } },
+      { price: 25, currency: 'USD', valuationUse: { use: { code: 'CURRENT_SALES_PRIMARY' } } },
+      { price: 999, currency: 'USD', valuationUse: { use: { code: 'CURRENT_SALES_DIAGNOSTIC_ONLY' } } },
       ])).toEqual({ count: 2, low: 11, high: 25, average: 18 });
   });
   it('summarizes active asking prices separately from sold valuation prices', () => {
     expect(summarizeCurrentMarketPrices([
-      { sourceId: 'ebay_active', price: 19.99, visualReviewStatus: 'match' },
-      { sourceId: 'ebay_active', price: 24.99, visualReviewStatus: 'mismatch' },
-      { sourceId: 'sold_comps', price: 999 },
+      { sourceId: 'ebay_active', price: 19.99, currency: 'USD', visualReviewStatus: 'match', visualExecution: { ...receipt, identity: { origin: 'visual', result: 'match', reviewVerdict: 'match' } } },
+      { sourceId: 'ebay_active', price: 24.99, currency: 'USD', visualReviewStatus: 'mismatch' },
+      { sourceId: 'sold_comps', price: 999, currency: 'USD' },
     ])).toEqual({ count: 1, low: 19.99, high: 19.99, average: 19.99 });
   });
   it('uses the card price fallbacks when an active listing supplies only currentPrice', () => {
     expect(summarizeCurrentMarketPrices([
-      { sourceId: 'ebay_active', currentPrice: { value: '19.99', currency: 'USD' }, visualReviewStatus: 'match' },
+      { sourceId: 'ebay_active', currentPrice: { value: '19.99', currency: 'USD' }, currency: 'USD', visualReviewStatus: 'match', visualExecution: { ...receipt, identity: { origin: 'visual', result: 'match', reviewVerdict: 'match' } } },
     ])).toEqual({ count: 1, low: 19.99, high: 19.99, average: 19.99 });
   });
   it('includes a source-stage eligible undispatched active asking price as context', () => {
     expect(summarizeCurrentMarketPrices([
-      { sourceId: 'ebay_active', price: 200, saleStatus: 'active', evidenceDisposition: 'valuation_eligible', visualReviewStatus: 'not_reviewed' },
-      { sourceId: 'ebay_active', price: 999, saleStatus: 'active', evidenceDisposition: 'valuation_eligible', visualReviewStatus: 'mismatch' },
+      { sourceId: 'ebay_active', price: 200, currency: 'USD', saleStatus: 'active', evidenceDisposition: 'valuation_eligible', visualReviewStatus: 'not_reviewed' },
+      { sourceId: 'ebay_active', price: 999, currency: 'USD', saleStatus: 'active', evidenceDisposition: 'valuation_eligible', visualReviewStatus: 'mismatch' },
     ])).toEqual({ count: 1, low: 200, high: 200, average: 200 });
   });
   it('renders the current-market count and asking-price summary for active listings', () => {
-    const html = review([{ id: 'ebay_active', label: 'eBay Active', packet: { listings: [{ title: 'Active listing', price: 19.99, saleStatus: 'active', visualReviewStatus: 'match' }, { title: 'Unmatched active listing', price: 24.99, saleStatus: 'active', visualReviewStatus: 'mismatch' }] } }]);
+    const html = review([{ id: 'ebay_active', label: 'eBay Active', packet: { listings: [{ title: 'Active listing', price: 19.99, currency: 'USD', saleStatus: 'active', visualReviewStatus: 'match', visualExecution: { ...receipt, identity: { origin: 'visual', result: 'match', reviewVerdict: 'match' } } }, { title: 'Unmatched active listing', price: 24.99, currency: 'USD', saleStatus: 'active', visualReviewStatus: 'mismatch' }] } }]);
     expect(html).toContain('Current market context');
     expect(html).toContain('Prices from current market context');
     expect(html).toContain('Low Asking Price'); expect(html).toContain('$19.99');

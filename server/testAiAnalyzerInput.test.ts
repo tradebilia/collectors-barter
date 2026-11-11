@@ -126,6 +126,13 @@ describe('Test AI analyzer input compatibility', () => {
     expect(routerSource).toContain('provenanceToken: z.string().max(16_000).nullable().optional()');
   });
 
+  it('routes empty Lelands and Pristine context responses through the Autographs policy', () => {
+    expect(routerSource).toContain("sourceLabel: 'Lelands completed auction context records'");
+    expect(routerSource).toContain("sourceLabel: 'Pristine Auction context records'");
+    expect(routerSource).toContain("role: 'signed_item_relevance'");
+    expect(routerSource).toContain('listings: result.context');
+  });
+
   it('feeds normalized Sold-Comps completed sales into the bounded deterministic sales array', () => {
     expect(routerSource).toContain('leftHistoricalTrendSales: z.array');
     expect(routerSource).toContain('provenanceToken: z.string().max(16_000).nullable().optional()');

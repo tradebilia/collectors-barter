@@ -79,6 +79,10 @@ function terminalFinalBlocker(row: CandidateDisplayRow, reasonCodes: Set<string>
 function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: string[]): string | undefined {
   if (code === 'CURRENT_SALES_PRIMARY') return row.valuationUse?.identityAdmission?.basis === 'server_autograph_market_relevance'
     ? `This reported sold price was used as Autographs market evidence. Exact image review is not required.${row.sourceId === 'mercari_sold_comps' ? ' Sale date remains Unknown under the Mercari date exception.' : ''}` : undefined;
+  const reasonCodes = new Set([
+    ...(row.valuationUse?.sourceAdmission?.blockerCodes ?? []),
+    ...(row.valuationUse?.use?.reasonCodes ?? []),
+  ]);
   const visualResponse = hasActualVisualResponse(row);
   const visualDispatched = hasActualVisualDispatch(row);
   const autographNoVisual = row.visualRequirement === 'not_required'
@@ -91,7 +95,11 @@ function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: 
     const score = Number(row.metadataMatchScore);
     if (Number.isFinite(score) && score < 70) return `The signed-item market relevance score was ${score}/100, below the required minimum of 70/100. Image review is not required for Autographs.`;
   }
-  if (row.sourceId === 'mercari_sold_comps' && !visualResponse && !autographNoVisual) {
+  // Final economic, provenance, source, and identity blockers are more
+  // authoritative than a missing visual response. Visual wording is only a
+  // fallback when final analysis has no stronger recorded reason.
+  const hasAuthoritativeFinalBlocker = terminalFinalBlocker(row, reasonCodes) !== undefined;
+  if (row.sourceId === 'mercari_sold_comps' && !visualResponse && !autographNoVisual && !hasAuthoritativeFinalBlocker) {
     const execution = candidateExecutionFact(row);
     const attemptFacts = candidateExecutionAttemptFacts(row);
     const attemptFailure = attemptFacts.at(-1)?.failure?.label;
@@ -100,10 +108,6 @@ function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: 
       ? `The visual AI was called but did not return a usable review${detail}. Because no visual match was confirmed, this candidate could not proceed to valuation.`
       : 'The visual AI review was not completed for this candidate. Because no visual match was confirmed, this candidate could not proceed to valuation.';
   }
-  const reasonCodes = new Set([
-    ...(row.valuationUse?.sourceAdmission?.blockerCodes ?? []),
-    ...(row.valuationUse?.use?.reasonCodes ?? []),
-  ]);
   if (code === 'SOURCE_ELIGIBLE_NOT_SELECTED' || reasonCodes.has('INSUFFICIENT_CURRENT_SUPPORT')) {
     const mercariDateNote = reasonCodes.has('MERCARI_UNDATED_TIMING_UNVERIFIED')
       ? ' This Mercari sale has no verified sale date, so it is kept as supporting evidence while more comparable sales are gathered.' : '';

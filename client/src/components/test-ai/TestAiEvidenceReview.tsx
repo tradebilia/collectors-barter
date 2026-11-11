@@ -3,6 +3,7 @@ import type { NormalizedEvidenceSummary } from '../../../../shared/testAiEvidenc
 import { collectEbayCandidateDisplayOccurrences, mergeCandidateDisplayGroups, reconcileCandidateFinalUse } from '../../../../shared/testAiCandidateLedger';
 import { sourceVisualDisplayGroups, sourceRetainedDisplayGroups } from '../../../../shared/testAiSourceDisplay';
 import { isCurrentMarketContextSource } from '../../../../shared/testAiMarketContext';
+import { hasActualVisualResponse } from '../../../../shared/testAiCandidateStatus';
 import { TestAiCandidateMasterList } from '../TestAiCandidateMasterList';
 import { TestAiSafeImage } from '../TestAiSafeImage';
 import { useTestAiCandidateDisplay } from '../TestAiCandidateStatus';
@@ -25,9 +26,10 @@ export type UsedValuationPriceSummary = { count: number; low: number | null; hig
 export type CurrentMarketPriceSummary = UsedValuationPriceSummary;
 
 export function isConfirmedCurrentMarketMatch(row: any): boolean {
-  return row?.visualReviewStatus === 'match'
-    || row?.visualExecution?.identity?.result === 'match'
-    || row?.visualIdentityResult === 'match';
+  return hasActualVisualResponse(row)
+    && (row?.visualReviewStatus === 'match'
+      || row?.visualExecution?.identity?.result === 'match'
+      || row?.visualIdentityResult === 'match');
 }
 
 function isCurrentMarketContextCandidate(row: any): boolean {
@@ -44,8 +46,19 @@ function candidatePrice(row: any): number | null {
   return null;
 }
 
+function candidateCurrency(row: any): string | null {
+  const candidates = [row?.currency, row?.soldCurrency, row?.saleCurrency, row?.price?.currency, row?.currentPrice?.currency];
+  const currency = candidates.find((value) => typeof value === 'string' && value.trim());
+  return currency ? currency.trim().toUpperCase() : null;
+}
+
+function isUsdPrice(row: any): boolean {
+  return candidateCurrency(row) === 'USD';
+}
+
 export function summarizeUsedValuationPrices(rows: any[]): UsedValuationPriceSummary {
   const prices = rows.filter((row) => row?.valuationUse?.use?.code === 'CURRENT_SALES_PRIMARY')
+    .filter(isUsdPrice)
     .map(candidatePrice).filter((price): price is number => price !== null);
   if (!prices.length) return { count: 0, low: null, high: null, average: null };
   return { count: prices.length, low: Math.min(...prices), high: Math.max(...prices), average: prices.reduce((total, price) => total + price, 0) / prices.length };
@@ -58,7 +71,7 @@ export function summarizeCurrentMarketPrices(rows: any[]): CurrentMarketPriceSum
     kind: row?.kind,
     saleStatus: row?.saleStatus,
     priceBasis: row?.priceBasis,
-  }) && isCurrentMarketContextCandidate(row)).map(candidatePrice).filter((price): price is number => price !== null);
+  }) && isCurrentMarketContextCandidate(row) && isUsdPrice(row)).map(candidatePrice).filter((price): price is number => price !== null);
   if (!prices.length) return { count: 0, low: null, high: null, average: null };
   return { count: prices.length, low: Math.min(...prices), high: Math.max(...prices), average: prices.reduce((total, price) => total + price, 0) / prices.length };
 }
