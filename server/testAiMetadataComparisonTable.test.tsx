@@ -154,9 +154,14 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     expect(identityRows).toHaveLength(1);
     expect(identityRows[0]).toMatchObject({ targetValue: 'Conan The Destroyer', candidateValue: candidate.title,
       titleDerivedStatus: 'match', rankingContribution: { awardedPoints: 25 } });
+    const potentialTotal = output.metadataFieldComparisons.reduce((total, row) => total + (row.rankingContribution?.potentialPoints ?? 0), 0);
+    expect(potentialTotal).toBe(100);
+    expect(output.metadataFieldComparisons.find(row => row.fieldKey === 'edition')).toMatchObject({ targetValue: 'Unknown', rankingContribution: { potentialPoints: 15 } });
+    expect(output.metadataFieldComparisons.find(row => row.fieldKey === 'region')).toMatchObject({ targetValue: 'Unknown', rankingContribution: { potentialPoints: 10 } });
     const rendered = renderToStaticMarkup(createElement(MetadataComparisonTable, { listing: output }));
     expect(rendered).toMatch(/data-ranking-score="true">25<\/td>/);
     expect(rendered).toContain('data-ranking-score-total="true">55<');
+    expect(rendered).toContain('potential 100/100');
     for (const title of ['Conan The Barbarian CGC 8.0 A VHS Tape', 'Rambo CGC 8.0 A VHS Tape']) {
       expect(moviesIndividualVisualScore({ title }, target).awards.some(award => award.field === 'movieTitle')).toBe(false);
     }

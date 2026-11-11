@@ -2449,6 +2449,12 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
   const keys = new Set<string>([
     ...(['video_games', 'movies', 'music', 'pokemon', 'vintage_toys', 'coins', 'paper_money', 'sports_cards', 'comics', 'stamps'].includes(category)
       || listing.metadataScoreAwards?.some(award => award.field === 'isGraded') ? ['isGraded'] : []),
+    // Keep every field in the active Movie model visible, even when neither
+    // side supplied it, so unavailable potential points are auditable.
+    ...(category === 'movies' && movieTargetItemType(targetMetadata) === 'individual_movie'
+      ? MOVIES_INDIVIDUAL_SCORE_FIELDS.map(([field]) => field) : []),
+    ...(category === 'movies' && movieTargetItemType(targetMetadata) === 'box_set'
+      ? MOVIES_BOX_SET_SCORE_FIELDS.map(([field]) => field) : []),
     ...Object.keys(targetDetails),
     ...Object.keys(candidateDetails),
     // Rule/composite terms may have no structured target/candidate key at all.

@@ -83,6 +83,12 @@ export function MetadataComparisonTable({ listing }: { listing: any }) {
     ? 'rounded bg-violet-900/60 px-1 text-violet-100 ring-1 ring-violet-400/60' : 'text-gray-200';
   const rowScores = metadataRowScores(comparisons);
   const rankingTotal = Number.isFinite(Number(listing?.metadataMatchScore)) ? Number(listing.metadataMatchScore) : rowScores.total;
+  const potentialTotal = comparisons.reduce((sum: number, comparison: any) => sum + Number(comparison.rankingContribution?.potentialPoints ?? 0), 0);
+  const availablePotential = comparisons.reduce((sum: number, comparison: any) => {
+    const target = String(comparison.targetValue ?? '').trim().toLowerCase();
+    return target && !['unknown', 'n/a', 'na', 'none'].includes(target)
+      ? sum + Number(comparison.rankingContribution?.potentialPoints ?? 0) : sum;
+  }, 0);
   return <details className="mt-1 rounded border border-cyan-700/30 bg-cyan-950/20 p-1.5">
     <summary className="cursor-pointer text-[11px] font-bold uppercase tracking-wide text-cyan-200">Full metadata comparison</summary>
     <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-gray-400" aria-label="Ranking highlight legend">
@@ -117,7 +123,7 @@ export function MetadataComparisonTable({ listing }: { listing: any }) {
           <td className={`p-1 font-semibold uppercase ${statusClass[titleMatch ? 'match' : comparison.status] ?? statusClass.unknown}`}>{titleMatch ? 'match' : comparison.status || 'unknown'}</td>
         </tr>;
       })}</tbody>
-      <tfoot><tr className="border-t border-cyan-700/60 text-cyan-100"><td className="p-1 font-semibold" colSpan={6}>Total ranking score</td><td className="p-1 text-center font-bold text-amber-200" data-ranking-score-total>{rowScores.total}</td><td className="p-1 text-right text-gray-400">{rowScores.total === rankingTotal ? `of ${rankingTotal}` : `reported ${rankingTotal}`}</td></tr></tfoot>
+      <tfoot><tr className="border-t border-cyan-700/60 text-cyan-100"><td className="p-1 font-semibold" colSpan={6}>Total ranking score <span className="font-normal text-gray-400">(potential {potentialTotal}/100; available {availablePotential})</span></td><td className="p-1 text-center font-bold text-amber-200" data-ranking-score-total>{rowScores.total}</td><td className="p-1 text-right text-gray-400">{rowScores.total === rankingTotal ? `of ${potentialTotal || rankingTotal}` : `reported ${rankingTotal}`}</td></tr></tfoot>
       </table></div>
   </details>;
 }
