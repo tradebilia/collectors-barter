@@ -4,6 +4,8 @@ import { resolve } from 'node:path';
 import { normalizeAnalysisMarketSale, COMPLETED_SALE_SOURCE_DEFAULTS } from './testAiMarketEvidence';
 import { buildMarketProfile } from './testAiComparableEngine';
 import { sealCanonicalObservation } from './testAiCanonicalObservation';
+import { finalizeMercariContextResult } from './testAIRouter';
+import { buildVisualTargetMetadata } from './testAiVisualSourceFilter';
 
 const now = new Date('2026-11-10T15:00:00Z');
 const signingKey = 'mercari-status-policy-synthetic-signing-key-not-a-service-secret';
@@ -54,6 +56,24 @@ describe('Mercari status is not completed-price authority', () => {
     expect(route).not.toContain('Mercari completed-sale endpoint');
     expect(route).not.toContain("saleStatus: 'completed'");
     expect(route).not.toContain('Only completed visual matches can enter analyzer valuation');
+  });
+
+  it('reprojects stale Movie awards at the final transport boundary', () => {
+    const movieTarget = buildVisualTargetMetadata({ title: 'Conan CGC 8.0 VHS Tape', category: 'movies', itemType: 'individual_movie',
+      itemDetails: JSON.stringify({ title: 'Conan CGC 8.0 VHS Tape', format: 'VHS', isGraded: 'Yes', certificationCompany: 'CGC', grade: '8' }) });
+    const row = { saleId: 'mercari:stale-movie', title: 'Conan CGC 8.0 A VHS Tape', price: 117, currency: 'USD',
+      metadataMatchScore: 30, metadataScoreAwards: [
+        { field: 'format', source: 'title', awardedPoints: 20 },
+        { field: 'gradingCompany', source: 'title', awardedPoints: 5 },
+        { field: 'grade', source: 'title', awardedPoints: 5 },
+      ], metadataFieldComparisons: [], visualReviewStatus: 'not_reviewed' };
+    const original = { saleId: row.saleId, title: row.title, price: row.price, currency: row.currency, itemUrl: 'https://www.mercari.com/us/item/stale-movie/' };
+    const result = finalizeMercariContextResult({ listings: [row], audit: { ledger: [row] } }, [original] as any,
+      { input: { title: movieTarget, category: 'movies', itemType: 'individual_movie' } as any, targetMetadata: movieTarget });
+    const returned = result.listings[0];
+    expect(returned.metadataMatchScore).toBe(55);
+    expect(returned.metadataScoreAwards).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'movieTitle', awardedPoints: 25 })]));
+    expect(returned.metadataFieldComparisons.find((entry: any) => entry.targetField === 'Movie title')?.rankingContribution?.awardedPoints).toBe(25);
   });
 });
 

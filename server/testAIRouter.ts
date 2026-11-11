@@ -916,9 +916,16 @@ export function finalizeMercariContextResult(payload: any, originals: readonly A
     if (!projections.has(row.saleId)) {
       const current = { ...row, ...advanced.get(row.saleId) };
       const recoveredUsableMatch = hasUsableRecoveredMercariMatch(payload);
-      projections.set(row.saleId, approvalContext && !payload.error
+      const finalized = approvalContext && !payload.error
         && (!payload.processingDiagnostic || recoveredUsableMatch)
-        ? sealMercariFinalVisualListing(current, original, approvalContext) : mercariContextProjection(current, observed(row)));
+        ? sealMercariFinalVisualListing(current, original, approvalContext) : mercariContextProjection(current, observed(row));
+      // Finalization can select a newer visual row than the original ranking
+      // snapshot. Re-project the exact object that will cross the tRPC
+      // boundary so a stale award list cannot leave a visible MATCH with
+      // Potential Points 25 but earned Score 0.
+      projections.set(row.saleId, approvalContext?.targetMetadata
+        ? withMetadataFieldComparisons(approvalContext.targetMetadata, finalized)
+        : finalized);
     }
     return projections.get(row.saleId);
   };

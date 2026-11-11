@@ -294,6 +294,28 @@ describe('Stage 6 actual ordinary eBay route retrieval union', () => {
 });
 
 describe('Stage 6 actual Mercari adapter -> actual source route handoff', () => {
+  it('captures the Conan Movie-title award before ranking snapshots and transports it in the final ledger', async () => {
+    const target = { title: 'Conan CGC 8.0 VHS Tape', category: 'movies', itemType: 'individual_movie',
+      grade: '8', certificationCompany: 'CGC', condition: 'mint', itemDetails: JSON.stringify({
+        title: 'Conan The Destroyer', format: 'VHS', isGraded: 'yes', sealed: 'yes', releaseYear: '1991',
+      }) };
+    fixtures = Array.from({ length: 20 }, () => () => json({ items: [{ itemId: 'conan-title-route',
+      title: 'Conan CGC 8.0 A VHS Tape', price: '117', currency: 'USD', status: 'sold',
+      url: 'https://www.mercari.com/us/item/conan-title-route/', imageUrl: 'https://example.test/conan.jpg' }] }));
+    // No target image: this tests real retrieval/ranking/transport only, without
+    // a model call or granting visual/valuation approval from metadata points.
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    const row = retained(result).find(candidate => candidate.saleId === 'mercari:conan-title-route');
+    expect(row).toBeDefined();
+    expect(row.metadataMatchScore).toBe(55);
+    expect(row.metadataRanking.score).toBe(55);
+    expect(row.metadataScoreAwards).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'movieTitle', awardedPoints: 25 })]));
+    expect(row.metadataFieldComparisons.find((entry: Row) => entry.targetField === 'Movie title'))
+      .toMatchObject({ targetValue: 'Conan The Destroyer', rankingContribution: { awardedPoints: 25 } });
+    expect(row.identityApproval).toBeFalsy();
+    expect(boundaries.llm).not.toHaveBeenCalled();
+  });
+
   it.each([MOVIE, GAME])('retains earlier query issues through actual no-image $category route', async (target) => {
     fixtures = [() => json({ message: 'RAW_PROVIDER_SECRET_SENTINEL' }, 401), () => json({ items: [{ itemId: 'stage6-mercari-route',
       title: target.title, status: 'sold', price: '100', currency: 'USD', soldAt: '2026-11-08', url: 'https://www.mercari.com/us/item/stage6-mercari-route/',

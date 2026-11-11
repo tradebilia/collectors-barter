@@ -138,6 +138,29 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     expect(output.metadataScoreAwards).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'movieTitle', awardedPoints: 25 })]));
     expect(titleRow?.rankingContribution).toMatchObject({ matched: true, titleDerived: true, awardedPoints: 25 });
   });
+
+  it('scores the actual live Conan stored identity, not a substituted inventory listing title', () => {
+    const target = buildVisualTargetMetadata({ title: 'Conan CGC 8.0 VHS Tape', category: 'movies', itemType: 'individual_movie',
+      grade: '8', certificationCompany: 'CGC', condition: 'mint', itemDetails: JSON.stringify({
+        certificationNumber: '1004068009', format: 'VHS', isGraded: 'yes', quantity: '1', releaseYear: '1991',
+        sealed: 'yes', shippingAvailable: 'yes', title: 'Conan The Destroyer', year: '1991',
+      }) });
+    const candidate = { title: 'Conan CGC 8.0 A VHS Tape' };
+    const scored = moviesIndividualVisualScore(candidate, target);
+    expect(scored.awards.find(award => award.field === 'movieTitle')?.awardedPoints).toBe(25);
+    expect(scored.score).toBe(55);
+    const output = withMetadataFieldComparisons(target, { ...candidate, metadataMatchScore: scored.score, metadataScoreAwards: scored.awards });
+    const identityRows = output.metadataFieldComparisons.filter(row => row.targetField === 'Movie title');
+    expect(identityRows).toHaveLength(1);
+    expect(identityRows[0]).toMatchObject({ targetValue: 'Conan The Destroyer', candidateValue: candidate.title,
+      titleDerivedStatus: 'match', rankingContribution: { awardedPoints: 25 } });
+    const rendered = renderToStaticMarkup(createElement(MetadataComparisonTable, { listing: output }));
+    expect(rendered).toMatch(/data-ranking-score="true">25<\/td>/);
+    expect(rendered).toContain('data-ranking-score-total="true">55<');
+    for (const title of ['Conan The Barbarian CGC 8.0 A VHS Tape', 'Rambo CGC 8.0 A VHS Tape']) {
+      expect(moviesIndividualVisualScore({ title }, target).awards.some(award => award.field === 'movieTitle')).toBe(false);
+    }
+  });
 });
 
 

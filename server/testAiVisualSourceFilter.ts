@@ -2481,13 +2481,18 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
   const emittedFieldLabels = new Set<string>();
   for (const key of keys) {
     if (excluded.has(key) || /^(?:id|url|saleId|sourceId|providerReference|price|currency|date)$/i.test(key)) continue;
-				const targetRaw = firstMeaningfulValue(resolvedVisualFieldValue(metadataValue(targetMetadata, key), targetDetails, key), readMetadataValue(targetDetails, comparisonMetadataAliases(key)));
+      const movieIdentity = movieContext && /^(?:title|movieTitle)$/i.test(key)
+        && movieTargetItemType(targetMetadata) === 'individual_movie';
+      const targetRaw = movieIdentity
+        ? firstMeaningfulValue(targetDetails.title, targetDetails.movieTitle, extractTargetTitle(targetMetadata))
+        : firstMeaningfulValue(resolvedVisualFieldValue(metadataValue(targetMetadata, key), targetDetails, key), readMetadataValue(targetDetails, comparisonMetadataAliases(key)));
       const states = key === 'isGraded' ? explicitScoreGradingStates(targetMetadata, listing) : null;
       const stateDisplay = (state: ObservedExplicitGradingState | undefined, value: string) => state?.state === 'conflicted'
         ? `Conflicted (${state.observations.filter(observation => observation.state !== 'unknown').slice(0, 8)
           .map(observation => `${observation.field}=${observation.value.slice(0, 160)}`).join('; ')})` : value;
 				const targetValue = stateDisplay(states?.target, comparisonValue(targetRaw));
-				const candidateValue = stateDisplay(states?.candidate, comparisonCandidateFieldValue(listing, candidateDetails, key));
+      const candidateValue = stateDisplay(states?.candidate, movieIdentity
+        ? comparisonValue(canonicalCandidateTitle(listing)) : comparisonCandidateFieldValue(listing, candidateDetails, key));
 				const titleDerivedValue = isBoardGameTarget
           && /^(?:year|releaseYear)$/i.test(key)
           ? "Unknown" : comparisonTitleDerivedValue(listing, key, targetValue, category,
@@ -4058,7 +4063,11 @@ function movieCanonicalText(value: unknown): string {
   const normalized = normalizeComparableNumberWords(normalizedChoice(value).replace(/_/g, ' '))
     .replace(/\bseasons?\b/g, ' season')
     .replace(/(\d+)\s+and\s+(\d+)/g, '$1 $2');
-  return normalized.replace(/[_-]+/g, ' ').replace(/\bthe\b/g, '').replace(/\b(?:movie|film|dvd|blu\s*ray|4k\s+uhd|vhs|laserd?isc)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  // Strip the complete media descriptor before removing VHS itself. Leaving
+  // "Tape" behind turns an abbreviated "Conan" identity into "Conan Tape"
+  // and incorrectly defeats the existing subset-title anchor match.
+  return normalized.replace(/[_-]+/g, ' ').replace(/\b(?:vhs|video)\s+tapes?\b/g, '')
+    .replace(/\bthe\b/g, '').replace(/\b(?:movie|film|dvd|blu\s*ray|4k\s+uhd|vhs|laserd?isc)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 }
 function movieTitleComparable(value: unknown): string {
   return movieCanonicalText(value)
