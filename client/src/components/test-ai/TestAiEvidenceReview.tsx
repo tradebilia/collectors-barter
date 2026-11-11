@@ -20,6 +20,27 @@ export function evidenceReviewCandidates(source: EvidenceReviewSource): any[] {
   return mergeCandidateDisplayGroups([...groups, array(source.rows)], { sourceId: source.id });
 }
 
+export type UsedValuationPriceSummary = { count: number; low: number | null; high: number | null; average: number | null };
+
+function candidatePrice(row: any): number | null {
+  for (const value of [row?.price, row?.soldPrice, row?.finalPrice, row?.transactionPrice]) {
+    const parsed = typeof value === 'string' ? Number(value.replace(/[$,]/g, '')) : Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+  return null;
+}
+
+export function summarizeUsedValuationPrices(rows: any[]): UsedValuationPriceSummary {
+  const prices = rows.filter((row) => row?.valuationUse?.use?.code === 'CURRENT_SALES_PRIMARY')
+    .map(candidatePrice).filter((price): price is number => price !== null);
+  if (!prices.length) return { count: 0, low: null, high: null, average: null };
+  return { count: prices.length, low: Math.min(...prices), high: Math.max(...prices), average: prices.reduce((total, price) => total + price, 0) / prices.length };
+}
+
+function formatRunSummaryPrice(value: number | null): string {
+  return value === null ? 'Not available' : `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
+
 export function TestAiEvidenceReview({ item, side, summary, sources }: {
   item: { id?: number; title: string; category: string; itemType?: string | null; primaryPhotoUrl?: string | null };
   side: 'left' | 'right'; summary: NormalizedEvidenceSummary; sources: EvidenceReviewSource[];
@@ -29,6 +50,7 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
   const groups = sources.map(source => ({ ...source, candidates: evidenceReviewCandidates(source) }));
   const displayed = groups.flatMap(source => reconcileCandidateFinalUse(source.candidates, context.outcome, { side: scopeSide, sourceId: source.id }));
   const used = displayed.filter(row => row.valuationUse?.use?.code === 'CURRENT_SALES_PRIMARY').length;
+  const usedPriceSummary = summarizeUsedValuationPrices(displayed);
   const resolved = displayed.filter(row => row.valuationUse?.use?.code).length;
   const valuationNotRun = !context.outcome;
   return <section className="space-y-4 rounded-xl border border-cyan-800/40 bg-slate-950/40 p-4" aria-label={`${scopeSide === 'item_a' ? 'Item A' : 'Item B'} evidence review`}>
@@ -53,7 +75,17 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
         <div><p className="text-xl font-semibold text-cyan-200">{displayed.length}</p><p className="text-xs text-slate-400">Candidates</p></div>
         <div><p className="text-xl font-semibold text-emerald-200">{used}</p><p className="text-xs text-slate-400">Used in valuation</p></div>
         <div><p className="text-xl font-semibold text-amber-200">{Math.max(0, displayed.length - used)}</p><p className="text-xs text-slate-400">Not used</p></div>
-      </div>{valuationNotRun ? <p className="mt-2 text-xs text-amber-200">Final valuation analysis has not run yet; current valuation counts are 0.</p> : resolved < displayed.length && <p className="mt-2 text-xs text-amber-200">{displayed.length - resolved} candidate decisions have no resolved final valuation record; their cards explain what is known.</p>}</div>
+      </div>
+      <div className="mt-3 rounded border border-emerald-800/40 bg-emerald-950/20 p-2" aria-label="Prices from items used in valuation">
+        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">Prices from items used in valuation</p>
+        <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+          <div><p className="text-sm font-semibold text-emerald-100">{formatRunSummaryPrice(usedPriceSummary.low)}</p><p className="text-[10px] text-slate-400">Low Price</p></div>
+          <div><p className="text-sm font-semibold text-emerald-100">{formatRunSummaryPrice(usedPriceSummary.high)}</p><p className="text-[10px] text-slate-400">High Price</p></div>
+          <div><p className="text-sm font-semibold text-emerald-100">{formatRunSummaryPrice(usedPriceSummary.average)}</p><p className="text-[10px] text-slate-400">Average Price</p></div>
+        </div>
+        <p className="mt-1 text-[10px] text-slate-500">Based only on {usedPriceSummary.count} candidate{usedPriceSummary.count === 1 ? '' : 's'} with the final primary-sales valuation-use decision.</p>
+      </div>
+      {valuationNotRun ? <p className="mt-2 text-xs text-amber-200">Final valuation analysis has not run yet; current valuation counts are 0.</p> : resolved < displayed.length && <p className="mt-2 text-xs text-amber-200">{displayed.length - resolved} candidate decisions have no resolved final valuation record; their cards explain what is known.</p>}</div>
     </div>
     <div aria-label="Evidence review candidate results" className="space-y-4">
       {groups.filter(source => source.candidates.length > 0).map(source => <TestAiCandidateMasterList key={source.id} listings={source.candidates} sourceLabel={source.label} targetImageUrl={item.primaryPhotoUrl} scope={{ side: scopeSide, sourceId: source.id }} />)}

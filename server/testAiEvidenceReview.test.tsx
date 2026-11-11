@@ -2,7 +2,7 @@ import React, { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { TestAiEvidenceReview, evidenceReviewCandidates } from '../client/src/components/test-ai/TestAiEvidenceReview';
+import { TestAiEvidenceReview, evidenceReviewCandidates, summarizeUsedValuationPrices } from '../client/src/components/test-ai/TestAiEvidenceReview';
 import { MetadataComparisonTable, TestAiVisualComparison } from '../client/src/components/TestAiMetadataComparisonTable';
 import { normalizeTestAiEvidence } from '../shared/testAiEvidenceNormalization';
 const item = { id: 1, title: 'Target LaserDisc', category: 'movies', itemType: 'individual_movie' };
@@ -40,6 +40,17 @@ describe('Evidence Review is the complete candidate decision view', () => {
   it('does not display source-stage eligibility as actual valuation use', () => {
     const html = review([{ id: 'sold_comps', label: 'eBay Sold', packet: { listings: [{ title: 'Eligible', evidenceDisposition: 'valuation_eligible' }] } }]);
     expect(html).toContain('VALUATION NOT RUN'); expect(html).not.toContain('USED IN VALUATION'); expect(html).toContain('Final valuation analysis has not run yet; current valuation counts are 0.');
+  });
+  it('summarizes only final primary-sales rows for the run-summary prices', () => {
+    expect(summarizeUsedValuationPrices([
+      { price: 11, valuationUse: { use: { code: 'CURRENT_SALES_PRIMARY' } } },
+      { price: 25, valuationUse: { use: { code: 'CURRENT_SALES_PRIMARY' } } },
+      { price: 999, valuationUse: { use: { code: 'CURRENT_SALES_DIAGNOSTIC_ONLY' } } },
+    ])).toEqual({ count: 2, low: 11, high: 25, average: 18 });
+  });
+  it('renders the three valuation price labels and keeps them unavailable before final use', () => {
+    const html = review([]);
+    expect(html).toContain('Prices from items used in valuation'); expect(html).toContain('Low Price'); expect(html).toContain('High Price'); expect(html).toContain('Average Price'); expect(html).toContain('Based only on 0 candidates');
   });
   it('shows an explicit no-record state and source failure instead of a blank page', () => {
     const html = review([{ id: 'sold_comps', label: 'eBay Sold', status: 'error', message: 'Provider failed' }]);
