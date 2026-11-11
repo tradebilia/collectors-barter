@@ -2959,16 +2959,24 @@ export const testAIRouter = router({
       if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupCollectAuctions(input);
       if (!result.sales.length) return result;
+      const targetMetadata = buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails });
       const visualFilter = await filterVisualSourceCandidates({
         visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: 'Collect Auctions completed records', targetImageUrl: input.imageUrl,
-        targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
+        targetMetadata,
         listings: result.sales,
       });
+      const collectSales = visualFilter.listings;
+      const collectContext = visualFilter.contextListings ?? [];
       return {
         ...result,
-        sales: attachCanonicalProvenance('collect_auction', visualFilter.listings.map((sale: any) => ({
+        sales: attachCanonicalProvenance('collect_auction', collectSales.map((sale: any) => ({
+          ...sale, saleId: sale.lotId ?? sale.url ?? null, saleStatus: sale.completed ? 'completed' : sale.saleStatus,
+          completedStatusBasis: sale.completed ? 'Collect Auctions completed-sale archive via Parse.bot' : null,
+          priceBasis: 'realized', buyerPremium: 'unknown',
+        })), { query: input.title }),
+        context: attachCanonicalProvenance('collect_auction', collectContext.map((sale: any) => ({
           ...sale, saleId: sale.lotId ?? sale.url ?? null, saleStatus: sale.completed ? 'completed' : sale.saleStatus,
           completedStatusBasis: sale.completed ? 'Collect Auctions completed-sale archive via Parse.bot' : null,
           priceBasis: 'realized', buyerPremium: 'unknown',
@@ -2990,14 +2998,20 @@ export const testAIRouter = router({
       if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupSiriusSportsAuctions(input);
       if (!result.sales.length) return result;
+      const targetMetadata = buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails });
       const visualFilter = await filterVisualSourceCandidates({
         visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: 'Sirius Sports Auctions completed records', targetImageUrl: input.imageUrl,
-        targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
+        targetMetadata,
         listings: result.sales,
       });
-      return { ...result, sales: attachCanonicalProvenance('sirius_sports_auctions', visualFilter.listings.map((sale: any) => ({
+      const siriusSales = visualFilter.listings;
+      const siriusContext = visualFilter.contextListings ?? [];
+      return { ...result, sales: attachCanonicalProvenance('sirius_sports_auctions', siriusSales.map((sale: any) => ({
+        ...sale, saleId: sale.lotId ?? sale.url ?? null, saleStatus: sale.completed ? 'completed' : sale.saleStatus,
+        completedStatusBasis: sale.completed ? 'Sirius closed-lot prices-realized archive' : null, priceBasis: 'realized', buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : 'unknown',
+      })), { query: input.title }), context: attachCanonicalProvenance('sirius_sports_auctions', siriusContext.map((sale: any) => ({
         ...sale, saleId: sale.lotId ?? sale.url ?? null, saleStatus: sale.completed ? 'completed' : sale.saleStatus,
         completedStatusBasis: sale.completed ? 'Sirius closed-lot prices-realized archive' : null, priceBasis: 'realized', buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : 'unknown',
       })), { query: input.title }), visualFilter };
@@ -4534,19 +4548,23 @@ export const testAIRouter = router({
       if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupParse130PointSales(input);
       if (result.status !== 'success' || !result.data) return result;
+      const targetMetadata = buildVisualTargetMetadata({ title: input.title ?? input.query, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails });
       const visualFilter = await filterVisualSourceCandidates({
         visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: '130point sold listings',
         targetImageUrl: input.imageUrl,
-        targetMetadata: buildVisualTargetMetadata({ title: input.title ?? input.query, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
+        targetMetadata,
         listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })),
       });
+      const sourceItems = isAutographSignedItemTarget(targetMetadata)
+        ? [...visualFilter.listings, ...(visualFilter.contextListings ?? [])]
+        : visualFilter.listings;
       return {
         ...result,
         data: {
           ...result.data,
-          items: attachCanonicalProvenance('130point', visualFilter.listings.map((sale: any) => ({
+          items: attachCanonicalProvenance('130point', sourceItems.map((sale: any) => ({
             ...sale,
             saleId: sale.id ?? sale.url ?? null,
             saleStatus: 'completed',
@@ -4576,15 +4594,19 @@ export const testAIRouter = router({
       if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupPwccSales(input.query);
       if (result.status !== 'success' || !result.data) return result;
+      const targetMetadata = buildVisualTargetMetadata({ title: input.title ?? input.query, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails });
       const visualFilter = await filterVisualSourceCandidates({
         visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: 'PWCC / Fanatics Collect sold listings',
         targetImageUrl: input.imageUrl,
-        targetMetadata: buildVisualTargetMetadata({ title: input.title ?? input.query, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
+        targetMetadata,
         listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })),
       });
-      return { ...result, data: { ...result.data, items: visualFilter.listings }, visualFilter };
+      const sourceItems = isAutographSignedItemTarget(targetMetadata)
+        ? [...visualFilter.listings, ...(visualFilter.contextListings ?? [])]
+        : visualFilter.listings;
+      return { ...result, data: { ...result.data, items: sourceItems }, visualFilter };
     }),
 
   // Wikidata public metadata lookup — administrator-only, read-only, and not a valuation source.
