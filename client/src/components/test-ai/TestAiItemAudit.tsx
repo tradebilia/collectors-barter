@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useIsFetching, useIsMutating } from '@tanstack/react-query';
+import { useIsMutating } from '@tanstack/react-query';
 import { trpc } from '@/lib/trpc';
 import type { NormalizedEvidenceSummary } from '../../../../shared/testAiEvidenceNormalization';
 import { testAiItemAuditLifecycleKey } from '../../../../shared/testAiAnalysisLifecycle';
@@ -47,17 +47,21 @@ function procedure(key: readonly unknown[] | undefined): string | null {
   return Array.isArray(path) && path[0] === 'testAI' && typeof path[1] === 'string' ? path[1] : null;
 }
 
+const PENDING_SOURCE_STATUSES = new Set(['loading', 'pending', 'running', 'fetching']);
+
+/** Only source work represented by this audit may delay its dispatch. */
+export function isItemAuditSourcePending(sources: ReadonlyArray<ItemAuditSource>): boolean {
+  return sources.some(source => PENDING_SOURCE_STATUSES.has(String(source.status ?? '').toLowerCase()));
+}
+
 export function TestAiItemAudit({ item, displayItem = item, summary, sources }: {
   item: ItemAuditTarget; displayItem?: ItemAuditTarget; summary: NormalizedEvidenceSummary; sources: ItemAuditSource[];
 }) {
-  const fetching = useIsFetching({ predicate: query => {
-    const name = procedure(query.queryKey);
-    return name !== null && !['getMyInventory', 'getAllSandboxItems'].includes(name);
-  } });
   const reviewing = useIsMutating({ predicate: mutation => {
     const name = procedure(mutation.options.mutationKey);
     return name !== null && ['reviewEbayVisualData', 'readCertificationFromImage'].includes(name) && !mutation.state.isPaused;
   } });
+  const sourcePending = isItemAuditSourcePending(sources);
   const target = { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade,
     condition: item.condition, certificationCompany: item.certificationCompany, itemDetails: item.itemDetails,
     estimatedValue: item.estimatedValue, ...buildApprovalTargetImageInput({ primaryPhotoUrl: item.primaryPhotoUrl ?? undefined }, false) };
@@ -97,11 +101,11 @@ export function TestAiItemAudit({ item, displayItem = item, summary, sources }: 
     if (attemptedKey.current !== key) { attemptedKey.current = ''; activeRun.current = ''; }
   }, [key]);
   useEffect(() => {
-    if (fetching + reviewing > 0 || attemptedKey.current === key || isCollectionLotItemType(item.itemType)) return;
+    if (sourcePending || reviewing > 0 || attemptedKey.current === key || isCollectionLotItemType(item.itemType)) return;
     const timer = window.setTimeout(() => runRef.current(), 300);
     return () => window.clearTimeout(timer);
-  }, [key, fetching, reviewing, item.itemType]);
-  const busy = fetching + reviewing > 0;
+  }, [key, sourcePending, reviewing, item.itemType]);
+  const busy = sourcePending || reviewing > 0;
   const current = receipt?.key === key && !busy ? receipt : null;
   const error = failure?.key === key ? failure.message : null;
   return <div className="space-y-3" aria-label="Item A standalone valuation audit">

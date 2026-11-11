@@ -87,13 +87,13 @@ describe('Automatic Item A-only audit', () => {
     await tick(); expect(mocks.mutate).toHaveBeenCalledTimes(1);
     await act(async () => container.querySelector('button')!.click()); expect(mocks.mutate).toHaveBeenCalledTimes(2);
   });
-  it('waits for source requests to settle before running automatically', async () => {
+  it('waits for the selected source to settle but ignores unrelated active queries', async () => {
     let resolve!: (data: any) => void;
     const pending = client.fetchQuery({ queryKey: [['testAI', 'getMercariSoldCompsData']], queryFn: () => new Promise(res => { resolve = res; }) });
-    await render(); await tick(); expect(mocks.mutate).not.toHaveBeenCalled();
+    await render(item, sources.map(source => ({ ...source, status: 'loading' }))); await tick(); expect(mocks.mutate).not.toHaveBeenCalled();
     expect(container.textContent).toContain('Waiting for source retrieval');
     await act(async () => { resolve({}); await pending; });
-    await render(); await tick(); expect(mocks.mutate).toHaveBeenCalledTimes(1);
+    await render(item, sources.map(source => ({ ...source, status: 'success' }))); await tick(); expect(mocks.mutate).toHaveBeenCalledTimes(1);
   });
   it('retains the later trade panel behind an explicit disabled-by-default option', () => {
     const page = readFileSync(`${process.cwd()}/client/src/pages/TestAI.tsx`, 'utf8');
