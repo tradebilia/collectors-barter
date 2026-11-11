@@ -6,6 +6,11 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { SourceRunOutcomeSummary } from '../client/src/components/test-ai/SourceRunOutcomeSummary';
 import { buildItemAuditSubmission } from '../client/src/components/test-ai/TestAiItemAudit';
+import { normalizeTestAiSelectedItem } from '../shared/testAiSelectedItem';
+import { candidateFinalDecision } from '../client/src/components/test-ai/candidateFinalDecision';
+import { buildApprovalTargetInput } from '../shared/testAiSoldCompsTransport';
+import { reconcileCandidateFinalUse } from '../shared/testAiCandidateLedger';
+import { summarizeUsedValuationPrices } from '../client/src/components/test-ai/TestAiEvidenceReview';
 const mocks = vi.hoisted(() => ({ llm: vi.fn(), fetch: vi.fn() }));
 vi.mock('./_core/env', () => ({ ENV: { jwtSecret: 'mercari-date-exception-synthetic-signing-key', appId: 'synthetic-test' } }));
 vi.mock('./_core/llm', () => ({ invokeLLM: mocks.llm }));
@@ -18,6 +23,14 @@ const MOVIE = { title: 'Batman (1989) LaserDisc LD', category: 'movies', itemTyp
   itemDetails: JSON.stringify({ movieTitle: 'Batman', format: 'LaserDisc', releaseYear: '1989', isGraded: 'No', sealed: 'No' }) };
 const AUTOGRAPH = { title: 'Barry Bonds Official Major League Baseball Signed Rawlings', category: 'autographs', itemType: 'signed_item',
   itemDetails: JSON.stringify({ signer: 'Barry Bonds', signedItemType: 'baseball', autographCategory: 'Sports/Baseball', authenticationIncluded: 'No', inscriptionPresent: 'No' }) };
+// Actual cached inventory metadata, with the same selected-item normalization
+// as the page. Candidate titles must NOT be copied from this target.
+const LIVE_AUTOGRAPH = normalizeTestAiSelectedItem({
+  title: 'Barry Bonds Signed Baseball 2002 All-Star Game Autographed Rawlings',
+  category: 'autographs', itemType: 'signed_item', grade: '0', condition: 'excellent',
+  itemDetails: JSON.stringify({ authenticationIncluded: 'no', autographCategory: 'Sports', inscriptionPresent: 'no',
+    quantity: '1', shippingAvailable: 'yes', signedItemType: 'Baseball', signer: 'Barry Bonds' }),
+});
 const GAME = { title: 'The Legend of Zelda NES WATA 7.5 Sealed A++', category: 'video_games', itemType: 'game', grade: '7.5', certificationCompany: 'WATA',
   itemDetails: JSON.stringify({ gameTitle: 'The Legend of Zelda', platform: 'NES', releaseYear: '1987', isGraded: 'Yes', gradingCompany: 'WATA', grade: '7.5', completeInBox: 'Yes', sealed: 'Yes' }) };
 let rows: Record<string, any>[];
@@ -159,6 +172,73 @@ describe('Mercari undated sold=true actual route admission', () => {
     expect(comp.valuationUse?.sourceAdmission.blockerCodes).not.toContain('REQUIRED_APPROVAL_MISSING');
     expect(comp.valuationUse?.sourceAdmission.blockerCodes).not.toContain('PROVENANCE_UNVERIFIED');
     expect(comp.valuationUse?.use.code).toBe('CURRENT_SALES_PRIMARY');
+  });
+  it.each(['Barry Bonds Official Major League Baseball', 'Barry Bonds Signed Baseball'])
+  ('uses actual inventory target and distinct candidate title without a second generic-score veto: %s', async candidateTitle => {
+    rows = [providerRow(LIVE_AUTOGRAPH as typeof MOVIE, { title: candidateTitle, price: '75.00', condition: 'Like new' })];
+    const source: any = await caller().getMercariSoldCompsData(input(LIVE_AUTOGRAPH as typeof MOVIE));
+    const row = source.audit.ledger.find((entry: any) => entry.title === candidateTitle);
+    expect(row).toMatchObject({ metadataMatchScore: 70, evidenceDisposition: 'valuation_eligible', visualRequirement: 'not_required' });
+    expect(mocks.llm).not.toHaveBeenCalled();
+    const intake = buildItemAuditSubmission([{ id: 'mercari_sold_comps', label: 'Mercari Sold', kind: 'market_completed', packet: source }], 'actual-target-distinct-title');
+    const result = await caller().auditItemValuation({ item: { ...buildApprovalTargetInput(LIVE_AUTOGRAPH), approvalTargetImageReference: TARGET_IMAGE }, sales: intake.submitted });
+    const comp = result.snapshot.profile.comparables.find(entry => entry.title === candidateTitle)!;
+    expect(comp.valuationUse?.identityAdmission.blockerCodes).toEqual([]);
+    expect(result.snapshot.profile.selectionDiagnostics.selectedForValuation).toBe(1);
+    expect(result.snapshot.profile.primaryValue).toBe(75);
+    expect(comp.valuationUse?.use.code).toBe('CURRENT_SALES_PRIMARY');
+    expect(candidateFinalDecision({ ...row, valuationUse: comp.valuationUse }).label).toBe('USED IN VALUATION');
+    expect(mocks.llm).not.toHaveBeenCalled();
+  });
+  it.each([
+    'Joe Smith Signed Baseball', 'Barry Bonds Signed Football', 'Barry Bonds Signed Baseball Steiner COA',
+    'Barry Bonds Replica Signed Baseball', 'Barry Bonds Signed Baseball Lot of 2',
+    'Barry Bonds Signed Baseball Inscribed HOF 73',
+    'Barry Bonds Pittsburgh Pirates Baseball Illustrated Print Poster Art', 'Barry Bonds Baseball Book',
+  ])('keeps explicit signed-object conflicts out of actual-target valuation: %s', async candidateTitle => {
+    rows = [providerRow(LIVE_AUTOGRAPH as typeof MOVIE, { title: candidateTitle, price: '75.00' })];
+    const source: any = await caller().getMercariSoldCompsData(input(LIVE_AUTOGRAPH as typeof MOVIE));
+    const intake = buildItemAuditSubmission([{ id: 'mercari_sold_comps', label: 'Mercari Sold', kind: 'market_completed', packet: source }], 'explicit-autograph-conflict');
+    const result = await caller().auditItemValuation({ item: { ...buildApprovalTargetInput(LIVE_AUTOGRAPH), approvalTargetImageReference: TARGET_IMAGE }, sales: intake.submitted });
+    expect(result.snapshot.profile.selectionDiagnostics.selectedForValuation).toBe(0);
+    expect(result.snapshot.profile.primaryValue).toBeNull();
+    expect(mocks.llm).not.toHaveBeenCalled();
+  });
+  it.each([{ cancelled: true }, { finalPrice: '99.00' }, { currency: 'CAD' }, { soldAt: '2099-01-01T00:00:00Z' }])
+  ('does not let no-visual Autographs bypass original economic facts: %j', async override => {
+    rows = [providerRow(LIVE_AUTOGRAPH as typeof MOVIE, { title: 'Barry Bonds Official Major League Baseball', price: '75.00', ...override })];
+    const source: any = await caller().getMercariSoldCompsData(input(LIVE_AUTOGRAPH as typeof MOVIE));
+    const intake = buildItemAuditSubmission([{ id: 'mercari_sold_comps', label: 'Mercari Sold', kind: 'market_completed', packet: source }], 'autograph-economic-conflict');
+    const result = await caller().auditItemValuation({ item: { ...buildApprovalTargetInput(LIVE_AUTOGRAPH), approvalTargetImageReference: TARGET_IMAGE }, sales: intake.submitted });
+    expect(result.snapshot.profile.selectionDiagnostics.selectedForValuation).toBe(0);
+    expect(result.snapshot.profile.primaryValue).toBeNull();
+  });
+  it('does not accept unsigned no-visual records or client-inflated relevance scores', async () => {
+    rows = [providerRow(LIVE_AUTOGRAPH as typeof MOVIE, { title: 'Barry Bonds Official Major League Baseball', price: '75.00' })];
+    const source: any = await caller().getMercariSoldCompsData(input(LIVE_AUTOGRAPH as typeof MOVIE));
+    const sale = buildMercariAnalysisSales(source, true)[0];
+    const item = { ...buildApprovalTargetInput(LIVE_AUTOGRAPH), approvalTargetImageReference: TARGET_IMAGE };
+    const unsigned = await caller().auditItemValuation({ item, sales: [{ ...sale, provenanceToken: undefined, metadataMatchScore: 100 }] });
+    expect(unsigned.snapshot.profile.selectionDiagnostics.selectedForValuation).toBe(0);
+    const wrongTarget = { ...item, itemDetails: JSON.stringify({ ...JSON.parse(item.itemDetails!), signer: 'Joe Smith' }) };
+    const inflated = await caller().auditItemValuation({ item: wrongTarget, sales: [{ ...sale, metadataMatchScore: 100 }] });
+    expect(inflated.snapshot.profile.selectionDiagnostics.selectedForValuation).toBe(0);
+  });
+  it('reconciles a 55-candidate actual-target run to one used USD75 comp and matching summary prices', async () => {
+    rows = Array.from({ length: 55 }, (_, index) => providerRow(LIVE_AUTOGRAPH as typeof MOVIE, {
+      itemId: `m${54069072197 + index}`, url: `https://www.mercari.com/us/item/m${54069072197 + index}/`,
+      title: index === 0 ? 'Barry Bonds Official Major League Baseball' : `Joe Smith Signed Football ${index}`, price: '75.00',
+    }));
+    const source: any = await caller().getMercariSoldCompsData(input(LIVE_AUTOGRAPH as typeof MOVIE));
+    const intake = buildItemAuditSubmission([{ id: 'mercari_sold_comps', label: 'Mercari Sold', kind: 'market_completed', packet: source }], 'actual-55-candidates');
+    expect(intake.submitted).toHaveLength(55);
+    const result = await caller().auditItemValuation({ item: { ...buildApprovalTargetInput(LIVE_AUTOGRAPH), approvalTargetImageReference: TARGET_IMAGE }, sales: intake.submitted });
+    const reconciled = reconcileCandidateFinalUse(intake.submitted, { side: 'item_a', requestRunId: 'actual-55-candidates',
+      submitted: intake.submitted, finalRows: result.snapshot.profile.comparables, analysisRunId: result.analysisRunId });
+    expect(reconciled.filter(row => candidateFinalDecision(row).label === 'USED IN VALUATION')).toHaveLength(1);
+    expect(summarizeUsedValuationPrices(reconciled)).toMatchObject({ count: 1, low: 75, high: 75, average: 75 });
+    expect(result.snapshot.profile.selectionDiagnostics.selectedForValuation).toBe(1);
+    expect(mocks.llm).not.toHaveBeenCalled();
   });
   it('does not treat an explicit inscription as equivalent to a target marked No inscription', () => {
     const target = { ...AUTOGRAPH, approvalTargetImageReference: TARGET_IMAGE };

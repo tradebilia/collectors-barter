@@ -90,6 +90,30 @@ describe('Stage 5 actual status render component', () => {
     expect(decision.reason).not.toContain('visual AI review was not completed');
     expect(decision.reason).toContain('shown for comparison only');
   });
+  it('names the actual missing signature wording when final signed-item approval was not established', () => {
+    const decision = candidateFinalDecision({ visualRequirement: 'not_required',
+      valuationUse: { use: { code: 'REVIEW_REQUIRED', reasonCodes: ['UNIVERSAL_REVIEW_REQUIRED'] },
+        identityAdmission: { blockerCodes: ['UNIVERSAL_REVIEW_REQUIRED'], reasonDetails: ['autograph status is not stated'] } } });
+    expect(decision.reason).toContain('listing title does not state that the item is signed or autographed');
+    expect(decision.reason).not.toContain('universal identity field');
+  });
+  it('does not blame visual review for a signed-item relevance rejection even on a legacy display row', () => {
+    const decision = candidateFinalDecision({ sourceId: 'mercari_sold_comps', metadataMatchScore: 45,
+      metadataRanking: { scorerRole: 'signed_item_relevance' }, evidenceDisposition: 'context_only',
+      evidenceReasons: ['signed object type is missing or does not match the target'],
+      valuationUse: { use: { code: 'REVIEW_REQUIRED', reasonCodes: [] } } });
+    expect(decision.reason).toContain('signed object type is missing or does not match');
+    expect(decision.reason).not.toContain('visual AI review was not completed');
+  });
+  it('describes no-visual Autographs market admission without technical warning codes', () => {
+    const decision = candidateFinalDecision({ sourceId: 'mercari_sold_comps',
+      valuationUse: { use: { code: 'CURRENT_SALES_PRIMARY', reasonCodes: ['MERCARI_UNDATED_QUALIFIED_EXCEPTION'] },
+        identityAdmission: { basis: 'server_autograph_market_relevance' } } });
+    expect(decision.label).toBe('USED IN VALUATION');
+    expect(decision.reason).toContain('Exact image review is not required');
+    expect(decision.reason).toContain('Sale date remains Unknown');
+    expect(decision.reason).not.toContain('MERCARI_UNDATED_QUALIFIED_EXCEPTION');
+  });
   it('preserves eight metadata columns, Potential Points, source highlights, target/candidate images and one master list', () => {
     const frozen = freezeMetadataRankingPopulation([{ title: target.title, imageUrl: 'https://example.test/candidate.jpg', currency: 'CAD', price: 100 }], { sourceId: 'fixture', populationId: 'rank-run' });
     const row = { ...frozen.listings[0], metadataMatchScore: 100, metadataFieldComparisons: [{ targetField: 'Player', targetValue: 'Ken Griffey Jr', candidateField: 'player', candidateValue: 'Ken Griffey Jr', titleDerivedValue: 'Ken Griffey Jr', status: 'match', rankingContribution: { matched: true, structured: true, titleDerived: true, awardedPoints: 20, sources: ['structured', 'title'] } }] };

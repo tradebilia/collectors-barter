@@ -4,10 +4,11 @@ import { extractIdentityState, identityStateConflicts } from './testAiIdentitySt
 import { isVerifiedGuideAnchor } from './testAiGuideEvidence';
 import { TEST_AI_VALUE_UNAVAILABLE_MESSAGE, nullableTestAiPrice, type GuideValueAnchor } from '../shared/testAiEvidenceNormalization';
 import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
-import { getVerifiedIdentityApproval, hasVerifiedMercariUndatedSale, transferVerifiedIdentityApproval } from './testAiCanonicalObservation';
+import { getVerifiedIdentityApproval, hasVerifiedMercariUndatedSale, transferVerifiedIdentityApproval, verifyCanonicalObservation } from './testAiCanonicalObservation';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 import { signedTransactionLotConflict, transactionIdentity, type TransactionIdentity } from './testAiEconomicIntegrity';
-import type { VisualEvidence } from './testAiVisualSourceFilter';
+import { autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility,
+  buildVisualTargetMetadata, type VisualEvidence } from './testAiVisualSourceFilter';
 import { randomUUID } from 'node:crypto';
 import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAuditRef,
   readServerNormalizationReport, retainServerNormalizationReport, finalUsePopulation,
@@ -171,7 +172,7 @@ export interface ComparableMatch {
   evidenceDisposition?: string | null;
   evidenceReasons?: string[] | null;
   identityApproval?: unknown;
-  identityAdmissionBasis?: 'server_final_visual' | 'title_evidence';
+  identityAdmissionBasis?: 'server_final_visual' | 'server_autograph_market_relevance' | 'title_evidence';
   visualEvidence?: VisualEvidence;
   visualAudit?: unknown;
   visualDifferences?: unknown[] | null;
@@ -1852,6 +1853,29 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const details = parseDetails(target);
   const categoryKey = String(target.category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
   const isDisneyPins = categoryKey === 'disney_pins';
+  // Recompute the approved Autographs policy from signed canonical title facts
+  // against this target. Browser score/awards and a not_required label alone
+  // cannot grant admission. The private receipt survives token stripping.
+  const autographTarget = categoryKey === 'autographs'
+    && String(target.itemType ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_') === 'signed_item';
+  const receipt = autographTarget ? readServerNormalizationReport(sale) : undefined;
+  const verifiedSource = receipt?.sourceAdmission.verification === 'verified'
+    && receipt.sourceAdmission.normalizationEligible === true
+    && receipt.sourceAdmission.verifiedSourceDisposition === 'valuation_eligible'
+    && Boolean(receipt.auditRef.verifiedObservationId);
+  const canonical = autographTarget && !receipt ? verifyCanonicalObservation(sale) : null;
+  const canonicalAutographSale = verifiedSource ? sale : canonical?.verified ? canonical.sale : null;
+  const autographMarketPolicy = canonicalAutographSale?.visualRequirement === 'not_required'
+    && canonicalAutographSale.evidenceDisposition === 'valuation_eligible'
+    ? (() => {
+      const metadata = buildVisualTargetMetadata(target);
+      const candidate = { title: canonicalAutographSale.title };
+      const eligibility = autographValuationEligibility(candidate, metadata);
+      const exclusion = autographMarketExclusionReason(metadata, candidate);
+      return { eligible: eligibility.eligible && !exclusion,
+        score: autographMarketRelevanceScore(candidate, metadata).score,
+        reasons: [...eligibility.reasons, ...(exclusion ? [exclusion] : [])] };
+    })() : null;
   // Disney Pins do not use a graded/raw state in this marketplace workflow.
   // Ignore both explicit stale fields and any grade-related itemDetails here;
   // their identity is adjudicated by the category-specific visual gate instead.
@@ -1860,6 +1884,11 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const universalIdentityConflicts = targetIdentityState && saleIdentityState
     ? identityStateConflicts(targetIdentityState, saleIdentityState, categoryKey === 'comics', categoryKey)
     : [];
+  // The source-neutral signed-object policy already requires the same signer
+  // and object. A title need not repeat signed/autographed for market relevance;
+  // do not invent candidate authentication or an exact visual identity.
+  const blockingUniversalConflicts = universalIdentityConflicts.filter(reason =>
+    !(autographMarketPolicy?.eligible && reason === 'autograph status is not stated'));
   const identity = buildTestAiP0Identity(target);
   const targetTokens = new Set(textTokens(target.title));
   const saleTokens = new Set(textTokens(title));
@@ -2004,16 +2033,19 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     reasons.push(`${categoryIdentity.confirmedFields.length} category-critical identifiers match`);
   }
 
-  const boundedScore = Math.max(0, Math.min(100, score));
+  const boundedScore = Math.max(0, Math.min(100, autographMarketPolicy?.score ?? score));
+  if (autographMarketPolicy) reasons.push(...(autographMarketPolicy.eligible
+    ? [`Server-recomputed Autographs market relevance ${autographMarketPolicy.score}/100; no exact visual identity claimed.`]
+    : autographMarketPolicy.reasons));
   const priceIsUsable = price !== null && Number.isFinite(price) && price > 0;
   const categoryHardConflict = categoryIdentity.status === 'objective_conflict';
-  if (universalIdentityConflicts.length) {
-    reasons.push(...universalIdentityConflicts.map((reason) => `identity state conflict: ${reason}`));
+  if (blockingUniversalConflicts.length) {
+    reasons.push(...blockingUniversalConflicts.map((reason) => `identity state conflict: ${reason}`));
   }
-  const universalHardConflict = universalIdentityConflicts.some((reason) =>
+  const universalHardConflict = blockingUniversalConflicts.some((reason) =>
     /raw\/graded state differs|single item versus lot\/bundle differs|negative listing signal|parallel\/variant differs|sale declares an autograph|signature name(?: set)? differs/.test(reason),
   );
-  const universalNeedsReview = universalIdentityConflicts.some((reason) => reason.includes('not stated'));
+  const universalNeedsReview = blockingUniversalConflicts.some((reason) => reason.includes('not stated'));
   const categoryNeedsReview = categoryIdentity.status === 'needs_review';
   const categoryDirectConfirmed = categoryIdentity.status === 'direct_confirmed' || categoryIdentity.status === 'not_applicable';
   const restrictiveSourceDisposition = Boolean(sale.evidenceDisposition && sale.evidenceDisposition !== 'valuation_eligible');
@@ -2049,6 +2081,9 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   } else if (approvedIdentity) {
     identityRelationship = 'exact_identity';
     valuationRelationship = 'direct_comparable';
+  } else if (autographMarketPolicy?.eligible) {
+    identityRelationship = 'related_object';
+    valuationRelationship = 'direct_comparable';
   } else if (categoryDirectConfirmed && numberMatches) {
     identityRelationship = 'exact_identity';
     valuationRelationship = 'direct_comparable';
@@ -2080,10 +2115,14 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
       ? 'contextual'
     : categoryNeedsReview || universalNeedsReview
       ? 'contextual'
+    : autographMarketPolicy && !autographMarketPolicy.eligible
+      ? 'contextual'
     : visualMismatch || materialVariantReview || sale.evidenceDisposition === 'warning_review' || boundedScore < 48
       ? 'contextual'
     : identity.readiness !== 'ready'
       ? 'contextual'
+    : autographMarketPolicy?.eligible
+      ? 'near'
       : boundedScore >= 80
         ? 'exact'
         : boundedScore >= 60
@@ -2102,10 +2141,14 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
           ? 'same underlying object is certification-adjacent; retained for secondary evidence, excluded from direct valuation'
             : universalHardConflict
               ? `universal identity conflict: ${universalIdentityConflicts.join('; ')}`
-            : categoryHardConflict
-            ? `category-specific identity conflict: ${categoryIdentity.conflicts.join('; ')}`
-            : categoryNeedsReview
-              ? `category-specific identity needs review: ${categoryIdentity.unconfirmedFields.join(', ')}`
+    : categoryHardConflict
+    ? `category-specific identity conflict: ${categoryIdentity.conflicts.join('; ')}`
+    : categoryNeedsReview
+      ? `category-specific identity needs review: ${categoryIdentity.unconfirmedFields.join(', ')}`
+    : universalNeedsReview
+      ? `universal identity needs review: ${blockingUniversalConflicts.filter(reason => reason.includes('not stated')).join('; ')}`
+    : autographMarketPolicy && !autographMarketPolicy.eligible
+      ? `Autographs market-evidence requirements not met: ${autographMarketPolicy.reasons.join('; ')}`
           : materialVariantConflict
             ? 'explicit sale variant or release detail differs from target'
             : materialNumberConflict
@@ -2147,6 +2190,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   if (transactionLotConflict) identityBlockerCodes.push('TRANSACTION_LOT_CONFLICT');
   if (identityApproval && transactionLotConflict) identityBlockerCodes.push('APPROVED_LOT_CONFLICT');
   if (identityApproval && approvalHardStateConflict) identityBlockerCodes.push('APPROVED_STATE_CONFLICT');
+  if (autographMarketPolicy && !autographMarketPolicy.eligible) identityBlockerCodes.push('AUTOGRAPH_MARKET_POLICY_BLOCKED');
   if (restrictiveSourceDisposition) identityBlockerCodes.push('SOURCE_DISPOSITION_RESTRICTIVE');
   if (!approvedIdentity && identity.readiness !== 'ready') identityBlockerCodes.push('TARGET_IDENTITY_INCOMPLETE');
   if (!accepted && boundedScore < 48) identityBlockerCodes.push('IDENTITY_SCORE_BELOW_THRESHOLD');
@@ -2157,7 +2201,8 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     titleCategoryIdentity: { ...titleCategoryIdentity, confirmedFields: [...titleCategoryIdentity.confirmedFields],
       unconfirmedFields: [...titleCategoryIdentity.unconfirmedFields], conflicts: [...titleCategoryIdentity.conflicts] },
     serverFinalApprovalVerified: Boolean(identityApproval),
-    basis: accepted ? approvedIdentity ? 'server_final_visual' : 'title_evidence' : 'not_admitted',
+    basis: accepted ? approvedIdentity ? 'server_final_visual' : autographMarketPolicy?.eligible ? 'server_autograph_market_relevance' : 'title_evidence' : 'not_admitted',
+    reasonDetails: [...blockingUniversalConflicts, ...(autographMarketPolicy?.eligible === false ? autographMarketPolicy.reasons : [])].slice(0, 20),
     visualReviewStatus: sale.visualReviewStatus ?? 'not_reviewed', blockerCodes: identityBlockerCodes,
   };
   return {
@@ -2175,7 +2220,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     valuationRelationship,
     categoryIdentity: finalCategoryIdentity,
     titleCategoryIdentity,
-    identityAdmissionBasis: approvedIdentity ? 'server_final_visual' : 'title_evidence',
+    identityAdmissionBasis: approvedIdentity ? 'server_final_visual' : accepted && autographMarketPolicy?.eligible ? 'server_autograph_market_relevance' : 'title_evidence',
     ...(identityApproval ? { identityApproval } : {}),
     sourceId: sale.sourceId ?? sale.marketplace ?? null,
     sourceLabel: sale.sourceLabel ?? sale.marketplace ?? sale.sourceId ?? null,

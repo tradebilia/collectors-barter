@@ -44,6 +44,7 @@ const finalAnalysisBlockerLabels: Record<string, string> = {
   CERTIFICATION_ADJACENT: 'The candidate is certification-adjacent to the target.',
   CATEGORY_REVIEW_REQUIRED: 'A category-critical identity field remains unresolved.',
   UNIVERSAL_REVIEW_REQUIRED: 'A universal identity field remains unresolved.',
+  AUTOGRAPH_MARKET_POLICY_BLOCKED: 'The listing did not meet the signed-item market-evidence requirements.',
   VARIANT_REVIEW_REQUIRED: 'A declared variant requires review before direct valuation use.',
   SIGNED_FORM_CONFLICT: 'The signed transaction form conflicts with the target.',
   APPROVED_STATE_CONFLICT: 'The approved transaction state conflicts with the target.',
@@ -66,7 +67,7 @@ const finalBlockerPriority = [
   'CATALOG_NUMBER_CONFLICT', 'CATEGORY_IDENTITY_CONFLICT', 'UNIVERSAL_IDENTITY_CONFLICT', 'VARIANT_CONFLICT',
   'GRADE_ADJACENT', 'CERTIFICATION_ADJACENT', 'CATEGORY_REVIEW_REQUIRED', 'UNIVERSAL_REVIEW_REQUIRED',
   'VARIANT_REVIEW_REQUIRED', 'SIGNED_FORM_CONFLICT', 'APPROVED_STATE_CONFLICT', 'TARGET_IDENTITY_INCOMPLETE',
-  'IDENTITY_SCORE_BELOW_THRESHOLD', 'MATERIAL_IDENTITY_HOLD', 'GUIDE_FALLBACK_PRIMARY', 'SOURCE_BALANCED_CAP',
+  'AUTOGRAPH_MARKET_POLICY_BLOCKED', 'IDENTITY_SCORE_BELOW_THRESHOLD', 'MATERIAL_IDENTITY_HOLD', 'GUIDE_FALLBACK_PRIMARY', 'SOURCE_BALANCED_CAP',
   'IQR_EXCLUDED_N_GE_10', 'EXACT_DUPLICATE_POLICY', 'PROBABLE_DUPLICATE_POLICY',
 ] as const;
 function terminalFinalBlocker(row: CandidateDisplayRow, reasonCodes: Set<string>): string | undefined {
@@ -76,11 +77,20 @@ function terminalFinalBlocker(row: CandidateDisplayRow, reasonCodes: Set<string>
   return finalBlockerPriority.find((code) => reasonCodes.has(code) && !ignored.has(code) && finalAnalysisBlockerLabels[code]);
 }
 function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: string[]): string | undefined {
-  if (code === 'CURRENT_SALES_PRIMARY') return undefined;
+  if (code === 'CURRENT_SALES_PRIMARY') return row.valuationUse?.identityAdmission?.basis === 'server_autograph_market_relevance'
+    ? `This reported sold price was used as Autographs market evidence. Exact image review is not required.${row.sourceId === 'mercari_sold_comps' ? ' Sale date remains Unknown under the Mercari date exception.' : ''}` : undefined;
   const visualResponse = hasActualVisualResponse(row);
   const visualDispatched = hasActualVisualDispatch(row);
   const autographNoVisual = row.visualRequirement === 'not_required'
-    || typeof row.visualRequirement === 'string' && row.visualRequirement.startsWith('not_required_autograph');
+    || typeof row.visualRequirement === 'string' && row.visualRequirement.startsWith('not_required_autograph')
+    || row.metadataRanking?.scorerRole === 'signed_item_relevance';
+  if (autographNoVisual && row.evidenceDisposition !== 'valuation_eligible') {
+    const sourceReason = Array.isArray(row.evidenceReasons) ? row.evidenceReasons.find((reason: unknown) =>
+      typeof reason === 'string' && /^(?:signer is|signed object type|market relevance score|Autograph candidate)/i.test(reason)) : undefined;
+    if (sourceReason) return `The signed-item check stopped this listing: ${sourceReason}`;
+    const score = Number(row.metadataMatchScore);
+    if (Number.isFinite(score) && score < 70) return `The signed-item market relevance score was ${score}/100, below the required minimum of 70/100. Image review is not required for Autographs.`;
+  }
   if (row.sourceId === 'mercari_sold_comps' && !visualResponse && !autographNoVisual) {
     const execution = candidateExecutionFact(row);
     const attemptFacts = candidateExecutionAttemptFacts(row);
@@ -113,6 +123,18 @@ function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: 
   if (code === 'OMITTED_BY_CAP') return 'The item matched, but the source limit was reached before it could be included in the final calculation.';
   if (reasonCodes.has('SOURCE_DISPOSITION_RESTRICTIVE')) return sourceDispositionExplanation(row);
   const blocker = terminalFinalBlocker(row, reasonCodes);
+  const identity = row.valuationUse?.identityAdmission;
+  if (blocker === 'UNIVERSAL_REVIEW_REQUIRED') {
+    const detail = identity?.reasonDetails?.find((reason: unknown) => typeof reason === 'string' && reason.includes('not stated'));
+    if (detail === 'autograph status is not stated') return 'The listing title does not state that the item is signed or autographed; the final signed-item market-evidence approval was not established.';
+    if (detail === 'signature name is not stated') return 'The listing does not identify who signed the item.';
+  }
+  if (blocker === 'CATEGORY_REVIEW_REQUIRED' && identity?.categoryIdentity?.unconfirmedFields?.length) {
+    return `The listing does not confirm the required ${identity.categoryIdentity.unconfirmedFields.join(', ')} information.`;
+  }
+  if (blocker === 'AUTOGRAPH_MARKET_POLICY_BLOCKED' && identity?.reasonDetails?.length) {
+    return `The signed-item check stopped this listing: ${identity.reasonDetails[0]}.`;
+  }
   if (blocker) return `The item looks like a match, but ${finalAnalysisBlockerLabels[blocker]}`;
   if (code === 'REVIEW_REQUIRED') return 'The item looks like a match, but a required verification step was not completed, so it cannot be used for the value yet.';
   if (code === 'UNSUPPORTED_CURRENCY') return 'The item matched, but the sale is not reported in US dollars, so it cannot be used in the value calculation.';

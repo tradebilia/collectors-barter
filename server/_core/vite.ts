@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import viteConfig from "../../vite.config";
+import { resolveViteHmrPorts } from "./viteHmr";
 
 // Keep file resolution compatible with production Node runtimes that do not
 // expose newer module-directory convenience properties.
@@ -15,13 +16,14 @@ export async function setupVite(app: Express, server: Server) {
   // WebDev forwards both HTTP and WebSocket traffic through Express. In
   // middleware mode Vite otherwise advertises its standalone default (5173),
   // which makes the browser try a second, unreachable WebSocket endpoint.
-  const hmrClientPort = Number(process.env.PORT ?? 3000);
+  const { listenPort, clientPort } = resolveViteHmrPorts({ PORT: process.env.PORT, VITE_HMR_CLIENT_PORT: process.env.VITE_HMR_CLIENT_PORT });
   const serverOptions = {
     middlewareMode: true,
     hmr: {
       server,
-      port: hmrClientPort,
-      clientPort: hmrClientPort,
+      port: listenPort,
+      // The HTTPS forwarded preview uses public :443, not internal :3000.
+      clientPort,
     },
     allowedHosts: true as const,
   };

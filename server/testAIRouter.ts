@@ -817,6 +817,31 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
   if (!report) return blocked(['MERCARI_OBSERVATION_MISSING: private original provider observation is unavailable.']);
   if (report.requestedMode !== 'sold') return blocked(['MERCARI_REQUEST_NOT_SOLD: the provider request was not sold=true.']);
   if (row.visualExecution?.hardExclusion === true) return blocked([`MERCARI_HARD_EXCLUSION: ${row.visualReviewRationale || 'A deterministic identity/safety exclusion was recorded.'}`]);
+  // A visual exemption must not bypass the original transaction safeguards.
+  // Run these once, before either visual or signed-object policy can seal a row.
+  const originalPrice = report.fields.price;
+  const price = originalPrice?.present && (originalPrice.type === 'number'
+    || originalPrice.type === 'string' && typeof originalPrice.value === 'string' && /^\d+(?:\.\d+)?$/.test(originalPrice.value))
+    ? Number(originalPrice.value) : NaN;
+  const currency = mercariObservedCurrency(report);
+  const dateFields = ['soldAt', 'soldDate', 'date', 'endedAt', 'saleDate', 'completedAt'];
+  const hasUnvalidatedDate = dateFields.some(key => report.fields[key]?.present && report.fields[key].value != null
+    && report.fields[key].value !== '');
+  const cancelled = ['cancelled', 'canceled', 'isCancelled', 'isCanceled'].some(key => report.fields[key]?.value === true)
+    || ['cancelled', 'canceled'].includes(String(report.fields.cancellationStatus?.value));
+  const priceConflict = report.economicIssues.some(issue => issue.startsWith('price_conflict:'));
+  const sourceConflict = report.economicIssues.includes('marketplace_conflict')
+    || report.fields.originMarketplace?.present && report.fields.originMarketplace.value !== 'mercari';
+  if (!Number.isFinite(price) || price <= 0 || currency !== 'USD' || hasUnvalidatedDate || cancelled || priceConflict || sourceConflict) {
+    return blocked([
+      ...(!Number.isFinite(price) || price <= 0 ? ['MERCARI_ORIGINAL_PRICE_INVALID: positive original provider price is required.'] : []),
+      ...(currency !== 'USD' ? [`MERCARI_CURRENCY_NOT_USD: original currency is ${currency ?? 'Unknown'}, not USD.`] : []),
+      ...(hasUnvalidatedDate ? ['MERCARI_SUPPLIED_DATE_REQUIRES_VALIDATION: the unknown-date exception cannot erase a supplied date.'] : []),
+      ...(cancelled ? ['MERCARI_CANCELLED: explicit cancellation prevents sold-sale admission.'] : []),
+      ...(priceConflict ? ['MERCARI_PRICE_FIELDS_CONFLICT: original price fields disagree.'] : []),
+      ...(sourceConflict ? ['MERCARI_MARKETPLACE_CONFLICT: original marketplace conflicts with Mercari.'] : []),
+    ]);
+  }
   // Autographs intentionally use broad market-range evidence. They still need
   // the private provider observation, sold=true contract, positive USD price,
   // transaction identity and signed provenance, but they do not need an exact
@@ -825,11 +850,6 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
     if (row.evidenceDisposition !== 'valuation_eligible') {
       return blocked(['MERCARI_AUTOGRAPH_METADATA_GATE: the Autographs signer/object/category score did not pass the 70-point market-evidence minimum.']);
     }
-    const originalPrice = report.fields.price;
-    const price = originalPrice?.present && (originalPrice.type === 'number'
-      || originalPrice.type === 'string' && typeof originalPrice.value === 'string' && /^\d+(?:\.\d+)?$/.test(originalPrice.value))
-      ? Number(originalPrice.value) : NaN;
-    const currency = mercariObservedCurrency(report);
     const originalIdentity = original as unknown as Record<string, unknown>;
     const providerUrl = [original.itemUrl, originalIdentity.url, originalIdentity.itemWebUrl, originalIdentity.link, originalIdentity.href]
       .find((value): value is string => typeof value === 'string' && value.trim().length > 0) ?? null;
@@ -864,29 +884,6 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
   }
   if (row.visualReviewStatus !== 'match') return blocked([`MERCARI_VISUAL_NOT_MATCH: visual status is ${row.visualReviewStatus ?? 'not reviewed'}; no confirmed match was recorded.`]);
   if (!row.visualAudit) return blocked(['MERCARI_VISUAL_AUDIT_MISSING: a matched verdict has no deciding-pass audit.']);
-  const originalPrice = report.fields.price;
-  const price = originalPrice?.present && (originalPrice.type === 'number'
-    || originalPrice.type === 'string' && typeof originalPrice.value === 'string' && /^\d+(?:\.\d+)?$/.test(originalPrice.value))
-    ? Number(originalPrice.value) : NaN;
-  const currency = mercariObservedCurrency(report);
-  const dateFields = ['soldAt', 'soldDate', 'date', 'endedAt', 'saleDate', 'completedAt'];
-  const hasUnvalidatedDate = dateFields.some(key => report.fields[key]?.present && report.fields[key].value != null
-    && report.fields[key].value !== '');
-  const cancelled = ['cancelled', 'canceled', 'isCancelled', 'isCanceled'].some(key => report.fields[key]?.value === true)
-    || ['cancelled', 'canceled'].includes(String(report.fields.cancellationStatus?.value));
-  const priceConflict = report.economicIssues.some(issue => issue.startsWith('price_conflict:'));
-  const sourceConflict = report.economicIssues.includes('marketplace_conflict')
-    || report.fields.originMarketplace?.present && report.fields.originMarketplace.value !== 'mercari';
-  if (!Number.isFinite(price) || price <= 0 || currency !== 'USD' || hasUnvalidatedDate || cancelled || priceConflict || sourceConflict) {
-    return blocked([
-      ...(!Number.isFinite(price) || price <= 0 ? ['MERCARI_ORIGINAL_PRICE_INVALID: positive original provider price is required.'] : []),
-      ...(currency !== 'USD' ? [`MERCARI_CURRENCY_NOT_USD: original currency is ${currency ?? 'Unknown'}, not USD.`] : []),
-      ...(hasUnvalidatedDate ? ['MERCARI_SUPPLIED_DATE_REQUIRES_VALIDATION: the unknown-date exception cannot erase a supplied date.'] : []),
-      ...(cancelled ? ['MERCARI_CANCELLED: explicit cancellation prevents sold-sale admission.'] : []),
-      ...(priceConflict ? ['MERCARI_PRICE_FIELDS_CONFLICT: original price fields disagree.'] : []),
-      ...(sourceConflict ? ['MERCARI_MARKETPLACE_CONFLICT: original marketplace conflicts with Mercari.'] : []),
-    ]);
-  }
   // Review and signed approval must use the same inventory target and image.
   // Rebuilding either from search fields recreates the target-drift defect.
   const reviewedTarget = context.effectiveTarget;

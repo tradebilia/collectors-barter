@@ -342,6 +342,14 @@ function autographObjectType(value: unknown): string {
   if (/\bbasketball\s+(?:jersey|uniform)\b/.test(text)) return "basketball jersey";
   if (/\bhockey\s+(?:jersey|sweater)\b/.test(text)) return "hockey jersey";
   if (/\b(?:football|baseball|hockey|basketball)\s+helmet\b/.test(text)) return text.match(/\b(?:football|baseball|hockey|basketball)\s+helmet\b/)![0];
+  // Physical nouns outrank sport/theme words: a baseball poster is a poster,
+  // not a physical baseball. The actual Mercari run contains such art listings.
+  if (/\bposter\b/.test(text)) return "poster";
+  if (/\b(?:art\s+print|illustrated\s+print|lithograph)\b/.test(text)) return "print";
+  if (/\bprogram\b/.test(text)) return "program";
+  if (/\bticket\b/.test(text)) return "ticket";
+  if (/\b(?:book|novel|paperback|hardcover)\b/.test(text)) return "book";
+  if (/\bdocument\b/.test(text)) return "document";
   // A possessive/theme phrase such as “Baseball’s Greatest Players” does not
   // identify a physical baseball. Card wording was handled above first.
   if (/\bbaseball\b(?!['’]s\b)/.test(text)) return "baseball";
@@ -352,11 +360,6 @@ function autographObjectType(value: unknown): string {
   if (/\bhelmet\b/.test(text)) return "helmet";
   if (/\bbat\b/.test(text)) return "bat";
   if (/\bglove\b/.test(text)) return "glove";
-  if (/\bposter\b/.test(text)) return "poster";
-  if (/\bprogram\b/.test(text)) return "program";
-  if (/\bticket\b/.test(text)) return "ticket";
-  if (/\b(?:book|novel|paperback|hardcover)\b/.test(text)) return "book";
-  if (/\bdocument\b/.test(text)) return "document";
   return "";
 }
 
@@ -541,6 +544,7 @@ function annotateAutographMarketCandidates<T extends VisualSourceCandidate>(list
       return {
         ...entry.item,
         metadataMatchRank: rank + 1,
+        visualRequirement: 'not_required_autograph_market_context',
         evidenceDisposition: eligibility.eligible ? 'valuation_eligible' : 'context_only',
         evidenceReasons: eligibility.eligible ? ['Autographs / Signed Item passed the signer, object-type, and 70-point valuation gate.'] : eligibility.reasons,
       } as T;

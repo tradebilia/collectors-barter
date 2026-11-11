@@ -71,7 +71,9 @@ export type FinalIdentityAdmission = {
   categoryIdentity: FinalCategoryIdentity;
   titleCategoryIdentity: FinalCategoryIdentity;
   serverFinalApprovalVerified: boolean;
-  basis: 'server_final_visual' | 'title_evidence' | 'not_admitted';
+  basis: 'server_final_visual' | 'server_autograph_market_relevance' | 'title_evidence' | 'not_admitted';
+  /** Bounded diagnostic explanations from the actual final identity assessment. */
+  reasonDetails?: string[];
   visualReviewStatus: string;
   blockerCodes: string[];
 };
