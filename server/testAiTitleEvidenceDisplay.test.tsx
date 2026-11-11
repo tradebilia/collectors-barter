@@ -114,6 +114,23 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
     ]));
   });
 
+  it('keeps Video Game and generic Movie title-derived Edition evidence aligned with earned score', () => {
+    const gameMetadata = gameTarget({ edition: 'Standard', sealed: 'Yes' });
+    const gameCandidate = { title: 'The Legend of Zelda NES Standard Sealed' };
+    const gameScore = videoGameGameVisualScore(gameCandidate, gameMetadata);
+    expect(gameScore.awards).toContainEqual(expect.objectContaining({ field: 'edition', source: 'title', awardedPoints: 10 }));
+    const gameEdition = row(buildMetadataFieldComparisons(gameMetadata, { ...gameCandidate, metadataScoreAwards: gameScore.awards }), 'edition');
+    expect(gameEdition).toMatchObject({ titleDerivedStatus: 'match', rankingContribution: { awardedPoints: 10 } });
+
+    const movieTargetMetadata = buildVisualTargetMetadata({ title: 'The Matrix', category: 'movies', itemType: 'individual_movie',
+      fullItemDetails: { movieTitle: 'The Matrix', format: 'Blu-ray', edition: 'Standard' } });
+    const movieCandidate = { title: 'The Matrix Blu-ray Standard Edition' };
+    const movieScore = moviesIndividualVisualScore(movieCandidate, movieTargetMetadata);
+    expect(movieScore.awards).toContainEqual(expect.objectContaining({ field: 'edition', source: 'title', awardedPoints: 15 }));
+    const movieEdition = row(buildMetadataFieldComparisons(movieTargetMetadata, { ...movieCandidate, metadataScoreAwards: movieScore.awards }), 'edition');
+    expect(movieEdition).toMatchObject({ titleDerivedStatus: 'match', rankingContribution: { awardedPoints: 15 } });
+  });
+
   it('preserves structured conflicts and independent title parsing instead of rescuing them with title awards', () => {
     const { score, rows } = movieRows({ title: screenshotTitle,
       fullItemDetails: { boxSetName: 'Different Show', format: 'VHS', numberOfMovies: 3, sealed: 'yes' } });

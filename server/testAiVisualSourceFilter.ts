@@ -4888,7 +4888,13 @@ function scoreComposite(left: ScorePredicate, right: ScorePredicate, result: boo
 function videoGameScoreValueMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[], label: string): ScorePredicate {
   const target = videoGameScoreText(meaningfulMetadataText(targetValue));
   if (!target || /^(?:unknown|n a|na|none|not applicable)$/.test(target)) return null;
-  const witness = scoreCandidateEvidence(listing, aliases, patterns);
+  if (label === 'edition' && titleContainsValue(canonicalCandidateTitle(listing), targetValue)) {
+    return scoreMatch(true, { value: String(targetValue), source: 'title', field: aliases[0] ?? 'edition' });
+  }
+  // Edition is also independently extracted from the listing title for the
+  // comparison table. Use that same title fallback here so a displayed MATCH
+  // cannot lose its ranking award at the scorer boundary.
+  const witness = scoreCandidateEvidence(listing, aliases, patterns, { titleFallback: label === 'edition' });
   const candidateValue = witness?.value;
   if (!candidateValue) return null;
   const candidate = videoGameScoreText(candidateValue);
@@ -5055,7 +5061,8 @@ function movieScoreEditionMatches(targetValue: unknown, listing: VisualSourceCan
   const structured = scoreCandidateEvidence(listing, ['edition', 'releaseType']);
   const title = canonicalCandidateTitle(listing);
   const titleMatch = title.match(/\b(?:limited|special|collector['’]?s?|anniversary|ultimate|deluxe|director['’]?s?|extended|criterion|steelbook)\s+edition\b/i);
-  const witness = structured ?? (titleMatch ? { value: titleMatch[0], source: 'title' as const, field: 'edition' } : null);
+  const titleHasTarget = titleMatch || titleContainsValue(title, targetValue);
+  const witness = structured ?? (titleHasTarget ? { value: titleMatch?.[0] ?? String(targetValue), source: 'title' as const, field: 'edition' } : null);
   if (!witness) return null;
   const editionTerms = (value: unknown) => movieScoreText(value).replace(/\bedition\b/g, '').split(' ')
     .filter((term) => term.length > 1).map((term) => term.replace(/s$/, ''));

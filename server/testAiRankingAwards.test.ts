@@ -6,6 +6,7 @@ vi.mock("./_core/llm", () => ({ invokeLLM: vi.fn(() => { throw new Error("LLM fo
 import { invokeLLM } from "./_core/llm";
 import {
   annotatePreVisualComparableScores, autographMarketRelevanceScore, buildVisualTargetMetadata,
+  buildMetadataFieldComparisons, withMetadataFieldComparisons,
   coinsSetVisualScore, coinsSingleVisualScore, comicsSingleVisualScore,
   disneyPinsIndividualVisualScore, disneyPinsSetVisualScore, filterVisualSourceCandidates,
   moviesBoxSetVisualScore, moviesIndividualVisualScore, musicVisualScore,
@@ -237,6 +238,25 @@ describe("actual category awards and unchanged model arithmetic", () => {
       expectAccounting(result, row.weights);
       expect(result.score).toBe(90);
       expect(result.awards.some((award) => ["grade", "gradingCompany", "gradingDetails"].includes(award.field))).toBe(false);
+    }
+  });
+
+  it('never displays title-derived MATCH with potential points but no earned award', () => {
+    for (const row of fixtures) {
+      const target = fixtureTarget(row);
+      const candidate = fixtureCandidate(row);
+      delete candidate.itemDetails;
+      const score = row.scorer(candidate, target);
+      const projected = withMetadataFieldComparisons(target, {
+        ...candidate,
+        metadataMatchScore: score.score,
+        metadataScoreAwards: score.awards,
+      });
+      const displayed = projected.metadataFieldComparisons ?? buildMetadataFieldComparisons(target, projected);
+      const missingAwardRows = displayed.filter((comparison) => comparison.titleDerivedStatus === 'match'
+        && Number(comparison.rankingContribution?.potentialPoints ?? 0) > 0
+        && Number(comparison.rankingContribution?.awardedPoints ?? 0) === 0);
+      expect(missingAwardRows, `${row.name}: title-derived match lost its score`).toEqual([]);
     }
   });
 
