@@ -2250,6 +2250,28 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
       const value = state ? movieBoolean(state) : "";
       return value ? `${value === 'yes' ? 'Yes' : 'No'} (inferred from title)` : "Unknown";
     }
+		if (category === "autographs") {
+			if (/^(?:signedItemType|autographItemType)$/i.test(key)) {
+				const objectType = autographObjectType(title);
+				return objectType ? `${objectType.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
+			}
+			if (/^(?:autographCategory|signatureCategory)$/i.test(key)) {
+				const objectType = autographObjectType(title);
+				const sportsEvidence = /\b(?:sports?|baseball|softball|football|basketball|hockey|jersey|bat|glove|helmet|ball)\b/i.test(title);
+				return sportsEvidence || /\bsports?\s+memorabilia\b/i.test(title)
+					? "Sports (detected in title)" : objectType ? "Sports (inferred from signed object)" : "Unknown";
+			}
+			if (/^(?:authentication|authenticated|authenticationStatus)$/i.test(key)) {
+				const authentication = autographCandidateAuthentication(listing, "");
+				return authentication && !/^(?:no|none|unknown|unauthenticated|unverified)$/i.test(authentication)
+					? "Yes (inferred from title)" : "Unknown";
+			}
+			if (/^(?:authenticationCompany|customAuthenticationCompany|authenticator)$/i.test(key)) {
+				const authentication = autographCandidateAuthentication(listing, "");
+				return authentication && !/^(?:authenticated|yes)$/i.test(authentication)
+					? `${authentication.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
+			}
+		}
 		if (/^(?:title|listingTitle|itemTitle)$/i.test(key)) return comparisonValue(title);
 	if (/^(?:year|releaseYear)$/i.test(key)) {
 		return title.match(/\b(?:17|18|19|20)\d{2}\b/)?.[0] ?? "Unknown";
@@ -2275,13 +2297,113 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 		if (/\b(?:factory\s+sealed|sealed|unopened)\b/i.test(title)) return "Yes (inferred from title)";
 		return "Unknown";
 	}
-		if (/^(?:packagingType|packaging|form|saleForm)$/i.test(key)) {
+		if (category !== "pokemon" && /^(?:packagingType|packaging|form|saleForm)$/i.test(key)) {
 			if (/\b(?:factory\s+sealed|sealed|moc|mint\s+on\s+card|carded)\b/i.test(title)) return "Sealed/Carded (inferred from title)";
 			if (/\b(?:loose|no\s+box|boxless)\b/i.test(title)) return "Loose (inferred from title)";
 			return "Unknown";
 		}
     if (category === "pokemon" && /^(?:cardNumber|cardNo|number)$/i.test(key)) {
       return pokemonTitleNumber(title)?.raw ?? "Unknown";
+    }
+    if (category === "sports_cards" && /^(?:cardNumber|cardNo|number)$/i.test(key)) {
+      const cardNumber = title.match(/(?:#|card\s*(?:no\.?|number)?\s*)(\d+[A-Za-z]?)(?:\b|\s*\/)/i)?.[1];
+      return cardNumber ? `${cardNumber} (detected in title)` : "Unknown";
+    }
+    if (category === "sports_cards") {
+      if (/^(?:productName|productTitle)$/i.test(key)) {
+        return titleContainsValue(title, comparisonValue(targetValue)) ? `${comparisonValue(targetValue)} (detected in title)` : "Unknown";
+      }
+      if (/^(?:productFormat|format)$/i.test(key)) {
+        const format = sportsCardUnopenedFormat(undefined, title);
+        return format ? `${format.replace(/_/g, " ")} (detected in title)` : "Unknown";
+      }
+      if (/^(?:productType|productConfiguration)$/i.test(key)) {
+        const productType = sportsCardUnopenedProductType(undefined, title);
+        return productType ? `${productType.replace(/_/g, " ")} (detected in title)` : "Unknown";
+      }
+      if (/^(?:authenticationCompany|authenticator)$/i.test(key)) {
+        const company = sportsCardUnopenedCompany(undefined, title);
+        return company ? `${company.toUpperCase()} (detected in title)` : "Unknown";
+      }
+      if (/^(?:fromASealedCase|fromSealedCase)$/i.test(key)) {
+        return /\b(?:FASC|from\s+(?:a\s+)?sealed\s+case)\b/i.test(title) ? "Yes (inferred from title)" : "Unknown";
+      }
+    }
+    if (category === "pokemon" && /^(?:finish|finishVariant|rarity|editionEra|edition|era|setType|packaging|originalPackaging|productName|productTitle|productType|productConfiguration)$/i.test(key)) {
+      const targetText = comparisonValue(targetValue);
+      return titleContainsValue(title, targetText) ? `${targetText} (detected in title)` : "Unknown";
+    }
+    if (category === "pokemon" && /^(?:fromASealedCase|fromSealedCase)$/i.test(key)) {
+      return /\b(?:FASC|from\s+(?:a\s+)?sealed\s+case)\b/i.test(title) ? "Yes (inferred from title)" : "Unknown";
+    }
+    if (category === "coins") {
+      if (/^(?:denomination)$/i.test(key)) {
+        const denomination = targetValue.match(/\$?\s*(?:1|one)\s*(?:dollar|usd)/i) && /\b(?:dollar|\$1)\b/i.test(title)
+          ? targetValue : "";
+        return denomination ? `${denomination} (detected in title)` : "Unknown";
+      }
+      if (/^(?:mintMark|mint)$/i.test(key)) {
+        const mintMark = title.match(/\b(?:19|20)\d{2}\s*[-–—]\s*([A-Z])\b/)?.[1];
+        return mintMark ? `${mintMark} (detected in title)` : "Unknown";
+      }
+      if (/^(?:variety|varietyType)$/i.test(key)) {
+        return titleContainsValue(title, comparisonValue(targetValue)) ? `${comparisonValue(targetValue)} (detected in title)` : "Unknown";
+      }
+      if (/^(?:setType|setForm)$/i.test(key)) {
+        return titleContainsValue(title, comparisonValue(targetValue)) ? `${comparisonValue(targetValue)} (detected in title)` : "Unknown";
+      }
+      if (/^(?:numberOfCoins|coinCount)$/i.test(key)) {
+        const count = title.match(/\b(?:set\s+of\s+)?(\d+)\s+coins?\b/i)?.[1];
+        return count ? `${count} (detected in title)` : "Unknown";
+      }
+      if (/^(?:originalPackagingIncluded|originalPackaging)$/i.test(key)) {
+        return /\b(?:original\s+packaging|original\s+holder|in\s+original\s+packaging)\b/i.test(title)
+          ? "Yes (inferred from title)" : "Unknown";
+      }
+    }
+    if (category === "stamps") {
+      if (/^(?:scottNumber|scottNo)$/i.test(key)) {
+        const scott = title.match(/\bScott\s+([A-Z]?\d+[A-Z]?)\b/i)?.[1];
+        return scott ? `${scott} (detected in title)` : "Unknown";
+      }
+      if (/^(?:denomination|faceValue)$/i.test(key)) {
+        const denomination = title.match(/\b\d+(?:\.\d+)?c\b/i)?.[0];
+        return denomination ? `${denomination} (detected in title)` : "Unknown";
+      }
+      if (/^(?:sheetType|setType|format)$/i.test(key)) {
+        const sheetType = /\b(?:mint\s+set|sheet|block|set)\b/i.test(title) ? comparisonValue(targetValue) : "";
+        return sheetType ? `${sheetType} (detected in title)` : "Unknown";
+      }
+      if (/^(?:numberOfStamps|stampCount)$/i.test(key)) {
+        const count = title.match(/\b(\d+)\s+stamps?\b/i)?.[1];
+        return count ? `${count} (detected in title)` : "Unknown";
+      }
+      if (/^(?:mintOrUsed|condition)$/i.test(key)) {
+        const state = title.match(/\b(?:mint|used|unused|MNH|hinged)\b/i)?.[0];
+        return state ? `${state} (detected in title)` : "Unknown";
+      }
+    }
+    if (category === "video_games" && /^(?:workingCondition|functionality)$/i.test(key)) {
+      const state = title.match(/\b(?:working|tested|untested|non[- ]?working|for\s+parts)\b/i)?.[0];
+      return state ? `${state} (detected in title)` : "Unknown";
+    }
+    if (category === "disney_pins") {
+      if (/^(?:pinTradingEvent|tradingEvent|event)$/i.test(key)) {
+        const event = title.match(/\b(?:D23|Disneyland|Disney\s+World|EPCOT)\b/i)?.[0];
+        return event ? `${event} (detected in title)` : "Unknown";
+      }
+      if (/^(?:backstampInformation|backstamp|backstampInfo)$/i.test(key)) {
+        const backstamp = title.match(/\b(?:Disney\s+)?D23\b/i)?.[0];
+        return backstamp ? `Disney ${backstamp.replace(/^Disney\s+/i, "")} (detected in title)` : "Unknown";
+      }
+      if (/^(?:numberOfPins|pinCount)$/i.test(key)) {
+        const count = title.match(/\b(?:set\s+of\s+)?(\d+)\s+pins?\b/i)?.[1];
+        return count ? `${count} (detected in title)` : "Unknown";
+      }
+    }
+    if (category === "music" && /^(?:catalogNumber|catalogNo|catNo)$/i.test(key)) {
+      const catalog = title.match(/\b[A-Z]{1,4}\s*\d{2,5}\b/i)?.[0];
+      return catalog ? `${catalog} (detected in title)` : "Unknown";
     }
     if (category === "vintage_toys" && /^(?:setNumber|pieceCount|numberOfPieces)$/i.test(key)) {
       return readToyNumericTitleEvidence(title, key as ToyNumericField)?.raw ?? "Unknown";

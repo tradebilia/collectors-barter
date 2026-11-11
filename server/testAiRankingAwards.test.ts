@@ -123,7 +123,7 @@ const fixtures: Fixture[] = [
   fixture({ name: "Movie individual", category: "movies", itemType: "individual_movie", scorer: moviesIndividualVisualScore,
     title: "The Matrix Blu-ray 1999 Standard Region 1 Opened CGC 9.8", grade: "9.8", grader: "CGC",
     details: { title: "The Matrix", format: "Blu-ray", releaseYear: "1999", edition: "Standard", region: "Region 1", sealed: "No" },
-    weights: { movieTitle: 25, format: 20, releaseYear: 15, edition: 15, region: 10, sealed: 5, gradingCompany: 5, grade: 5 } }),
+    weights: { movieTitle: 25, format: 25, releaseYear: 15, edition: 15, region: 5, sealed: 5, gradingCompany: 5, grade: 5 } }),
   fixture({ name: "Movie box", category: "movies", itemType: "box_set", scorer: moviesBoxSetVisualScore,
     title: "Lord of the Rings Trilogy 3 Movie Blu-ray Box Set Standard Sealed CGC 9.8", grade: "9.8", grader: "CGC",
     details: { boxSetName: "Lord of the Rings Trilogy", format: "Blu-ray", numberOfMovies: "3", edition: "Standard", sealed: "Yes" },
@@ -257,6 +257,12 @@ describe("actual category awards and unchanged model arithmetic", () => {
         && Number(comparison.rankingContribution?.potentialPoints ?? 0) > 0
         && Number(comparison.rankingContribution?.awardedPoints ?? 0) === 0);
       expect(missingAwardRows, `${row.name}: title-derived match lost its score`).toEqual([]);
+      const titleAwardFields = new Set(score.awards.filter((award) => award.source === 'title').map((award) => award.field));
+      const contradictoryTitleRows = displayed.filter((comparison) => titleAwardFields.has(comparison.fieldKey)
+        && String(comparison.targetValue).trim().toLowerCase() !== 'unknown'
+        && (comparison.titleDerivedStatus !== 'match' || String(comparison.titleDerivedValue).trim().toLowerCase() === 'unknown'));
+      expect(contradictoryTitleRows.map((comparison) => ({ field: comparison.fieldKey, value: comparison.titleDerivedValue, status: comparison.titleDerivedStatus })),
+        `${row.name}: title-scored evidence is not visibly parsed as a matching value`).toEqual([]);
     }
   });
 

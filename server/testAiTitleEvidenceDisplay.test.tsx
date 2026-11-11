@@ -8,7 +8,7 @@ vi.mock('./_core/llm', () => ({ invokeLLM: vi.fn(() => { throw new Error('TITLE_
 import { invokeLLM } from './_core/llm';
 import {
   buildMetadataFieldComparisons, buildVisualTargetMetadata, moviesBoxSetVisualScore,
-  moviesIndividualVisualScore, videoGameAccessoryVisualScore, videoGameGameVisualScore, vintageToyVisualScore, withMetadataFieldComparisons,
+  autographMarketRelevanceScore, moviesIndividualVisualScore, videoGameAccessoryVisualScore, videoGameGameVisualScore, vintageToyVisualScore, withMetadataFieldComparisons,
   type MetadataFieldComparison, type VisualSourceCandidate,
 } from './testAiVisualSourceFilter';
 import {
@@ -48,6 +48,23 @@ function movieRows(candidate: VisualSourceCandidate, target = movieTarget()) {
 }
 
 describe('title evidence transparency: screenshot scorer and real rendered witnesses', () => {
+  it('keeps Autographs title-scored object and category fields from displaying Unknown', () => {
+    const target = buildVisualTargetMetadata({ title: 'Barry Bonds Autographed Baseball', category: 'autographs', itemType: 'signed_item',
+      fullItemDetails: { signer: 'Barry Bonds', signedItemType: 'Baseball', autographCategory: 'Sports', authenticationCompany: 'Steiner' } });
+    const candidate = { title: 'Barry Bonds Autographed Baseball Steiner Sports Memorabilia Original Signed' };
+    const score = autographMarketRelevanceScore(candidate, target);
+    const rows = buildMetadataFieldComparisons(target, { ...candidate, metadataScoreAwards: score.awards });
+    expect(score.awards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'signedItemType', source: 'title', awardedPoints: 25 }),
+      expect.objectContaining({ field: 'autographCategory', source: 'title', awardedPoints: 10 }),
+      expect.objectContaining({ field: 'authenticationCompany', source: 'title', awardedPoints: 10 }),
+    ]));
+    for (const [field, value] of [['signedItemType', 'Baseball (detected in title)'], ['autographCategory', 'Sports (detected in title)'], ['authenticationCompany', 'Steiner (detected in title)']] as const) {
+      expect(row(rows, field)).toMatchObject({ titleDerivedValue: value, titleDerivedStatus: 'match', rankingContribution: { awardedPoints: expect.any(Number) } });
+      expect(row(rows, field).titleDerivedValue).not.toBe('Unknown');
+    }
+  });
+
   it('keeps the screenshot score 75 and all four exact selected awards, visibly, without filling structured Unknowns', () => {
     const candidate = { title: screenshotTitle };
     const before = JSON.stringify(candidate);
