@@ -70,8 +70,9 @@ import {
 	  autographIdentityConflictReason,
 	  autographMultiSignatureReason,
 	  autographValuationEligibility,
-	  autographObjectTypeMismatchReason,
-	  autographMarketExclusionReason,
+		  autographObjectTypeMismatchReason,
+		  autographAuthenticationConflictReason,
+		  autographMarketExclusionReason,
 	  autographReplicaReason,
 	  isAutographSignedItemTarget,
 	  pokemonVisualCap,
@@ -209,6 +210,33 @@ describe("visual source filter", () => {
     expect(certificatePhrase.matched).toContain("authenticated");
     expect(missingCoa.score).toBe(60);
     expect(missingCoa.matched).not.toContain("authenticated");
+  });
+
+  it("hard-excludes a certified Autographs candidate when the target explicitly says Authentication Included = No", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "Barry Bonds Autographed Baseball",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: {
+        signer: "Barry Bonds",
+        signedItemType: "Baseball",
+        autographCategory: "Sports",
+        authenticationIncluded: "no",
+      },
+    });
+    const candidate = { title: "Barry Bonds Autographed Baseball Steiner Sports Memorabilia Original Signed", imageUrl: "https://example.com/steiner.jpg" };
+    expect(autographAuthenticationConflictReason(target, candidate)).toMatch(/Steiner.*hard exclusion/i);
+    expect(autographMarketExclusionReason(target, candidate)).toMatch(/certified\/authenticated.*Steiner.*hard exclusion/i);
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "ebay",
+      sourceLabel: "Autograph market range",
+      targetMetadata: target,
+      listings: [candidate],
+    });
+    expect(result.listings).toHaveLength(0);
+    expect(result.contextListings?.[0]).toMatchObject({ hardException: true, valuationEligible: false });
+    expect(result.preVisualExcludedCount).toBe(1);
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
   });
 
   it("requires core identity and a 70-point minimum before Autographs valuation", () => {

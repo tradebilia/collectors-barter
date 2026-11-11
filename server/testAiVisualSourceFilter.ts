@@ -429,8 +429,26 @@ export function autographObjectTypeMismatchReason(targetMetadata: string, listin
   return `Autograph candidate is a signed ${candidateType}, but the target is a signed ${targetType}; different signed object types are excluded from market-range evidence.`;
 }
 
+export function autographAuthenticationConflictReason(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  if (autographTargetAuthenticationState(targetDetails) !== "no") return null;
+  const candidateDetails = candidateStructuredDetails(listing);
+  const candidateCompany = autographCandidateAuthentication(listing, "");
+  const candidateState = autographAuthenticationState(
+    candidateDetails.authenticationIncluded
+      ?? candidateDetails.authenticated
+      ?? candidateDetails.authenticationStatus
+      ?? candidateCompany,
+  );
+  if (candidateState !== "yes") return null;
+  const company = candidateCompany && !/^(?:authenticated|yes)$/i.test(candidateCompany)
+    ? ` (${candidateCompany})` : "";
+  return `Autograph candidate is certified/authenticated${company}, but the target explicitly says Authentication Included = No; hard exclusion.`;
+}
+
 export function autographMarketExclusionReason(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   return autographReplicaReason(listing)
+    ?? autographAuthenticationConflictReason(targetMetadata, listing)
     ?? autographObjectTypeMismatchReason(targetMetadata, listing)
     ?? multiItemLotReason(listing, targetMetadata);
 }
