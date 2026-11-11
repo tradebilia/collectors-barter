@@ -9,6 +9,7 @@ import {
   hasCompletedCoinAdjudication, disneyPinsEvidenceIsExact,
   type VisualEvidence, type VisualSourceReview,
 } from './testAiVisualSourceFilter';
+import { readServerNormalizationReport } from '../shared/testAiValuationUse';
 
 /**
  * Server-owned observation contract for the Test AI sandbox.
@@ -712,11 +713,43 @@ export function hasVerifiedMercariUndatedSale(
   sale: MarketSale, target?: IdentityApprovalTargetInput & { approvalTargetImageReference?: string }, imageReference?: string,
 ): boolean {
   const authority = verifiedIdentityApprovals.get(sale);
-  return Boolean(authority && authority.approval.adapterId === 'mercari_sold_comps'
-    && authority.facts.originMarketplace === 'mercari' && authority.facts.date === null
-    && authority.facts.saleDatePolicy === MERCARI_UNDATED_SALE_POLICY
-    && sale.date === null && sale.recency === 'undated' && authorityStillBound(sale, authority)
-    && (!target || getVerifiedIdentityApproval(sale, target, imageReference)));
+  if (authority) {
+    return Boolean(authority.approval.adapterId === 'mercari_sold_comps'
+      && authority.facts.originMarketplace === 'mercari' && authority.facts.date === null
+      && authority.facts.saleDatePolicy === MERCARI_UNDATED_SALE_POLICY
+      && sale.date === null && sale.recency === 'undated' && authorityStillBound(sale, authority)
+      && (!target || getVerifiedIdentityApproval(sale, target, imageReference)));
+  }
+  // Signed-item Autographs intentionally have no identity-approval object.
+  // Their exception still requires a valid server signature and canonical
+  // facts; browser labels alone never satisfy this branch. Collection/lot
+  // targets remain outside this policy and therefore cannot use it.
+  const category = String(target?.category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const itemType = String(target?.itemType ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (category !== 'autographs' || itemType !== 'signed_item') return false;
+  const receipt = readServerNormalizationReport(sale);
+  if (receipt?.sourceAdmission.verification === 'verified'
+    && receipt.sourceAdmission.verifiedSourceId === 'mercari_sold_comps'
+    && receipt.sourceAdmission.verifiedSourceDisposition === 'valuation_eligible'
+    && receipt.sourceAdmission.normalizationEligible === true
+    && Boolean(receipt.auditRef.verifiedObservationId)) {
+    return sale.sourceId === 'mercari_sold_comps' && sale.sourceAdapter === 'mercari_sold_comps'
+      && sale.originMarketplace === 'mercari' && sale.date === null && sale.recency === 'undated'
+      && sale.saleDatePolicy === MERCARI_UNDATED_SALE_POLICY && sale.saleStatus === 'completed'
+      && sale.priceBasis === 'sold' && sale.visualRequirement === 'not_required'
+      && sale.visualReviewStatus === 'not_reviewed' && sale.evidenceDisposition === 'valuation_eligible'
+      && typeof sale.price === 'number' && Number.isFinite(sale.price) && sale.price > 0;
+  }
+  const verified = verifyCanonicalObservation(sale);
+  const verifiedSale = verified.sale;
+  return verified.verified && verifiedSale.sourceId === 'mercari_sold_comps'
+    && verifiedSale.sourceAdapter === 'mercari_sold_comps' && verifiedSale.originMarketplace === 'mercari'
+    && verifiedSale.date === null && verifiedSale.recency === 'undated'
+    && verifiedSale.saleDatePolicy === MERCARI_UNDATED_SALE_POLICY
+    && verifiedSale.saleStatus === 'completed' && verifiedSale.priceBasis === 'sold'
+    && typeof verifiedSale.price === 'number' && Number.isFinite(verifiedSale.price) && verifiedSale.price > 0
+    && verifiedSale.visualRequirement === 'not_required' && verifiedSale.visualReviewStatus === 'not_reviewed'
+    && verifiedSale.evidenceDisposition === 'valuation_eligible';
 }
 
 function asMarketSale(facts: CanonicalObservationFacts, provenance: CanonicalObservationProvenance): MarketSale {

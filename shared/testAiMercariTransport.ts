@@ -58,6 +58,32 @@ export function hasMercariUndatedSoldAdmission(sale: MercariTransportListing, re
     && approval.adapterId === 'mercari_sold_comps' && approval.originMarketplace === 'mercari';
 }
 
+/**
+ * Autographs use a different signed Mercari contract: the sale still needs
+ * server-owned canonical provenance, but it intentionally has no visual
+ * approval object because exact image identity is not required for this
+ * category's market-range evidence. This is shape recognition only; the
+ * server audit must still verify the signed token and target category.
+ */
+export function hasMercariAutographNoVisualAdmission(
+  sale: MercariTransportListing, requestedMode?: unknown,
+): sale is MercariAnalysisSale {
+  if (requestedMode === 'active' || sale.requestedMode === 'active' || sale.mercariObservation?.requestedMode === 'active') return false;
+  const provenance = objectFields(sale.provenance);
+  const basis = sale.completedStatusBasis;
+  return sale.sourceId === 'mercari_sold_comps' && sale.sourceAdapter === 'mercari_sold_comps'
+    && sale.originMarketplace === 'mercari' && sale.saleDatePolicy === MERCARI_UNDATED_SOLD_POLICY
+    && sale.date === null && sale.endedAt === null && sale.recency === 'undated'
+    && sale.saleStatus === 'completed' && sale.priceBasis === 'sold'
+    && typeof sale.price === 'number' && Number.isFinite(sale.price) && sale.price > 0 && sale.currency === 'USD'
+    && typeof basis === 'string' && /Sold[- ]Comps/i.test(basis) && /Mercari/i.test(basis)
+    && /sold\s*=\s*true/i.test(basis) && /reported sold price/i.test(basis)
+    && sale.visualRequirement === 'not_required' && sale.visualReviewStatus === 'not_reviewed'
+    && sale.evidenceDisposition === 'valuation_eligible'
+    && typeof sale.provenanceToken === 'string' && Boolean(sale.provenanceToken.trim())
+    && provenance?.adapterId === 'mercari_sold_comps' && provenance.originMarketplace === 'mercari';
+}
+
 /** Provider status conflicts stay diagnostic in sold mode. Actual active-mode
  * requests remain active context, regardless of a contradictory sold row. */
 export function mercariTransportStatus(sale: MercariTransportListing): MercariListingStatus {
@@ -123,9 +149,12 @@ export function buildMercariAnalysisSales(
   return data.listings.map((input) => {
     const sale = ownDataFields(input);
     if (data?.requestedMode === 'active') sale.requestedMode = 'active';
-    if (hasMercariUndatedSoldAdmission(sale, data?.requestedMode)) {
+    if (hasMercariUndatedSoldAdmission(sale, data?.requestedMode)
+      || hasMercariAutographNoVisualAdmission(sale, data?.requestedMode)) {
       const projected: MercariAnalysisSale = { ...sale, listingStatus: 'sold',
         // Do not claim browser verification or carry stale final-use overlays.
+        // This branch also preserves the server-signed no-visual Autographs
+        // receipt; the generic context branch below would erase it.
         verified: false, trusted: false, approved: false, serverFinalApprovalVerified: false,
         approval: null, serverFinalApproval: null, trustedIdentityApproval: null, serverFinalIdentityApproval: null,
         valuationUse: null, economicAdmission: null,

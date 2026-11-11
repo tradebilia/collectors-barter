@@ -16,6 +16,8 @@ import { isCompletedSaleCandidate, scoreComparable, buildMarketProfile } from '.
 const TARGET_IMAGE = 'https://example.test/mercari/target.jpg';
 const MOVIE = { title: 'Batman (1989) LaserDisc LD', category: 'movies', itemType: 'individual_movie',
   itemDetails: JSON.stringify({ movieTitle: 'Batman', format: 'LaserDisc', releaseYear: '1989', isGraded: 'No', sealed: 'No' }) };
+const AUTOGRAPH = { title: 'Barry Bonds Official Major League Baseball Signed Rawlings', category: 'autographs', itemType: 'signed_item',
+  itemDetails: JSON.stringify({ signer: 'Barry Bonds', signedItemType: 'baseball', autographCategory: 'Sports/Baseball', authenticationIncluded: 'No' }) };
 const GAME = { title: 'The Legend of Zelda NES WATA 7.5 Sealed A++', category: 'video_games', itemType: 'game', grade: '7.5', certificationCompany: 'WATA',
   itemDetails: JSON.stringify({ gameTitle: 'The Legend of Zelda', platform: 'NES', releaseYear: '1987', isGraded: 'Yes', gradingCompany: 'WATA', grade: '7.5', completeInBox: 'Yes', sealed: 'Yes' }) };
 let rows: Record<string, any>[];
@@ -128,6 +130,25 @@ describe('Mercari undated sold=true actual route admission', () => {
     expect(comp.valuationUse?.sourceAdmission.normalizationEligible).toBe(true);
     expect(comp.valuationUse?.sourceAdmission.blockerCodes).not.toContain('INVALID_DATE');
     expect(mocks.fetch).toHaveBeenCalledTimes(fetchCount); expect(mocks.llm).toHaveBeenCalledTimes(modelCount);
+  });
+  it('keeps a no-visual Autographs sale signed through transport and admits it to final Item A valuation', async () => {
+    rows = [providerRow(AUTOGRAPH as typeof MOVIE)];
+    const source: any = await caller().getMercariSoldCompsData(input(AUTOGRAPH as typeof MOVIE));
+    const row = source.audit.ledger[0];
+    expect(row).toMatchObject({ sourceId: 'mercari_sold_comps', visualRequirement: 'not_required', visualReviewStatus: 'not_reviewed',
+      valuationEligible: true, evidenceDisposition: 'valuation_eligible', price: 11, currency: 'USD', date: null });
+    expect(row.provenanceToken).toBeTruthy();
+    const intake = buildItemAuditSubmission([{ id: 'mercari_sold_comps', label: 'Mercari Sold', kind: 'market_completed', packet: source }], 'autograph-item-a-test');
+    expect(intake.submitted[0]).toMatchObject({ sourceAdapter: 'mercari_sold_comps', visualRequirement: 'not_required',
+      visualReviewStatus: 'not_reviewed', saleStatus: 'completed', priceBasis: 'sold', provenanceToken: row.provenanceToken });
+    const result = await caller().auditItemValuation({ item: { ...AUTOGRAPH, approvalTargetImageReference: TARGET_IMAGE }, sales: intake.submitted });
+    const comp = result.snapshot.profile.comparables[0];
+    expect(result.snapshot.profile.selectionDiagnostics.selectedForValuation).toBe(1);
+    expect(comp.valuationUse?.sourceAdmission.normalizationEligible).toBe(true);
+    expect(comp.valuationUse?.sourceAdmission.reportedVisualReviewStatus).toBe('not_reviewed');
+    expect(comp.valuationUse?.sourceAdmission.blockerCodes).not.toContain('REQUIRED_APPROVAL_MISSING');
+    expect(comp.valuationUse?.sourceAdmission.blockerCodes).not.toContain('PROVENANCE_UNVERIFIED');
+    expect(comp.valuationUse?.use.code).toBe('CURRENT_SALES_PRIMARY');
   });
   it('reports the missing ungraded deciding-evidence gate rather than blaming the Unknown Mercari date', async () => {
     imageEvidence = { identityMatches: true, artworkMatches: true, slabVisible: false };

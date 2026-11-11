@@ -323,7 +323,7 @@ export function normalizeAnalysisMarketSales(inputs: MarketSale[] | null | undef
   // Reuse actual final admission: a recent wrong-target observation must not
   // suppress a permitted older exact comparable. Without a target, preserve
   // the existing conservative financial-only behavior for legacy callers.
-  if (strict.some((sale) => isCompletedSaleCandidate(sale, now.getTime())
+  if (strict.some((sale) => isCompletedSaleCandidate(sale, now.getTime(), options?.target)
     && (!options?.target || scoreComparable(options.target, sale).accepted))) return strict;
   const category = sourceKey(options?.category);
   if (!ILLIQUID_MARKET_EXTENSION_CATEGORIES.has(category)) return strict;

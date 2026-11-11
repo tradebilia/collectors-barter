@@ -725,11 +725,11 @@ function assessMarketEvidenceCoverage(
   };
 }
 
-export function isCompletedSaleCandidate(sale: MarketSale, nowMs: number): boolean {
+export function isCompletedSaleCandidate(sale: MarketSale, nowMs: number, target?: ComparableTarget): boolean {
   if (sale.evidenceDisposition && sale.evidenceDisposition !== 'valuation_eligible') return false;
   if (sale.saleStatus !== 'completed') return false;
   if (!sale.priceBasis || !['realized', 'sold', 'closed'].includes(sale.priceBasis)) return false;
-  if (hasVerifiedMercariUndatedSale(sale)) return true;
+  if (hasVerifiedMercariUndatedSale(sale, target)) return true;
   if (sale.sourceAdapter === 'mercari_sold_comps' || sale.sourceId === 'mercari_sold_comps') return false;
   if (sale.recency === 'historical' || sale.recency === 'undated') return false;
   const age = daysOld(sale.date, nowMs);
@@ -816,9 +816,9 @@ export function selectBalancedComparableSales(
 ) {
   const nowMs = now.getTime();
   const deduplicated = deduplicateMarketSales(sales, (sale) => scoreComparable(target, sale).identityAdmission!,
-    (sale, identity) => isCompletedSaleCandidate(sale, nowMs) && String(sale.currency ?? 'UNKNOWN').toUpperCase() === 'USD'
+    (sale, identity) => isCompletedSaleCandidate(sale, nowMs, target) && String(sale.currency ?? 'UNKNOWN').toUpperCase() === 'USD'
       && identity?.accepted === true);
-  const valuationCandidates = deduplicated.unique.filter((sale) => isCompletedSaleCandidate(sale, nowMs));
+  const valuationCandidates = deduplicated.unique.filter((sale) => isCompletedSaleCandidate(sale, nowMs, target));
   const valuationMatches = valuationCandidates
     .filter((sale) => String(sale.currency ?? 'UNKNOWN').toUpperCase() === 'USD')
     .map((sale) => ({ sale, match: scoreComparable(target, sale), ageDays: daysOld(sale.date, nowMs) }));
@@ -2251,7 +2251,7 @@ export function buildMarketProfile(
   const nowMs = now.getTime();
   const selection = selectBalancedComparableSales(target, sales, now, MAX_VALUATION_COMPARABLES);
   const { deduplicated, valuationCandidates, valuationMatches, selected, selectedMatches } = selection;
-  const contextualSales = deduplicated.unique.filter((sale) => !isCompletedSaleCandidate(sale, nowMs));
+  const contextualSales = deduplicated.unique.filter((sale) => !isCompletedSaleCandidate(sale, nowMs, target));
   const valuationMatchRecords = valuationMatches.map(({ sale, match }) => {
     if (selectedMatches.has(match)) return match;
     if (match.accepted) {
