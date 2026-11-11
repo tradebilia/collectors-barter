@@ -66,7 +66,7 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     const target = buildVisualTargetMetadata({ title: 'Moonlighting Season 1&2', category: 'movies', itemType: 'individual_movie', fullItemDetails: { movieTitle: 'Moonlighting Season 1&2', title: 'Moonlighting Season 1&2' } });
     const rows = withMetadataFieldComparisons(target, { title: 'Moonlighting Season 1&2', movieTitle: 'Moonlighting Season 1&2', metadataScoreAwards: [{ field: 'movieTitle', source: 'title', awardedPoints: 30 }] }).metadataFieldComparisons ?? [];
     expect(rows.filter(row => ['movieTitle', 'title'].includes(row.fieldKey ?? '')).length).toBe(1);
-    expect(rows.find(row => row.fieldKey === 'movieTitle')?.targetField).toBe('Movie Title');
+    expect(rows.find(row => row.fieldKey === 'movieTitle')?.targetField).toBe('Movie title');
   });
   it('renders certification company, grading company, and grader as one canonical scored row', () => {
     const target = buildVisualTargetMetadata({ title: 'Canon VHS', category: 'movies', itemType: 'individual_movie', fullItemDetails: {
@@ -100,6 +100,10 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     expect(gradeRow?.rankingContribution).toMatchObject({ matched: true, titleDerived: true, awardedPoints: 5 });
     expect(scored.score).toBe(55);
     expect((output.metadataFieldComparisons ?? []).reduce((total, row) => total + (row.rankingContribution?.awardedPoints ?? 0), 0)).toBe(55);
+    const rendered = renderToStaticMarkup(createElement(MetadataComparisonTable, { listing: output }));
+    expect(rendered).toContain('Movie title');
+    expect(rendered).toMatch(/data-ranking-score="true">25<\/td>/);
+    expect(rendered).toContain('data-ranking-score-total="true">55<');
   });
   it('attaches the Movie title award to a generic MATCH Title row for individual_movie', () => {
     const target = buildVisualTargetMetadata({ title: 'Canon CGC 8.0 VHS Tape', category: 'individual_movie', itemType: 'individual_movie', fullItemDetails: {

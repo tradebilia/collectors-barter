@@ -2442,6 +2442,7 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
   const candidateDetails = candidateStructuredDetails(listing);
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   const targetType = targetItemTypeValue(targetMetadata);
+  const movieContext = category === 'movies' || normalizedFieldKey(targetType).includes('movie');
   const isBoardGameTarget = category === "vintage_toys" && vintageToyTargetItemType(targetMetadata) === "board game/puzzle";
   const excluded = new Set(["image", "imageUrl", "imageUrls", "photos", "thumbnail", "titleEvidence", "normalizedStructuredMetadata"]);
   const isGradingField = (key: string) => /^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key));
@@ -2492,7 +2493,8 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
           ? "Unknown" : comparisonTitleDerivedValue(listing, key, targetValue, category,
             /^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key)) ? explicitScoreGradingStates(targetMetadata, listing).candidateIdentityValues
               : category === "music" && /^(?:condition|mediaCondition)$/i.test(key) ? musicTargetConditionIdentityValues(targetMetadata) : []);
-				const fieldLabel = comparisonFieldLabel(key);
+          const fieldLabel = movieContext && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(key)
+            ? 'Movie title' : comparisonFieldLabel(key);
 			const normalizedFieldLabel = fieldLabel.trim().toLowerCase();
 				if (emittedFieldLabels.has(normalizedFieldLabel)) continue;
 				emittedFieldLabels.add(normalizedFieldLabel);
@@ -4039,7 +4041,9 @@ function movieTitleComparable(value: unknown): string {
     // complete holder-grade phrase from product-title comparison so harmless
     // title variants such as `CGC 8.0` versus `CGC 8.0 A` do not lose the
     // 25-point movie-identity award while grade/company are scored separately.
-    .replace(/\b(?:psa|cgc|wata|bgs|sgc|vga|pca)\s*\d+(?:\.\d+)?(?:\s*[a-z](?:\+{1,3})?)?\b/gi, ' ')
+    // normalizeComparableNumberWords may turn `8.0` into `8 0`; accept both
+    // spellings so harmless holder-grade/title variants still earn movie-title points.
+    .replace(/\b(?:psa|cgc|wata|bgs|sgc|vga|pca)\s*\d+(?:(?:\.\d+)|(?:\s+\d+))?(?:\s*[a-z](?:\+{1,3})?)?\b/gi, ' ')
     .replace(/\b(?:19|20)\d{2}\b/g, '')
     .replace(/\b(?:special|standard|edition|new|used|tested)\b/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
