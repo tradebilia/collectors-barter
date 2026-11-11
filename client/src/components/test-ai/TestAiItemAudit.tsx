@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useIsMutating } from '@tanstack/react-query';
 import { trpc } from '@/lib/trpc';
 import type { NormalizedEvidenceSummary } from '../../../../shared/testAiEvidenceNormalization';
 import { testAiItemAuditLifecycleKey } from '../../../../shared/testAiAnalysisLifecycle';
@@ -42,11 +41,6 @@ export function buildItemAuditSubmission(sources: ItemAuditSource[], runId: stri
   return { sources: groups.map(group => ({ ...group, packet: undefined, auditRows: undefined, rows: group.rows.map(row => byInput.get(row) ?? row) })),
     submitted: stamped.slice(0, 120), omitted: Math.max(0, ordered.length - 120) };
 }
-function procedure(key: readonly unknown[] | undefined): string | null {
-  const path = key?.[0];
-  return Array.isArray(path) && path[0] === 'testAI' && typeof path[1] === 'string' ? path[1] : null;
-}
-
 const PENDING_SOURCE_STATUSES = new Set(['loading', 'pending', 'running', 'fetching']);
 
 /** Only source work represented by this audit may delay its dispatch. */
@@ -57,10 +51,6 @@ export function isItemAuditSourcePending(sources: ReadonlyArray<ItemAuditSource>
 export function TestAiItemAudit({ item, displayItem = item, summary, sources }: {
   item: ItemAuditTarget; displayItem?: ItemAuditTarget; summary: NormalizedEvidenceSummary; sources: ItemAuditSource[];
 }) {
-  const reviewing = useIsMutating({ predicate: mutation => {
-    const name = procedure(mutation.options.mutationKey);
-    return name !== null && ['reviewEbayVisualData', 'readCertificationFromImage'].includes(name) && !mutation.state.isPaused;
-  } });
   const sourcePending = isItemAuditSourcePending(sources);
   const target = { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade,
     condition: item.condition, certificationCompany: item.certificationCompany, itemDetails: item.itemDetails,
@@ -101,11 +91,11 @@ export function TestAiItemAudit({ item, displayItem = item, summary, sources }: 
     if (attemptedKey.current !== key) { attemptedKey.current = ''; activeRun.current = ''; }
   }, [key]);
   useEffect(() => {
-    if (sourcePending || reviewing > 0 || attemptedKey.current === key || isCollectionLotItemType(item.itemType)) return;
+    if (sourcePending || attemptedKey.current === key || isCollectionLotItemType(item.itemType)) return;
     const timer = window.setTimeout(() => runRef.current(), 300);
     return () => window.clearTimeout(timer);
-  }, [key, sourcePending, reviewing, item.itemType]);
-  const busy = sourcePending || reviewing > 0;
+  }, [key, sourcePending, item.itemType]);
+  const busy = sourcePending;
   const current = receipt?.key === key && !busy ? receipt : null;
   const error = failure?.key === key ? failure.message : null;
   return <div className="space-y-3" aria-label="Item A standalone valuation audit">

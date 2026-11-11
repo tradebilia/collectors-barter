@@ -95,6 +95,12 @@ describe('Automatic Item A-only audit', () => {
     await act(async () => { resolve({}); await pending; });
     await render(item, sources.map(source => ({ ...source, status: 'success' }))); await tick(); expect(mocks.mutate).toHaveBeenCalledTimes(1);
   });
+  it('audits retained rows from a partially completed source instead of leaving the queue stuck', async () => {
+    await render(item, sources.map(source => ({ ...source, status: 'partial' })));
+    await tick();
+    expect(mocks.mutate).toHaveBeenCalledTimes(1);
+    expect(mocks.mutate.mock.calls[0][0].sales).toHaveLength(1);
+  });
   it('retains the later trade panel behind an explicit disabled-by-default option', () => {
     const page = readFileSync(`${process.cwd()}/client/src/pages/TestAI.tsx`, 'utf8');
     expect(page).toContain("useState(false)"); expect(page).toContain('Enable two-item trade testing — later phase');
