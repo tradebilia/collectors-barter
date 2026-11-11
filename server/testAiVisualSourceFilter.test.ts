@@ -215,6 +215,42 @@ describe("visual source filter", () => {
     expect(autographObjectTypeMismatchReason(baseballTarget, cut)).toContain("different signed object types");
   });
 
+  it("does not infer Sports from a physical autograph object such as Paper or Photo", () => {
+    const entertainmentPaperTarget = buildVisualTargetMetadata({
+      title: "Marlon Brando signed paper",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Marlon Brando", signedItemType: "Paper", autographCategory: "Entertainment" },
+    });
+    const paperScore = autographMarketRelevanceScore(
+      { title: "Marlon Brando Signed Autographed Paper" },
+      entertainmentPaperTarget,
+    );
+    expect(paperScore.score).toBe(60);
+    expect(paperScore.matched).toEqual(expect.arrayContaining(["signer", "signed item type"]));
+    expect(paperScore.matched).not.toContain("autograph category");
+
+    const entertainmentPhotoTarget = buildVisualTargetMetadata({
+      title: "Marlon Brando signed photo",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Marlon Brando", signedItemType: "Photo", autographCategory: "Entertainment" },
+    });
+    const photoScore = autographMarketRelevanceScore(
+      { title: "Marlon Brando Signed Autographed Photo" },
+      entertainmentPhotoTarget,
+    );
+    expect(photoScore.matched).not.toContain("autograph category");
+
+    const sportsTarget = buildVisualTargetMetadata({
+      title: "Babe Ruth signed baseball",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Babe Ruth", signedItemType: "Baseball", autographCategory: "Sports" },
+    });
+    expect(autographMarketRelevanceScore({ title: "Babe Ruth Signed Baseball" }, sportsTarget).matched).toContain("autograph category");
+  });
+
   it("recognizes generic COA wording as authentication evidence without awarding company-match points", () => {
     const target = buildVisualTargetMetadata({
       title: "Donald Trump signed photo",

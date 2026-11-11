@@ -368,7 +368,10 @@ function autographObjectType(value: unknown): string {
 function autographCategoryFromTitle(title: string): string {
   const sportsEvidence = /\b(?:sports?|baseball|softball|football|basketball|hockey|jersey|bat|glove|helmet|ball)\b/i.test(title)
     || /\bsports?\s+memorabilia\b/i.test(title);
-  return sportsEvidence || autographObjectType(title) ? "sports" : "";
+  // Physical object nouns (Paper, Photo, Cut, Book, etc.) identify the signed
+  // object, not the autograph category. A Marlon Brando signed paper must not
+  // become Sports merely because Paper is a recognized object type.
+  return sportsEvidence ? "sports" : "";
 }
 
 function autographTargetObjectType(targetMetadata: string, details: Record<string, unknown>): string {
