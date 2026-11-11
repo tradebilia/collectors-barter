@@ -2489,11 +2489,12 @@ function normalizedRankingReason(value: unknown): string {
 function compactRankingReason(value: unknown): string {
 	return normalizedRankingReason(value).replace(/\s+/g, "");
 }
-function rankingPotentialPointsForField(category: string, itemType: string, field: string): number {
+function rankingScoreFieldsForCategory(category: string, itemType: string): readonly (readonly [string, number])[] {
   const categoryKey = normalizedChoice(category);
   const typeKey = normalizedChoice(itemType);
   let fields: readonly (readonly [string, number])[] = [];
-  if (categoryKey === 'video_games') fields = typeKey === 'console' ? VIDEO_GAME_CONSOLE_SCORE_FIELDS : typeKey === 'accessory' ? VIDEO_GAME_ACCESSORY_SCORE_FIELDS : VIDEO_GAME_GAME_SCORE_FIELDS;
+  if (categoryKey === 'autographs') fields = AUTOGRAPH_SCORE_FIELDS;
+  else if (categoryKey === 'video_games') fields = typeKey === 'console' ? VIDEO_GAME_CONSOLE_SCORE_FIELDS : typeKey === 'accessory' ? VIDEO_GAME_ACCESSORY_SCORE_FIELDS : VIDEO_GAME_GAME_SCORE_FIELDS;
   else if (categoryKey === 'movies') fields = typeKey === 'box_set' ? MOVIES_BOX_SET_SCORE_FIELDS : MOVIES_INDIVIDUAL_SCORE_FIELDS;
   else if (categoryKey === 'sports_cards') fields = typeKey.includes('set') ? SPORTS_CARD_SET_SCORE_FIELDS : typeKey.includes('unopened') || typeKey.includes('sealed') ? SPORTS_CARD_UNOPENED_SCORE_FIELDS : SPORTS_CARD_SCORE_FIELDS;
   else if (categoryKey === 'pokemon') fields = POKEMON_SCORE_FIELDS[typeKey as keyof typeof POKEMON_SCORE_FIELDS] ?? [];
@@ -2507,16 +2508,25 @@ function rankingPotentialPointsForField(category: string, itemType: string, fiel
   else if (categoryKey === 'stamps') fields = typeKey.includes('set') ? STAMPS_SET_SCORE_FIELDS : STAMPS_SINGLE_SCORE_FIELDS;
   else if (categoryKey === 'comics') fields = COMICS_SINGLE_SCORE_FIELDS;
   else if (categoryKey === 'original_art') fields = ORIGINAL_ART_SCORE_FIELDS;
+  return fields;
+}
+function rankingPotentialPointsForField(category: string, itemType: string, field: string): number {
+  const fields = rankingScoreFieldsForCategory(category, itemType);
   const fieldKey = rankingAwardFieldKey(field, category, itemType);
   return fields.filter(([candidateField]) => rankingAwardFieldKey(candidateField, category, itemType) === fieldKey)
     .reduce((sum, [, points]) => sum + points, 0);
 }
 function rankingContributionForField(listing: VisualSourceCandidate, key: string, _fieldLabel: string, candidateValue: string, titleDerivedValue: string, category = "", itemType = ""): MetadataFieldComparison["rankingContribution"] {
   const contribution = rankingAwardContribution(listing.metadataScoreAwards, key, category, itemType);
+  const modelFields = rankingScoreFieldsForCategory(category, itemType);
   const modelPotentialPoints = rankingPotentialPointsForField(category, itemType, key);
-  const potentialPoints = modelPotentialPoints || contribution.awards.reduce((sum, award) => sum + award.awardedPoints, 0) || (contribution as { awardedPoints?: number }).awardedPoints || 0;
+  const fallbackPotentialPoints = contribution.awards.reduce((sum, award) => sum + award.awardedPoints, 0) || (contribution as { awardedPoints?: number }).awardedPoints || 0;
+  // Once a category has a declared model, only its model rows can carry
+  // potential points. Extra alias rows (for example generic Grade or Year)
+  // remain visible for auditability but must not double-count the same award.
+  const potentialPoints = modelFields.length ? modelPotentialPoints : fallbackPotentialPoints;
   if (/^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key)) && key !== 'isGraded') {
-    return { ...contribution, matched: false, structured: false, titleDerived: false, potentialPoints: 0, awardedPoints: 0, awards: [], sources: [], scoringEvidence: [] };
+    return { ...contribution, matched: false, structured: false, titleDerived: false, potentialPoints, awardedPoints: 0, awards: [], sources: [], scoringEvidence: [] };
   }
   const rowKey = rankingAwardFieldKey(key, category, itemType);
   const scoringEvidence = contribution.awards.map((award) => {
@@ -2580,6 +2590,28 @@ function boundedMetadataComparisonRows(rows: MetadataFieldComparison[]): Metadat
     selected.add(row);
   }
   return rows.filter((row) => selected.has(row)).slice(0, 40);
+}
+function normalizeModelPotentialPoints(rows: MetadataFieldComparison[], category: string, itemType: string): MetadataFieldComparison[] {
+  const modelFields = rankingScoreFieldsForCategory(category, itemType);
+  if (!modelFields.length) return rows;
+  const result = rows.map((row) => ({
+    ...row,
+    rankingContribution: row.rankingContribution
+      ? { ...row.rankingContribution, potentialPoints: 0 }
+      : row.rankingContribution,
+  }));
+  const semanticModelKey = (field: string): string => /^(?:gradingcompany|grader)$/i.test(normalizedFieldKey(field))
+    ? 'certificationcompany' : normalizedFieldKey(field);
+  for (const [field, points] of modelFields) {
+    const modelKey = rankingAwardFieldKey(field, category, itemType);
+    const exactIndex = result.findIndex((row) => semanticModelKey(row.fieldKey ?? row.targetField) === semanticModelKey(field));
+    const canonicalIndex = result.findIndex((row) => rankingAwardFieldKey(row.fieldKey ?? row.targetField, category, itemType) === modelKey);
+    const index = exactIndex >= 0 ? exactIndex : canonicalIndex;
+    if (index >= 0 && result[index].rankingContribution) {
+      result[index] = { ...result[index], rankingContribution: { ...result[index].rankingContribution!, potentialPoints: points } };
+    }
+  }
+  return result;
 }
 function comparisonStatus(targetValue: string, candidateValue: string, category = "", key = ""): MetadataFieldComparison["status"] {
 	if (!meaningfulMetadataText(targetValue) || !meaningfulMetadataText(candidateValue)) return "unknown";
@@ -2653,6 +2685,7 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
       ? MOVIES_INDIVIDUAL_SCORE_FIELDS.map(([field]) => field) : []),
     ...(category === 'movies' && movieTargetItemType(targetMetadata) === 'box_set'
       ? MOVIES_BOX_SET_SCORE_FIELDS.map(([field]) => field) : []),
+    ...rankingScoreFieldsForCategory(category, targetType).map(([field]) => field),
     ...Object.keys(targetDetails),
     ...Object.keys(candidateDetails),
     // Rule/composite terms may have no structured target/candidate key at all.
@@ -2744,7 +2777,7 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 						rankingContribution,
 				});
   }
-		return boundedMetadataComparisonRows(rows);
+			return boundedMetadataComparisonRows(normalizeModelPotentialPoints(rows, comparisonCategory, targetType));
 }
 
 /**
@@ -2813,7 +2846,8 @@ export function withMetadataFieldComparisons<T extends Record<string, any>>(targ
     if (comparisonQuality(row) > comparisonQuality(result[duplicateIndex])) result[duplicateIndex] = row;
     return result;
   }, []);
-  return { ...projectionListing, metadataFieldComparisons: boundedMetadataComparisonRows(deduplicated) } as T & { metadataFieldComparisons: MetadataFieldComparison[] };
+  const normalizedPotentialRows = normalizeModelPotentialPoints(deduplicated, category, itemType);
+  return { ...projectionListing, metadataFieldComparisons: boundedMetadataComparisonRows(normalizedPotentialRows) } as T & { metadataFieldComparisons: MetadataFieldComparison[] };
 }
 
 type ExplicitState = "yes" | "no" | "unknown";
@@ -4987,6 +5021,9 @@ const VIDEO_GAME_CONSOLE_SCORE_FIELDS = [
 ] as const;
 const VIDEO_GAME_ACCESSORY_SCORE_FIELDS = [
   ['accessoryType', 20], ['accessoryName', 25], ['compatiblePlatform', 20], ['manufacturer', 10], ['workingCondition', 10], ['originalPackaging', 10], ['isGraded', 5],
+] as const;
+const AUTOGRAPH_SCORE_FIELDS = [
+  ['signer', 35], ['signedItemType', 25], ['autographCategory', 10], ['authenticationIncluded', 10], ['authenticationCompany', 10], ['inscription', 10],
 ] as const;
 function videoGameScoreText(value: unknown): string {
   return videoGameCanonicalValue(value).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();

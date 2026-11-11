@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { MetadataComparisonTable } from '../client/src/components/TestAiMetadataComparisonTable';
-import { annotatePreVisualComparableScores, buildVisualTargetMetadata, moviesIndividualVisualScore, withMetadataFieldComparisons } from './testAiVisualSourceFilter';
+import { annotatePreVisualComparableScores, buildMetadataFieldComparisons, buildVisualTargetMetadata, moviesIndividualVisualScore, withMetadataFieldComparisons } from './testAiVisualSourceFilter';
 
 const baseRow = { targetField: 'Accessory name', targetValue: 'Power Glove', candidateField: 'Accessory name',
   candidateValue: 'Generic Controller', titleDerivedValue: 'Power Glove (detected in title)', status: 'different', titleDerivedStatus: 'match' };
@@ -13,6 +13,32 @@ function cells(contribution?: any, row = baseRow): string[] {
 }
 
 describe('Stage 4 actual metadata comparison table renders honest awarded sources', () => {
+  it('always shows the complete 100-point model, including unavailable fields', () => {
+    const representativeTargets = [
+      ['sports_cards', 'single_card'], ['video_games', 'game'], ['movies', 'individual_movie'], ['pokemon', 'single_card'],
+      ['vintage_toys', 'action figure/doll'], ['disney_pins', 'individual_pin'], ['music', 'individual_release'], ['coins', 'single_coin'],
+      ['paper_money', 'single_note'], ['stamps', 'single_stamp'], ['comics', 'single_comic'], ['original_art', 'original_art'],
+      ['autographs', 'signed_item'],
+    ] as const;
+    for (const [category, itemType] of representativeTargets) {
+      const target = buildVisualTargetMetadata({ title: 'Representative item', category, itemType, fullItemDetails: {} });
+      const rows = buildMetadataFieldComparisons(target, { title: 'Unrelated listing' });
+      const potential = rows.reduce((sum, row) => sum + Number(row.rankingContribution?.potentialPoints ?? 0), 0);
+      expect(potential, `${category}/${itemType}`).toBe(100);
+    }
+  });
+
+  it('shows all Autographs scoring fields when the candidate only supplies title evidence', () => {
+    const target = buildVisualTargetMetadata({ title: 'Marlon Brando Signed Baseball 2002', category: 'autographs', itemType: 'signed_item', fullItemDetails: {
+      signer: 'Marlon Brando', signedItemType: 'Paper', autographCategory: 'Entertainment', authenticationIncluded: 'Yes',
+      authenticationCompany: 'East Coast Authenticators', inscriptionPresent: 'No',
+    } });
+    const rows = buildMetadataFieldComparisons(target, { title: 'Marlon Brando Signed Cut Signature COA Autograph Signed Film Movie' });
+    const potential = rows.reduce((sum, row) => sum + Number(row.rankingContribution?.potentialPoints ?? 0), 0);
+    expect(potential).toBe(100);
+    expect(rows.map((row) => row.fieldKey)).toEqual(expect.arrayContaining(['signer', 'signedItemType', 'autographCategory', 'authenticationIncluded', 'authenticationCompany', 'inscription']));
+  });
+
   it('title-only awards keep conflicting structured fields neutral and visible', () => {
     const rendered = cells({ matched: true, structured: false, titleDerived: true, awardedPoints: 25, sources: ['title'] });
     expect(rendered).toHaveLength(8);
@@ -203,7 +229,7 @@ describe('actual scorer → refreshed comparison → rendered component', () => 
     expect(cellsByRow[siblingIndex][3]).toContain('8.5');
     expect(cellsByRow[gradeIndex][5]).toContain('5');
     expect(cellsByRow[gradeIndex][6]).toContain('5');
-    expect(cellsByRow[siblingIndex][5]).toContain('5');
+    expect(cellsByRow[siblingIndex][5]).toContain('0');
     expect(cellsByRow[siblingIndex][6]).toContain('0');
     expect(cellsByRow[gradeIndex][7]).toContain('match');
     expect(withMetadataFieldComparisons(target, output).metadataFieldComparisons).toEqual(rows);
