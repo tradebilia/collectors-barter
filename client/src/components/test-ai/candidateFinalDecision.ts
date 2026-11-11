@@ -149,9 +149,14 @@ function sourceDispositionExplanation(row: CandidateDisplayRow): string {
     .replace(/^unsupported currency (.+); retained as context only$/i, 'the sale was reported in $1 instead of USD')
     .replace(/^missing or non-positive realized price$/i, 'the reported sale amount was missing or not positive')
     .replace(/^Qualified undated Mercari exception: sale date remains Unknown; timing is unverified and sold=true reported sold price is used as reported, not proof of a recent sale or a private accepted-offer amount\.?$/i, 'Mercari reported this as sold, but the sale date and final accepted amount were not independently verified'));
-  return `Not used in valuation. ${specificDetails.length
-    ? `The item looked like a possible match, but ${specificDetails.join('; ')}.`
-    : 'The source did not provide the verified evidence required for final valuation.'} The sale price was excluded from the valuation.`;
+  // The decision label already says whether the row was used. Once a candidate
+  // has a blocking reason, listing every downstream consequence (price excluded,
+  // date excluded, retained as context, etc.) obscures the one fact an operator
+  // needs to investigate. Show only the first actionable reason in source order.
+  const primaryDetail = specificDetails[0];
+  return primaryDetail
+    ? `The primary reason this candidate was stopped is: ${primaryDetail}.`
+    : `The source did not provide the verified evidence required for final valuation (${disposition}).`;
 }
 function evidenceReasons(row: CandidateDisplayRow): string {
   return Array.isArray(row.evidenceReasons) ? row.evidenceReasons.filter((reason: unknown) => typeof reason === 'string' && reason.trim()).join('; ') : '';

@@ -178,11 +178,38 @@ describe('candidate final decision presentation (no filtering or pricing authori
       },
     });
     expect(result.label).toBe('NOT USED — REVIEW REQUIRED');
-    expect(result.reason).toContain('Not used in valuation.');
+    expect(result.reason).toContain('The primary reason this candidate was stopped is:');
     expect(result.reason).toContain('the visual evidence did not confirm the candidate was the same product identity');
-    expect(result.reason).toContain('The sale price was excluded from the valuation.');
+    expect(result.reason).not.toContain('The sale price was excluded from the valuation.');
+    expect(result.reason).not.toContain('Not used in valuation.');
     expect(result.reason).not.toContain('server-final target/source/image-bound approval');
     expect(result.reason).not.toContain('APPROVAL_IDENTITY_NOT_CONFIRMED');
+  });
+  it('shows only the first actionable blocker instead of repeating downstream exclusions', () => {
+    const result = candidateFinalDecision({
+      sourceId: 'sold_comps',
+      valuationUse: {
+        sourceAdmission: {
+          verification: 'verified',
+          reportedDisposition: 'valuation_eligible',
+          verifiedSourceDisposition: 'context_only',
+          blockerCodes: ['SOURCE_DISPOSITION_RESTRICTIVE', 'INVALID_PRICE', 'INVALID_DATE'],
+          reasonDetails: [
+            'explicit stated grade conflicts with target grade 9.4',
+            'server provenance reference is absent or signing is unavailable',
+            'the source did not verify that this was a completed sale',
+            'the sale date is missing, invalid, or future-dated',
+          ],
+        },
+        identityAdmission: { accepted: false },
+        use: { code: 'REVIEW_REQUIRED', reasonCodes: ['SOURCE_DISPOSITION_RESTRICTIVE', 'INVALID_PRICE', 'INVALID_DATE'] },
+      },
+    });
+    expect(result.reason).toContain('explicit stated grade conflicts with target grade 9.4');
+    expect(result.reason).not.toContain('server provenance reference is absent');
+    expect(result.reason).not.toContain('completed sale');
+    expect(result.reason).not.toContain('sale date');
+    expect(result.reason).not.toContain('sale price was excluded');
   });
   it('uses explicit asking-price economics, never arbitrary title text, for active context', () => {
     const active = candidateFinalDecision({ title: 'Ordinary candidate', saleStatus: 'active', visualExecution: receipt() });
