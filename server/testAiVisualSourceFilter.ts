@@ -2526,12 +2526,37 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
  * rows are rebuilt from structured metadata plus normalized title evidence.
  */
 export function withMetadataFieldComparisons<T extends Record<string, any>>(targetMetadata: string, listing: T): T & { metadataFieldComparisons: MetadataFieldComparison[] } {
-  const fresh = buildMetadataFieldComparisons(targetMetadata, listing as VisualSourceCandidate);
-  const existing = Array.isArray(listing.metadataFieldComparisons) && listing.metadataFieldComparisons.length
-    ? listing.metadataFieldComparisons as MetadataFieldComparison[] : fresh;
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   const itemType = targetItemTypeValue(targetMetadata);
   const movieContext = category === 'movies' || category === 'movie' || normalizedFieldKey(itemType).includes('movie');
+  // The live source payload can contain an older award snapshot even after the
+  // title comparison rules have changed. Recompute Movie awards here, without
+  // another provider/model call, so the final visible score and the candidate's
+  // ranking payload come from the same deterministic scorer.
+  const movieScoring = movieContext
+    ? movieTargetItemType(targetMetadata) === 'box_set'
+      ? moviesBoxSetVisualScore(listing as VisualSourceCandidate, targetMetadata)
+      : moviesIndividualVisualScore(listing as VisualSourceCandidate, targetMetadata)
+    : null;
+  const existingAwards = Array.isArray(listing.metadataScoreAwards) ? listing.metadataScoreAwards : [];
+  const existingAwardKeys = new Set(existingAwards.map((award: RankingAward) => rankingAwardFieldKey(award.field, category, itemType)));
+  const missingMovieAwards = (movieScoring?.awards ?? []).filter((award) => !existingAwardKeys.has(rankingAwardFieldKey(award.field, category, itemType)));
+  const mergedAwards = [...existingAwards, ...missingMovieAwards];
+  const refreshedMovieScore = movieScoring
+    ? existingAwards.length
+      ? Number(listing.metadataMatchScore ?? 0) + missingMovieAwards.reduce((sum, award) => sum + award.awardedPoints, 0)
+      : movieScoring.score
+    : undefined;
+  const projectionListing = movieScoring ? {
+    ...listing,
+    metadataMatchScore: refreshedMovieScore,
+    metadataMatchReasons: [...new Set([...(listing.metadataMatchReasons ?? []), ...missingMovieAwards.map((award) => award.field)])],
+    metadataUnknownFields: movieScoring.unknown ?? [],
+    metadataScoreAwards: mergedAwards,
+  } as T : listing;
+  const fresh = buildMetadataFieldComparisons(targetMetadata, projectionListing as VisualSourceCandidate);
+  const existing = Array.isArray(listing.metadataFieldComparisons) && listing.metadataFieldComparisons.length
+    ? listing.metadataFieldComparisons as MetadataFieldComparison[] : fresh;
   const canonicalComparisonKey = (field: string): string => movieContext
     && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(field) ? 'movieTitle' : normalizedFieldKey(field);
   const comparisonQuality = (row: MetadataFieldComparison): number => [row.targetValue, row.candidateValue, row.titleDerivedStatus === 'match' ? row.titleDerivedValue : ''].filter(value => meaningfulMetadataText(value)).length;
@@ -2541,7 +2566,7 @@ export function withMetadataFieldComparisons<T extends Record<string, any>>(targ
     const key = previous.fieldKey ?? previous.targetField;
     const replacement = freshByKey.get(normalizedFieldKey(key)) ?? freshByLabel.get(normalizedFieldKey(previous.targetField));
     const row = replacement ? { ...previous, ...replacement } : { ...previous };
-    return { ...row, rankingContribution: rankingContributionForField(listing as VisualSourceCandidate,
+    return { ...row, rankingContribution: rankingContributionForField(projectionListing as VisualSourceCandidate,
       row.fieldKey ?? row.targetField, row.targetField, row.candidateValue, row.titleDerivedValue, category, itemType) };
   });
   const present = new Set(rows.map((row) => normalizedFieldKey(row.fieldKey ?? row.targetField)));
@@ -2561,7 +2586,7 @@ export function withMetadataFieldComparisons<T extends Record<string, any>>(targ
     if (comparisonQuality(row) > comparisonQuality(result[duplicateIndex])) result[duplicateIndex] = row;
     return result;
   }, []);
-  return { ...listing, metadataFieldComparisons: boundedMetadataComparisonRows(deduplicated) } as T & { metadataFieldComparisons: MetadataFieldComparison[] };
+  return { ...projectionListing, metadataFieldComparisons: boundedMetadataComparisonRows(deduplicated) } as T & { metadataFieldComparisons: MetadataFieldComparison[] };
 }
 
 type ExplicitState = "yes" | "no" | "unknown";

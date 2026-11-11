@@ -121,6 +121,23 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     expect(titleRows).toHaveLength(1);
     expect(titleRows[0]).toMatchObject({ fieldKey: 'title', rankingContribution: { matched: true, titleDerived: true, awardedPoints: 25 } });
   });
+  it('refreshes stale live Movie awards so a MATCH title cannot remain at Score 0', () => {
+    const target = buildVisualTargetMetadata({ title: 'Conan CGC 8.0 VHS Tape', category: 'movies', itemType: 'individual_movie', fullItemDetails: {
+      title: 'Conan CGC 8.0 VHS Tape', format: 'VHS', isGraded: 'Yes', certificationCompany: 'CGC', grade: '8',
+    } });
+    const staleAwards = [
+      { field: 'format', source: 'title' as const, awardedPoints: 20 },
+      { field: 'gradingCompany', source: 'title' as const, awardedPoints: 5 },
+      { field: 'grade', source: 'title' as const, awardedPoints: 5 },
+    ];
+    const output = withMetadataFieldComparisons(target, {
+      title: 'Conan CGC 8.0 A VHS Tape', format: 'VHS', metadataMatchScore: 30, metadataScoreAwards: staleAwards,
+    });
+    const titleRow = output.metadataFieldComparisons.find(row => row.targetField === 'Movie title');
+    expect(output.metadataMatchScore).toBe(55);
+    expect(output.metadataScoreAwards).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'movieTitle', awardedPoints: 25 })]));
+    expect(titleRow?.rankingContribution).toMatchObject({ matched: true, titleDerived: true, awardedPoints: 25 });
+  });
 });
 
 
