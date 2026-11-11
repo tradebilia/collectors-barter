@@ -74,7 +74,8 @@ export function MetadataComparisonTable({ listing }: { listing: any }) {
     <summary className="cursor-pointer text-[12px] font-semibold text-cyan-200">Full metadata comparison</summary>
     <p className="mt-2 text-xs text-slate-400">No field comparison was returned for this candidate. Missing metadata is not an image mismatch.</p>
   </details>;
-  const statusClass: Record<string, string> = { match: 'text-emerald-300', different: 'text-red-300', unknown: 'text-amber-200' };
+  const statusClass: Record<string, string> = { match: 'text-emerald-300', different: 'text-red-300', soft_difference: 'text-amber-200', unknown: 'text-slate-300' };
+  const statusLabel: Record<string, string> = { match: 'match', different: 'different', soft_difference: 'soft difference', unknown: 'unknown' };
   const termClass = (contribution?: RankingContribution) => contribution?.matched
     ? 'rounded bg-sky-900/50 px-1 text-sky-100 ring-1 ring-sky-400/50' : 'text-gray-300';
   const structuredClass = (contribution?: RankingContribution) => contribution?.matched && contribution.structured
@@ -120,7 +121,7 @@ export function MetadataComparisonTable({ listing }: { listing: any }) {
           </td>
           <td className="p-1 text-center font-semibold text-slate-300" data-ranking-potential-points title="Maximum points available for this field under the active ranking model">{contribution?.potentialPoints ?? contribution?.awardedPoints ?? contribution?.points ?? 0}</td>
           <td className="p-1 text-center font-semibold text-amber-200" data-ranking-score>{rowScores.scores[comparisonIndex] ?? 0}</td>
-          <td className={`p-1 font-semibold uppercase ${statusClass[titleMatch ? 'match' : comparison.status] ?? statusClass.unknown}`}>{titleMatch ? 'match' : comparison.status || 'unknown'}</td>
+          <td className={`p-1 font-semibold uppercase ${statusClass[titleMatch ? 'match' : comparison.status] ?? statusClass.unknown}`}>{titleMatch ? 'match' : statusLabel[comparison.status] ?? 'unknown'}</td>
         </tr>;
       })}</tbody>
       <tfoot><tr className="border-t border-cyan-700/60 text-cyan-100"><td className="p-1 font-semibold" colSpan={6}>Total ranking score <span className="font-normal text-gray-400">(potential {potentialTotal}/100; available {availablePotential})</span></td><td className="p-1 text-center font-bold text-amber-200" data-ranking-score-total>{rowScores.total}</td><td className="p-1 text-right text-gray-400">{rowScores.total === rankingTotal ? `of ${potentialTotal || rankingTotal}` : `reported ${rankingTotal}`}</td></tr></tfoot>

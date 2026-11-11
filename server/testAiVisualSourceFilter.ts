@@ -43,10 +43,10 @@ export type MetadataFieldComparison = {
 	targetValue: string;
 	candidateField: string;
 	candidateValue: string;
-	status: "match" | "different" | "unknown";
+  status: "match" | "different" | "soft_difference" | "unknown";
 	titleDerivedField: string;
 	titleDerivedValue: string;
-	titleDerivedStatus: "match" | "different" | "unknown";
+  titleDerivedStatus: "match" | "different" | "soft_difference" | "unknown";
   rankingContribution?: {
     matched: boolean;
     structured: boolean;
@@ -2401,6 +2401,19 @@ function boundedMetadataComparisonRows(rows: MetadataFieldComparison[]): Metadat
 function comparisonStatus(targetValue: string, candidateValue: string, category = "", key = ""): MetadataFieldComparison["status"] {
 	if (!meaningfulMetadataText(targetValue) || !meaningfulMetadataText(candidateValue)) return "unknown";
 	if (category === "movies" && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(key)) return movieValuesAgree(targetValue, candidateValue) ? "match" : "different";
+	if (category === "movies" && /^(?:condition|mediaCondition)$/i.test(key)) {
+		const targetComparable = comparisonComparable(targetValue);
+		const candidateComparable = comparisonComparable(candidateValue.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, ""));
+		if (!targetComparable || !candidateComparable) return "unknown";
+		if (targetComparable === candidateComparable) return "match";
+		const targetUnusable = unusableState(targetValue);
+		const candidateUnusable = unusableState(candidateValue);
+		if (targetUnusable !== "unknown" && candidateUnusable !== "unknown" && targetUnusable !== candidateUnusable) return "different";
+		const targetSealed = sealedState(targetValue);
+		const candidateSealed = sealedState(candidateValue);
+		if (targetSealed !== "unknown" && candidateSealed !== "unknown" && targetSealed !== candidateSealed) return "different";
+		return "soft_difference";
+	}
   if (category === "music" && /^(?:condition|mediaCondition)$/i.test(key)) {
     const target = musicMediaCondition(targetValue);
     const candidate = musicMediaCondition(candidateValue.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, ""));

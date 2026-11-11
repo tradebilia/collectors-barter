@@ -62,6 +62,15 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     expect(html).toContain('No field comparison was returned');
     expect(html).not.toContain('<table');
   });
+  it('labels ordinary Movie condition differences as soft rather than hard mismatches', () => {
+    const target = buildVisualTargetMetadata({ title: 'Conan The Destroyer', category: 'movies', itemType: 'individual_movie', condition: 'mint', fullItemDetails: { condition: 'mint' } });
+    const output = withMetadataFieldComparisons(target, { title: 'Conan The Destroyer', condition: 'new' });
+    const row = output.metadataFieldComparisons.find((comparison) => comparison.fieldKey === 'condition');
+    expect(row).toMatchObject({ status: 'soft_difference', targetValue: 'mint', candidateValue: 'new' });
+    const html = renderToStaticMarkup(createElement(MetadataComparisonTable, { listing: output }));
+    expect(html).toContain('soft difference');
+    expect(html).not.toContain('>different<');
+  });
   it('renders Movie Title and generic Title aliases as one canonical row', () => {
     const target = buildVisualTargetMetadata({ title: 'Moonlighting Season 1&2', category: 'movies', itemType: 'individual_movie', fullItemDetails: { movieTitle: 'Moonlighting Season 1&2', title: 'Moonlighting Season 1&2' } });
     const rows = withMetadataFieldComparisons(target, { title: 'Moonlighting Season 1&2', movieTitle: 'Moonlighting Season 1&2', metadataScoreAwards: [{ field: 'movieTitle', source: 'title', awardedPoints: 30 }] }).metadataFieldComparisons ?? [];
