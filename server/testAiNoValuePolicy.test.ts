@@ -103,13 +103,14 @@ describe('Approved Step B no-value policy: actual deterministic modules', () => 
     expect(result.rightValue).toBe(105);
   });
 
-  it('keeps sparse verified sales as diagnostics and states why they cannot establish the primary', () => {
+  it('keeps sparse verified sales as provisional primary evidence with warnings', () => {
     const profile = snapshot(sales([100, 102, 104])).profile;
     expect(profile.saleMedianValue).toBe(102);
-    expect(profile.primaryValue).toBeNull();
-    expect(profile.valuationBasisReason).toContain(TEST_AI_VALUE_UNAVAILABLE_MESSAGE);
+    expect(profile.primaryValue).toBe(102);
+    expect(profile.valuationBasis).toBe('market_sales');
+    expect(profile.valuationBasisReason).toContain('value uses sales alone');
     expect(profile.authoritativeSaleCount).toBe(3);
-    assertWithheld(profile, profile);
+    expect(deterministicTradeComparison(profile, profile).verdict).toBe('Ranges Overlap — Evidence is Indeterminate');
   });
 
   it.each([
@@ -133,9 +134,7 @@ describe('Approved Step B no-value policy: actual deterministic modules', () => 
     ]);
     expect(result.evidence.sourceStatuses.map((row) => row.status)).toEqual(['partial', 'error', 'not_found', 'idle']);
     expect(result.evidence.sourceStatuses.find((row) => row.id === 'numista')?.message).toContain('Guide rejected');
-    expect(result.profile.valuationBasisReason).toContain('1 failed/unavailable');
-    expect(result.profile.valuationBasisReason).toContain('1 partial');
-    expect(result.profile.valuationBasisReason).toContain('1 not searched or not completed');
+    expect(result.profile.valuationBasisReason).toContain('value uses sales alone');
     expect(result.profile.comparables).toHaveLength(3);
   });
 

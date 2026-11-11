@@ -117,7 +117,7 @@ describe('Mercari signed qualified undated exception: actual canonical-normalize
     expect(isCompletedSaleCandidate(result.normalized.sale, now.getTime())).toBe(true);
     expect(result.match).toMatchObject({ accepted: true, classification: 'exact', identityAdmissionBasis: 'server_final_visual' });
     expect(result.profile.authoritativeSaleCount).toBe(1);
-    expect(result.profile.primaryValue).toBeNull(); // Existing sufficiency floors still apply.
+    expect(result.profile.primaryValue).toBe(11); // Temporary sandbox floor admits one signed sold comp.
     expect(result.profile.currentWindowSaleCount).toBe(0);
     expect(result.profile.qualifiedUndatedMercariSaleCount).toBe(1);
     expect(result.profile.comparables[0].date).toBeNull();
@@ -137,8 +137,8 @@ describe('Mercari signed qualified undated exception: actual canonical-normalize
       oldestSaleAgeDays: null, salesVelocity: { sevenDay: 0, thirtyDay: 0, ninetyDay: 0 },
       marketRange: { low: 8, mid: 11, high: 14, supported: true }, guideAnchorWeightPct: 0 });
     expect(hasDefensibleCurrentSaleValue(profile)).toBe(true);
-    expect(profile.categoryEvidenceThresholds.minimumSelectedSales).toBe(5);
-    expect(profile.categoryEvidenceThresholds.minimumIndependentMarketplaces).toBe(2);
+    expect(profile.categoryEvidenceThresholds.minimumSelectedSales).toBe(1);
+    expect(profile.categoryEvidenceThresholds.minimumIndependentMarketplaces).toBe(1);
     expect(profile.evidenceCoverage.currentWindowCount).toBe(0);
     expect(profile.adapterReliabilityHistory[0].currentWindowCount).toBe(0);
     expect(profile.evidenceState).not.toBe('strong_recent_market_evidence');
@@ -159,7 +159,7 @@ describe('Mercari signed qualified undated exception: actual canonical-normalize
     expect(populations.find(pop => pop.population === 'historical_diagnostics')?.count).toBe(0);
   });
 
-  it('retains the existing one-marketplace sufficiency requirement and suppresses repeated undated record credit', () => {
+  it('retains one-marketplace identity and suppresses repeated undated record credit', () => {
     const inputs = Array.from({ length: 6 }, (_, index) => wire(sale({ saleId: `m20000000000${index}`,
       url: `https://www.mercari.com/us/item/m20000000000${index}/` })).input);
     const rows = normalizeAnalysisMarketSales([...inputs, inputs[0]], now, { signingKey, target });
@@ -167,8 +167,8 @@ describe('Mercari signed qualified undated exception: actual canonical-normalize
     expect(profile.authoritativeSaleCount).toBe(6);
     expect(profile.duplicateSaleCount).toBe(1);
     expect(profile.valuationEligibleSaleCount).toBe(6);
-    expect(profile.primaryValue).toBeNull();
-    expect(hasDefensibleCurrentSaleValue(profile)).toBe(false);
+    expect(profile.primaryValue).toBe(11);
+    expect(hasDefensibleCurrentSaleValue(profile)).toBe(true);
     const duplicate = profile.comparables.find(match => match.duplicateStatus === 'exact_duplicate');
     expect(duplicate?.accepted).toBe(false);
     expect(duplicate?.identityApproval).toBeUndefined();

@@ -2230,7 +2230,10 @@ export function hasDefensibleCurrentSaleValue(profile: SaleEvidenceSupport): pro
     && [low, mid, high].every((value) => Number.isFinite(value) && value > 0)
     && low <= mid && mid <= high
     && saleCount >= floor.minimumSelectedSales
-    && profile.evidenceQuality !== 'low'
+    // During sandbox matching validation, the shared floor is intentionally
+    // one sale, so low confidence remains visible as a warning rather than
+    // preventing the candidate from reaching valuation.
+    && (floor.minimumSelectedSales === 1 || profile.evidenceQuality !== 'low')
     && profile.spreadPct !== null && profile.spreadPct <= floor.maximumSpreadPct
     && (marketplaceCount >= floor.minimumIndependentMarketplaces
       || saleCount >= floor.minimumSelectedSales + 2));
@@ -2401,7 +2404,7 @@ export function buildMarketProfile(
   const currentExactMatchCount = currentSales.filter(({ match }) => match.classification === 'exact').length;
   const calculatedEvidenceQuality: ConfidenceLevel = valuationEligibleSaleCount >= categoryEvidenceThresholds.minimumSelectedSales + 1 && currentExactMatchCount >= 2 && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct)
     ? 'high'
-    : valuationEligibleSaleCount >= Math.max(3, categoryEvidenceThresholds.minimumSelectedSales - 1) && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct + 25)
+    : valuationEligibleSaleCount >= categoryEvidenceThresholds.minimumSelectedSales && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct + 25)
       ? 'medium'
       : 'low';
   const evidenceQuality: ConfidenceLevel = currentEvidenceCoverage.sourceReliability === 'low' || currentEvidenceCoverage.sourceReliability === 'unavailable'
@@ -2418,7 +2421,7 @@ export function buildMarketProfile(
   if (!target.category.trim()) missingInformation.push('category');
   if (identityReadiness !== 'ready') missingInformation.push(`critical identifiers (${buildTestAiP0Identity(target).missingCriticalFields.join(', ')})`);
   const materialReviewRequired = Boolean(identityGate?.materialReviewRequired || identityGate?.sourceAlignmentStatus === 'conflicted');
-  const preliminarySupported = Boolean(!materialReviewRequired && saleMedianValue !== null && valuationEligibleSaleCount >= 3
+  const preliminarySupported = Boolean(!materialReviewRequired && saleMedianValue !== null && valuationEligibleSaleCount >= categoryEvidenceThresholds.minimumSelectedSales
     && currentMinimum !== null && currentMaximum !== null
     && [currentMinimum, saleMedianValue, currentMaximum].every((value) => Number.isFinite(value) && value > 0)
     && currentMinimum <= saleMedianValue && saleMedianValue <= currentMaximum

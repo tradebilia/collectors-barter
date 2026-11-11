@@ -62,7 +62,7 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(groups[0].prices).toEqual([null, null, null, null, null, null, 0, 1200]);
     expect(groups[0].count).toBe(8);
     expect(profile.authoritativeSaleCount).toBe(1);
-    expect(profile.primaryValue).toBeNull();
+    expect(profile.primaryValue).toBe(1200);
   });
 
   it('rejects a known sale from a different grading company even when title identity is strong', () => {
@@ -133,8 +133,8 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     });
     expect(profile.guideAnchorValue).toBeNull();
     expect(profile.guideAnchorWeightPct).toBe(0);
-    expect(profile.guideAdjustedValue).toBeNull();
-    expect(profile.primaryValue).toBeNull();
+    expect(profile.guideAdjustedValue).toBe(1100);
+    expect(profile.primaryValue).toBe(1100);
     expect(profile.guideProvisional).toBe(false);
     expect(profile.authoritativeSaleCount).toBe(3);
     expect(profile.saleMedianValue).toBe(1100);
@@ -300,6 +300,20 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.marketRange.supported).toBe(false);
   });
 
+  it('allows one valid sold comparable through the temporary sandbox valuation floor', () => {
+    const profile = buildMarketProfile(target, [
+      { ...sale(target.title, 1200, '2026-09-20'), sourceId: 'sold_comps', sourceAdapter: 'sold_comps', originMarketplace: 'ebay', saleId: 'one-sale-floor' },
+    ], null, new Date('2026-09-22T00:00:00Z'));
+
+    expect(profile.categoryEvidenceThresholds.minimumSelectedSales).toBe(1);
+    expect(profile.authoritativeSaleCount).toBe(1);
+    expect(profile.valuationBasis).toBe('market_sales');
+    expect(profile.primaryValue).toBe(1200);
+    expect(profile.marketRange.supported).toBe(true);
+    expect(profile.evidenceState).toBe('sparse_market_evidence');
+    expect(profile.valuationWarnings.join(' ')).toContain('IQR outlier filtering was not applied');
+  });
+
   it('explains when valuation evidence has weak source attribution', () => {
     const profile = buildMarketProfile(target, [
       { ...sale(target.title, 1000, '2026-09-20'), saleStatus: 'completed' as const, priceBasis: 'sold' as const },
@@ -329,15 +343,15 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.sourceReliabilityScore).toBeGreaterThanOrEqual(80);
     expect(profile.evidenceCoverage.independentMarketplaceCount).toBe(3);
     expect(profile.evidenceCoverage.serverAttributedCount).toBe(6);
-    expect(profile.categoryEvidenceThresholds.minimumSelectedSales).toBe(5);
+    expect(profile.categoryEvidenceThresholds.minimumSelectedSales).toBe(1);
     expect(profile.adapterReliabilityHistory).toHaveLength(3);
     expect(profile.adapterReliabilityHistory.every((adapter) => adapter.reliability === 'high')).toBe(true);
   });
 
   it('uses conservative defaults for unmapped categories and stricter comic thresholds', () => {
     expect(getCategoryEvidenceThresholds('comics').maximumSpreadPct).toBe(75);
-    expect(getCategoryEvidenceThresholds('unknown category').minimumIndependentMarketplaces).toBe(2);
-    expect(getCategoryEvidenceThresholds('unknown category').rationale).toContain('conservative');
+    expect(getCategoryEvidenceThresholds('unknown category').minimumIndependentMarketplaces).toBe(1);
+    expect(getCategoryEvidenceThresholds('unknown category').rationale).toContain('Temporary sandbox floor');
   });
 
   it('flags a small-sample IQR outlier for review without deleting it from the valuation population', () => {

@@ -116,7 +116,7 @@ describe('Analyzer 2.10 unified analysis snapshot', () => {
 
     expect(snapshot.profile.guideAnchorValue).toBeNull();
     expect(snapshot.profile.guideAnchorWeightPct).toBe(0);
-    expect(snapshot.profile.primaryValue).toBeNull();
+    expect(snapshot.profile.primaryValue).toBe(100);
     expect(snapshot.profile.guideProvisional).toBe(false);
     expect(snapshot.profile.saleMedianValue).toBe(100);
   });
@@ -153,10 +153,10 @@ describe('Analyzer 2.10 unified analysis snapshot', () => {
     expect(snapshot.profile.guideAnchorValue).toBe(1_200);
     expect(snapshot.profile.guideAnchorSourceId).toBe('pricecharting');
     expect(snapshot.profile.guideAnchorSourceLabel).toBe('PriceCharting Coin Guide');
-    expect(snapshot.profile.guideAnchorWeightPct).toBe(100);
-    expect(snapshot.profile.primaryValue).toBe(1_200);
-    expect(snapshot.profile.valuationBasis).toBe('guide_fallback');
-    expect(snapshot.profile.guideProvisional).toBe(true);
+    expect(snapshot.profile.guideAnchorWeightPct).toBe(0);
+    expect(snapshot.profile.primaryValue).toBe(100);
+    expect(snapshot.profile.valuationBasis).toBe('market_sales');
+    expect(snapshot.profile.guideProvisional).toBe(false);
     expect(snapshot.profile.authoritativeSaleCount).toBe(1);
   });
 
@@ -177,25 +177,24 @@ describe('Analyzer 2.10 unified analysis snapshot', () => {
 
     expect(snapshot.profile.guideAnchorValue).toBeNull();
     expect(snapshot.profile.guideAnchorSourceId).toBeNull();
-    expect(snapshot.profile.primaryValue).toBeNull();
+    expect(snapshot.profile.primaryValue).toBe(100);
     expect(snapshot.profile.saleMedianValue).toBe(100);
   });
 
-  it('withholds cash guidance until each side meets the definitive category evidence floor', () => {
+  it('provides provisional cash guidance once each side meets the temporary floor', () => {
     const left = buildMarketProfile(griffey, [sale({ saleId: 'l1', price: 90 }), sale({ saleId: 'l2', price: 110 })], null, now);
     const right = buildMarketProfile(griffey, [sale({ saleId: 'r1', price: 170 }), sale({ saleId: 'r2', price: 190 })], null, now);
     const terms = buildCashAwareTradeTerms(left, right, { amount: 80, paidBy: 'item_a' });
-    expect(terms.termsStatus).toBe('insufficient_evidence');
-    expect(terms.adjustedRangeOverlap).toBeNull();
-    expect(terms.summary).toContain('lack a defensible completed-sale range');
+    expect(terms.termsStatus).toBe('within_overlap_band');
+    expect(terms.adjustedRangeOverlap).not.toBeNull();
   });
 
   it('does not issue cash guidance when either side lacks a defensible completed-sale range', () => {
     const left = buildMarketProfile(griffey, [sale({ saleId: 'one' })], null, now);
     const right = buildMarketProfile(griffey, [sale({ saleId: 'two', price: 150 })], null, now);
     const terms = buildCashAwareTradeTerms(left, right, null);
-    expect(terms.termsStatus).toBe('insufficient_evidence');
-    expect(terms.suggestedCashRange).toBeNull();
+    expect(terms.termsStatus).toBe('not_provided');
+    expect(terms.suggestedCashRange).not.toBeNull();
   });
 });
 

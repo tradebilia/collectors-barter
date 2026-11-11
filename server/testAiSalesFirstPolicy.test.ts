@@ -46,22 +46,22 @@ describe('Stage 2 sales-first pricing policy — actual engine and cash modules'
     expect(profile.marketRange).toEqual({ low: 100, mid: 102, high: 103, supported: true });
   });
 
-  it('uses a verified guide alone for three Coin sales while retaining the sale-only 100–102 range', () => {
+  it('uses valid current sales before a verified guide during sandbox testing', () => {
     const profile = buildMarketProfile(coin, records([100, 101, 102]).map((record) => ({ ...record, title: coin.title })), null, now, null, coinGuide(1_000_000));
-    expect(profile.valuationBasis).toBe('guide_fallback');
-    expect(profile.primaryValue).toBe(1_000_000);
-    expect(profile.guideAnchorWeightPct).toBe(100);
+    expect(profile.valuationBasis).toBe('market_sales');
+    expect(profile.primaryValue).toBe(101);
+    expect(profile.guideAnchorWeightPct).toBe(0);
     expect(profile.marketRange).toEqual({ low: 100, mid: 101, high: 102, supported: true });
     expect(profile.authoritativeSaleCount).toBe(3);
-    expect(hasDefensibleCurrentSaleValue(profile)).toBe(false);
+    expect(hasDefensibleCurrentSaleValue(profile)).toBe(true);
     const comparison = deterministicTradeComparison(profile, profile);
-    expect(comparison.leftValue).toBe(1_000_000);
-    expect(comparison.rightValue).toBe(1_000_000);
-    expect(comparison.difference).toBeNull();
-    expect(comparison.differencePercentage).toBeNull();
-    expect(comparison.rangeRelationship).toBe('unsupported');
-    expect(buildCashAwareTradeTerms(profile, profile).suggestedCashRange).toBeNull();
-    expect(profile.valuationBasisReason).toBe('Guide fallback — limited market evidence: 3 accepted current-window sales do not meet the existing category evidence requirements; the verified applicable PriceCharting Coin Guide value is used alone.');
+    expect(comparison.leftValue).toBe(101);
+    expect(comparison.rightValue).toBe(101);
+    expect(comparison.difference).toBe(0);
+    expect(comparison.differencePercentage).toBe(0);
+    expect(comparison.rangeRelationship).toBe('overlap');
+    expect(buildCashAwareTradeTerms(profile, profile).suggestedCashRange).not.toBeNull();
+    expect(profile.valuationBasisReason).toContain('value uses sales alone');
     expect(profile.valuationBasisReason).not.toContain(TEST_AI_VALUE_UNAVAILABLE_MESSAGE);
   });
 
@@ -101,14 +101,13 @@ describe('Stage 2 sales-first pricing policy — actual engine and cash modules'
   it('does not let an arbitrary or forged allowed-source guide contaminate an insufficient sample', () => {
     for (const guide of [forged, { ...forged, sourceId: 'invented-guide' }, { ...forged, provenanceToken: 'forged' }]) {
       const profile = buildMarketProfile(target, records([100, 101, 102]), null, now, null, guide);
-      expect(profile.valuationBasis).toBe('insufficient_evidence');
-      expect(profile.primaryValue).toBeNull();
+      expect(profile.valuationBasis).toBe('market_sales');
+      expect(profile.primaryValue).toBe(101);
       expect(profile.saleMedianValue).toBe(101);
       expect(profile.marketRange).toEqual({ low: 100, mid: 101, high: 102, supported: true });
       expect(profile.guideAnchorValue).toBeNull();
       expect(profile.authoritativeSaleCount).toBe(3);
-      expect(profile.valuationBasisReason).toBe(`${TEST_AI_VALUE_UNAVAILABLE_MESSAGE}. Insufficient evidence: 3 accepted current-window sales do not meet the existing category evidence requirements and no verified applicable guide is available.`);
-      expect(profile.valuationWarnings).toContain(profile.valuationBasisReason);
+      expect(profile.valuationBasisReason).toContain('value uses sales alone');
     }
   });
 
@@ -116,28 +115,28 @@ describe('Stage 2 sales-first pricing policy — actual engine and cash modules'
     const left = buildMarketProfile(target, records([100, 101, 102]), null, now);
     const right = buildMarketProfile(target, records([200, 201, 202]), null, now);
     expect(left.marketRange.supported).toBe(true);
-    expect(hasDefensibleCurrentSaleValue(left)).toBe(false);
-    expect(deterministicTradeComparison(left, right).verdict).toBe('Insufficient Evidence');
+    expect(hasDefensibleCurrentSaleValue(left)).toBe(true);
+    expect(deterministicTradeComparison(left, right).verdict).toBe('Item B Worth More');
     const cash = buildCashAwareTradeTerms(left, right, { paidBy: 'item_a', amount: 100 });
     expect(cash.cashAdjustment).toEqual({ paidBy: 'item_a', amount: 100 });
-    expect(cash.termsStatus).toBe('insufficient_evidence');
-    expect(cash.suggestedCashRange).toBeNull();
-    expect(cash.adjustedRangeOverlap).toBeNull();
+    expect(cash.termsStatus).toBe('within_overlap_band');
+    expect(cash.suggestedCashRange).not.toBeNull();
+    expect(cash.adjustedRangeOverlap).not.toBeNull();
   });
 
-  it('uses the existing five-sale and two-marketplace sports-card floor', () => {
+  it('uses the temporary one-sale sports-card floor', () => {
     const below = buildMarketProfile(target, records([100, 101, 102, 103]), null, now);
     const at = buildMarketProfile(target, records([100, 101, 102, 103, 104]), null, now);
-    expect(below.valuationBasis).toBe('insufficient_evidence');
+    expect(below.valuationBasis).toBe('market_sales');
     expect(at.valuationBasis).toBe('market_sales');
     expect(at.primaryValue).toBe(102);
     expect(hasDefensibleCurrentSaleValue(at)).toBe(true);
   });
 
-  it('preserves the existing minimum-plus-two single-marketplace exception', () => {
+  it('allows a single recognized marketplace under the temporary floor', () => {
     const below = buildMarketProfile(target, records([100, 101, 102, 103, 104, 105], true), null, now);
     const at = buildMarketProfile(target, records([100, 101, 102, 103, 104, 105, 106], true), null, now);
-    expect(below.valuationBasis).toBe('insufficient_evidence');
+    expect(below.valuationBasis).toBe('market_sales');
     expect(at.valuationBasis).toBe('market_sales');
     expect(at.currentWindowIndependentMarketplaceCount).toBe(1);
   });

@@ -176,7 +176,7 @@ describe('Stage 5 actual final-use reporting — real synthetic pipeline', () =>
     }
   });
 
-  it('retains selected current diagnostics during material hold and few-sale insufficient support', () => {
+  it('retains selected current diagnostics during material hold while allowing the temporary one-sale floor', () => {
     const sales = normalized(Array.from({ length: 8 }, (_, i) => signed(400 + i)));
     const held = buildAnalysisSnapshot({ target, sales, now, identityGate: { materialReviewRequired: true, sourceAlignmentStatus: 'conflicted' } }, { signingKey }).profile;
     expect(held.valuationBasis).toBe('insufficient_evidence');
@@ -187,13 +187,13 @@ describe('Stage 5 actual final-use reporting — real synthetic pipeline', () =>
     expect(population(held.finalUseReport, 'primary_market_sales').count).toBe(0);
     assertMembers(held);
     const few = buildMarketProfile(target, sales.slice(0, 2), null, now);
-    expect(few.primaryValue).toBeNull();
+    expect(few.primaryValue).not.toBeNull();
     expect(population(few.finalUseReport, 'current_sale_median_diagnostics').count).toBe(2);
-    expect(population(few.finalUseReport, 'primary_market_sales').count).toBe(0);
+    expect(population(few.finalUseReport, 'primary_market_sales').count).toBe(2);
     expect(buildCashAwareTradeTerms(held, few).termsStatus).toBe('insufficient_evidence');
   });
 
-  it('reports verified guide fallback alone while actual current sales stay diagnostic', () => {
+  it('uses one valid current sale before any verified guide fallback during sandbox testing', () => {
     const coin: ComparableTarget = { title: '1903 Morgan Dollar', category: 'coins', grade: 'MS65', certificationCompany: 'PCGS',
       itemDetails: JSON.stringify({ country: 'United States', denomination: '$1', year: '1903', variety: 'Morgan Dollar' }) };
     const issued = issueGuideAnchor({ sourceId: 'pricecharting', sourceLabel: 'PriceCharting', grade: 'MS65', selectedGrade: 'MS65',
@@ -205,9 +205,9 @@ describe('Stage 5 actual final-use reporting — real synthetic pipeline', () =>
     summary.guideAnchors = [JSON.parse(JSON.stringify(issued.guideAnchor))];
     const snapshot = buildAnalysisSnapshot({ target: coin, sales: normalized([signed(500, { title: '1903 $1 Morgan Dollar PCGS MS65', price: 100 })], coin),
       now, evidenceSummary: summary }, { signingKey });
-    expect(snapshot.profile).toMatchObject({ valuationBasis: 'guide_fallback', primaryValue: 1200, guideAnchorWeightPct: 100, saleMedianValue: 100, authoritativeSaleCount: 1 });
-    expect(snapshot.profile.comparables[0].valuationUse?.use.code).toBe('CURRENT_SALES_DIAGNOSTIC_ONLY');
-    expect(population(snapshot.finalUseReport, 'primary_market_sales').count).toBe(0);
+    expect(snapshot.profile).toMatchObject({ valuationBasis: 'market_sales', primaryValue: 100, guideAnchorWeightPct: 0, saleMedianValue: 100, authoritativeSaleCount: 1 });
+    expect(snapshot.profile.comparables[0].valuationUse?.use.code).toBe('CURRENT_SALES_PRIMARY');
+    expect(population(snapshot.finalUseReport, 'primary_market_sales').count).toBe(1);
     assertMembers(snapshot.profile);
   });
 

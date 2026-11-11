@@ -7,24 +7,24 @@ import {
 } from './testAiSalesEvidencePolicy';
 
 const EXPECTED_THRESHOLDS: CategoryEvidenceThresholds[] = [
-  { category: 'comics', minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Issue, grade, variant, and slab differences can materially change comic values.' },
-  { category: 'sports_cards', minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Grade, parallel, and certification differences can materially change card values.' },
-  { category: 'pokemon', minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Set, card number, language, and grade need multiple independent confirmations.' },
-  { category: 'coins', minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Mint, denomination, grade, and variety evidence is often thinner but still requires source breadth.' },
-  { category: 'stamps', minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Country, catalog number, denomination, and hinge/use state can fragment the market.' },
-  { category: 'video_games', minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Platform, edition, completeness, and grading state drive condition-sensitive prices.' },
-  { category: 'music', minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Pressing, format, release year, and autograph state can differ across records.' },
-  { category: 'movies', minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Format, release year, region, and graded/raw state must be cross-checked.' },
-  { category: 'vintage_toys', minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Completeness, edition, packaging, and condition vary substantially.' },
-  { category: 'disney_pins', minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Release, edition, set, and authenticity details can affect comparability.' },
-  { category: 'autographs', minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Signer, item type, authentication, and inscription details require corroboration.' },
+  { category: 'comics', minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 75, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' },
+  { category: 'sports_cards', minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 75, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' },
+  { category: 'pokemon', minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 75, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' },
+  { category: 'coins', minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' },
+  { category: 'stamps', minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' },
+  { category: 'video_games', minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' },
+  { category: 'music', minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' },
+  { category: 'movies', minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' },
+  { category: 'vintage_toys', minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' },
+  { category: 'disney_pins', minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' },
+  { category: 'autographs', minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' },
 ];
 
 const EXPECTED_UNKNOWN = {
-  minimumSelectedSales: 5,
-  minimumIndependentMarketplaces: 2,
+  minimumSelectedSales: 1,
+  minimumIndependentMarketplaces: 1,
   maximumSpreadPct: 75,
-  rationale: 'Unmapped categories use the conservative general evidence standard.',
+  rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.',
 };
 
 // Source-only inspection deliberately avoids the engine's canonical -> visual runtime graph.
@@ -94,18 +94,18 @@ describe('getCategoryEvidenceThresholds', () => {
 
 describe('buildSoldReviewBudget', () => {
   it.each([
-    ['comics', 5, 7, 9],
-    ['sports_cards', 5, 7, 9],
-    ['pokemon', 5, 7, 9],
-    ['coins', 4, 6, 8],
-    ['stamps', 4, 6, 8],
-    ['video_games', 4, 6, 8],
-    ['music', 3, 5, 7],
-    ['movies', 3, 5, 7],
-    ['vintage_toys', 4, 6, 8],
-    ['disney_pins', 3, 5, 7],
-    ['autographs', 3, 5, 7],
-    ['unknown', 5, 7, 9],
+    ['comics', 1, 3, 5],
+    ['sports_cards', 1, 3, 5],
+    ['pokemon', 1, 3, 5],
+    ['coins', 1, 3, 5],
+    ['stamps', 1, 3, 5],
+    ['video_games', 1, 3, 5],
+    ['music', 1, 3, 5],
+    ['movies', 1, 3, 5],
+    ['vintage_toys', 1, 3, 5],
+    ['disney_pins', 1, 3, 5],
+    ['autographs', 1, 3, 5],
+    ['unknown', 1, 3, 5],
   ] as const)('adds only review opportunity for %s', (category, minimum, singleMarketplace, requested) => {
     expect(buildSoldReviewBudget(category, 2, 30)).toEqual({
       sourceRole: 'sold_source',
@@ -129,10 +129,10 @@ describe('buildSoldReviewBudget', () => {
     expect(buildSoldReviewBudget(' New -- Category ', 0, 20).normalizedCategory).toBe('new_category');
   });
 
-  it('retains the existing higher Sports cap of ten rather than replacing it with nine', () => {
+  it('retains the explicit Sports cap of ten while using the one-sale floor', () => {
     expect(buildSoldReviewBudget('Sports Cards', 10, 30)).toMatchObject({
-      minimumSelectedSales: 5,
-      singleMarketplaceSalesRequirement: 7,
+      minimumSelectedSales: 1,
+      singleMarketplaceSalesRequirement: 3,
       requestedSelectionBudget: 10,
       selectedCount: 10,
       opportunityShortfall: 0,
@@ -145,10 +145,10 @@ describe('buildSoldReviewBudget', () => {
     [48, 7, 30, 48, 7, 41],
     [48, 100, 100, 48, 30, 18],
     [48, 100, 6, 48, 6, 42],
-    [6, 30, 5, 8, 5, 3],
-    [6, 3, 30, 8, 3, 5],
-    [6, 0, 30, 8, 0, 8],
-    [6, 30, 0, 8, 0, 8],
+    [6, 30, 5, 6, 5, 1],
+    [6, 3, 30, 6, 3, 3],
+    [6, 0, 30, 6, 0, 6],
+    [6, 30, 0, 6, 0, 6],
     [30, 30, 30, 30, 30, 0],
   ])('bounds cap %s / available %s / approved max %s', (cap, available, maximum, requested, selected, shortfall) => {
     const budget = buildSoldReviewBudget('video_games', cap, available, maximum);
@@ -178,8 +178,8 @@ describe('buildSoldReviewBudget', () => {
   it('does not coerce, round or allow invalid existing caps to inflate requests', () => {
     for (const invalid of INVALID_COUNTS) {
       expect(buildSoldReviewBudget('video_games', invalid as number, 30)).toMatchObject({
-        requestedSelectionBudget: 8,
-        selectedCount: 8,
+        requestedSelectionBudget: 5,
+        selectedCount: 5,
         opportunityShortfall: 0,
       });
     }
@@ -229,7 +229,7 @@ describe('sales-policy dependency and financial boundaries (source-only)', () =>
 
   it('freezes internal threshold entries and fallback without freezing getter output', () => {
     expect(POLICY_SOURCE).toContain('const CATEGORY_EVIDENCE_THRESHOLDS: Readonly<Record<string, EvidenceThresholdValues>> = Object.freeze({');
-    expect((POLICY_SOURCE.match(/minimumSelectedSales: [345], minimumIndependentMarketplaces: 2, maximumSpreadPct: (?:75|100), rationale:/g) ?? []).length).toBe(11);
+    expect((POLICY_SOURCE.match(/minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: (?:75|100), rationale:/g) ?? []).length).toBe(11);
     expect((POLICY_SOURCE.match(/: Object\.freeze\(\{ minimumSelectedSales:/g) ?? []).length).toBe(11);
     expect(POLICY_SOURCE).toContain('const UNKNOWN_CATEGORY_EVIDENCE_THRESHOLDS: EvidenceThresholdValues = Object.freeze({');
     expect(POLICY_SOURCE).toContain("return { category: normalized || 'unknown', ...thresholds };");
@@ -244,14 +244,17 @@ describe('sales-policy dependency and financial boundaries (source-only)', () =>
     expect(ENGINE_SOURCE).not.toContain('buildSoldReviewBudget');
   });
 
-  it('preserves financial floors while qualifying undated Mercari separately from dated proof', () => {
+  it('preserves the temporary one-sale floor while qualifying undated Mercari separately from dated proof', () => {
     expect(ENGINE_SOURCE).toContain('const saleCount = profile.valuationEligibleSaleCount ?? profile.currentWindowSaleCount;');
     expect(ENGINE_SOURCE).toContain('const marketplaceCount = profile.valuationEligibleIndependentMarketplaceCount ?? profile.currentWindowIndependentMarketplaceCount;');
     expect(ENGINE_SOURCE).toContain(`  return Boolean(supported && low !== null && mid !== null && high !== null
     && [low, mid, high].every((value) => Number.isFinite(value) && value > 0)
     && low <= mid && mid <= high
     && saleCount >= floor.minimumSelectedSales
-    && profile.evidenceQuality !== 'low'
+    // During sandbox matching validation, the shared floor is intentionally
+    // one sale, so low confidence remains visible as a warning rather than
+    // preventing the candidate from reaching valuation.
+    && (floor.minimumSelectedSales === 1 || profile.evidenceQuality !== 'low')
     && profile.spreadPct !== null && profile.spreadPct <= floor.maximumSpreadPct
     && (marketplaceCount >= floor.minimumIndependentMarketplaces
       || saleCount >= floor.minimumSelectedSales + 2));`);

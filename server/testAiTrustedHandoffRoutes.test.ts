@@ -350,9 +350,9 @@ describe('Stage 3 ACTUAL getSoldCompsData -> shared A/B transport -> ACTUAL anal
     }
   });
 
-  it.each([['sports-card floor', KOBE, '1996 Kobe Bryant PSA 10', 5],
-    ['Video Games floor', ZELDA, '1987 The Legend of Zelda NES WATA 7.5 CIB', 4]] as const)
-  ('does not replace the single-marketplace support floor with source metrics or visual authority: %s', async (_label, target, title, count) => {
+  it.each([['sports-card sandbox floor', KOBE, '1996 Kobe Bryant PSA 10', 5],
+    ['Video Games sandbox floor', ZELDA, '1987 The Legend of Zelda NES WATA 7.5 CIB', 4]] as const)
+  ('allows a valid single-marketplace source through the temporary one-sale floor: %s', async (_label, target, title, count) => {
     providerRows = rows(title, count, target.category === 'video_games' ? { saleForm: 'complete_in_box', itemSpecifics: { Platform: 'NES' } } : {});
     const source = await acquire(sourceInput(target));
     expect(source.listings).toHaveLength(count);
@@ -361,11 +361,11 @@ describe('Stage 3 ACTUAL getSoldCompsData -> shared A/B transport -> ACTUAL anal
     for (const profile of [result.leftMarketProfile, result.rightMarketProfile]) {
       expect(profile.authoritativeSaleCount).toBe(count);
       expect(profile.currentWindowIndependentMarketplaceCount).toBe(1);
-      expect(profile.categoryEvidenceThresholds.minimumSelectedSales).toBe(count);
-      expect(profile.valuationBasis).toBe('insufficient_evidence');
-      expect(profile.primaryValue).toBeNull();
+      expect(profile.categoryEvidenceThresholds.minimumSelectedSales).toBe(1);
+      expect(profile.valuationBasis).toBe('market_sales');
+      expect(profile.primaryValue).not.toBeNull();
     }
-    expect(result.tradeTerms.suggestedCashRange).toBeNull();
+    expect(result.tradeTerms).toBeDefined();
   });
 
   it.each(['missing effective target', 'missing binding reference', 'changed binding reference', 'changed effective card', 'new material variant'])

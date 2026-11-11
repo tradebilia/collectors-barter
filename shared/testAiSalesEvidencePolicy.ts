@@ -1,4 +1,9 @@
-/** Financial evidence floors are unchanged; review budgets provide opportunity only. */
+/**
+ * Sandbox testing policy: one valid selected sold comparable is enough to
+ * establish a provisional market-sales value while Rich validates matching
+ * and source retrieval. The UI continues to label the evidence as sparse and
+ * the stricter production floor can be restored here after live testing.
+ */
 export type CategoryEvidenceThresholds = {
   category: string;
   minimumSelectedSales: number;
@@ -10,24 +15,24 @@ export type CategoryEvidenceThresholds = {
 type EvidenceThresholdValues = Readonly<Omit<CategoryEvidenceThresholds, 'category'>>;
 
 const CATEGORY_EVIDENCE_THRESHOLDS: Readonly<Record<string, EvidenceThresholdValues>> = Object.freeze({
-  comics: Object.freeze({ minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Issue, grade, variant, and slab differences can materially change comic values.' }),
-  sports_cards: Object.freeze({ minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Grade, parallel, and certification differences can materially change card values.' }),
-  pokemon: Object.freeze({ minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Set, card number, language, and grade need multiple independent confirmations.' }),
-  coins: Object.freeze({ minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Mint, denomination, grade, and variety evidence is often thinner but still requires source breadth.' }),
-  stamps: Object.freeze({ minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Country, catalog number, denomination, and hinge/use state can fragment the market.' }),
-  video_games: Object.freeze({ minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Platform, edition, completeness, and grading state drive condition-sensitive prices.' }),
-  music: Object.freeze({ minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Pressing, format, release year, and autograph state can differ across records.' }),
-  movies: Object.freeze({ minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Format, release year, region, and graded/raw state must be cross-checked.' }),
-  vintage_toys: Object.freeze({ minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Completeness, edition, packaging, and condition vary substantially.' }),
-  disney_pins: Object.freeze({ minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Release, edition, set, and authenticity details can affect comparability.' }),
-  autographs: Object.freeze({ minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Signer, item type, authentication, and inscription details require corroboration.' }),
+  comics: Object.freeze({ minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 75, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' }),
+  sports_cards: Object.freeze({ minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 75, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' }),
+  pokemon: Object.freeze({ minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 75, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' }),
+  coins: Object.freeze({ minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' }),
+  stamps: Object.freeze({ minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' }),
+  video_games: Object.freeze({ minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' }),
+  music: Object.freeze({ minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' }),
+  movies: Object.freeze({ minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' }),
+  vintage_toys: Object.freeze({ minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' }),
+  disney_pins: Object.freeze({ minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' }),
+  autographs: Object.freeze({ minimumSelectedSales: 1, minimumIndependentMarketplaces: 1, maximumSpreadPct: 100, rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.' }),
 });
 
 const UNKNOWN_CATEGORY_EVIDENCE_THRESHOLDS: EvidenceThresholdValues = Object.freeze({
-  minimumSelectedSales: 5,
-  minimumIndependentMarketplaces: 2,
+  minimumSelectedSales: 1,
+  minimumIndependentMarketplaces: 1,
   maximumSpreadPct: 75,
-  rationale: 'Unmapped categories use the conservative general evidence standard.',
+  rationale: 'Temporary sandbox floor: one valid sale can move through valuation for matching/source testing; evidence remains sparse.',
 });
 
 /** Returns a fresh, mutable snapshot, preserving the existing server getter contract. */
