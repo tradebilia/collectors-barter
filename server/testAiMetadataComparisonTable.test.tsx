@@ -62,11 +62,11 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     expect(html).toContain('No field comparison was returned');
     expect(html).not.toContain('<table');
   });
-  it('does not append a second synthetic marketplace-title row', () => {
-    const target = buildVisualTargetMetadata({ title: 'Moonlighting Season 1&2', category: 'movies', itemType: 'box_set', fullItemDetails: { boxSetName: 'Moonlighting Season 1&2' } });
-    const rows = withMetadataFieldComparisons(target, { title: 'Moonlighting Season 1&2', metadataScoreAwards: [{ field: 'boxSetName', source: 'title', awardedPoints: 30 }] }).metadataFieldComparisons ?? [];
-    expect(rows.filter(row => /box set name/i.test(row.targetField)).length).toBe(1);
-    expect(rows.some(row => row.targetField === 'Target listing title')).toBe(false);
+  it('renders Movie Title and generic Title aliases as one canonical row', () => {
+    const target = buildVisualTargetMetadata({ title: 'Moonlighting Season 1&2', category: 'movies', itemType: 'individual_movie', fullItemDetails: { movieTitle: 'Moonlighting Season 1&2', title: 'Moonlighting Season 1&2' } });
+    const rows = withMetadataFieldComparisons(target, { title: 'Moonlighting Season 1&2', movieTitle: 'Moonlighting Season 1&2', metadataScoreAwards: [{ field: 'movieTitle', source: 'title', awardedPoints: 30 }] }).metadataFieldComparisons ?? [];
+    expect(rows.filter(row => ['movieTitle', 'title'].includes(row.fieldKey ?? '')).length).toBe(1);
+    expect(rows.find(row => row.fieldKey === 'movieTitle')?.targetField).toBe('Movie Title');
   });
 });
 

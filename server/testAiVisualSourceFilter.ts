@@ -2463,6 +2463,10 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
     keys.add("gamePuzzleName");
     keys.add("completeness");
   }
+  // Movies expose the same product identity through both the generic listing
+  // title and the category-specific movieTitle field. Prefer the canonical
+  // movieTitle row so the comparison does not show the same value twice.
+  if (category === 'movies' && [...keys].some(key => normalizedFieldKey(key) === 'movietitle')) keys.delete('title');
   const rows: MetadataFieldComparison[] = [];
   const emittedFieldLabels = new Set<string>();
   for (const key of keys) {
