@@ -3,11 +3,20 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { TestAiEvidenceReview, evidenceReviewCandidates, summarizeCurrentMarketPrices, summarizeUsedValuationPrices } from '../client/src/components/test-ai/TestAiEvidenceReview';
+import { TestAiCandidateDisplayProvider } from '../client/src/components/TestAiCandidateStatus';
 import { MetadataComparisonTable, TestAiVisualComparison } from '../client/src/components/TestAiMetadataComparisonTable';
 import { normalizeTestAiEvidence } from '../shared/testAiEvidenceNormalization';
+import { stampCandidateDisplayIntake } from '../shared/testAiCandidateLedger';
 const item = { id: 1, title: 'Target LaserDisc', category: 'movies', itemType: 'individual_movie' };
 const summary = normalizeTestAiEvidence(item, []);
 const review = (sources: any[]) => renderToStaticMarkup(createElement(TestAiEvidenceReview, { item, side: 'left', summary, sources }));
+const auditedReview = (row: any, valuationUse: any) => {
+  const submitted = stampCandidateDisplayIntake([row], 'item_a', 'request-current');
+  const outcome = { side: 'item_a' as const, requestRunId: 'request-current', analysisRunId: 'server-current', submitted,
+    finalRows: [{ ...submitted[0], valuationUse: { ...valuationUse, auditRef: { side: 'item_a', analysisRunId: 'server-current', intakeOrdinal: 0, displayCorrelation: submitted[0].displayCorrelation, verifiedObservationId: submitted[0].observationId ?? null, sourceCorrelation: { metadataOriginOccurrenceKey: row.metadataOriginOccurrenceKey ?? null } } } }] };
+  return renderToStaticMarkup(createElement(TestAiCandidateDisplayProvider, { side: 'item_a', outcome,
+    children: createElement(TestAiEvidenceReview, { item, side: 'left', summary, sources: [{ id: 'mercari_sold_comps', label: 'Mercari Sold', packet: { listings: [submitted[0]] } }] }) }));
+};
 const receipt = { version: 1, state: 'completed', reasonCode: 'review_returned', hardExclusion: false, selectedForReview: true, identity: { origin: 'visual', result: 'mismatch', reviewVerdict: 'mismatch' }, attempts: [{ ordinal: 1, stage: 'initial', format: 'json_schema', outcome: 'usable_review' }] };
 describe('Evidence Review is the complete candidate decision view', () => {
   it('renders candidates from raw retained records even when no analyzer records exist', () => {
@@ -40,6 +49,16 @@ describe('Evidence Review is the complete candidate decision view', () => {
   it('does not display source-stage eligibility as actual valuation use', () => {
     const html = review([{ id: 'sold_comps', label: 'eBay Sold', packet: { listings: [{ title: 'Eligible', evidenceDisposition: 'valuation_eligible' }] } }]);
     expect(html).toContain('VALUATION NOT RUN'); expect(html).not.toContain('USED IN VALUATION'); expect(html).toContain('Final valuation analysis has not run yet; current valuation counts are 0.');
+  });
+  it('renders the reconciled final blocker on the card instead of stale Mercari date-exemption wording', () => {
+    const html = auditedReview({ sourceId: 'mercari_sold_comps', requestedMode: 'sold', metadataOriginOccurrenceKey: 'mercari_sold_comps:run:occ:0', observationId: 'mercari-observation-0', title: 'Moonlighting', price: 11, currency: 'USD', visualExecution: { ...receipt, identity: { origin: 'visual', result: 'match', reviewVerdict: 'match' } } }, {
+      sourceAdmission: { verification: 'verified', blockerCodes: ['REQUIRED_APPROVAL_MISSING', 'INVALID_DATE'] },
+      identityAdmission: { accepted: false },
+      use: { code: 'REVIEW_REQUIRED', reasonCodes: ['MERCARI_UNDATED_QUALIFIED_EXCEPTION', 'REQUIRED_APPROVAL_MISSING', 'INVALID_DATE'] },
+    });
+    expect(html).toContain('Required server-final identity approval is missing or not bound to this target and image');
+    expect(html).not.toContain('The sale date is missing, invalid, or future-dated');
+    expect(html).not.toContain('No server-issued date-exception approval is attached');
   });
   it('summarizes only final primary-sales rows for the run-summary prices', () => {
     expect(summarizeUsedValuationPrices([

@@ -251,7 +251,7 @@ describe('Step A actual TestAI AST wiring (source-only, no application import)',
   it('invalidates both Mercari query keys identically and preserves source/metadata/image panel nesting', () => {
     const page = readFileSync(new URL('../client/src/pages/TestAI.tsx', import.meta.url), 'utf8');
     const ast = ts.createSourceFile('TestAI.tsx', page, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-    expect(variable(ast, 'mercariVisualReviewVersion').initializer?.getText(ast)).toBe("'mercari-undated-sold-v1'");
+    expect(variable(ast, 'mercariVisualReviewVersion').initializer?.getText(ast)).toBe("'mercari-undated-sold-v2-admission-reasons'");
     for (const name of ['leftMercariSoldCompsQuery', 'rightMercariSoldCompsQuery']) {
       const query = variable(ast, name);
       const versions = descendants(query).filter((node): node is ts.PropertyAssignment => ts.isPropertyAssignment(node) && node.name.getText(ast) === 'visualReviewVersion');

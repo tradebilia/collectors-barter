@@ -144,7 +144,7 @@ describe('Mercari Video Game pre-visual filtering', () => {
 }`);
     expect(candidateLedgerSource).toContain('return sortMetadataRankedCandidates([...merged.values()]);');
     expect(candidateLedgerSource).toContain('preserveParentDisplayRanking(knownParent, result)');
-    expect(masterListSource).toContain('const candidates = reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);');
+    expect(masterListSource).toContain('const candidates = reconciled ? listings : reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);');
     expect(masterListSource).toContain('candidates.map((listing, index)');
     expect(masterListSource).toContain('<MetadataComparisonTable listing={listing} />');
     expect(masterListSource).toContain('<TestAiCandidateStatus listing={listing} scope={scope} reconciled />');

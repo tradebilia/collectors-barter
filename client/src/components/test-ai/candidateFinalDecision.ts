@@ -58,6 +58,23 @@ const finalAnalysisBlockerLabels: Record<string, string> = {
   PROBABLE_DUPLICATE_POLICY: 'A probable duplicate transaction was suppressed.',
   MERCARI_UNDATED_QUALIFIED_EXCEPTION: 'Mercari qualified for the signed sold=true undated-sale exception.',
 };
+const finalBlockerPriority = [
+  'SOURCE_DISPOSITION_RESTRICTIVE', 'VISUAL_MISMATCH', 'REQUIRED_APPROVAL_MISSING', 'PROVENANCE_UNVERIFIED',
+  'TRANSACTION_IDENTITY_MISSING', 'INVALID_PRICE', 'UNKNOWN_CURRENCY', 'UNSUPPORTED_CURRENCY', 'NOT_COMPLETED',
+  'UNKNOWN_PRICE_BASIS', 'PREMIUM_NOT_INCLUDED', 'AUCTION_AMOUNT_UNRESOLVED', 'TRANSACTION_LOT_CONFLICT',
+  'APPROVED_LOT_CONFLICT', 'HIGH_VALUE_PRICE_TOO_LOW', 'HIGH_VALUE_PRICE_TOO_HIGH', 'INVALID_DATE', 'HISTORICAL_DATE',
+  'CATALOG_NUMBER_CONFLICT', 'CATEGORY_IDENTITY_CONFLICT', 'UNIVERSAL_IDENTITY_CONFLICT', 'VARIANT_CONFLICT',
+  'GRADE_ADJACENT', 'CERTIFICATION_ADJACENT', 'CATEGORY_REVIEW_REQUIRED', 'UNIVERSAL_REVIEW_REQUIRED',
+  'VARIANT_REVIEW_REQUIRED', 'SIGNED_FORM_CONFLICT', 'APPROVED_STATE_CONFLICT', 'TARGET_IDENTITY_INCOMPLETE',
+  'IDENTITY_SCORE_BELOW_THRESHOLD', 'MATERIAL_IDENTITY_HOLD', 'GUIDE_FALLBACK_PRIMARY', 'SOURCE_BALANCED_CAP',
+  'IQR_EXCLUDED_N_GE_10', 'EXACT_DUPLICATE_POLICY', 'PROBABLE_DUPLICATE_POLICY',
+] as const;
+function terminalFinalBlocker(row: CandidateDisplayRow, reasonCodes: Set<string>): string | undefined {
+  const mercariDateException = row.sourceId === 'mercari_sold_comps'
+    && (hasMercariUndatedSoldAdmission(row) || reasonCodes.has('MERCARI_UNDATED_QUALIFIED_EXCEPTION'));
+  const ignored = mercariDateException ? new Set(['INVALID_DATE', 'MERCARI_UNDATED_TIMING_UNVERIFIED', 'MERCARI_SOLD_TRUE_PRICE_AS_REPORTED']) : new Set<string>();
+  return finalBlockerPriority.find((code) => reasonCodes.has(code) && !ignored.has(code) && finalAnalysisBlockerLabels[code]);
+}
 function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: string[]): string | undefined {
   if (code === 'CURRENT_SALES_PRIMARY') return undefined;
   const visualResponse = hasActualVisualResponse(row);
@@ -93,8 +110,9 @@ function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: 
   if (code === 'EXACT_DUPLICATE' || code === 'PROBABLE_DUPLICATE') return 'The item matched, but this sale duplicates another sale already counted, so it was not counted twice.';
   if (code === 'OMITTED_BY_CAP') return 'The item matched, but the source limit was reached before it could be included in the final calculation.';
   if (reasonCodes.has('SOURCE_DISPOSITION_RESTRICTIVE')) return sourceDispositionExplanation(row);
-  if (reasonCodes.has('INVALID_PRICE')) return 'The item looks like a match, but the reported sale price is missing, zero, or invalid, so it cannot be used in the value.';
-  if (code === 'REVIEW_REQUIRED' || reasonCodes.has('REQUIRED_APPROVAL_MISSING')) return 'The item looks like a match, but a required verification step was not completed, so it cannot be used for the value yet.';
+  const blocker = terminalFinalBlocker(row, reasonCodes);
+  if (blocker) return `The item looks like a match, but ${finalAnalysisBlockerLabels[blocker]}`;
+  if (code === 'REVIEW_REQUIRED') return 'The item looks like a match, but a required verification step was not completed, so it cannot be used for the value yet.';
   if (code === 'UNSUPPORTED_CURRENCY') return 'The item matched, but the sale is not reported in US dollars, so it cannot be used in the value calculation.';
   if (code === 'FINAL_HARD_EXCLUDED') return 'The item was stopped because a required identity or transaction detail conflicts with the target.';
   return exactReasons.length ? 'The item was not used because a final valuation rule prevented this sale from contributing to the value.' : undefined;

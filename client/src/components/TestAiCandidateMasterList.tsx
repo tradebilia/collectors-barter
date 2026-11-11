@@ -21,12 +21,12 @@ function CandidateImage({ src, label, url }: { src?: string | null; label: strin
 }
 
 /** One card per retained occurrence; the ledger remains the authority for joins and rank order. */
-export function TestAiCandidateMasterList({ listings, sourceLabel, targetImageUrl, scope: suppliedScope }: {
-  listings: CandidateDisplayRow[]; sourceLabel: string; targetImageUrl?: string | null; scope?: CandidateDisplayScope;
+export function TestAiCandidateMasterList({ listings, sourceLabel, targetImageUrl, scope: suppliedScope, reconciled = false }: {
+  listings: CandidateDisplayRow[]; sourceLabel: string; targetImageUrl?: string | null; scope?: CandidateDisplayScope; reconciled?: boolean;
 }) {
   const context = useTestAiCandidateDisplay();
   const scope = suppliedScope ?? context.scope;
-  const candidates = reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);
+  const candidates = reconciled ? listings : reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);
   return <section className="rounded-lg border border-slate-700/70 bg-slate-950/30 p-3 text-[12px]" aria-label={`${sourceLabel} ranked candidate master list`}>
     <header className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-700/60 pb-3">
       <div><h3 className="text-[12px] font-semibold text-slate-100">Final decisions — ranked candidates ({candidates.length})</h3>
