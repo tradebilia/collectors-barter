@@ -7,7 +7,7 @@ function procedureName(key: readonly unknown[] | undefined): string | null {
   return typeof path[1] === 'string' ? path[1] : null;
 }
 const inventoryQueries = new Set(['getMyInventory', 'getAllSandboxItems']);
-const analysisProcedures = new Set(['analyzeTrade', 'analyze']);
+const analysisProcedures = new Set(['analyzeTrade', 'analyze', 'auditItemValuation']);
 const imageProcedures = new Set(['reviewEbayVisualData', 'readCertificationFromImage']);
 
 /** Watches existing requests only: never starts, refetches, retries or cancels work. */

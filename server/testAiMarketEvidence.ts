@@ -231,6 +231,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
       verifiedSourceDisposition: verification.verified ? safeText(trustedInput.evidenceDisposition, 80) : null,
       verification: verification.verified ? 'verified' as const : 'unverified' as const,
       normalizationEligible: valuationEligible, blockerCodes, warningCodes,
+      reasonDetails: uniqueReasons(reasons).slice(0, 40),
     },
   };
   const evidenceDisposition: NonNullable<MarketSale['evidenceDisposition']> = valuationEligible

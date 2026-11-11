@@ -5,6 +5,7 @@ import { canonicalizeIdentityApprovalTarget, canonicalizeIdentityApprovalCandida
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { SourceRunOutcomeSummary } from '../client/src/components/test-ai/SourceRunOutcomeSummary';
+import { buildItemAuditSubmission } from '../client/src/components/test-ai/TestAiItemAudit';
 const mocks = vi.hoisted(() => ({ llm: vi.fn(), fetch: vi.fn() }));
 vi.mock('./_core/env', () => ({ ENV: { jwtSecret: 'mercari-date-exception-synthetic-signing-key', appId: 'synthetic-test' } }));
 vi.mock('./_core/llm', () => ({ invokeLLM: mocks.llm }));
@@ -86,6 +87,36 @@ describe('Mercari undated sold=true actual route admission', () => {
     expect(profile.comparables.find(comp => comp.accepted)?.price).toBe(11);
     expect(profile.comparables.find(comp => comp.accepted)?.date).toBeNull();
     expect(requests.length).toBeGreaterThan(0);
+  });
+  it('runs final Item A audit with the signed undated comp and no Item B or additional provider/model calls', async () => {
+    const source: any = await caller().getMercariSoldCompsData(input());
+    const fetchCount = mocks.fetch.mock.calls.length, modelCount = mocks.llm.mock.calls.length;
+    const intake = buildItemAuditSubmission([{ id: 'mercari_sold_comps', label: 'Mercari Sold', kind: 'market_completed', packet: source }], 'actual-item-a-test');
+    const result = await caller().auditItemValuation({ item: { ...MOVIE, approvalTargetImageReference: TARGET_IMAGE },
+      sales: intake.submitted });
+    expect(result.side).toBe('item_a'); expect(result.snapshot.profile.selectionDiagnostics.selectedForValuation).toBe(1);
+    const comp = result.snapshot.profile.comparables[0];
+    expect(comp.date).toBeNull(); expect(comp.price).toBe(11);
+    expect(comp.valuationUse?.sourceAdmission.normalizationEligible).toBe(true);
+    expect(comp.valuationUse?.sourceAdmission.blockerCodes).not.toContain('INVALID_DATE');
+    expect(mocks.fetch).toHaveBeenCalledTimes(fetchCount); expect(mocks.llm).toHaveBeenCalledTimes(modelCount);
+  });
+  it('reports the missing ungraded deciding-evidence gate rather than blaming the Unknown Mercari date', async () => {
+    imageEvidence = { identityMatches: true, artworkMatches: true, slabVisible: false };
+    const source: any = await caller().getMercariSoldCompsData(input());
+    const row = source.audit.ledger[0];
+    expect(row.visualReviewStatus).toBe('match'); expect(row.valuationEligible).toBe(false);
+    expect(row.mercariAdmissionBlockers.join('; ')).toContain('APPROVAL_UNGRADED_STATE_UNCONFIRMED');
+    const result = await caller().auditItemValuation({ item: { ...MOVIE, approvalTargetImageReference: TARGET_IMAGE },
+      sales: buildMercariAnalysisSales({ listings: [row], requestedMode: 'sold' }, true) });
+    expect(result.snapshot.profile.comparables[0].valuationUse?.sourceAdmission.reasonDetails?.join('; ')).toContain('APPROVAL_UNGRADED_STATE_UNCONFIRMED');
+  });
+  it('keeps tampered image binding out of the Item A audit pricing pool', async () => {
+    const source: any = await caller().getMercariSoldCompsData(input());
+    const result = await caller().auditItemValuation({ item: { ...MOVIE, approvalTargetImageReference: 'https://example.test/wrong.jpg' },
+      sales: buildMercariAnalysisSales(source, true) });
+    expect(result.snapshot.profile.selectionDiagnostics.selectedForValuation).toBe(0);
+    expect(result.snapshot.profile.comparables[0].valuationUse?.sourceAdmission.blockerCodes).toContain('REQUIRED_APPROVAL_MISSING');
   });
   it('counts qualified undated source details while leaving unsigned completion claims at zero', async () => {
     const result: any = await caller().getMercariSoldCompsData(input());

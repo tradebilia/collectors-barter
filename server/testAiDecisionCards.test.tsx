@@ -132,7 +132,8 @@ describe('candidate final decision presentation (no filtering or pricing authori
     const decision = candidateFinalDecision({ sourceId: 'mercari_sold_comps', requestedMode: 'sold', priceBasis: 'sold', visualExecution: receipt(), mercariObservation: { priceContext: 'active_asking' } });
     expect(decision.reason).toContain('Sold-mode Mercari listing');
     expect(decision.reason).not.toContain('Active asking-price');
-    expect(decision.reason).toContain('final transaction amount');
+    expect(decision.reason).toContain('No server-issued date-exception approval is attached');
+    expect(decision.reason).not.toContain('final transaction amount and sale-event date are unverified');
   });
   it.each([
     ['OUTLIER_EXCLUDED', 'NOT USED — OUTLIER', 'Outlier excluded'],

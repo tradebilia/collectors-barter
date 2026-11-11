@@ -46,6 +46,8 @@ export type FinalSourceAdmission = {
   verification: 'verified' | 'unverified' | 'unmeasured';
   normalizationEligible: boolean | null;
   blockerCodes: NormalizationBlockerCode[];
+  /** Bounded server normalization explanations; reporting only, not admission input. */
+  reasonDetails?: string[];
   warningCodes: string[];
 };
 export type FinalIntakeReport = {

@@ -59,7 +59,8 @@ const finalAnalysisBlockerLabels: Record<string, string> = {
 };
 function finalAnalysisReasons(row: CandidateDisplayRow): string[] {
   const codes = [...(row.valuationUse?.sourceAdmission?.blockerCodes ?? []), ...(row.valuationUse?.use?.reasonCodes ?? [])];
-  return [...new Set(codes)].map((code) => `${code}: ${finalAnalysisBlockerLabels[code] ?? 'Final analysis recorded this code as a reason the candidate was not used.'}`);
+  const details = (row.valuationUse?.sourceAdmission?.reasonDetails ?? []).filter((reason: unknown) => typeof reason === 'string' && reason.trim());
+  return [...new Set(codes)].map((code) => `${code}: ${finalAnalysisBlockerLabels[code] ?? 'Final analysis recorded this code as a reason the candidate was not used.'}`).concat(details);
 }
 function evidenceReasons(row: CandidateDisplayRow): string {
   return Array.isArray(row.evidenceReasons) ? row.evidenceReasons.filter((reason: unknown) => typeof reason === 'string' && reason.trim()).join('; ') : '';
@@ -68,7 +69,9 @@ function explicitContextReason(row: CandidateDisplayRow): string | undefined {
   if (hasMercariUndatedSoldAdmission(row)) return undefined;
   if (row.sourceId === 'mercari_sold_comps' && row.requestedMode !== 'active' && row.mercariObservation?.requestedMode !== 'active'
     && (row.requestedMode === 'sold' || row.mercariObservation?.requestedMode === 'sold')) {
-    return 'Sold-mode Mercari listing; the final transaction amount and sale-event date are unverified, so the reported price remains context only.';
+    return Array.isArray(row.mercariAdmissionBlockers) && row.mercariAdmissionBlockers.length
+      ? row.mercariAdmissionBlockers.join('; ')
+      : 'Sold-mode Mercari listing (sold=true); sale date remains Unknown. No server-issued date-exception approval is attached; the Item A audit will report the remaining admission checks.';
   }
   if (row.requestedMode === 'active' || row.mercariObservation?.requestedMode === 'active'
     || row.saleStatus === 'active' || row.sourceEconomics?.convention === 'active_ask'
@@ -102,6 +105,9 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
       reason: `${pricing.label}${details ? ` · ${details}` : ''}`, code: pricing.code,
       className: primary ? green : hard ? red : amber };
   }
+  if (row.auditOmittedByCap === true) return { label: 'NOT USED — AUDIT CAP',
+    reason: 'Not submitted: the Item A audit transport limit is 120 retained candidates. No final decision was made for this row.',
+    code: 'AUDIT_TRANSPORT_CAP', className: amber };
   if (isHardCandidateDisplayException(row)) return { label: 'NOT USED — HARD EXCLUSION',
     reason: evidence || execution.reason || 'Hard exclusion recorded; supporting reason was not recorded.', code: 'HARD_EXCLUDED', className: red };
   if (pricing.code === 'UNRESOLVED_AUDIT_LINK') return { label: 'NOT USED — REVIEW UNRESOLVED',

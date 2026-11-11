@@ -32,6 +32,7 @@ import { deterministicTradeComparison, marketProfileForPrompt, scoreComparable, 
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
 import { normalizeAnalysisMarketSales } from './testAiMarketEvidence';
 import { attachCanonicalProvenance as attachCanonicalSourceProvenance, createServerFinalIdentityApproval, sealCanonicalObservation } from './testAiCanonicalObservation';
+import { auditItemValuation, itemAuditTargetSchema } from './testAiItemAudit';
 import { prepareSourceTransactionIdentity } from './testAiEconomicIntegrity';
 import { mapNamedSourceEconomics, mapNamedSourcePartitions } from './testAiSourceEconomics';
 import { numistaCoinGuideQuote, priceChartingCoinGuideQuote } from './testAiGuideEvidence';
@@ -807,8 +808,13 @@ type MercariApprovalContext = {
 function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsListing, context: MercariApprovalContext) {
   const report = getMercariObservedFacts(original)?.report;
   const fallback = mercariContextProjection(row, report ?? null);
-  if (!report || report.requestedMode !== 'sold' || row.visualReviewStatus !== 'match'
-    || !row.visualAudit || row.visualExecution?.hardExclusion === true) return fallback;
+  const blocked = (reasons: string[]) => ({ ...fallback, mercariAdmissionBlockers: reasons,
+    evidenceReasons: [...new Set([...reasons, ...fallback.evidenceReasons])].slice(0, 20) });
+  if (!report) return blocked(['MERCARI_OBSERVATION_MISSING: private original provider observation is unavailable.']);
+  if (report.requestedMode !== 'sold') return blocked(['MERCARI_REQUEST_NOT_SOLD: the provider request was not sold=true.']);
+  if (row.visualExecution?.hardExclusion === true) return blocked([`MERCARI_HARD_EXCLUSION: ${row.visualReviewRationale || 'A deterministic identity/safety exclusion was recorded.'}`]);
+  if (row.visualReviewStatus !== 'match') return blocked([`MERCARI_VISUAL_NOT_MATCH: visual status is ${row.visualReviewStatus ?? 'not reviewed'}; no confirmed match was recorded.`]);
+  if (!row.visualAudit) return blocked(['MERCARI_VISUAL_AUDIT_MISSING: a matched verdict has no deciding-pass audit.']);
   const originalPrice = report.fields.price;
   const price = originalPrice?.present && (originalPrice.type === 'number'
     || originalPrice.type === 'string' && typeof originalPrice.value === 'string' && /^\d+(?:\.\d+)?$/.test(originalPrice.value))
@@ -823,11 +829,14 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
   const sourceConflict = report.economicIssues.includes('marketplace_conflict')
     || report.fields.originMarketplace?.present && report.fields.originMarketplace.value !== 'mercari';
   if (!Number.isFinite(price) || price <= 0 || currency !== 'USD' || hasUnvalidatedDate || cancelled || priceConflict || sourceConflict) {
-    return { ...fallback, evidenceReasons: [...fallback.evidenceReasons,
-      hasUnvalidatedDate ? 'Provider sale-date field requires validation; the unknown-date exception cannot erase a supplied date.'
-        : cancelled ? 'Explicit cancellation prevents sold-sale admission.'
-          : priceConflict ? 'Conflicting original price fields prevent sold-price admission.'
-            : sourceConflict ? 'Original marketplace conflicts with Mercari.' : 'A positive original Mercari price and explicit USD currency are required.'] };
+    return blocked([
+      ...(!Number.isFinite(price) || price <= 0 ? ['MERCARI_ORIGINAL_PRICE_INVALID: positive original provider price is required.'] : []),
+      ...(currency !== 'USD' ? [`MERCARI_CURRENCY_NOT_USD: original currency is ${currency ?? 'Unknown'}, not USD.`] : []),
+      ...(hasUnvalidatedDate ? ['MERCARI_SUPPLIED_DATE_REQUIRES_VALIDATION: the unknown-date exception cannot erase a supplied date.'] : []),
+      ...(cancelled ? ['MERCARI_CANCELLED: explicit cancellation prevents sold-sale admission.'] : []),
+      ...(priceConflict ? ['MERCARI_PRICE_FIELDS_CONFLICT: original price fields disagree.'] : []),
+      ...(sourceConflict ? ['MERCARI_MARKETPLACE_CONFLICT: original marketplace conflicts with Mercari.'] : []),
+    ]);
   }
   const reviewedTarget: ComparableTarget = { title: context.input.title, category: context.input.category,
     itemType: context.input.itemType, grade: context.input.grade, condition: context.input.condition,
@@ -855,18 +864,22 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
   const confidence = row.visualAudit.finalPass === 'high_resolution_retry'
     ? row.visualAudit.retryConfidence : row.visualAudit.initialConfidence;
   const acquiredAt = new Date();
+  const approvalFailures: string[] = [];
   const approval = !hardConflict && imageReference ? createServerFinalIdentityApproval({ sale, target, reviewedTarget,
     targetImageReference: imageReference, expectedImageReference: context.input.approvalTargetImageReference ?? imageReference,
     targetMetadata: context.targetMetadata, acquiredAt, candidateIdentityFields,
+    onRejected: reason => approvalFailures.push(reason),
     review: { candidateIndex: 0, verdict: 'match', confidence: confidence === 'high' || confidence === 'medium' ? confidence : 'low',
       rationale: String(row.visualReviewRationale ?? ''), visualEvidence: row.visualEvidence,
       visualAudit: row.visualAudit, visualDifferences: row.visualDifferences } }) : null;
-  if (!approval) return { ...fallback, evidenceReasons: [...fallback.evidenceReasons,
-    hardConflict ? 'Known identity conflict prevents Mercari final approval.'
-      : 'Server-final Mercari identity approval is unavailable or target/image binding changed; retained for review.'] };
+  if (!approval) return blocked(hardConflict
+    ? [`MERCARI_KNOWN_IDENTITY_CONFLICT: ${knownIdentity.exclusionReason || knownIdentity.categoryIdentity.conflicts.join('; ') || 'Known identity, grade, variant or transaction-form conflict.'}`]
+    : !imageReference ? ['APPROVAL_TARGET_IMAGE_MISSING: no target image reference was supplied.']
+      : approvalFailures.length ? approvalFailures : ['APPROVAL_FAILURE_UNRECORDED: no server approval was issued; rejection detail was not recorded.']);
   const sealed = sealCanonicalObservation('mercari_sold_comps', sale, { acquiredAt, query: context.input.title, identityApproval: approval });
-  if (!sealed.provenanceToken || !sealed.identityApproval) return fallback;
+  if (!sealed.provenanceToken || !sealed.identityApproval) return blocked([`MERCARI_CANONICAL_SEAL_FAILED: ${sealed.validationErrors.join('; ') || 'Signed provenance or identity approval was not issued.'}`]);
   return { ...sale, ...sealed, valuationEligible: true,
+    mercariAdmissionBlockers: [],
     priceContext: 'sold_listing_reported', visualPricingNotice: 'Reported sold price; sale date Unknown — Mercari date exception. Final valuation selection still applies.' };
 }
 
@@ -4797,6 +4810,25 @@ export const testAIRouter = router({
         console.warn('[Test AI] Field completion unavailable:', error instanceof Error ? error.message : 'unknown error');
         throw new TRPCError({ code: 'BAD_GATEWAY', message: 'The image field scan was unavailable. No listing data was changed.' });
       }
+    }),
+
+  auditItemValuation: protectedProcedure
+    .input(z.object({
+      item: itemAuditTargetSchema,
+      // Diagnostic rows may be active, held out, or malformed. Do not make one
+      // failed candidate abort the audit; normalization reports the exact gate.
+      sales: z.array(analysisMarketSaleTransportSchema.extend({
+        price: z.unknown().optional(), currency: z.string().max(80).nullish(),
+        date: z.unknown().optional(), saleDatePolicy: z.string().max(80).nullish(),
+        saleStatus: z.string().max(80).nullish(), priceBasis: z.string().max(80).nullish(),
+        evidenceDisposition: z.string().max(80).nullish(), visualReviewStatus: z.string().max(80).nullish(),
+        recency: z.string().max(80).nullish(), visualRequirement: z.string().max(80).nullish(),
+      })).max(120),
+      evidenceSummary: testAiEvidenceSummarySchema.optional(),
+    }).strict())
+    .mutation(({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return auditItemValuation({ item: input.item, sales: input.sales as MarketSale[], evidenceSummary: input.evidenceSummary });
     }),
 
   analyzeTrade: protectedProcedure

@@ -38,3 +38,8 @@ export function isCurrentTestAiFinalRequest(receipt: { runId: string; lifecycleK
   issuedRunId: string | undefined, currentLifecycleKey: string): boolean {
   return Boolean(receipt && receipt.runId === issuedRunId && receipt.lifecycleKey === currentLifecycleKey);
 }
+
+/** Standalone sandbox audit: changing Item B can never start or cancel this work. */
+export function testAiItemAuditLifecycleKey(input: { target: unknown; sources: unknown; summary: unknown }): string {
+  return JSON.stringify(semanticValue(input));
+}

@@ -161,7 +161,8 @@ describe('Mercari candidate decision UI (real ReactDOM components)', () => {
 
   it('leaves legacy context, provider failure, rough match and hard exclusion reasons intact', () => {
     const legacy = cards(buildMercariAnalysisSales({ listings: [qualified({ provenanceToken: null })] }, true));
-    expect(legacy).toContain('VALUATION NOT RUN'); expect(legacy).toContain('final transaction amount and sale-event date are unverified');
+    expect(legacy).toContain('VALUATION NOT RUN'); expect(legacy).toContain('No server-issued date-exception approval is attached');
+    expect(legacy).not.toContain('final transaction amount and sale-event date are unverified');
     const failed = cards([qualified({ visualExecution: receipt({ state: 'dispatched_inconclusive', reasonCode: 'provider_error',
       identity: { origin: 'none', result: 'not_established' }, attempts: [{ ordinal: 1, stage: 'initial', format: 'json_schema', outcome: 'error', failureCode: 'provider_request_failed' }] }) })]);
     expect(failed).toContain('NOT USED — REVIEW UNRESOLVED'); expect(failed).toContain('Provider request failed'); expect(failed).not.toContain('Image-confirmed');
@@ -208,6 +209,6 @@ describe('Mercari page integration source assertions (no routes invoked)', () =>
       expect(input).toContain('visualReviewVersion: mercariVisualReviewVersion');
       expect(input).toContain("has('mercari_sold_comps')");
     }
-    expect(page).toContain("const mercariVisualReviewVersion = 'mercari-undated-sold-v1';");
+    expect(page).toContain("const mercariVisualReviewVersion = 'mercari-undated-sold-v2-admission-reasons';");
   });
 });

@@ -15,6 +15,7 @@ import { sortMetadataRankedCandidates, buildEbayVisualReviewListings } from '@sh
 import { TestAiCandidateMasterList as CandidateMasterList } from '@/components/TestAiCandidateMasterList';
 import { TestAiEvidenceReview } from '@/components/test-ai/TestAiEvidenceReview';
 import { TestAiWorkStatus } from '@/components/test-ai/TestAiWorkStatus';
+import { TestAiItemAudit } from '@/components/test-ai/TestAiItemAudit';
 import { TestAiSourceStatusBadges, TestAiSourceRelevanceSummary, TestAiCandidateDisplayProvider, TestAiCandidateStatus, TestAiVisualReviewRow, TestAiExecutionSummary, TestAiFinalUseSummary, TestAiSourcePopulationSummary, TestAiFinalLedgerRow, TestAiProcessCompleteNotice as ProcessCompleteNotice, TestAiSourceMetricSummary, TestAiSourceCurrentWindowCount, selectTestAiVisualDisplayRows } from '@/components/TestAiCandidateStatus';
 import { TestAiSafeImage } from '@/components/TestAiSafeImage';
 import { candidateDisplayKey, collectEbayCandidateDisplayOccurrences, mergeCandidateDisplayGroups, mergeVisualReviewDisplayBatches, mergeEbayCandidateDisplayData, stampCandidateDisplayIntake, type CandidateFinalDisplayOutcome } from '@shared/testAiCandidateLedger';
@@ -3327,8 +3328,10 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     .filter(id => !summary.sources.some(source => source.id === id) && enabledSources.has(id as SourceId))
     .map(id => ({ id, label: DATA_SOURCES[id as SourceId]?.label || id, status: evidenceStatus(extraReviewPackets[id]) }))];
   return <>
-    <TestAiEvidenceReview item={item} side={side} summary={summary}
+    {side === 'left' ? <TestAiItemAudit item={marketItem} displayItem={item} summary={summary}
       sources={reviewSources.map(source => ({ ...source, packet: extraReviewPackets[source.id] ?? reviewPackets[source.id] }))} />
+      : <TestAiEvidenceReview item={item} side={side} summary={summary}
+        sources={reviewSources.map(source => ({ ...source, packet: extraReviewPackets[source.id] ?? reviewPackets[source.id] }))} />}
     {enabledSources.has('discogs') && discogsSearchCriteria.isMusic && discogsCandidates.length > 1 && <details className="rounded border border-slate-800 p-3">
       <summary className="cursor-pointer text-xs text-slate-300">Discogs reference selection</summary>
       <label className="mt-2 block text-xs text-slate-300">Confirm exact release / pressing</label>
@@ -4579,6 +4582,7 @@ export default function TestAI() {
   const [, navigate] = useLocation();
   const [leftItem, setLeftItem] = useState<SelectedItem | null>(null);
   const [rightItem, setRightItem] = useState<SelectedItem | null>(null);
+  const [tradeTestingEnabled, setTradeTestingEnabled] = useState(false);
   const [leftSources, setLeftSources] = useState<Set<SourceId>>(new Set());
   const [rightSources, setRightSources] = useState<Set<SourceId>>(new Set());
   const [visualProvider, setVisualProvider] = useState<'manus_forge' | 'openai'>('manus_forge');
@@ -4887,7 +4891,7 @@ export default function TestAI() {
   );
   // Invalidate both columns' old context-only / pre-policy Mercari receipts.
   // This changes only the existing query key, not request scope or budgets.
-  const mercariVisualReviewVersion = 'mercari-undated-sold-v1';
+  const mercariVisualReviewVersion = 'mercari-undated-sold-v2-admission-reasons';
   const leftMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
     leftSearchItem ? buildSoldCompsApprovalInput({ title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion, visualProvider }, effectiveLeftItem ?? leftSearchItem) : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('mercari_sold_comps'), retry: false }
@@ -4976,12 +4980,20 @@ export default function TestAI() {
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         <TestAiWorkStatus />
         {/* Item selectors */}
+        <div className="rounded-lg border border-cyan-800/40 bg-slate-900/50 p-3 text-xs text-slate-300">
+          <p className="font-semibold text-cyan-200">Current testing phase: Item A source validation</p>
+          <p className="mt-1">Test marketplace, reference and grading sources against Item A. Final valuation auditing runs without Item B.</p>
+          <label className="mt-2 flex items-center gap-2 text-slate-400"><input type="checkbox" checked={tradeTestingEnabled} onChange={event => {
+            setTradeTestingEnabled(event.target.checked);
+            if (!event.target.checked) { setRightItem(null); setRightSources(new Set()); }
+          }} />Enable two-item trade testing — later phase</label>
+        </div>
         <div className="flex gap-4">
           <ItemPanel side="left" item={leftItem} onItemChange={setLeftItem} onSourceChange={setLeftSources} inventory={inventory} inventoryLoading={inventoryLoading} sandboxItems={sandboxItems} sandboxItemsLoading={sandboxItemsLoading} />
-          <div className="flex items-center justify-center flex-shrink-0">
+          {tradeTestingEnabled && <><div className="flex items-center justify-center flex-shrink-0">
             <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 font-bold text-sm">VS</div>
           </div>
-          <ItemPanel side="right" item={rightItem} onItemChange={setRightItem} onSourceChange={setRightSources} inventory={inventory} inventoryLoading={inventoryLoading} sandboxItems={sandboxItems} sandboxItemsLoading={sandboxItemsLoading} />
+          <ItemPanel side="right" item={rightItem} onItemChange={setRightItem} onSourceChange={setRightSources} inventory={inventory} inventoryLoading={inventoryLoading} sandboxItems={sandboxItems} sandboxItemsLoading={sandboxItemsLoading} /></>}
         </div>
 
         {/* Data source selectors — only show when items are selected */}
@@ -5048,7 +5060,7 @@ export default function TestAI() {
           <div className="py-10 text-gray-500">
             <div className="text-center">
               <p className="text-4xl mb-4">🧪</p>
-              <p className="text-lg font-medium text-gray-400">Select two items to begin testing</p>
+              <p className="text-lg font-medium text-gray-400">Select Item A to begin source testing</p>
               <p className="text-sm mt-2">Choose from your inventory or enter a certificate ID, then select which data sources to test</p>
             </div>
             <div className="mt-8 rounded-xl border border-slate-700/70 bg-slate-900/60 p-4 text-left">
