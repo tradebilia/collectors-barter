@@ -348,6 +348,8 @@ function autographObjectType(value: unknown): string {
   if (/\b(?:art\s+print|illustrated\s+print|lithograph)\b/.test(text)) return "print";
   if (/\bprogram\b/.test(text)) return "program";
   if (/\bticket\b/.test(text)) return "ticket";
+  // In autograph markets, a cut or cut signature is a signed piece of paper.
+  if (/\b(?:signed[\s-]+)?cut(?:[\s-]+(?:signature|autograph))?\b/.test(text) || /\bpaper\b/.test(text)) return "paper";
   if (/\b(?:book|novel|paperback|hardcover)\b/.test(text)) return "book";
   if (/\bdocument\b/.test(text)) return "document";
   // A possessive/theme phrase such as “Baseball’s Greatest Players” does not

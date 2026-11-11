@@ -192,6 +192,29 @@ describe("visual source filter", () => {
     expect(autographObjectTypeMismatchReason(baseballGloveTarget, { title: "Babe Ruth signed baseball" })).toContain("different signed object types");
   });
 
+  it("normalizes a signed Cut to the Paper signed-item type", () => {
+    const paperTarget = buildVisualTargetMetadata({
+      title: "Marlon Brando signed paper",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Marlon Brando", signedItemType: "Paper", authenticationCompany: "JSA" },
+    });
+    const cut = { title: "Marlon Brando Signed Cut Signature COA" };
+    const score = autographMarketRelevanceScore(cut, paperTarget);
+    expect(score.matched).toEqual(expect.arrayContaining(["signer", "signed item type", "authenticated"]));
+    expect(score.score).toBe(70);
+    expect(autographObjectTypeMismatchReason(paperTarget, cut)).toBeNull();
+    expect(autographValuationEligibility(cut, paperTarget)).toMatchObject({ eligible: true });
+
+    const baseballTarget = buildVisualTargetMetadata({
+      title: "Marlon Brando signed baseball",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Marlon Brando", signedItemType: "Baseball" },
+    });
+    expect(autographObjectTypeMismatchReason(baseballTarget, cut)).toContain("different signed object types");
+  });
+
   it("recognizes generic COA wording as authentication evidence without awarding company-match points", () => {
     const target = buildVisualTargetMetadata({
       title: "Donald Trump signed photo",
