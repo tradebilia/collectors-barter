@@ -31,8 +31,9 @@ export function isConfirmedCurrentMarketMatch(row: any): boolean {
 }
 
 function candidatePrice(row: any): number | null {
-  for (const value of [row?.price, row?.soldPrice, row?.finalPrice, row?.transactionPrice]) {
-    const parsed = typeof value === 'string' ? Number(value.replace(/[$,]/g, '')) : Number(value);
+  for (const value of [row?.price, row?.soldPrice, row?.salePrice, row?.finalPrice, row?.transactionPrice, row?.currentPrice, row?.current_price, row?.amount]) {
+    const raw = value && typeof value === 'object' ? value.value ?? value.amount ?? value.price : value;
+    const parsed = typeof raw === 'string' ? Number(raw.replace(/[$,]/g, '')) : Number(raw);
     if (Number.isFinite(parsed) && parsed > 0) return parsed;
   }
   return null;
