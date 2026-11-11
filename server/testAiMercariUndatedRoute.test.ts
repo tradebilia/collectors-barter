@@ -138,6 +138,16 @@ describe('Mercari undated sold=true actual route admission', () => {
     expect(row).toMatchObject({ sourceId: 'mercari_sold_comps', visualRequirement: 'not_required', visualReviewStatus: 'not_reviewed',
       valuationEligible: true, evidenceDisposition: 'valuation_eligible', price: 11, currency: 'USD', date: null });
     expect(row.provenanceToken).toBeTruthy();
+    const descriptiveLabelTransport = buildMercariAnalysisSales({
+      listings: [{ ...row, visualRequirement: 'not_required_autograph_market_context' }], requestedMode: 'sold',
+    }, true);
+    expect(descriptiveLabelTransport[0]).toMatchObject({
+      visualRequirement: 'not_required_autograph_market_context', provenanceToken: row.provenanceToken,
+      evidenceDisposition: 'valuation_eligible', saleStatus: 'completed', priceBasis: 'sold',
+    });
+    const descriptiveAudit = await caller().auditItemValuation({ item: { ...AUTOGRAPH, approvalTargetImageReference: TARGET_IMAGE }, sales: descriptiveLabelTransport });
+    expect(descriptiveAudit.snapshot.profile.selectionDiagnostics.selectedForValuation).toBe(1);
+    expect(descriptiveAudit.snapshot.profile.comparables[0].valuationUse?.sourceAdmission.blockerCodes).not.toContain('PROVENANCE_UNVERIFIED');
     const intake = buildItemAuditSubmission([{ id: 'mercari_sold_comps', label: 'Mercari Sold', kind: 'market_completed', packet: source }], 'autograph-item-a-test');
     expect(intake.submitted[0]).toMatchObject({ sourceAdapter: 'mercari_sold_comps', visualRequirement: 'not_required',
       visualReviewStatus: 'not_reviewed', saleStatus: 'completed', priceBasis: 'sold', provenanceToken: row.provenanceToken });

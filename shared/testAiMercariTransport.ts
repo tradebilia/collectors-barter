@@ -32,6 +32,8 @@ const own = (record: object, field: string) => Object.prototype.hasOwnProperty.c
 const isStatus = (value: unknown): value is MercariListingStatus => value === 'sold' || value === 'active' || value === 'unknown';
 
 const objectFields = (value: unknown): Record<string, unknown> | undefined => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
+const isAutographNoVisualRequirement = (value: unknown): boolean => value === 'not_required'
+  || typeof value === 'string' && value.startsWith('not_required_autograph');
 export const MERCARI_UNDATED_SOLD_POLICY = 'mercari_undated_sold_v1' as const;
 
 /** Shape recognition for lossless handoff/presentation ONLY, not authentication.
@@ -78,7 +80,7 @@ export function hasMercariAutographNoVisualAdmission(
     && typeof sale.price === 'number' && Number.isFinite(sale.price) && sale.price > 0 && sale.currency === 'USD'
     && typeof basis === 'string' && /Sold[- ]Comps/i.test(basis) && /Mercari/i.test(basis)
     && /sold\s*=\s*true/i.test(basis) && /reported sold price/i.test(basis)
-    && sale.visualRequirement === 'not_required' && sale.visualReviewStatus === 'not_reviewed'
+    && isAutographNoVisualRequirement(sale.visualRequirement) && sale.visualReviewStatus === 'not_reviewed'
     && sale.evidenceDisposition === 'valuation_eligible'
     && typeof sale.provenanceToken === 'string' && Boolean(sale.provenanceToken.trim())
     && provenance?.adapterId === 'mercari_sold_comps' && provenance.originMarketplace === 'mercari';
