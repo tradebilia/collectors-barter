@@ -2467,6 +2467,15 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
   // title and the category-specific movieTitle field. Prefer the canonical
   // movieTitle row so the comparison does not show the same value twice.
   if (category === 'movies' && [...keys].some(key => normalizedFieldKey(key) === 'movietitle')) keys.delete('title');
+  // Certification company, grading company, and grader are the same semantic
+  // field. Keep one canonical row so one recorded award is not rendered as a
+  // MATCH with 0 points on a duplicate alias row.
+  if ([...keys].some(key => /^(?:certificationcompany|gradingcompany|grader)$/i.test(normalizedFieldKey(key)))) {
+    for (const key of [...keys]) {
+      if (/^(?:gradingcompany|grader)$/i.test(normalizedFieldKey(key))) keys.delete(key);
+    }
+    keys.add('certificationCompany');
+  }
   const rows: MetadataFieldComparison[] = [];
   const emittedFieldLabels = new Set<string>();
   for (const key of keys) {

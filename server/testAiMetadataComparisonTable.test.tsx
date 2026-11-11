@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { MetadataComparisonTable } from '../client/src/components/TestAiMetadataComparisonTable';
-import { annotatePreVisualComparableScores, buildVisualTargetMetadata, withMetadataFieldComparisons } from './testAiVisualSourceFilter';
+import { annotatePreVisualComparableScores, buildVisualTargetMetadata, moviesIndividualVisualScore, withMetadataFieldComparisons } from './testAiVisualSourceFilter';
 
 const baseRow = { targetField: 'Accessory name', targetValue: 'Power Glove', candidateField: 'Accessory name',
   candidateValue: 'Generic Controller', titleDerivedValue: 'Power Glove (detected in title)', status: 'different', titleDerivedStatus: 'match' };
@@ -67,6 +67,24 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     const rows = withMetadataFieldComparisons(target, { title: 'Moonlighting Season 1&2', movieTitle: 'Moonlighting Season 1&2', metadataScoreAwards: [{ field: 'movieTitle', source: 'title', awardedPoints: 30 }] }).metadataFieldComparisons ?? [];
     expect(rows.filter(row => ['movieTitle', 'title'].includes(row.fieldKey ?? '')).length).toBe(1);
     expect(rows.find(row => row.fieldKey === 'movieTitle')?.targetField).toBe('Movie Title');
+  });
+  it('renders certification company, grading company, and grader as one canonical scored row', () => {
+    const target = buildVisualTargetMetadata({ title: 'Canon VHS', category: 'movies', itemType: 'individual_movie', fullItemDetails: {
+      format: 'VHS', isGraded: 'Yes', certificationCompany: 'CGC', grade: '8', gradingCompany: 'CGC',
+    } });
+    const candidate = { title: 'Canon CGC 8.0 VHS Tape', format: 'VHS' };
+    const scored = moviesIndividualVisualScore(candidate, target);
+    const output = withMetadataFieldComparisons(target, { ...candidate, metadataScoreAwards: scored.awards, metadataMatchScore: scored.score });
+    const rows = output.metadataFieldComparisons ?? [];
+    const companyRows = rows.filter(row => /^(?:certificationCompany|gradingCompany|grader)$/.test(row.fieldKey ?? ''));
+    expect(companyRows).toHaveLength(1);
+    expect(companyRows[0]).toMatchObject({ fieldKey: 'certificationCompany', targetValue: 'CGC', titleDerivedValue: 'CGC', titleDerivedStatus: 'match' });
+    expect(companyRows[0].rankingContribution).toMatchObject({ matched: true, titleDerived: true, awardedPoints: 5 });
+    const gradeRow = rows.find(row => row.fieldKey === 'grade');
+    expect(gradeRow).toMatchObject({ titleDerivedValue: '8', titleDerivedStatus: 'match' });
+    expect(gradeRow?.rankingContribution).toMatchObject({ matched: true, titleDerived: true, awardedPoints: 5 });
+    expect(scored.score).toBe(55);
+    expect(rows.reduce((total, row) => total + (row.rankingContribution?.awardedPoints ?? 0), 0)).toBe(55);
   });
 });
 
