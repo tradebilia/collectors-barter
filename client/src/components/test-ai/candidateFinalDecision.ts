@@ -1,6 +1,7 @@
 import type { CandidateDisplayRow } from '../../../../shared/testAiCandidateLedger';
-import { candidateExecutionAttemptFacts, candidateExecutionFact, candidateExecutionReceipt, candidateIdentityFact, candidatePricingFact, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException } from '../../../../shared/testAiCandidateStatus';
+import { candidateExecutionAttemptFacts, candidateExecutionFact, candidateExecutionReceipt, candidateIdentityFact, candidatePricingFact, formatCandidateDisplayPrice, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException } from '../../../../shared/testAiCandidateStatus';
 import { hasMercariUndatedSoldAdmission, mercariPriceContextLabel } from '../../../../shared/testAiMercariTransport';
+import { isCurrentMarketContextSource } from '../../../../shared/testAiMarketContext';
 
 export type CandidateFinalDecision = { label: string; reason: string; code: string; className: string };
 const neutral = 'border-slate-600/60 bg-slate-900/60 text-slate-200';
@@ -143,6 +144,9 @@ function explicitContextReason(row: CandidateDisplayRow): string | undefined {
   }
   return undefined;
 }
+function isActiveMarketContext(row: CandidateDisplayRow): boolean {
+  return isCurrentMarketContextSource({ ...row, role: row.sourceRole ?? row.sourceRelevance?.role });
+}
 /** Presentation only. Call after the existing current-request ledger reconciliation. */
 export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinalDecision {
   const pricing = candidatePricingFact(row);
@@ -151,6 +155,12 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
   const receipt = candidateExecutionReceipt(row);
   const evidence = evidenceReasons(row);
   const contextReason = explicitContextReason(row);
+  const activeContextMatch = isActiveMarketContext(row) && hasActualVisualResponse(row) && identity.code === 'match';
+  if (activeContextMatch && pricing.code !== 'CURRENT_SALES_PRIMARY') {
+    return { label: 'MATCH CONFIRMED — CURRENT MARKET CONTEXT',
+      reason: `Image match confirmed. This eBay active listing is current asking-price activity${formatCandidateDisplayPrice(row) !== 'Price unavailable' ? ` at ${formatCandidateDisplayPrice(row)}` : ''}, not a completed sale. It is retained for current-market context and commentary, but it is not used to set the primary sold-comps value.`,
+      code: 'ACTIVE_MARKET_CONTEXT_MATCH', className: green };
+  }
   if (row.valuationUse?.use?.code) {
     const primary = pricing.code === 'CURRENT_SALES_PRIMARY';
     const hard = pricing.code === 'FINAL_HARD_EXCLUDED';

@@ -164,8 +164,20 @@ describe('candidate final decision presentation (no filtering or pricing authori
   });
   it('uses explicit asking-price economics, never arbitrary title text, for active context', () => {
     const active = candidateFinalDecision({ title: 'Ordinary candidate', saleStatus: 'active', visualExecution: receipt() });
-    expect(active.label).toBe('VALUATION NOT RUN'); expect(active.reason).toContain('Active asking-price context only');
+    expect(active.label).toBe('MATCH CONFIRMED — CURRENT MARKET CONTEXT'); expect(active.reason).toContain('current asking-price activity');
     const completed = candidateFinalDecision({ title: 'Active asking price in old title', saleStatus: 'completed', visualExecution: receipt() });
     expect(completed.reason).toContain('Image match recorded'); expect(completed.reason).not.toContain('Active asking-price context only');
+  });
+  it('labels a confirmed eBay Active match as current-market context instead of a post-visual failure', () => {
+    const active = candidateFinalDecision({
+      sourceId: 'ebay_active', saleStatus: 'active', priceBasis: 'asking', price: 19.99, currency: 'USD',
+      visualExecution: receipt(), valuationUse: { use: { code: 'REVIEW_REQUIRED', reasonCodes: ['PROVENANCE_UNVERIFIED', 'NOT_COMPLETED', 'INVALID_DATE'] } },
+    });
+    expect(active.label).toBe('MATCH CONFIRMED — CURRENT MARKET CONTEXT');
+    expect(active.reason).toContain('current asking-price activity at USD 19.99');
+    expect(active.reason).toContain('not a completed sale');
+    expect(active.reason).toContain('not used to set the primary sold-comps value');
+    expect(active.reason).not.toContain('PROVENANCE_UNVERIFIED');
+    expect(active.reason).not.toContain('INVALID_DATE');
   });
 });

@@ -16,11 +16,13 @@ const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.t
 const adapterSource = readFileSync(resolve(import.meta.dirname, "./ebayMarketplaceCandidate.ts"), "utf8");
 const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
 const clientMainSource = readFileSync(resolve(import.meta.dirname, "../client/src/main.tsx"), "utf8");
+const clientRpcTransportSource = readFileSync(resolve(import.meta.dirname, "../client/src/lib/testAiRpcTransport.ts"), "utf8");
 const visualSource = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
 const rankingDisplaySource = readFileSync(resolve(import.meta.dirname, "../shared/testAiRankingDisplay.ts"), "utf8");
 const candidateLedgerSource = readFileSync(resolve(import.meta.dirname, "../shared/testAiCandidateLedger.ts"), "utf8");
 const candidateStatusSource = readFileSync(resolve(import.meta.dirname, "../shared/testAiCandidateStatus.ts"), "utf8");
 const masterListSource = readFileSync(resolve(import.meta.dirname, "../client/src/components/TestAiCandidateMasterList.tsx"), "utf8");
+const decisionSource = readFileSync(resolve(import.meta.dirname, "../client/src/components/test-ai/candidateFinalDecision.ts"), "utf8");
 const statusComponentSource = readFileSync(resolve(import.meta.dirname, "../client/src/components/TestAiCandidateStatus.tsx"), "utf8");
 const sourceDisplaySource = readFileSync(resolve(import.meta.dirname, "../shared/testAiSourceDisplay.ts"), "utf8");
 
@@ -196,8 +198,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(ebayProcedure).toContain("...entry.item,");
     expect(visualSource).toContain("scorePreVisualComparableCandidate");
     expect(masterListSource).toContain("Every retained candidate appears once.");
-    expect(masterListSource).toContain("final user-facing outcome");
-    expect(masterListSource).toContain("<TestAiCandidateImagePair listing={listing} targetImageUrl={targetImageUrl} />");
+    expect(masterListSource).toContain('data-final-decision-code={decision.code}');
+    expect(masterListSource).toContain('<CandidateImage src={targetImageUrl} label="Target" />');
     expect(statusComponentSource).toContain("{label} unavailable");
     expect(masterListSource).toContain("<MetadataComparisonTable listing={listing} />");
   });
@@ -252,7 +254,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("const auditLedger = mergeCandidateDisplayGroups([data?.audit?.ledger ?? [], data?.listings ?? [], data?.visualFilter?.contextListings ?? []]);");
     expect(masterListSource).toContain("Every retained candidate appears once.");
     expect(masterListSource).toContain("<MetadataComparisonTable listing={listing} />");
-    expect(masterListSource).toContain("ACCEPTED FOR VALUATION");
+    expect(decisionSource).toContain("USED IN VALUATION");
     expect(pageSource).toContain("No candidates reached the main valuation/review list");
   });
 
@@ -364,7 +366,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     const reviewProcedure = procedureSource("reviewEbayVisualData: protectedProcedure", "// Fetch HIPStamp active listings");
     expect(reviewProcedure).toContain(".mutation(async ({ ctx, input }) => {");
     expect(reviewProcedure).not.toContain(".query(async ({ ctx, input }) => {");
-    expect(clientMainSource).toContain("maxURLLength: 2000");
+    expect(clientRpcTransportSource).toContain("maxURLLength: 2000");
   });
 
   it("builds the loading preview from structured criteria without duplicating title grade or condition", () => {

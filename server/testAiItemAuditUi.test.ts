@@ -53,7 +53,7 @@ describe('Automatic Item A-only audit', () => {
     await render(); await tick(); await act(async () => respond());
     expect(container.textContent).toContain('Final Item A audit completed');
     const decisionReason = container.querySelector('[data-final-decision-code] p')?.textContent ?? '';
-    expect(decisionReason).toContain('required verification step was not completed');
+    expect(decisionReason).toContain('visual AI review was not completed');
     expect(decisionReason).not.toContain('APPROVAL_UNGRADED_STATE_UNCONFIRMED');
     expect(decisionReason).not.toContain('REQUIRED_APPROVAL_MISSING');
     expect(container.textContent).toContain('REQUIRED_APPROVAL_MISSING');
@@ -112,6 +112,15 @@ describe('Bounded audit population', () => {
     ], 'intake-test');
     expect(intake.submitted).toHaveLength(3); expect(intake.submitted.map(row => row.title)).toEqual(['Same', 'Same', 'Wrong format']);
     expect(new Set(intake.submitted.map(row => row.displayCorrelation.requestOccurrenceRef)).size).toBe(3);
+  });
+  it('keeps eBay Active candidates visible as current context but excludes them from sold valuation intake', () => {
+    const intake = buildItemAuditSubmission([
+      { id: 'ebay_active', label: 'eBay Active', kind: 'market_current', packet: { listings: [{ title: 'Batman Laserdisc', price: 19.99, saleStatus: 'active', priceBasis: 'asking' }] } },
+      { id: 'sold_comps', label: 'Sold', kind: 'market_completed', packet: { listings: [{ title: 'Batman Laserdisc', price: 11 }] } },
+    ], 'active-context-test');
+    expect(intake.sources.find(source => source.id === 'ebay_active')?.rows).toHaveLength(1);
+    expect(intake.submitted.map(row => row.sourceId)).toEqual(['sold_comps']);
+    expect(intake.sources.find(source => source.id === 'ebay_active')?.role).toBe('asking_price_context');
   });
   it('balances sources at the 120-row limit and gives every omitted card an explicit audit-cap reason', () => {
     const intake = buildItemAuditSubmission(['a', 'b'].map(id => ({ id, label: id, kind: 'market_completed', packet: {

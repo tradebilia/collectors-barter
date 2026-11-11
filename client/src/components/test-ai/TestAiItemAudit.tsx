@@ -7,6 +7,7 @@ import { stampCandidateDisplayIntake, type CandidateFinalDisplayOutcome } from '
 import { buildMercariAnalysisSales } from '../../../../shared/testAiMercariTransport';
 import { buildApprovalTargetImageInput } from '../../../../shared/testAiSoldCompsTransport';
 import { isCollectionLotItemType } from '../../../../shared/testAiItemType';
+import { isCurrentMarketContextSource } from '../../../../shared/testAiMarketContext';
 import { TestAiCandidateDisplayProvider } from '../TestAiCandidateStatus';
 import { TestAiEvidenceReview, evidenceReviewCandidates, type EvidenceReviewSource } from './TestAiEvidenceReview';
 
@@ -21,18 +22,24 @@ export type ItemAuditTarget = { id?: number; title: string; category: string; it
 export function buildItemAuditSubmission(sources: ItemAuditSource[], runId: string) {
   const groups = sources.map(source => {
     const marketplace = source.kind !== 'reference' && source.kind !== 'certification' && source.role !== 'valuation_guide';
-    const rows = marketplace ? evidenceReviewCandidates(source) : [];
+    const contextOnly = isCurrentMarketContextSource({ sourceId: source.id, role: source.role, kind: source.kind });
+    const displayRows = marketplace ? evidenceReviewCandidates(source) : [];
+    const valuationRows = contextOnly ? [] : displayRows;
     const transported = source.id === 'mercari_sold_comps'
-      ? buildMercariAnalysisSales({ listings: rows, requestedMode: source.packet?.requestedMode }, true) : rows;
-    return { ...source, rows: transported.map(row => ({ ...row, sourceId: row.sourceId ?? source.id })) };
+      ? buildMercariAnalysisSales({ listings: valuationRows, requestedMode: source.packet?.requestedMode }, true) : valuationRows;
+    const stamp = (row: any) => ({ ...row, sourceId: row.sourceId ?? source.id });
+    const transportedRows = transported.map(stamp);
+    const displayRowsStamped = displayRows.map(stamp);
+    return { ...source, role: contextOnly ? 'asking_price_context' : source.role,
+      rows: contextOnly ? displayRowsStamped : transportedRows, auditRows: transportedRows };
   });
   const ordered: any[] = [];
-  for (let index = 0; groups.some(group => index < group.rows.length); index += 1) {
-    for (const group of groups) if (group.rows[index]) ordered.push(group.rows[index]);
+  for (let index = 0; groups.some(group => index < group.auditRows.length); index += 1) {
+    for (const group of groups) if (group.auditRows[index]) ordered.push(group.auditRows[index]);
   }
   const stamped = stampCandidateDisplayIntake(ordered, 'item_a', runId);
   const byInput = new Map(ordered.map((row, index) => [row, { ...stamped[index], auditOmittedByCap: index >= 120 }]));
-  return { sources: groups.map(group => ({ ...group, packet: undefined, rows: group.rows.map(row => byInput.get(row)!) })),
+  return { sources: groups.map(group => ({ ...group, packet: undefined, auditRows: undefined, rows: group.rows.map(row => byInput.get(row) ?? row) })),
     submitted: stamped.slice(0, 120), omitted: Math.max(0, ordered.length - 120) };
 }
 function procedure(key: readonly unknown[] | undefined): string | null {
