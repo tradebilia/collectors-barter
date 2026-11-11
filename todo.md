@@ -14,3 +14,5 @@
 - [x] 2026-11-10: Correct candidate title-derived values in metadata comparison; show MATCH when title-derived evidence matches; add a Score column whose row contributions reconcile to the candidate ranking total. Preserve structured conflicts, title-evidence provenance, one-score ranking, and all valuation/source safeguards. Verified with 233 assertions across 8 focused suites, TypeScript no-emit, production build, and diff check.
 
 - [x] 2026-11-10: Replace generic restrictive-source and raw visual/date diagnostics with plain-English explanations that state the exact recorded disposition and concrete reason; retain machine codes only for technical audit. Verified 223 assertions across 7 suites, TypeScript no-emit, production build, and diff check.
+
+- [x] 2026-11-10: Correct the final identity approval gate so generic visual dateMatches=false does not block Movies; keep strict date/variety/mint/denomination checks for Coins. Added canonical approval regression and plain-English blocker translation. Verified 85 directly affected assertions, TypeScript no-emit, production build, and diff check.

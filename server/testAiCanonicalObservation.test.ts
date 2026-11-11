@@ -241,6 +241,14 @@ describe('identity-approval-v1 server authority', () => {
     ]) expect(mint(approvalSale(), finalReview({ visualDifferences: [{ field, targetObservation, candidateObservation, impact: 'hard material conflict' }] }))).toBeNull();
   });
 
+  it('does not treat the generic visual date flag as a Movie identity gate', () => {
+    const movieTarget = { title: 'Batman (1989) Laserdisc', category: 'movies', itemType: 'individual_movie',
+      itemDetails: JSON.stringify({ movieTitle: 'Batman', year: '1989', format: 'LaserDisc' }) };
+    const movieReview = finalReview({ visualEvidence: { identityMatches: true, artworkMatches: true, dateMatches: false } });
+    movieReview.visualAudit = { ...movieReview.visualAudit!, initialEvidence: { identityMatches: true, artworkMatches: true, dateMatches: false }, finalEvidence: { identityMatches: true, artworkMatches: true, dateMatches: false } };
+    expect(mint(approvalSale({ title: 'Batman (1989) Laserdisc Michael Keaton' }), movieReview, movieTarget, movieTarget)).not.toBeNull();
+  });
+
   it('requires the actual reviewed and effective target/image references to agree', () => {
     expect(mint(approvalSale(), finalReview(), { ...target, grade: '9' })).toBeNull();
     expect(mint(approvalSale(), finalReview(), { ...target, itemDetails: JSON.stringify({ ...JSON.parse(target.itemDetails), language: 'Japanese' }) })).toBeNull();
