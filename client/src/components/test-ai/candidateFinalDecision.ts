@@ -1,5 +1,5 @@
 import type { CandidateDisplayRow } from '../../../../shared/testAiCandidateLedger';
-import { candidateExecutionFact, candidateExecutionReceipt, candidateIdentityFact, candidatePricingFact, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException } from '../../../../shared/testAiCandidateStatus';
+import { candidateExecutionAttemptFacts, candidateExecutionFact, candidateExecutionReceipt, candidateIdentityFact, candidatePricingFact, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException } from '../../../../shared/testAiCandidateStatus';
 import { hasMercariUndatedSoldAdmission, mercariPriceContextLabel } from '../../../../shared/testAiMercariTransport';
 
 export type CandidateFinalDecision = { label: string; reason: string; code: string; className: string };
@@ -59,6 +59,17 @@ const finalAnalysisBlockerLabels: Record<string, string> = {
 };
 function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: string[]): string | undefined {
   if (code === 'CURRENT_SALES_PRIMARY') return undefined;
+  const visualResponse = hasActualVisualResponse(row);
+  const visualDispatched = hasActualVisualDispatch(row);
+  if (row.sourceId === 'mercari_sold_comps' && !visualResponse) {
+    const execution = candidateExecutionFact(row);
+    const attemptFacts = candidateExecutionAttemptFacts(row);
+    const attemptFailure = attemptFacts.at(-1)?.failure?.label;
+    const detail = attemptFailure || execution.reason ? ` (${attemptFailure || execution.reason})` : '';
+    return visualDispatched
+      ? `The visual AI was called but did not return a usable review${detail}. Because no visual match was confirmed, this candidate could not proceed to valuation.`
+      : 'The visual AI review was not completed for this candidate. Because no visual match was confirmed, this candidate could not proceed to valuation.';
+  }
   const reasonCodes = new Set([
     ...(row.valuationUse?.sourceAdmission?.blockerCodes ?? []),
     ...(row.valuationUse?.use?.reasonCodes ?? []),

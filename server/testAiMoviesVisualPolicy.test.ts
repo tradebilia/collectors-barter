@@ -57,7 +57,7 @@ describe('Movies-specific product identity policy', () => {
     const result = await run();
     expect(model).toHaveBeenCalledTimes(1);
     expect(policyCount(model.mock.calls[0][0])).toBe(1);
-    expect(model.mock.calls[0][0]).toMatchObject({ maxCompletionTokens: 1800, temperature: 0, response_format: { type: 'json_schema' } });
+    expect(model.mock.calls[0][0]).toMatchObject({ maxCompletionTokens: 3000, temperature: 0, response_format: { type: 'json_schema' } });
     expect(result.listings[0]).toMatchObject({ visualReviewStatus: 'match', metadataMatchScore: 75,
       visualDifferences: [difference], visualExecution: { identity: { result: 'match', origin: 'visual' } } });
     expect(moviesBoxSetVisualScore(candidate(), target())).toEqual(before);

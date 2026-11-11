@@ -7365,7 +7365,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
         const attempt = beginAttempt(candidate.candidateIndex, "initial", responseFormat.type);
         try {
-          const response = await invokeVisualReview({ provider: args.visualProvider, model: visualReviewModel(args.visualProvider, "initial"), messages: [{ role: "user", content }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
+          const response = await invokeVisualReview({ provider: args.visualProvider, model: visualReviewModel(args.visualProvider, "initial"), messages: [{ role: "user", content }], maxCompletionTokens: 3000, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
           const raw = response.choices[0]?.message?.content;
           text = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
           attempt.outcome = "no_decision";
@@ -7509,7 +7509,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
         const attempt = beginAttempt(candidate.candidateIndex, "high_resolution_retry", responseFormat.type);
         try {
-          const response = await invokeVisualReview({ provider: args.visualProvider, model: visualReviewModel(args.visualProvider, "retry", needsFocusedGradeEscalation), messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 1800, reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
+          const response = await invokeVisualReview({ provider: args.visualProvider, model: visualReviewModel(args.visualProvider, "retry", needsFocusedGradeEscalation), messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 3000, reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
           const raw = response.choices[0]?.message?.content;
           const galleryText = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
           attempt.outcome = "no_decision";
@@ -7561,7 +7561,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
                 },
               ],
             }],
-            maxCompletionTokens: 1800,
+            maxCompletionTokens: 3000,
             temperature: 0,
             response_format: { type: "json_object" as const },
           }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);

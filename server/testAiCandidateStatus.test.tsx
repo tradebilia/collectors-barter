@@ -72,6 +72,18 @@ describe('Stage 5 actual status render component', () => {
     expect(decision.reason).not.toContain('REQUIRED_APPROVAL_MISSING');
     expect(decision.reason).not.toContain('SOURCE_DISPOSITION_RESTRICTIVE');
   });
+  it('reports the actual Mercari visual failure first and does not blame permitted date/provenance cascades', () => {
+    const decision = candidateFinalDecision({ sourceId: 'mercari_sold_comps', requestedMode: 'sold', visualReviewStatus: 'not_reviewed',
+      visualExecution: receipt({ state: 'dispatched_inconclusive', reasonCode: 'provider_error', identity: { origin: 'none', result: 'not_established' },
+        attempts: [{ ordinal: 1, stage: 'initial', format: 'json_object', outcome: 'no_decision', failureCode: 'response_truncated', finishReason: 'length' }] }),
+      valuationUse: { use: { code: 'REVIEW_REQUIRED', reasonCodes: ['PROVENANCE_UNVERIFIED', 'INVALID_DATE', 'REQUIRED_APPROVAL_MISSING'], primaryMarketSales: false },
+        sourceAdmission: { blockerCodes: ['PROVENANCE_UNVERIFIED', 'INVALID_DATE', 'REQUIRED_APPROVAL_MISSING'], reasonDetails: ['sale date is missing, invalid, or future-dated'] } } });
+    expect(decision.reason).toContain('visual AI was called but did not return a usable review');
+    expect(decision.reason).toContain('Response truncated — output limit reached');
+    expect(decision.reason).toContain('no visual match was confirmed');
+    expect(decision.reason).not.toContain('sale date is missing');
+    expect(decision.reason).not.toContain('server provenance was not verified');
+  });
   it('preserves eight metadata columns, Potential Points, source highlights, target/candidate images and one master list', () => {
     const frozen = freezeMetadataRankingPopulation([{ title: target.title, imageUrl: 'https://example.test/candidate.jpg', currency: 'CAD', price: 100 }], { sourceId: 'fixture', populationId: 'rank-run' });
     const row = { ...frozen.listings[0], metadataMatchScore: 100, metadataFieldComparisons: [{ targetField: 'Player', targetValue: 'Ken Griffey Jr', candidateField: 'player', candidateValue: 'Ken Griffey Jr', titleDerivedValue: 'Ken Griffey Jr', status: 'match', rankingContribution: { matched: true, structured: true, titleDerived: true, awardedPoints: 20, sources: ['structured', 'title'] } }] };
