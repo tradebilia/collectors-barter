@@ -30,6 +30,11 @@ export function isConfirmedCurrentMarketMatch(row: any): boolean {
     || row?.visualIdentityResult === 'match';
 }
 
+function isCurrentMarketContextCandidate(row: any): boolean {
+  return isConfirmedCurrentMarketMatch(row)
+    || (row?.evidenceDisposition === 'valuation_eligible' && row?.visualReviewStatus !== 'mismatch');
+}
+
 function candidatePrice(row: any): number | null {
   for (const value of [row?.price, row?.soldPrice, row?.salePrice, row?.finalPrice, row?.transactionPrice, row?.currentPrice, row?.current_price, row?.amount]) {
     const raw = value && typeof value === 'object' ? value.value ?? value.amount ?? value.price : value;
@@ -53,7 +58,7 @@ export function summarizeCurrentMarketPrices(rows: any[]): CurrentMarketPriceSum
     kind: row?.kind,
     saleStatus: row?.saleStatus,
     priceBasis: row?.priceBasis,
-  }) && isConfirmedCurrentMarketMatch(row)).map(candidatePrice).filter((price): price is number => price !== null);
+  }) && isCurrentMarketContextCandidate(row)).map(candidatePrice).filter((price): price is number => price !== null);
   if (!prices.length) return { count: 0, low: null, high: null, average: null };
   return { count: prices.length, low: Math.min(...prices), high: Math.max(...prices), average: prices.reduce((total, price) => total + price, 0) / prices.length };
 }
@@ -81,7 +86,7 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
     kind: row?.kind,
     saleStatus: row?.saleStatus,
     priceBasis: row?.priceBasis,
-  }) && isConfirmedCurrentMarketMatch(row));
+  }) && isCurrentMarketContextCandidate(row));
   const currentMarketPriceSummary = summarizeCurrentMarketPrices(currentMarketRows);
   const resolved = displayed.filter(row => row.valuationUse?.use?.code).length;
   const valuationNotRun = !context.outcome;

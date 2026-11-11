@@ -79,6 +79,12 @@ describe('Evidence Review is the complete candidate decision view', () => {
       { sourceId: 'ebay_active', currentPrice: { value: '19.99', currency: 'USD' }, visualReviewStatus: 'match' },
     ])).toEqual({ count: 1, low: 19.99, high: 19.99, average: 19.99 });
   });
+  it('includes a source-stage eligible undispatched active asking price as context', () => {
+    expect(summarizeCurrentMarketPrices([
+      { sourceId: 'ebay_active', price: 200, saleStatus: 'active', evidenceDisposition: 'valuation_eligible', visualReviewStatus: 'not_reviewed' },
+      { sourceId: 'ebay_active', price: 999, saleStatus: 'active', evidenceDisposition: 'valuation_eligible', visualReviewStatus: 'mismatch' },
+    ])).toEqual({ count: 1, low: 200, high: 200, average: 200 });
+  });
   it('renders the current-market count and asking-price summary for active listings', () => {
     const html = review([{ id: 'ebay_active', label: 'eBay Active', packet: { listings: [{ title: 'Active listing', price: 19.99, saleStatus: 'active', visualReviewStatus: 'match' }, { title: 'Unmatched active listing', price: 24.99, saleStatus: 'active', visualReviewStatus: 'mismatch' }] } }]);
     expect(html).toContain('Current market context');

@@ -241,4 +241,15 @@ describe('candidate final decision presentation (no filtering or pricing authori
     expect(active.reason).not.toContain('PROVENANCE_UNVERIFIED');
     expect(active.reason).not.toContain('INVALID_DATE');
   });
+  it('keeps an undispatched price-bearing active listing visible as current-market context', () => {
+    const active = candidateFinalDecision({
+      sourceId: 'ebay_active', saleStatus: 'active', priceBasis: 'asking', price: 200, currency: 'USD',
+      metadataMatchScore: 70, candidatePricingLink: 'not_submitted',
+      visualExecution: { version: 1, state: 'completed', reasonCode: 'workflow_context_only', selectedForReview: false, attempts: [] },
+    });
+    expect(active.label).toBe('CURRENT MARKET CONTEXT — NOT VISUALLY REVIEWED');
+    expect(active.reason).toContain('current asking-price activity at USD 200');
+    expect(active.reason).toContain('not sent for image review');
+    expect(active.reason).toContain('not used to set the primary sold-comps value');
+  });
 });

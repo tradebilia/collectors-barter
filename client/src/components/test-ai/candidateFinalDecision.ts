@@ -193,10 +193,24 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
   const evidence = evidenceReasons(row);
   const contextReason = explicitContextReason(row);
   const activeContextMatch = isActiveMarketContext(row) && hasActualVisualResponse(row) && identity.code === 'match';
+  const activeContextPrice = formatCandidateDisplayPrice(row);
+  const activeContextListing = isActiveMarketContext(row)
+    && activeContextPrice !== 'Price unavailable'
+    && !isHardCandidateDisplayException(row)
+    && !['mismatch', 'deterministic_conflict'].includes(identity.code)
+    && row.evidenceDisposition !== 'pre_vision_score_excluded';
   if (activeContextMatch && pricing.code !== 'CURRENT_SALES_PRIMARY') {
     return { label: 'MATCH CONFIRMED — CURRENT MARKET CONTEXT',
-      reason: `Image match confirmed. This eBay active listing is current asking-price activity${formatCandidateDisplayPrice(row) !== 'Price unavailable' ? ` at ${formatCandidateDisplayPrice(row)}` : ''}, not a completed sale. It is retained for current-market context and commentary, but it is not used to set the primary sold-comps value.`,
+      reason: `Image match confirmed. This eBay active listing is current asking-price activity at ${activeContextPrice}, not a completed sale. It is retained for current-market context and commentary, but it is not used to set the primary sold-comps value.`,
       code: 'ACTIVE_MARKET_CONTEXT_MATCH', className: green };
+  }
+  if (activeContextListing && pricing.code !== 'CURRENT_SALES_PRIMARY') {
+    const reviewed = hasActualVisualResponse(row);
+    return { label: reviewed ? 'CURRENT MARKET CONTEXT' : 'CURRENT MARKET CONTEXT — NOT VISUALLY REVIEWED',
+      reason: reviewed
+        ? `This active listing shows current asking-price activity at ${activeContextPrice}, not a completed sale. It is retained as market context and is not used to set the primary sold-comps value.`
+        : `This active listing shows current asking-price activity at ${activeContextPrice}. It was not sent for image review, so it is context only and is not used to set the primary sold-comps value.`,
+      code: 'ACTIVE_MARKET_CONTEXT', className: reviewed ? green : amber };
   }
   if (row.valuationUse?.use?.code) {
     const primary = pricing.code === 'CURRENT_SALES_PRIMARY';
