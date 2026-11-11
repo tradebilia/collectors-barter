@@ -77,6 +77,15 @@ function fieldComparable(field: string, value: string): string {
     : compact(value);
 }
 
+function movieMaterialCondition(value: string): 'sealed' | 'for_parts' | 'damaged' | 'incomplete' | null {
+  const normalized = key(value);
+  if (/\b(?:sealed|factory sealed|unopened)\b/.test(normalized)) return 'sealed';
+  if (/\b(?:for parts|parts only)\b/.test(normalized)) return 'for_parts';
+  if (/\b(?:damaged|broken|unplayable)\b/.test(normalized)) return 'damaged';
+  if (/\b(?:incomplete|missing (?:disc|disk|manual|insert|component|part)|disc only|disk only|case only)\b/.test(normalized)) return 'incomplete';
+  return null;
+}
+
 function parseDetails(value: unknown): MetadataRecord {
   if (!value) return {};
   if (typeof value === 'object' && !Array.isArray(value)) return value as MetadataRecord;
@@ -403,6 +412,20 @@ export function findMaterialMetadataConflicts(
       const candidatePrintRun = printRunDenominator(directCandidateValue);
       if (targetPrintRun && candidatePrintRun && targetPrintRun !== candidatePrintRun) {
         conflicts.push({ field, targetValue, candidateValue: directCandidateValue, reason: 'candidate metadata declares a different serial-number print-run denominator' });
+      }
+      continue;
+    }
+    if (category === 'movies' && /^(?:condition|mediaCondition)$/i.test(field)) {
+      // Marketplace labels such as Excellent, Good, Fair, Used, and Pre-Owned
+      // are subjective quality descriptions. They must reach visual review,
+      // not become hard identity exclusions. Only material product-state
+      // declarations remain hard: sealed/opened, for-parts, damaged, or
+      // incomplete/missing-component forms.
+      const targetMaterial = movieMaterialCondition(targetValue);
+      const candidateMaterial = movieMaterialCondition(directCandidateValue);
+      if (targetMaterial && candidateMaterial && targetMaterial === candidateMaterial) continue;
+      if (targetMaterial || candidateMaterial) {
+        conflicts.push({ field, targetValue, candidateValue: directCandidateValue, reason: 'Movie material condition declares a hard product-state conflict' });
       }
       continue;
     }

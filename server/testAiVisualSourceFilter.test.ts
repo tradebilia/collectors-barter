@@ -1651,8 +1651,9 @@ describe("visual source filter", () => {
       itemType: "collection",
       imageUrl: "https://example.com/moonlighting-preowned.jpg",
     };
-    expect(buildDeclaredIdentityReviews([preOwnedCandidate], movieBoxSetTarget)).toHaveLength(1);
+    expect(buildDeclaredIdentityReviews([preOwnedCandidate], movieBoxSetTarget)).toEqual([]);
     expect(buildDeclaredIdentityReviews([preOwnedCandidate], movieBoxSetTarget, { ignoreSubjectiveConditionDifferences: true })).toEqual([]);
+    expect(prepareUniversalVisualCandidates([preOwnedCandidate], movieBoxSetTarget).contextReasons).toEqual(new Map());
   });
 
   it("hard-excludes raw-versus-graded, explicit grade, and grading-company conflicts before visual review", async () => {
@@ -4065,7 +4066,7 @@ describe("visual source filter", () => {
     "disney_pins",
     "vintage_toys",
     "music",
-  ])("allows ordinary condition differences for Mercari visual review across %s", (category) => {
+  ])("allows ordinary condition differences for visual review across %s", (category) => {
     const targetMetadata = buildVisualTargetMetadata({
       title: "Example collectible",
       category,
@@ -4077,7 +4078,7 @@ describe("visual source filter", () => {
       itemDetails: JSON.stringify({ condition: "good" }),
       imageUrl: "https://example.com/candidate.jpg",
     };
-    expect(buildDeclaredIdentityReviews([candidate], targetMetadata)).toHaveLength(category === "music" ? 0 : 1);
+    expect(buildDeclaredIdentityReviews([candidate], targetMetadata)).toHaveLength(category === "movies" || category === "music" ? 0 : 1);
     expect(buildDeclaredIdentityReviews(
       [candidate],
       targetMetadata,
