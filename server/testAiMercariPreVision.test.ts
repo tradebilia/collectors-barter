@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { annotateSoldComparableCandidate, assessSoldCompsPreVisionCandidates, mercariVideoGameVisualCap, rankMercariVideoGameCandidates, rankVideoGameCandidates, selectMercariVideoGameVisualCandidates, targetVideoGamePackaging } from './testAIRouter';
+import { annotateSoldComparableCandidate, assessSoldCompsPreVisionCandidates, hasUsableRecoveredMercariMatch, mercariVideoGameVisualCap, rankMercariVideoGameCandidates, rankVideoGameCandidates, selectMercariVideoGameVisualCandidates, targetVideoGamePackaging } from './testAIRouter';
 
 const routerSource = readFileSync(resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
 const pageSource = readFileSync(resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
@@ -12,6 +12,17 @@ const masterListSource = readFileSync(resolve(import.meta.dirname, '../client/sr
 const sourceDisplaySource = readFileSync(resolve(import.meta.dirname, '../shared/testAiSourceDisplay.ts'), 'utf8');
 
 describe('Mercari Video Game pre-visual filtering', () => {
+  it('does not discard a usable matched response just because an earlier attempt timed out', () => {
+    const recovered = { processingDiagnostic: { code: 'mercari_processing_unavailable' }, visualFilter: { listings: [{
+      visualReviewStatus: 'match', visualExecution: { attempts: [{ outcome: 'timed_out' }, { outcome: 'usable_review' }] },
+    }] } };
+    const timedOutOnly = { processingDiagnostic: { code: 'mercari_processing_unavailable' }, visualFilter: { listings: [{
+      visualReviewStatus: 'unreadable', visualExecution: { attempts: [{ outcome: 'timed_out' }] },
+    }] } };
+    expect(hasUsableRecoveredMercariMatch(recovered)).toBe(true);
+    expect(hasUsableRecoveredMercariMatch(timedOutOnly)).toBe(false);
+  });
+
   it('keeps the title gate opt-in so eBay behavior is not changed by this Mercari scope', () => {
     const result = assessSoldCompsPreVisionCandidates({
       category: 'video_games',
@@ -81,9 +92,9 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(section).toContain("targetImageUrl: safeTargetImage");
     expect(section).toContain("visualReviewRequired: true");
     expect(section).toContain('finalizeMercariContextResult');
-    expect(routerSource).toContain('audit: { ...payload.audit, ledger, valuationEligible: 0, completedSaleCount: 0 }');
+    expect(routerSource).toContain('audit: { ...payload.audit, ledger, valuationEligible: eligibleCount, completedSaleCount: eligibleCount }');
     expect(section).not.toContain("if (!['disney_pins', 'coins'].includes(normalizedCategory) && !input.imageUrl)");
-    expect(pageSource).toContain('Final amount and sale-event date unverified; no Mercari valuation metrics or admitted completed sales.');
+    expect(pageSource).toContain('Sold-Comps Mercari reported sold prices; server-issued, image-confirmed comps may support valuation under the Mercari date exception. Sale date remains Unknown; legacy, active and unqualified rows stay context/review only.');
   });
 
   it('orders every ranked candidate-analysis surface by rank before rendering', () => {
@@ -127,7 +138,7 @@ describe('Mercari Video Game pre-visual filtering', () => {
   return [data?.audit?.ledger, data?.listings, data?.preVisionExcludedListings,
     data?.visualFilter?.contextListings, data?.context].map((group) => Array.isArray(group) ? group : []);
 }`);
-    expect(pageSource).toContain("<CandidateMasterList listings={retainedMaster} sourceLabel={isMercari ? 'Mercari listing context' : `${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />");
+    expect(pageSource).toContain("<CandidateMasterList listings={retainedMaster} sourceLabel={isMercari ? 'Mercari sold comps and listing context' : `${marketplace} completed sales`} targetImageUrl={item.primaryPhotoUrl} />");
     expect(pageSource).toContain(`function mergeMasterCandidates(...groups: any[][]): any[] {
   return mergeCandidateDisplayGroups(groups);
 }`);

@@ -889,8 +889,21 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
     priceContext: 'sold_listing_reported', visualPricingNotice: 'Reported sold price; sale date Unknown — Mercari date exception. Final valuation selection still applies.' };
 }
 
+/** A recovered diagnostic may proceed only when the same payload contains an
+ * actual usable visual review for a matching candidate. A timeout alone never
+ * grants approval; this prevents an earlier failed attempt from erasing a
+ * later usable match. */
+export function hasUsableRecoveredMercariMatch(payload: any): boolean {
+  const groups = [payload?.visualFilter?.listings, payload?.visualFilter?.contextListings,
+    payload?.visualReviewListings, payload?.listings, payload?.contextListings]
+    .flatMap(group => Array.isArray(group) ? group : []);
+  return groups.some(row => row?.visualReviewStatus === 'match'
+    && Array.isArray(row?.visualExecution?.attempts)
+    && row.visualExecution.attempts.some((attempt: any) => attempt?.outcome === 'usable_review'));
+}
+
 /** Apply one private source observation to every branch; never refill submission slots. */
-function finalizeMercariContextResult(payload: any, originals: readonly AdditionalSoldCompsListing[], approvalContext?: MercariApprovalContext) {
+export function finalizeMercariContextResult(payload: any, originals: readonly AdditionalSoldCompsListing[], approvalContext?: MercariApprovalContext) {
   const byId = new Map(originals.map(row => [row.saleId, row]));
   const observed = (row: any) => {
     const original = byId.get(row.saleId);
@@ -902,7 +915,9 @@ function finalizeMercariContextResult(payload: any, originals: readonly Addition
     if (!original) return mercariContextProjection(row, observed(row));
     if (!projections.has(row.saleId)) {
       const current = { ...row, ...advanced.get(row.saleId) };
-      projections.set(row.saleId, approvalContext && !payload.processingDiagnostic && !payload.error
+      const recoveredUsableMatch = hasUsableRecoveredMercariMatch(payload);
+      projections.set(row.saleId, approvalContext && !payload.error
+        && (!payload.processingDiagnostic || recoveredUsableMatch)
         ? sealMercariFinalVisualListing(current, original, approvalContext) : mercariContextProjection(current, observed(row)));
     }
     return projections.get(row.saleId);

@@ -95,6 +95,17 @@ describe('Mercari undated sold=true actual route admission', () => {
     expect(row).toMatchObject({ itemUrl: 'https://www.mercari.com/us/item/m54069072197/', valuationEligible: true, evidenceDisposition: 'valuation_eligible' });
     expect(row.provenanceToken).toBeTruthy(); expect(row.identityApproval).toBeTruthy();
   });
+  it('seals a real route-produced match after an earlier visual failure while retaining the diagnostic', async () => {
+    mocks.llm.mockRejectedValueOnce(new Error('synthetic provider timeout'));
+    const recovered: any = await caller().getMercariSoldCompsData(input());
+    const row = recovered.audit.ledger[0];
+    expect(row.valuationEligible).toBe(true);
+    expect(row.provenanceToken).toBeTruthy();
+    expect(row.identityApproval).toBeTruthy();
+    expect(recovered.visualFilter?.status).toBe('applied');
+    expect(row.visualExecution.attempts.some((attempt: any) => attempt.outcome === 'error' && attempt.failureCode === 'provider_request_failed')).toBe(true);
+    expect(row.visualExecution.attempts.some((attempt: any) => attempt.outcome === 'usable_review')).toBe(true);
+  });
   it('runs final Item A audit with the signed undated comp and no Item B or additional provider/model calls', async () => {
     const source: any = await caller().getMercariSoldCompsData(input());
     const fetchCount = mocks.fetch.mock.calls.length, modelCount = mocks.llm.mock.calls.length;
