@@ -5015,7 +5015,7 @@ export function videoGameVisualCap(score: number): number {
   return 0;
 }
 const MOVIES_INDIVIDUAL_SCORE_FIELDS = [
-  ['movieTitle', 25], ['format', 20], ['releaseYear', 15], ['edition', 15], ['region', 10], ['sealed', 5], ['gradingCompany', 5], ['grade', 5],
+  ['movieTitle', 25], ['format', 25], ['releaseYear', 15], ['edition', 15], ['region', 5], ['sealed', 5], ['gradingCompany', 5], ['grade', 5],
 ] as const;
 const MOVIES_BOX_SET_SCORE_FIELDS = [
   ['boxSetName', 30], ['format', 20], ['numberOfMovies', 15], ['edition', 15], ['sealed', 10], ['gradingDetails', 10],
@@ -5067,10 +5067,10 @@ export function moviesIndividualVisualScore(listing: VisualSourceCandidate, targ
   const awards: RankingAward[] = [];
   const add = (field: typeof MOVIES_INDIVIDUAL_SCORE_FIELDS[number][0], points: number, result: ScorePredicate) => { if (scoreResult(result) === true) { score += points; matched.push(field); awards.push(scoreAward(field, points, result)); } else if (scoreResult(result) === null) unknown.push(field); };
   add('movieTitle', 25, movieScoreValueMatches(firstMeaningfulValue(target.title, target.movieTitle, extractTargetTitle(targetMetadata)), listing, ['title', 'movieTitle'], [], true));
-  add('format', 20, movieScoreFormatMatches(target.format, listing));
+  add('format', 25, movieScoreFormatMatches(target.format, listing));
   add('releaseYear', 15, movieScoreValueMatches(firstMeaningfulValue(target.releaseYear, target.year), listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/]));
   add('edition', 15, movieScoreValueMatches(target.edition, listing, ['edition', 'releaseType'], [], true));
-  add('region', 10, movieScoreValueMatches(target.region, listing, ['region', 'regionCode'], [/(?:Region\s*[0-9A-C]|NTSC|PAL)/i]));
+  add('region', 5, movieScoreValueMatches(target.region, listing, ['region', 'regionCode'], [/(?:Region\s*[0-9A-C]|NTSC|PAL)/i]));
   add('sealed', 5, movieScoreBooleanMatches(firstMeaningfulValue(target.sealed, target.sealedStatus), listing));
   add('gradingCompany', 5, coinGradingCompanyMatches(targetMetadata, normalizeVisualSourceCandidate(listing)));
   add('grade', 5, coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing)));

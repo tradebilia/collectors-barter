@@ -307,8 +307,8 @@ describe('Stage 6 actual Mercari adapter -> actual source route handoff', () => 
     const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
     const row = retained(result).find(candidate => candidate.saleId === 'mercari:conan-title-route');
     expect(row).toBeDefined();
-    expect(row.metadataMatchScore).toBe(55);
-    expect(row.metadataRanking.score).toBe(55);
+    expect(row.metadataMatchScore).toBe(60);
+    expect(row.metadataRanking.score).toBe(60);
     expect(row.metadataScoreAwards).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'movieTitle', awardedPoints: 25 })]));
     expect(row.metadataFieldComparisons.find((entry: Row) => entry.targetField === 'Movie title'))
       .toMatchObject({ targetValue: 'Conan The Destroyer', rankingContribution: { awardedPoints: 25 } });

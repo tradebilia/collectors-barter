@@ -83,8 +83,8 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     const gradeRow = rows.find(row => row.fieldKey === 'grade');
     expect(gradeRow).toMatchObject({ titleDerivedValue: '8', titleDerivedStatus: 'match' });
     expect(gradeRow?.rankingContribution).toMatchObject({ matched: true, titleDerived: true, awardedPoints: 5 });
-    expect(scored.score).toBe(55);
-    expect(rows.reduce((total, row) => total + (row.rankingContribution?.awardedPoints ?? 0), 0)).toBe(55);
+    expect(scored.score).toBe(60);
+    expect(rows.reduce((total, row) => total + (row.rankingContribution?.awardedPoints ?? 0), 0)).toBe(60);
   });
   it('renders CGC 8 A as numeric 8 and awards the matching title-grade points', () => {
     const target = buildVisualTargetMetadata({ title: 'Canon CGC 8.0 VHS Tape', category: 'movies', itemType: 'individual_movie', fullItemDetails: {
@@ -98,12 +98,12 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     const gradeRow = (output.metadataFieldComparisons ?? []).find(row => row.fieldKey === 'grade');
     expect(gradeRow).toMatchObject({ titleDerivedValue: '8', titleDerivedStatus: 'match' });
     expect(gradeRow?.rankingContribution).toMatchObject({ matched: true, titleDerived: true, awardedPoints: 5 });
-    expect(scored.score).toBe(55);
-    expect((output.metadataFieldComparisons ?? []).reduce((total, row) => total + (row.rankingContribution?.awardedPoints ?? 0), 0)).toBe(55);
+    expect(scored.score).toBe(60);
+    expect((output.metadataFieldComparisons ?? []).reduce((total, row) => total + (row.rankingContribution?.awardedPoints ?? 0), 0)).toBe(60);
     const rendered = renderToStaticMarkup(createElement(MetadataComparisonTable, { listing: output }));
     expect(rendered).toContain('Movie title');
     expect(rendered).toMatch(/data-ranking-score="true">25<\/td>/);
-    expect(rendered).toContain('data-ranking-score-total="true">55<');
+    expect(rendered).toContain('data-ranking-score-total="true">60<');
   });
   it('attaches the Movie title award to a generic MATCH Title row for individual_movie', () => {
     const target = buildVisualTargetMetadata({ title: 'Canon CGC 8.0 VHS Tape', category: 'individual_movie', itemType: 'individual_movie', fullItemDetails: {
@@ -126,15 +126,15 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
       title: 'Conan CGC 8.0 VHS Tape', format: 'VHS', isGraded: 'Yes', certificationCompany: 'CGC', grade: '8',
     } });
     const staleAwards = [
-      { field: 'format', source: 'title' as const, awardedPoints: 20 },
+      { field: 'format', source: 'title' as const, awardedPoints: 25 },
       { field: 'gradingCompany', source: 'title' as const, awardedPoints: 5 },
       { field: 'grade', source: 'title' as const, awardedPoints: 5 },
     ];
     const output = withMetadataFieldComparisons(target, {
-      title: 'Conan CGC 8.0 A VHS Tape', format: 'VHS', metadataMatchScore: 30, metadataScoreAwards: staleAwards,
+      title: 'Conan CGC 8.0 A VHS Tape', format: 'VHS', metadataMatchScore: 35, metadataScoreAwards: staleAwards,
     });
     const titleRow = output.metadataFieldComparisons.find(row => row.targetField === 'Movie title');
-    expect(output.metadataMatchScore).toBe(55);
+    expect(output.metadataMatchScore).toBe(60);
     expect(output.metadataScoreAwards).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'movieTitle', awardedPoints: 25 })]));
     expect(titleRow?.rankingContribution).toMatchObject({ matched: true, titleDerived: true, awardedPoints: 25 });
   });
@@ -148,7 +148,7 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     const candidate = { title: 'Conan CGC 8.0 A VHS Tape' };
     const scored = moviesIndividualVisualScore(candidate, target);
     expect(scored.awards.find(award => award.field === 'movieTitle')?.awardedPoints).toBe(25);
-    expect(scored.score).toBe(55);
+    expect(scored.score).toBe(60);
     const output = withMetadataFieldComparisons(target, { ...candidate, metadataMatchScore: scored.score, metadataScoreAwards: scored.awards });
     const identityRows = output.metadataFieldComparisons.filter(row => row.targetField === 'Movie title');
     expect(identityRows).toHaveLength(1);
@@ -157,10 +157,10 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     const potentialTotal = output.metadataFieldComparisons.reduce((total, row) => total + (row.rankingContribution?.potentialPoints ?? 0), 0);
     expect(potentialTotal).toBe(100);
     expect(output.metadataFieldComparisons.find(row => row.fieldKey === 'edition')).toMatchObject({ targetValue: 'Unknown', rankingContribution: { potentialPoints: 15 } });
-    expect(output.metadataFieldComparisons.find(row => row.fieldKey === 'region')).toMatchObject({ targetValue: 'Unknown', rankingContribution: { potentialPoints: 10 } });
+    expect(output.metadataFieldComparisons.find(row => row.fieldKey === 'region')).toMatchObject({ targetValue: 'Unknown', rankingContribution: { potentialPoints: 5 } });
     const rendered = renderToStaticMarkup(createElement(MetadataComparisonTable, { listing: output }));
     expect(rendered).toMatch(/data-ranking-score="true">25<\/td>/);
-    expect(rendered).toContain('data-ranking-score-total="true">55<');
+    expect(rendered).toContain('data-ranking-score-total="true">60<');
     expect(rendered).toContain('potential 100/100');
     for (const title of ['Conan The Barbarian CGC 8.0 A VHS Tape', 'Rambo CGC 8.0 A VHS Tape']) {
       expect(moviesIndividualVisualScore({ title }, target).awards.some(award => award.field === 'movieTitle')).toBe(false);
