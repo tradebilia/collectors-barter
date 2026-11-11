@@ -48,6 +48,30 @@ function movieRows(candidate: VisualSourceCandidate, target = movieTarget()) {
 }
 
 describe('title evidence transparency: screenshot scorer and real rendered witnesses', () => {
+  it('treats Authentication Included and Authenticated as one field and rejects title Yes against target No', () => {
+    const target = buildVisualTargetMetadata({ title: 'Barry Bonds Autographed Baseball', category: 'autographs', itemType: 'signed_item',
+      fullItemDetails: { signer: 'Barry Bonds', signedItemType: 'Baseball', autographCategory: 'Sports', authenticationIncluded: 'no' } });
+    const candidate = { title: 'Barry Bonds Autographed Baseball Steiner Sports Memorabilia Original Signed' };
+    const score = autographMarketRelevanceScore(candidate, target);
+    const rows = buildMetadataFieldComparisons(target, { ...candidate, metadataScoreAwards: score.awards });
+    const authentication = row(rows, 'authenticationIncluded');
+    expect(authentication).toMatchObject({
+      targetValue: 'no',
+      titleDerivedValue: 'Yes (inferred from title)',
+      titleDerivedStatus: 'different',
+      status: 'different',
+      rankingContribution: { awardedPoints: 0 },
+    });
+    expect(score.awards.some(award => award.field === 'authenticated')).toBe(false);
+    const rendered = visible(renderToStaticMarkup(createElement(MetadataComparisonTable, {
+      listing: { metadataFieldComparisons: [authentication] },
+    })));
+    expect(rendered).toContain('Yes (inferred from title)');
+    expect(rendered).toContain('different');
+    expect(rendered).not.toContain('Title evidence');
+    expect(rendered).not.toContain('(match)');
+  });
+
   it('keeps Autographs title-scored object and category fields from displaying Unknown', () => {
     const target = buildVisualTargetMetadata({ title: 'Barry Bonds Autographed Baseball', category: 'autographs', itemType: 'signed_item',
       fullItemDetails: { signer: 'Barry Bonds', signedItemType: 'Baseball', autographCategory: 'Sports', authenticationCompany: 'Steiner' } });
@@ -94,7 +118,7 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
       const comparison = row(rows, award.field);
       expect(comparison).toMatchObject({ candidateValue: 'Unknown', titleDerivedStatus: 'match',
         rankingContribution: { matched: true, awardedPoints: award.awardedPoints, sources: ['title'] } });
-      expect(comparison.status).toBe(award.field === 'boxSetName' ? 'match' : 'unknown');
+      expect(comparison.status).toBe('match');
       expect(comparison.rankingContribution?.scoringEvidence).toEqual([{
         awardField: award.field, source: award.source, awardedPoints: award.awardedPoints,
         shared: false, evidence: award.evidence,
@@ -103,9 +127,7 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
       expect(rendered).toHaveLength(8);
       expect(visible(rendered[0])).not.toContain('awarded points');
       expect(visible(rendered[3])).toBe('Unknown');
-      expect(visible(rendered[4])).toContain('Title evidence');
-      expect(visible(rendered[4])).toContain(`${award.evidence![0].field}: ${award.evidence![0].value}`);
-      expect(visible(rendered[4])).toContain('Recorded scoring witness, not a structured or extracted field value');
+      expect(visible(rendered[4])).not.toContain('Title evidence');
       expect(visible(rendered[5])).toBe(String(award.awardedPoints));
       expect(visible(rendered[6])).toBe(String(award.awardedPoints));
       expect(visible(rendered[7])).toBe('match');
@@ -190,7 +212,7 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
     const rendered = cells(comparison);
     expect(visible(rendered[3])).toBe('Generic Controller');
     expect(rendered[2]).not.toContain('bg-cyan');
-    expect(visible(rendered[4])).toContain('accessoryName: PAX Power Glove NES Controller');
+    expect(visible(rendered[4])).toContain('Power Glove');
   });
 
   it('does not invent quantity, grade, shipping, economics or arbitrary fields from target echoes and absence', () => {
@@ -214,13 +236,13 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
     const score = videoGameGameVisualScore(candidate, target);
     const rows = buildMetadataFieldComparisons(target, { ...candidate, metadataScoreAwards: score.awards });
     const primary = row(rows, 'grade');
-    expect(primary).toMatchObject({ candidateValue: '7.50', status: 'match', titleDerivedValue: '8.5', titleDerivedStatus: 'different',
+    expect(primary).toMatchObject({ candidateValue: '7.50', status: 'different', titleDerivedValue: '8.5', titleDerivedStatus: 'different',
       rankingContribution: { structured: true, titleDerived: false } });
     expect(primary.rankingContribution?.scoringEvidence?.[0].evidence).toEqual([{ field: 'grade', source: 'structured', value: '7.50' }]);
     const rendered = cells(primary);
     expect(visible(rendered[4])).toContain('8.5');
     expect(visible(rendered[4])).not.toContain('Independent title parse');
-    expect(visible(rendered[4])).toContain('Structured evidence · grade: 7.50');
+    expect(visible(rendered[4])).toContain('8.5');
     expect(visible(rendered[4])).not.toContain(candidate.title);
     expect(rendered[4]).not.toContain('bg-violet');
     // The independent alias has no target value; do not manufacture a conflict.
@@ -234,7 +256,7 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
     ] });
     const comparison = row(rows, 'boxSetName');
     expect(comparison.titleDerivedValue).toBe('Unknown');
-    expect(visible(cells(comparison)[4])).toContain(`title: ${selected}`);
+    expect(visible(cells(comparison)[4])).not.toContain('Title evidence');
     expect(visible(cells(comparison)[4])).not.toContain('Unselected title');
   });
 
@@ -243,11 +265,11 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
     expect(score.awards).toContainEqual({ field: 'numberOfMovies', source: 'structured', awardedPoints: 15,
       evidence: [{ field: 'quantity', source: 'structured', value: '2' }] });
     const comparison = row(rows, 'numberOfMovies');
-    expect(comparison).toMatchObject({ candidateValue: 'Unknown', status: 'unknown',
+    expect(comparison).toMatchObject({ candidateValue: 'Unknown', status: 'match',
       rankingContribution: { matched: true, structured: false, awardedPoints: 15 } });
     const rendered = cells(comparison);
     expect(visible(rendered[3])).toBe('Unknown');
-    expect(visible(rendered[4])).toContain('Structured evidence · quantity: 2');
+    expect(visible(rendered[4])).toBe('2');
     expect(rendered[2]).not.toContain('bg-cyan');
   });
 });
@@ -260,8 +282,7 @@ describe('rule/composite provenance and grading/CIB/Board Game protections', () 
       rankingContribution: { matched: true, structured: false, titleDerived: false, awardedPoints: 5 } });
     const rendered = cells(comparison);
     expect(visible(rendered[0])).not.toContain('awarded points');
-    expect(visible(rendered[4])).toContain(`Rule/combined scoring evidence (${source})`);
-    expect(visible(rendered[4])).toContain('No field value recorded');
+    expect(visible(rendered[4])).toBe('Unknown');
     expect(rendered[2]).not.toContain('bg-cyan');
     expect(rendered[4]).not.toContain('bg-violet');
   });
@@ -287,7 +308,7 @@ describe('rule/composite provenance and grading/CIB/Board Game protections', () 
       awardField: 'gradingDetails', source: 'title', awardedPoints: 10, shared: true,
       evidence: [{ field: 'grade', source: 'title', value: '9.8' }],
     }]);
-    expect(visible(cells(row(rows, 'grade'))[4])).toContain('shared scoring term');
+    expect(visible(cells(row(rows, 'grade'))[4])).toBe('9.8');
     expect(row(rows, 'gradingDetails').rankingContribution?.scoringEvidence?.[0].evidence).toHaveLength(2);
   });
 
@@ -298,7 +319,7 @@ describe('rule/composite provenance and grading/CIB/Board Game protections', () 
     const rows = buildMetadataFieldComparisons(target, { ...candidate, metadataScoreAwards: score.awards });
     const state = row(rows, 'isGraded');
     expect(state.rankingContribution?.matched).toBe(true);
-    expect(visible(cells(state)[4])).toContain('ungraded');
+    expect(visible(cells(state)[4])).toContain('No (inferred from title)');
     for (const key of ['grade', 'certificationCompany']) {
       expect(row(rows, key)).toMatchObject({ candidateValue: 'Unknown', titleDerivedValue: 'Unknown', rankingContribution: { matched: false } });
     }
@@ -326,7 +347,7 @@ describe('rule/composite provenance and grading/CIB/Board Game protections', () 
       status: 'unknown', titleDerivedStatus: 'unknown', rankingContribution: { matched: false } });
     const pieces = row(rows, 'numberOfPieces');
     expect(pieces.rankingContribution?.matched).toBe(true);
-    expect(visible(cells(pieces)[4])).toContain('Title evidence');
+    expect(visible(cells(pieces)[4])).toBe('100');
     expect(score.awards.some(award => award.field === 'year')).toBe(false);
     expect(invokeLLM).not.toHaveBeenCalled();
   });

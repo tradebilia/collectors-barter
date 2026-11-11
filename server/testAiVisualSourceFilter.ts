@@ -222,7 +222,18 @@ export function isAutographSignedItemTarget(targetMetadata: string): boolean {
 function autographMarketValue(value: unknown): string {
   return normalizedChoice(value).replace(/\bautograph(?:ed|s)?\b/g, "").replace(/\bsigned\b/g, "").trim();
 }
-
+function autographAuthenticationState(value: unknown): "yes" | "no" | "" {
+  const normalized = normalizedChoice(value);
+  if (["yes", "true", "1", "authenticated", "authentic", "verified"].includes(normalized)) return "yes";
+  if (["no", "false", "0", "unauthenticated", "unverified", "not_authenticated", "not_verified", "none", "without"].includes(normalized)) return "no";
+  return normalized && !["unknown", "n/a", "na", "not_applicable"].includes(normalized) ? "yes" : "";
+}
+function autographTargetAuthenticationState(details: Record<string, unknown>): "yes" | "no" | "" {
+  const explicit = [details.authenticationIncluded, details.authenticated, details.authenticationStatus, details.isAuthenticated]
+    .map(autographAuthenticationState).find(Boolean);
+  if (explicit) return explicit;
+  return meaningfulMetadataText(details.authenticationCompany ?? details.customAuthenticationCompany ?? details.authenticator) ? "yes" : "";
+}
 function autographTargetValue(targetMetadata: string, details: Record<string, unknown>, aliases: string[]): string {
   return autographMarketValue(aliases.map((key) => metadataValue(targetMetadata, key) || details[key]).find((value) => String(value ?? "").trim()));
 }
@@ -431,6 +442,7 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
   const targetItemType = autographTargetObjectType(targetMetadata, details);
   const targetCategory = targetValue(["autographCategory", "signatureCategory"]);
   const targetAuth = targetValue(["authenticationCompany", "customAuthenticationCompany", "certificationCompany"]);
+  const targetAuthState = autographTargetAuthenticationState(details);
   const targetInscription = targetValue(["inscription", "inscriptionText", "inscriptionPresent", "personalization"]);
   const candidate = normalizeVisualSourceCandidate(listing);
   const signerRead = scoreCandidateEvidence(listing, ['signer', 'autographSigner']);
@@ -445,6 +457,13 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
   const candidateCategory = categoryRead ? autographMarketValue(categoryRead.value) : '';
   const authRead = scoreCandidateEvidence(listing, ['authenticationCompany', 'customAuthenticationCompany', 'certificationCompany', 'authenticator', 'gradingCompany']);
   const candidateAuth = autographCandidateAuthentication(listing, authRead ? autographMarketValue(authRead.value) : '');
+  const candidateDetails = candidateStructuredDetails(listing);
+  const candidateAuthState = autographAuthenticationState(
+    candidateDetails.authenticationIncluded
+      ?? candidateDetails.authenticated
+      ?? candidateDetails.authenticationStatus
+      ?? candidateAuth,
+  );
   const authWitness: ScoreEvidence = authRead ?? { value: candidateAuth, source: 'title', field: 'authenticationCompany' };
   const inscriptionRead = scoreCandidateEvidence(listing, ['inscription', 'inscriptionText', 'inscriptionPresent', 'personalization']);
   const candidateInscription = autographMarketValue(inscriptionRead?.value);
@@ -463,21 +482,20 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
   compare(targetSigner, candidateSigner, 35, "signer", 'signer', signerWitness);
   compare(targetItemType, candidateItemType || autographMarketValue(candidate.title), 25, "signed item type", 'signedItemType', objectWitness);
   compare(targetCategory, candidateCategory || autographMarketValue(candidate.title), 10, "autograph category", 'autographCategory', categoryWitness);
-  const normalizedCandidateAuth = normalizedChoice(candidateAuth);
-  const explicitlyUnauthenticated = /^(?:no|none|unknown|not\s+authenticated|unauthenticated|unverified|not\s+verified)$/.test(normalizedCandidateAuth);
-  if (normalizedCandidateAuth && !explicitlyUnauthenticated) {
+  if (targetAuthState && candidateAuthState && targetAuthState === candidateAuthState) {
     score += 10;
     matched.push("authenticated");
     awards.push(scoreAward('authenticated', 10, scoreMatch(true, authWitness)));
   } else {
     unknown.push("authenticated");
   }
-  if (meaningfulMetadataText(targetAuth) && normalizedCandidateAuth && !explicitlyUnauthenticated
-    && (targetAuth === normalizedCandidateAuth || targetAuth.includes(normalizedCandidateAuth) || normalizedCandidateAuth.includes(targetAuth))) {
+  const normalizedCandidateCompany = normalizedChoice(candidateAuth);
+  if (meaningfulMetadataText(targetAuth) && candidateAuthState === "yes" && targetAuthState === "yes"
+    && normalizedCandidateCompany && (targetAuth === normalizedCandidateCompany || targetAuth.includes(normalizedCandidateCompany) || normalizedCandidateCompany.includes(targetAuth))) {
     score += 10;
     matched.push("authentication company");
     awards.push(scoreAward('authenticationCompany', 10, scoreMatch(true, authWitness)));
-  } else if (!targetAuth || !normalizedCandidateAuth || explicitlyUnauthenticated) {
+  } else if (!targetAuth || !candidateAuth || candidateAuthState !== "yes" || targetAuthState !== "yes") {
     unknown.push("authentication company");
   }
   if (!meaningfulMetadataText(targetInscription) || !candidateInscription) unknown.push("inscription");
@@ -2156,6 +2174,8 @@ function comparisonFieldLabel(key: string): string {
     releaseYear: "Year",
     itemType: "Item type",
     certificationCompany: "Certification company",
+    authenticationIncluded: "Authentication included",
+    authenticated: "Authentication included",
   };
   if (labels[key]) return labels[key];
   return key.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").replace(/^./, (value) => value.toUpperCase());
@@ -2178,6 +2198,7 @@ function comparisonMetadataAliases(key: string): string[] {
     ["sealed", "factorySealed", "sealedStatus"],
     ["publisherBrand", "brand", "manufacturer"],
     ["condition", "mediaCondition"],
+    ["authenticationIncluded", "authenticated", "authenticationStatus", "isAuthenticated"],
     ["cardNumber", "cardNo", "number"],
     ["setNumber", "setNo"],
     ["pieceCount", "pieces", "numberOfPieces"],
@@ -2261,10 +2282,10 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 				return sportsEvidence || /\bsports?\s+memorabilia\b/i.test(title)
 					? "Sports (detected in title)" : objectType ? "Sports (inferred from signed object)" : "Unknown";
 			}
-			if (/^(?:authentication|authenticated|authenticationStatus)$/i.test(key)) {
+			if (/^(?:authentication|authenticated|authenticationIncluded|authenticationStatus|isAuthenticated)$/i.test(key)) {
 				const authentication = autographCandidateAuthentication(listing, "");
-				return authentication && !/^(?:no|none|unknown|unauthenticated|unverified)$/i.test(authentication)
-					? "Yes (inferred from title)" : "Unknown";
+				const state = autographAuthenticationState(authentication);
+				return state === "yes" ? "Yes (inferred from title)" : state === "no" ? "No (inferred from title)" : "Unknown";
 			}
 			if (/^(?:authenticationCompany|customAuthenticationCompany|authenticator)$/i.test(key)) {
 				const authentication = autographCandidateAuthentication(listing, "");
@@ -2568,7 +2589,7 @@ function comparisonStatus(targetValue: string, candidateValue: string, category 
     const candidate = parseToyNumericValue(candidateValue, key as ToyNumericField);
     return target && candidate ? target.value === candidate.value ? "match" : "different" : "unknown";
   }
-  if (/^(?:sealed|factorysealed|sealedstatus|sealstatus|complete|iscomplete|completeness|completeinbox|originalpackaging|originalboxincluded|isgraded|graded)$/.test(normalizedFieldKey(key))) {
+  if (/^(?:sealed|factorysealed|sealedstatus|sealstatus|complete|iscomplete|completeness|completeinbox|originalpackaging|originalboxincluded|isgraded|graded|authenticated|authenticationincluded|authenticationstatus|isauthenticated)$/.test(normalizedFieldKey(key))) {
     const a = metadataBooleanState(targetValue), b = metadataBooleanState(candidateValue);
     if (a && b) return a === b ? "match" : "different";
   }
@@ -2619,6 +2640,15 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
     keys.add("gamePuzzleName");
     keys.add("completeness");
   }
+  // Autographs use authenticationIncluded in the inventory form while the
+  // scorer historically called the same fact authenticated. Keep one visible
+  // row so an explicit target No cannot coexist with a second Unknown row.
+  if (category === "autographs" && [...keys].some(key => /^(?:authenticationIncluded|authenticated|authenticationStatus|isAuthenticated)$/i.test(key))) {
+    for (const key of [...keys]) {
+      if (/^(?:authenticated|authenticationStatus|isAuthenticated)$/i.test(key)) keys.delete(key);
+    }
+    keys.add("authenticationIncluded");
+  }
   // Movies expose the same product identity through both the generic listing
   // title and the category-specific movieTitle field. Prefer the canonical
   // movieTitle row so the comparison does not show the same value twice.
@@ -2638,7 +2668,9 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
     if (excluded.has(key) || /^(?:id|url|saleId|sourceId|providerReference|price|currency|date)$/i.test(key)) continue;
       const movieIdentity = movieContext && /^(?:title|movieTitle)$/i.test(key)
         && movieTargetItemType(targetMetadata) === 'individual_movie';
-      const targetRaw = movieIdentity
+      const targetRaw = category === "autographs" && /^(?:authenticationIncluded|authenticated|authenticationStatus|isAuthenticated)$/i.test(key)
+        ? autographTargetAuthenticationState(targetDetails)
+        : movieIdentity
         ? firstMeaningfulValue(targetDetails.title, targetDetails.movieTitle, extractTargetTitle(targetMetadata))
         : originalArtContext && /^(?:artworkTitleCharacter|artworkTitle|character)$/i.test(key)
           ? firstMeaningfulValue(targetDetails.artworkTitleCharacter, targetDetails.artworkTitle, targetDetails.character)
@@ -2665,14 +2697,15 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
               ? 'unknown' : comparisonStatus(targetValue, titleDerivedValue, comparisonCategory, key);
 					const rankingContribution = titleDerivedStatus === 'match' && rankingContributionBase?.matched && (rankingContributionBase.sources ?? []).includes('title')
               ? { ...rankingContributionBase, titleDerived: true } : rankingContributionBase;
+					const structuredStatus = comparisonStatus(targetValue, candidateValue, category, key);
+					const finalStatus = structuredStatus === 'different' ? 'different' : titleDerivedStatus !== 'unknown' ? titleDerivedStatus : structuredStatus;
 					rows.push({
 					fieldKey: key,
           targetField: fieldLabel,
 				targetValue,
 				candidateField: fieldLabel,
 			candidateValue,
-					status: category === 'movies' && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(key) && titleDerivedStatus === 'match' && rankingContribution?.titleDerived
-              ? 'match' : comparisonStatus(targetValue, candidateValue, category, key),
+							status: finalStatus,
 							titleDerivedField: `${comparisonFieldLabel(key)} (from title)`,
 							titleDerivedValue,
 						titleDerivedStatus,

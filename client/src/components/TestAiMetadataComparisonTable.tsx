@@ -98,11 +98,10 @@ export function MetadataComparisonTable({ listing }: { listing: any }) {
       <span>Highlighted field names contributed to the ranking score. Selected scoring evidence is separate from structured values and independent title parsing; it does not confirm identity or valuation.</span>
     </div>
     <div className="mt-1 overflow-x-auto"><table className="w-full min-w-[620px] border-collapse text-[11px] leading-snug">
-      <thead><tr className="border-b border-cyan-800/50 text-left text-cyan-200/80"><th className="p-1">Target field</th><th className="p-1">Target value</th><th className="p-1">Candidate field</th><th className="p-1">Candidate value</th><th className="p-1">Candidate title-derived value / scoring evidence</th><th className="p-1">Potential Points</th><th className="p-1">Score</th><th className="p-1">Result</th></tr></thead>
+      <thead><tr className="border-b border-cyan-800/50 text-left text-cyan-200/80"><th className="p-1">Target field</th><th className="p-1">Target value</th><th className="p-1">Candidate field</th><th className="p-1">Candidate value</th><th className="p-1">Candidate title-derived value</th><th className="p-1">Potential Points</th><th className="p-1">Score</th><th className="p-1">Result</th></tr></thead>
       <tbody>{comparisons.map((comparison: any, comparisonIndex: number) => {
         const contribution = comparison.rankingContribution as RankingContribution | undefined;
         const label = metadataContributionTooltip(contribution);
-        const scoringEvidence = metadataSelectedScoringEvidence(contribution);
         const titleMatch = comparison.titleDerivedStatus === 'match' && contribution?.titleDerived === true;
         return <tr key={`${comparison.targetField}-${comparisonIndex}`} className="border-b border-gray-800/60 align-top">
           <td className="p-1 font-semibold"><span className={termClass(contribution)} title={label}>{comparison.targetField || 'Unknown field'}</span>{label && <div className="mt-1 font-normal text-sky-200" data-ranking-contribution>{label}</div>}</td>
@@ -110,14 +109,7 @@ export function MetadataComparisonTable({ listing }: { listing: any }) {
           <td className="p-1 font-semibold"><span className={structuredClass(contribution)} title={contribution?.structured ? label : undefined}>{comparison.candidateField || 'Unknown field'}</span></td>
           <td className="max-w-[150px] break-words p-1 text-gray-200">{comparison.candidateValue || 'Unknown'}</td>
           <td className="max-w-[250px] break-words p-1 text-gray-200">
-            <div><span className={titleClass(contribution)} title={contribution?.titleDerived ? label : undefined}>{comparison.titleDerivedValue || 'Unknown'}</span>{comparison.titleDerivedStatus && <span className={`ml-1 font-semibold uppercase ${statusClass[comparison.titleDerivedStatus] ?? statusClass.unknown}`}>({comparison.titleDerivedStatus})</span>}</div>
-            {scoringEvidence.map((award, awardIndex) => <div key={`${award.awardField}-${awardIndex}`} className="mt-1 border-t border-gray-700/70 pt-1" data-selected-scoring-evidence>
-              <div className="font-semibold text-sky-200">{scoringSourceLabel(award.source)} · {award.awardField}{award.shared ? ' (shared scoring term)' : ''}</div>
-              {award.evidence.length > 0 ? <>
-                <div className="text-gray-400">Recorded scoring witness, not a structured or extracted field value:</div>
-                {award.evidence.map((evidence, evidenceIndex) => <div key={`${evidence.field}-${evidenceIndex}`} className={evidence.source === 'title' ? 'text-violet-200' : 'text-cyan-200'}>{scoringSourceLabel(evidence.source)} · {evidence.field}: {evidence.value || 'Unknown (no value recorded)'}</div>)}
-              </> : <div className="text-gray-400">No field value recorded by this scoring term. Unknown values remain Unknown.</div>}
-            </div>)}
+            <span className={titleClass(contribution)} title={contribution?.titleDerived ? label : undefined}>{comparison.titleDerivedValue || 'Unknown'}</span>
           </td>
           <td className="p-1 text-center font-semibold text-slate-300" data-ranking-potential-points title="Maximum points available for this field under the active ranking model">{contribution?.potentialPoints ?? contribution?.awardedPoints ?? contribution?.points ?? 0}</td>
           <td className="p-1 text-center font-semibold text-amber-200" data-ranking-score>{rowScores.scores[comparisonIndex] ?? 0}</td>
