@@ -2186,7 +2186,21 @@ function comparisonMetadataAliases(key: string): string[] {
   return group ? [key, ...group.filter((alias) => normalizedFieldKey(alias) !== normalized)] : [key];
 }
 function comparisonCandidateFieldValue(listing: VisualSourceCandidate, details: Record<string, unknown>, key: string): string {
-  return comparisonValue(candidateMetadataValue(listing, details, comparisonMetadataAliases(key)));
+	return comparisonValue(candidateMetadataValue(listing, details, comparisonMetadataAliases(key)));
+}
+function movieTitleDerivedValue(title: string, key: string): string {
+  if (!/^(?:title|movieTitle|boxSetName|seriesName)$/i.test(key)) return "";
+  const cleaned = title.replace(/[|•]+/g, " ").replace(/\s+/g, " ").trim();
+  if (!cleaned) return "Unknown";
+  // Marketplace titles append format, packaging, condition, seller copy, and
+  // box-set descriptors after the product identity. Keep only the identity
+  // portion for the independent title-derived comparison column.
+  const marker = cleaned.search(/\b(?:widescreen|fullscreen|laser\s*d(?:i|)sc|dvd|blu[- ]?ray|4k\s+uhd|vhs|seasons?\b|complete\s+(?:series|collection)|box\s*set|bundle|lot|factory\s+sealed|sealed|used|new|tested|good|very\s+good|like\s+new|region\s*[0-9a-c]|ntsc|pal)\b/i);
+  const identity = (marker > 0 ? cleaned.slice(0, marker) : cleaned)
+    .replace(/^\s*(?:new|used|pre[- ]owned)\s+/i, "")
+    .replace(/[,:;\-]+\s*$/, "")
+    .trim();
+  return identity || "Unknown";
 }
 function titleGradeEvidence(title: string, category = ""): { grader: string; grade: string } | null {
   const observed = parseSourceGradeFromTitle(title, { category });
@@ -2211,9 +2225,31 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
   details.title,
   details.itemTitle,
   details.listingTitle,
- ) || "";
-	if (!title) return "Unknown";
-	if (/^(?:title|listingTitle|itemTitle)$/i.test(key)) return comparisonValue(title);
+	 ) || "";
+		if (!title) return "Unknown";
+		if (category === "movies" && /^(?:title|listingTitle|itemTitle|movieTitle|boxSetName|seriesName)$/i.test(key)) {
+      const selectedTitle = (listing.metadataScoreAwards ?? [])
+        .filter((award) => rankingAwardFieldKey(award.field, category, targetItemTypeValue('')) === rankingAwardFieldKey(key, category, targetItemTypeValue('')))
+        .flatMap((award) => award.evidence ?? [])
+        .filter((evidence) => evidence.source === 'title')
+        .map((evidence) => String(evidence.value ?? '').trim()).find(Boolean);
+      if (selectedTitle && selectedTitle !== title) return "Unknown";
+      return movieTitleDerivedValue(title, key);
+    }
+		if (category === "movies" && /^(?:numberOfMovies|movieCount)$/i.test(key)) {
+      const count = movieSeasonCountFromText(title);
+      return count || "Unknown";
+    }
+		if (category === "movies" && /^(?:format|mediaFormat)$/i.test(key)) {
+      const format = title.match(/\b(?:DVD|Blu[- ]?ray|4K\s+UHD|VHS|LaserDisc|Laserdic)\b/i)?.[0];
+			return format ? `${format} (detected in title)` : "Unknown";
+    }
+		if (category === "movies" && /^(?:sealed|sealedStatus|packaging)$/i.test(key)) {
+      const state = title.match(/\b(?:factory\s+sealed|sealed|opened|used)\b/i)?.[0];
+      const value = state ? movieBoolean(state) : "";
+      return value ? `${value === 'yes' ? 'Yes' : 'No'} (inferred from title)` : "Unknown";
+    }
+		if (/^(?:title|listingTitle|itemTitle)$/i.test(key)) return comparisonValue(title);
 	if (/^(?:year|releaseYear)$/i.test(key)) {
 		return title.match(/\b(?:17|18|19|20)\d{2}\b/)?.[0] ?? "Unknown";
 	}
@@ -2287,10 +2323,14 @@ function rankingContributionForField(listing: VisualSourceCandidate, key: string
     };
   });
   const columnAwarded = (source: "structured" | "title", value: string): boolean => {
-    if (!meaningfulMetadataText(value)) return false;
-    const displayed = value.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, "");
-    return contribution.awards.some((award) => (award.evidence ?? []).some((evidence) => {
-      if (evidence.source !== source || rankingAwardFieldKey(evidence.field, category, itemType) !== rowKey
+      if (!meaningfulMetadataText(value)) return false;
+      const displayed = value.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, "");
+      return contribution.awards.some((award) => (award.evidence ?? []).some((evidence) => {
+      const evidenceKey = rankingAwardFieldKey(evidence.field, category, itemType);
+      const movieIdentityTitleWitness = category === 'movies' && source === 'title'
+        && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(rowKey)
+        && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(rankingAwardFieldKey(award.field, category, itemType));
+      if (evidence.source !== source || (evidenceKey !== rowKey && !movieIdentityTitleWitness)
         || !meaningfulMetadataText(evidence.value)) return false;
       if (rowKey === "grade") return compareComparableGrades(displayed, evidence.value, { allowBareNumeric: true, category }) === "match";
       if (category === "pokemon" && /^(?:cardNumber|cardNo|number)$/i.test(rowKey)) {
@@ -2301,15 +2341,21 @@ function rankingContributionForField(listing: VisualSourceCandidate, key: string
         const b = determineExplicitGradingState({ isGraded: evidence.value }).state;
         return a !== 'unknown' && a !== 'conflicted' && a === b;
       }
+      if (category === 'movies' && source === 'title' && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(rowKey)) {
+        return movieIdentityTitleWitness || movieValuesAgree(displayed, evidence.value);
+      }
       const a = metadataBooleanState(displayed), b = metadataBooleanState(evidence.value);
       if (a && b) return a === b;
       const left = comparisonComparable(displayed), right = comparisonComparable(evidence.value!);
       return Boolean(left && right && (left === right || titleContainsValue(left, right) || titleContainsValue(right, left)));
     }));
   };
+  const movieIdentityTitleAwarded = category === 'movies'
+    && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(rowKey)
+    && contribution.awards.some((award) => award.source === 'title');
   return { ...contribution,
     structured: contribution.structured && columnAwarded("structured", candidateValue),
-    titleDerived: contribution.titleDerived && columnAwarded("title", titleDerivedValue),
+    titleDerived: movieIdentityTitleAwarded || contribution.titleDerived && columnAwarded("title", titleDerivedValue),
     awardedPoints: contribution.awards.reduce((sum, award) => sum + award.awardedPoints, 0),
     sources: [...new Set(contribution.awards.map((award) => award.source))],
     scoringEvidence,
@@ -2327,7 +2373,8 @@ function boundedMetadataComparisonRows(rows: MetadataFieldComparison[]): Metadat
   return rows.filter((row) => selected.has(row)).slice(0, 40);
 }
 function comparisonStatus(targetValue: string, candidateValue: string, category = "", key = ""): MetadataFieldComparison["status"] {
-  if (!meaningfulMetadataText(targetValue) || !meaningfulMetadataText(candidateValue)) return "unknown";
+	if (!meaningfulMetadataText(targetValue) || !meaningfulMetadataText(candidateValue)) return "unknown";
+	if (category === "movies" && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(key)) return movieValuesAgree(targetValue, candidateValue) ? "match" : "different";
   if (category === "music" && /^(?:condition|mediaCondition)$/i.test(key)) {
     const target = musicMediaCondition(targetValue);
     const candidate = musicMediaCondition(candidateValue.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, ""));
@@ -2406,22 +2453,26 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
           ? "Unknown" : comparisonTitleDerivedValue(listing, key, targetValue, category,
             /^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key)) ? explicitScoreGradingStates(targetMetadata, listing).candidateIdentityValues
               : category === "music" && /^(?:condition|mediaCondition)$/i.test(key) ? musicTargetConditionIdentityValues(targetMetadata) : []);
-			const fieldLabel = comparisonFieldLabel(key);
+				const fieldLabel = comparisonFieldLabel(key);
 			const normalizedFieldLabel = fieldLabel.trim().toLowerCase();
 				if (emittedFieldLabels.has(normalizedFieldLabel)) continue;
 				emittedFieldLabels.add(normalizedFieldLabel);
-      const rankingContribution = rankingContributionForField(listing, key, fieldLabel, candidateValue, titleDerivedValue, category, targetType);
-				rows.push({
+	      const rankingContributionBase = rankingContributionForField(listing, key, fieldLabel, candidateValue, titleDerivedValue, category, targetType);
+					const titleDerivedStatus = states?.candidate.state === 'conflicted' || states?.target.state === 'conflicted'
+              ? 'unknown' : comparisonStatus(targetValue, titleDerivedValue, category, key);
+					const rankingContribution = titleDerivedStatus === 'match' && rankingContributionBase?.matched && (rankingContributionBase.sources ?? []).includes('title')
+              ? { ...rankingContributionBase, titleDerived: true } : rankingContributionBase;
+					rows.push({
 					fieldKey: key,
           targetField: fieldLabel,
 				targetValue,
 				candidateField: fieldLabel,
 			candidateValue,
-					status: comparisonStatus(targetValue, candidateValue, category, key),
-						titleDerivedField: `${comparisonFieldLabel(key)} (from title)`,
-						titleDerivedValue,
-						titleDerivedStatus: states?.candidate.state === 'conflicted' || states?.target.state === 'conflicted'
-              ? 'unknown' : comparisonStatus(targetValue, titleDerivedValue, category, key),
+					status: category === 'movies' && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(key) && titleDerivedStatus === 'match' && rankingContribution?.titleDerived
+              ? 'match' : comparisonStatus(targetValue, candidateValue, category, key),
+							titleDerivedField: `${comparisonFieldLabel(key)} (from title)`,
+							titleDerivedValue,
+						titleDerivedStatus,
 						rankingContribution,
 				});
   }
@@ -2431,10 +2482,10 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
     targetValue: comparisonValue(extractTargetTitle(targetMetadata)),
 		candidateField: "Candidate listing title",
 		candidateValue: comparisonValue(listing.title),
-		status: "unknown",
-			titleDerivedField: "Candidate title (source)",
-			titleDerivedValue: comparisonValue(listing.title),
-			titleDerivedStatus: "unknown",
+			status: category === 'movies' && movieValuesAgree(extractTargetTitle(targetMetadata), comparisonValue(listing.title)) ? 'match' : "unknown",
+				titleDerivedField: "Candidate title (source)",
+				titleDerivedValue: category === 'movies' ? movieTitleDerivedValue(comparisonValue(listing.title), 'title') : comparisonValue(listing.title),
+				titleDerivedStatus: category === 'movies' && movieValuesAgree(extractTargetTitle(targetMetadata), comparisonValue(listing.title)) ? 'match' : "unknown",
 			rankingContribution: rankingContributionForField(listing, "title", "Target listing title", comparisonValue(listing.title), comparisonValue(listing.title), category, targetType),
 		}, ...rows]);
 }

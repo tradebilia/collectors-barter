@@ -69,11 +69,11 @@ describe('Metadata and visual evidence are separate expandable sections', () => 
     const html = renderToStaticMarkup(createElement(MetadataComparisonTable, { listing: {} }));
     expect(html).toContain('Full metadata comparison'); expect(html).toContain('No field comparison was returned');
   });
-  it('keeps the full six-column table while showing specific target/candidate visual observations below it', () => {
+  it('keeps the full seven-column table while showing specific target/candidate visual observations below it', () => {
     const listing = { visualExecution: receipt, metadataFieldComparisons: [{ targetField: 'Format', targetValue: 'LaserDisc', candidateField: 'Format', candidateValue: 'DVD', titleDerivedValue: 'DVD', status: 'different' }], visualDifferences: [{ field: 'Disc format', targetObservation: 'LaserDisc sleeve', candidateObservation: 'DVD case', impact: 'Different physical format' }] };
     const metadata = renderToStaticMarkup(createElement(MetadataComparisonTable, { listing }));
     const visual = renderToStaticMarkup(createElement(TestAiVisualComparison, { listing }));
-    expect((metadata.match(/<th /g) ?? []).length).toBe(6); expect(metadata).not.toContain('Visual comparison');
+    expect((metadata.match(/<th /g) ?? []).length).toBe(7); expect(metadata).not.toContain('Visual comparison');
     expect(visual).toContain('Visual comparison'); expect(visual).toContain('LaserDisc sleeve'); expect(visual).toContain('DVD case'); expect(visual).not.toContain('Scored field');
   });
   it('does not claim a visual match or show stale differences when no visual response exists', () => {

@@ -61,27 +61,26 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
     ]);
     for (const award of score.awards) {
       const comparison = row(rows, award.field);
-      expect(comparison).toMatchObject({ candidateValue: 'Unknown', status: 'unknown',
+      expect(comparison).toMatchObject({ candidateValue: 'Unknown', titleDerivedStatus: 'match',
         rankingContribution: { matched: true, awardedPoints: award.awardedPoints, sources: ['title'] } });
+      expect(comparison.status).toBe(award.field === 'boxSetName' ? 'match' : 'unknown');
       expect(comparison.rankingContribution?.scoringEvidence).toEqual([{
         awardField: award.field, source: award.source, awardedPoints: award.awardedPoints,
         shared: false, evidence: award.evidence,
       }]);
       const rendered = cells(comparison);
-      expect(rendered).toHaveLength(6);
+      expect(rendered).toHaveLength(7);
       expect(visible(rendered[0])).toContain(`${award.awardedPoints} awarded points`);
       expect(visible(rendered[3])).toBe('Unknown');
       expect(visible(rendered[4])).toContain('Title evidence');
       expect(visible(rendered[4])).toContain(`${award.evidence![0].field}: ${award.evidence![0].value}`);
       expect(visible(rendered[4])).toContain('Recorded scoring witness, not a structured or extracted field value');
-      expect(visible(rendered[5])).toBe('unknown');
+      expect(visible(rendered[5])).toBe(String(award.awardedPoints));
+      expect(visible(rendered[6])).toBe('match');
     }
-    // The parser did not independently extract these values. The witness still
-    // explains the award instead of being hidden by an unrelated Unknown parse.
-    for (const key of ['boxSetName', 'numberOfMovies', 'sealed']) {
-      expect(row(rows, key).titleDerivedValue).toBe('Unknown');
-      expect(row(rows, key).titleDerivedStatus).toBe('unknown');
-    }
+    expect(row(rows, 'boxSetName')).toMatchObject({ titleDerivedValue: 'Moonlighting', titleDerivedStatus: 'match' });
+    expect(row(rows, 'numberOfMovies')).toMatchObject({ titleDerivedValue: '2', titleDerivedStatus: 'match' });
+    expect(row(rows, 'sealed')).toMatchObject({ titleDerivedValue: 'No (inferred from title)', titleDerivedStatus: 'match' });
     const projected = withMetadataFieldComparisons(movieTarget(), listing);
     expect(projected.metadataMatchScore).toBe(75);
     expect(projected.metadataScoreAwards).toEqual(score.awards);
@@ -146,7 +145,8 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
       rankingContribution: { structured: true, titleDerived: false } });
     expect(primary.rankingContribution?.scoringEvidence?.[0].evidence).toEqual([{ field: 'grade', source: 'structured', value: '7.50' }]);
     const rendered = cells(primary);
-    expect(visible(rendered[4])).toContain('Independent title parse: 8.5');
+    expect(visible(rendered[4])).toContain('8.5');
+    expect(visible(rendered[4])).not.toContain('Independent title parse');
     expect(visible(rendered[4])).toContain('Structured evidence · grade: 7.50');
     expect(visible(rendered[4])).not.toContain(candidate.title);
     expect(rendered[4]).not.toContain('bg-violet');

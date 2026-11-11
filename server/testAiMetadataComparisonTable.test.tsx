@@ -15,13 +15,14 @@ function cells(contribution?: any, row = baseRow): string[] {
 describe('Stage 4 actual metadata comparison table renders honest awarded sources', () => {
   it('title-only awards keep conflicting structured fields neutral and visible', () => {
     const rendered = cells({ matched: true, structured: false, titleDerived: true, awardedPoints: 25, sources: ['title'] });
-    expect(rendered).toHaveLength(6);
+    expect(rendered).toHaveLength(7);
     expect(rendered[0]).toContain('25 awarded points');
     expect(rendered[2]).not.toMatch(/bg-cyan|bg-sky|bg-violet|title=/);
     expect(rendered[3]).toContain('Generic Controller');
     expect(rendered[4]).toContain('bg-violet');
     expect(rendered[4]).toContain('title');
-    expect(rendered[5]).toContain('different');
+    expect(rendered[5]).toContain('25');
+    expect(rendered[6]).toContain('match');
   });
   it('structured-only awards do not color title values merely because they also match', () => {
     const rendered = cells({ matched: true, structured: true, titleDerived: false, awardedPoints: 10, sources: ['structured'] });
@@ -47,7 +48,7 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
   });
   it('keeps the six columns, details and legend without another exclusion panel', () => {
     const html = renderToStaticMarkup(createElement(MetadataComparisonTable, { listing: { metadataFieldComparisons: [baseRow] } }));
-    expect([...html.matchAll(/<th\b/g)]).toHaveLength(6);
+    expect([...html.matchAll(/<th\b/g)]).toHaveLength(7);
     expect(html).toContain('Full metadata comparison');
     expect(html).toContain('Ranking highlight legend');
     expect(html).toContain('Title-derived scored field');
@@ -80,11 +81,14 @@ describe('actual scorer → refreshed comparison → rendered component', () => 
     const siblingIndex = rows.findIndex((row) => row.fieldKey === 'numericGrade');
     expect(gradeIndex).toBeGreaterThanOrEqual(0);
     expect(siblingIndex).toBeGreaterThanOrEqual(0);
-    expect(cellsByRow[gradeIndex]).toHaveLength(6);
+    expect(cellsByRow[gradeIndex]).toHaveLength(7);
     expect(cellsByRow[gradeIndex][2]).toContain('bg-cyan');
     expect(cellsByRow[gradeIndex][3]).toContain('7.50');
     expect(cellsByRow[siblingIndex][2]).not.toMatch(/bg-cyan|bg-violet/);
     expect(cellsByRow[siblingIndex][3]).toContain('8.5');
+    expect(cellsByRow[gradeIndex][5]).toContain('5');
+    expect(cellsByRow[siblingIndex][5]).toContain('0');
+    expect(cellsByRow[gradeIndex][6]).toContain('match');
     expect(withMetadataFieldComparisons(target, output).metadataFieldComparisons).toEqual(rows);
   });
   it('renders actual title-first Accessory points without coloring contradictory structured metadata', () => {
