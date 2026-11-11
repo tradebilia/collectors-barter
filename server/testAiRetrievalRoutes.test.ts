@@ -186,6 +186,24 @@ describe('Stage 6 actual ordinary eBay route retrieval union', () => {
     expect(requests.map(({ url }) => url.searchParams.get('keyword'))).toEqual(expected);
   });
 
+  it('uses the effective search target as the approval target when the optional handoff is omitted', async () => {
+    const expected = ebayQueries();
+    const targetImage = 'https://example.test/stage6/fallback-target.jpg';
+    fixtures = expected.map((_query, index) => () => json({ items: index === 0 ? [ebayRow('fallback-approval')] : [] }));
+    boundaries.llm.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ reviews: [{ candidateIndex: 0,
+      verdict: 'match', confidence: 'high', rationale: 'Synthetic deciding pixels confirm the exact card, slab, grader and numeric grade.',
+      visualDifferences: [], visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true,
+        gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, artworkMatches: true } }] }) } }] });
+
+    const result = await caller().getSoldCompsData({ ...TARGET, imageUrl: targetImage,
+      approvalTargetImageReference: targetImage }) as unknown as Row;
+    expect(result.error).toBeNull(); expect(result.listings).toHaveLength(1);
+    expect(result.listings[0].saleId).toBe('fallback-approval');
+    expect(result.listings[0].identityApproval).toBeTruthy();
+    expect(result.listings[0].evidenceDisposition).toBe('valuation_eligible');
+    expect(verifyCanonicalObservation(JSON.parse(JSON.stringify(result.listings[0]))).verified).toBe(true);
+  });
+
   it.each([['missing key', { ...TARGET }, 'config_unavailable'],
     ['unsupported input', { title: '', category: 'sports_cards' }, 'input_unsupported']] as const)(
     'ordinary %s emits one consistent non-executed bounded receipt and no provider/model call', async (label, target, outcome) => {

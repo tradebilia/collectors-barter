@@ -3362,11 +3362,23 @@ export const testAIRouter = router({
 
         console.log(`[Sold-Comps] Fetch Queries: ${queryCandidates.join(' | ')}, Filter: ${cert || 'any provider'} ${targetGrade ?? ''}, Total Results: ${rawItems.length}`);
 
-        const soldCompsTargetMetadata = buildVisualTargetMetadata({
-          title: input.title, category: input.category, condition: input.condition, itemType: input.itemType,
-          grade: input.grade, certificationCompany: input.certificationCompany,
-          isGraded: targetGrade !== null || Boolean(cert && grade) ? 'Yes' : undefined,
+        // The browser sends the effective inventory target separately from the
+        // search fields.  Build the review metadata from that same target so
+        // the visual review and final signed approval cannot validate different
+        // target representations (for example, a normalized itemType or title).
+        const approvalTarget = input.approvalTarget ?? {
+          title: input.title,
+          category: input.category,
+          condition: input.condition,
+          itemType: input.itemType,
+          grade: input.grade,
+          certificationCompany: input.certificationCompany,
           itemDetails: input.itemDetails,
+        };
+        const soldCompsTargetMetadata = buildVisualTargetMetadata({
+          ...approvalTarget,
+          certificationCompany: approvalTarget.certificationCompany ?? cert,
+          isGraded: targetGrade !== null || Boolean(cert && grade) ? 'Yes' : undefined,
         });
         const rankingPopulation = sourceMetadataRankingPopulation(rawItems, 'ebay_sold_comps', soldCompsTargetMetadata,
         isAutographSignedItemTarget(soldCompsTargetMetadata) ? 'signed_item_relevance'
@@ -3736,9 +3748,9 @@ export const testAIRouter = router({
           saleForm: item.saleForm ?? null,
           lotQuantity: item.lotQuantity ?? extractMarketplaceLotQuantity(item) ?? null,
         })), {
-          reviewedTarget: { title: input.title, category: input.category, itemType: input.itemType,
-            grade: input.grade, condition: input.condition, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails },
-          target: input.approvalTarget,
+          // Review and approval must use the exact same canonical target.
+          reviewedTarget: approvalTarget,
+          target: approvalTarget,
           targetMetadata: soldCompsTargetMetadata,
           targetImageReference: safeTargetImage,
           expectedImageReference: input.approvalTargetImageReference,
