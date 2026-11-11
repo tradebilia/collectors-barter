@@ -8,7 +8,7 @@ vi.mock('./_core/llm', () => ({ invokeLLM: vi.fn(() => { throw new Error('TITLE_
 import { invokeLLM } from './_core/llm';
 import {
   buildMetadataFieldComparisons, buildVisualTargetMetadata, moviesBoxSetVisualScore,
-  videoGameAccessoryVisualScore, videoGameGameVisualScore, vintageToyVisualScore, withMetadataFieldComparisons,
+  moviesIndividualVisualScore, videoGameAccessoryVisualScore, videoGameGameVisualScore, vintageToyVisualScore, withMetadataFieldComparisons,
   type MetadataFieldComparison, type VisualSourceCandidate,
 } from './testAiVisualSourceFilter';
 import {
@@ -88,6 +88,30 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
     expect(withMetadataFieldComparisons(movieTarget(), projected).metadataFieldComparisons).toEqual(projected.metadataFieldComparisons);
     expect(JSON.stringify(candidate)).toBe(before);
     expect(invokeLLM).not.toHaveBeenCalled();
+  });
+
+  it('captures title-derived Movie Edition and CGC numeric grade awards instead of showing MATCH with zero points', () => {
+    const target = buildVisualTargetMetadata({ title: 'Pulp Fiction', category: 'movies', itemType: 'individual_movie',
+      grade: '9.6', certificationCompany: 'CGC', fullItemDetails: {
+        movieTitle: 'Pulp Fiction', format: 'VHS', edition: 'Collectors Edition', isGraded: 'yes', sealed: 'yes',
+      } });
+    const candidate = { title: 'Pulp Fiction VHS Special Collector’s Edition 1994 CGC Graded 9.6 A+ Seal' };
+    const score = moviesIndividualVisualScore(candidate, target);
+    expect(score.score).toBe(75);
+    expect(score.awards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'edition', source: 'title', awardedPoints: 15 }),
+      expect.objectContaining({ field: 'gradingCompany', source: 'title', awardedPoints: 5 }),
+      expect.objectContaining({ field: 'grade', source: 'title', awardedPoints: 5 }),
+    ]));
+    const rows = buildMetadataFieldComparisons(target, { ...candidate, metadataScoreAwards: score.awards });
+    expect(row(rows, 'edition')).toMatchObject({ titleDerivedValue: 'Collectors Edition (detected in title)', titleDerivedStatus: 'match', rankingContribution: { awardedPoints: 15 } });
+    expect(row(rows, 'grade')).toMatchObject({ titleDerivedValue: '9.6', titleDerivedStatus: 'match', rankingContribution: { awardedPoints: 5 } });
+    const projected = withMetadataFieldComparisons(target, { ...candidate, metadataMatchScore: score.score, metadataScoreAwards: score.awards });
+    expect(projected.metadataMatchScore).toBe(75);
+    expect(projected.metadataScoreAwards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'edition', awardedPoints: 15 }),
+      expect.objectContaining({ field: 'grade', awardedPoints: 5 }),
+    ]));
   });
 
   it('preserves structured conflicts and independent title parsing instead of rescuing them with title awards', () => {

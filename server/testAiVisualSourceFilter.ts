@@ -4079,7 +4079,7 @@ function movieCandidateHasBoxSetEvidence(listing: VisualSourceCandidate): boolea
   return /\b(?:box\s*set|complete\s+(?:series|collection)|seasons?\s*(?:[0-9]+|one|two|three|four|five|six|seven|eight|nine|ten)(?:\s*(?:&|and|through|[-–])\s*(?:[0-9]+|one|two|three|four|five|six|seven|eight|nine|ten))?|trilogy|quadrilogy|movie\s+bundle|film\s+bundle)\b/i.test(title);
 }
 function movieCanonicalText(value: unknown): string {
-  const normalized = normalizeComparableNumberWords(normalizedChoice(value).replace(/_/g, ' '))
+  const normalized = normalizeComparableNumberWords(normalizedChoice(value).replace(/[’']/g, "'").replace(/'s\b/gi, 's').replace(/_/g, ' '))
     .replace(/\bseasons?\b/g, ' season')
     .replace(/(\d+)\s+and\s+(\d+)/g, '$1 $2');
   // Strip the complete media descriptor before removing VHS itself. Leaving
@@ -5039,12 +5039,30 @@ function movieScoreText(value: unknown): string {
 function movieScoreValueMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[] = [], textMatch = false): ScorePredicate {
   const target = movieScoreText(meaningfulMetadataText(targetValue));
   if (!target || /^(?:unknown|n a|na|none|not applicable)$/.test(target)) return null;
-  const witness = scoreCandidateEvidence(listing, aliases, patterns);
+  // Edition and other text identities may exist only in the marketplace title.
+  // Keep the scorer aligned with the comparison table's title-derived evidence;
+  // otherwise the UI can show MATCH while the award remains missing.
+  const witness = scoreCandidateEvidence(listing, aliases, patterns, { titleFallback: textMatch });
   const candidateValue = witness?.value;
   if (!candidateValue) return null;
   const candidate = movieScoreText(candidateValue);
   if (!candidate || /^(?:unknown|n a|na|none|not applicable)$/.test(candidate)) return null;
   return scoreMatch(textMatch ? movieValuesAgree(targetValue, candidateValue) : target === candidate, witness);
+}
+function movieScoreEditionMatches(targetValue: unknown, listing: VisualSourceCandidate): ScorePredicate {
+  const target = movieScoreText(meaningfulMetadataText(targetValue));
+  if (!target || /^(?:unknown|n a|na|none|not applicable)$/.test(target)) return null;
+  const structured = scoreCandidateEvidence(listing, ['edition', 'releaseType']);
+  const title = canonicalCandidateTitle(listing);
+  const titleMatch = title.match(/\b(?:limited|special|collector['’]?s?|anniversary|ultimate|deluxe|director['’]?s?|extended|criterion|steelbook)\s+edition\b/i);
+  const witness = structured ?? (titleMatch ? { value: titleMatch[0], source: 'title' as const, field: 'edition' } : null);
+  if (!witness) return null;
+  const editionTerms = (value: unknown) => movieScoreText(value).replace(/\bedition\b/g, '').split(' ')
+    .filter((term) => term.length > 1).map((term) => term.replace(/s$/, ''));
+  const targetTerms = editionTerms(targetValue);
+  const candidateTerms = editionTerms(witness.value);
+  const agrees = targetTerms.length > 0 && targetTerms.every((term) => candidateTerms.includes(term));
+  return scoreMatch(agrees, witness);
 }
 function movieScoreFormatMatches(targetValue: unknown, listing: VisualSourceCandidate): ScorePredicate {
   const target = movieFormat(meaningfulMetadataText(targetValue));
@@ -5082,7 +5100,7 @@ export function moviesIndividualVisualScore(listing: VisualSourceCandidate, targ
   add('movieTitle', 25, movieScoreValueMatches(firstMeaningfulValue(target.title, target.movieTitle, extractTargetTitle(targetMetadata)), listing, ['title', 'movieTitle'], [], true));
   add('format', 25, movieScoreFormatMatches(target.format, listing));
   add('releaseYear', 15, movieScoreValueMatches(firstMeaningfulValue(target.releaseYear, target.year), listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/]));
-  add('edition', 15, movieScoreValueMatches(target.edition, listing, ['edition', 'releaseType'], [], true));
+  add('edition', 15, movieScoreEditionMatches(target.edition, listing));
   add('region', 5, movieScoreValueMatches(target.region, listing, ['region', 'regionCode'], [/(?:Region\s*[0-9A-C]|NTSC|PAL)/i]));
   add('sealed', 5, movieScoreBooleanMatches(firstMeaningfulValue(target.sealed, target.sealedStatus), listing));
   add('gradingCompany', 5, coinGradingCompanyMatches(targetMetadata, normalizeVisualSourceCandidate(listing)));
@@ -5098,7 +5116,7 @@ export function moviesBoxSetVisualScore(listing: VisualSourceCandidate, targetMe
   add('boxSetName', 30, movieScoreValueMatches(firstMeaningfulValue(target.boxSetName, target.title, extractTargetTitle(targetMetadata)), listing, ['boxSetName', 'title', 'seriesName'], [], true));
   add('format', 20, movieScoreFormatMatches(target.format, listing));
   add('numberOfMovies', 15, movieScoreCountMatches(firstMeaningfulValue(target.numberOfMovies, target.movieCount) ?? movieSeasonCountFromText(firstMeaningfulValue(target.boxSetName, target.title, extractTargetTitle(targetMetadata))), listing));
-  add('edition', 15, movieScoreValueMatches(target.edition, listing, ['edition', 'releaseType'], [], true));
+  add('edition', 15, movieScoreEditionMatches(target.edition, listing));
   add('sealed', 10, movieScoreBooleanMatches(firstMeaningfulValue(target.sealed, target.sealedStatus), listing));
   const gradeMatch = coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing));
   const companyMatch = coinGradingCompanyMatches(targetMetadata, normalizeVisualSourceCandidate(listing));

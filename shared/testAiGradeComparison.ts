@@ -89,6 +89,11 @@ export function readSourceGradeClaimsFromTitle(value: unknown, options: Pick<Com
     for (const match of title.matchAll(pattern)) {
       const before = title.slice(Math.max(0, (match.index ?? 0) - 32), match.index).trim();
       if (/\b(?:not|non|no|without|fake|faux|replica|reproduction|raw|ungraded)(?:[-\s]+(?:a|an|by|for|grade|graded))?[-\s]*$/i.test(before)) continue;
+      // `CGC Graded 9.6 A+` can match twice: once as the grader-owned
+      // `CGC 9.6` claim and again as an unlabeled `Graded 9.6 A+` claim.
+      // The second match is presentation noise from the same grader, not a
+      // contradictory second grade. Keep the authoritative grader-bound claim.
+      if (index === 1 && new RegExp(`(?:${GRADERS})\\s*$`, 'i').test(before)) continue;
       let grade = (index === 0 ? match[2] : match[1]).trim();
       // Vintage Toy generation codes (G1, G2, …) are not independent grade
       // observations. A grader/labeled G grade remains evidence via patterns
