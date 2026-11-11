@@ -88,6 +88,16 @@ describe('Mercari undated sold=true actual route admission', () => {
     expect(profile.comparables.find(comp => comp.accepted)?.date).toBeNull();
     expect(requests.length).toBeGreaterThan(0);
   });
+  it('uses one effective inventory target and shared image fallback across review and final approval', async () => {
+    const searchFields = { ...MOVIE, title: 'Batman search alias', itemDetails: JSON.stringify({ movieTitle: 'Batman search alias', format: 'LaserDisc', releaseYear: '1989' }) };
+    const result: any = await caller().getMercariSoldCompsData({ ...searchFields, imageUrl: TARGET_IMAGE,
+      approvalTarget: MOVIE, approvalTargetImageReference: TARGET_IMAGE });
+    const row = result.audit.ledger[0];
+    expect(row.valuationEligible).toBe(true);
+    expect(row.identityApproval).toBeTruthy();
+    expect(row.identityApproval.targetFields.title).toBe(canonicalizeIdentityApprovalTarget(MOVIE).fields.title);
+    expect(row.identityApproval.targetImageReferenceFingerprint).toBeTruthy();
+  });
   it('keeps a valid itemWebUrl provider alias through visual approval and valuation sealing', async () => {
     rows = [providerRow(MOVIE, { url: undefined, itemWebUrl: 'https://www.mercari.com/us/item/m54069072197/' })];
     const result: any = await caller().getMercariSoldCompsData(input());

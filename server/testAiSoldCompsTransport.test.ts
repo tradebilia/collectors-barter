@@ -3,8 +3,12 @@ import { readFileSync } from 'node:fs';
 import {
   buildApprovalTargetImageInput,
   buildApprovalTargetInput,
+  buildEffectiveApprovalTarget,
   buildSoldCompsAnalysisSales,
   buildSoldCompsApprovalInput,
+  normalizeApprovalTargetImageReference,
+  normalizeVisualTargetImageReference,
+  resolveApprovalTargetImageReference,
 } from '../shared/testAiSoldCompsTransport';
 
 const photo = 'https://synthetic.invalid/target-primary.jpg';
@@ -199,6 +203,27 @@ describe('Stage 3 actual shared Sold-Comps transport', () => {
 });
 
 describe('Stage 3 actual client target and image binding inputs', () => {
+  it('uses one effective target contract for every source and strips browser-only fields', () => {
+    const search = { ...target, title: 'search wording', estimatedValue: 99, primaryPhotoUrl: photo };
+    const effective = { ...target, title: 'inventory wording', trusted: true, primaryPhotoUrl: 'https://synthetic.invalid/other.jpg' };
+    expect(buildEffectiveApprovalTarget(search, effective)).toStrictEqual(buildApprovalTargetInput(effective));
+    expect(buildEffectiveApprovalTarget(search)).toStrictEqual(buildApprovalTargetInput(search));
+    expect(buildEffectiveApprovalTarget(search, effective)).not.toHaveProperty('estimatedValue');
+    expect(buildEffectiveApprovalTarget(search, effective)).not.toHaveProperty('primaryPhotoUrl');
+  });
+
+  it('keeps visual review and final approval image bindings distinct and rejects unsafe references', () => {
+    const changed = 'https://synthetic.invalid/bound-primary.jpg';
+    expect(resolveApprovalTargetImageReference({ imageUrl: photo, approvalTargetImageReference: changed })).toBe(changed);
+    expect(resolveApprovalTargetImageReference({ imageUrl: photo })).toBe(photo);
+    expect(normalizeApprovalTargetImageReference({ imageUrl: photo, approvalTargetImageReference: changed })).toBe(changed);
+    expect(normalizeApprovalTargetImageReference({ imageUrl: photo, approvalTargetImageReference: undefined })).toBe(photo);
+    expect(normalizeVisualTargetImageReference({ imageUrl: photo })).toBe(photo);
+    expect(normalizeVisualTargetImageReference({ imageUrl: changed })).toBe(changed);
+    expect(normalizeApprovalTargetImageReference({ imageUrl: photo, approvalTargetImageReference: 'javascript:alert(1)' })).toBeNull();
+    expect(normalizeApprovalTargetImageReference({ imageUrl: 'not-a-url' })).toBeNull();
+  });
+
   it('copies only the exact declared final target fields, retaining qualifiers and original details', () => {
     const supplied = { ...target, grade: '7.50', condition: 'Sealed', estimatedValue: 999_999, trusted: true, verified: true, identityApproval: { match: 'match' }, certId: 'synthetic-tracking-only' };
     expect(buildApprovalTargetInput(supplied)).toStrictEqual({

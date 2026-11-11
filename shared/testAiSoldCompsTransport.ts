@@ -21,6 +21,68 @@ export function buildApprovalTargetInput(item: ApprovalTargetItem) {
   };
 }
 
+/**
+ * One canonical target boundary for every source that can issue final visual
+ * approval. Search fields are only the fallback; an explicitly supplied
+ * inventory target wins and is reduced to the signed field contract.
+ */
+export function buildEffectiveApprovalTarget(
+  searchItem: ApprovalTargetItem,
+  explicitTarget?: ApprovalTargetItem | null,
+) {
+  return buildApprovalTargetInput(explicitTarget ?? searchItem);
+}
+
+/**
+ * Resolve the one image reference that visual review and final approval must
+ * both use. An explicit binding reference is authoritative; the ordinary
+ * image URL is only a backwards-compatible fallback.
+ */
+export function resolveApprovalTargetImageReference(input: {
+  imageUrl?: string | null;
+  approvalTargetImageReference?: string | null;
+}) {
+  const explicit = typeof input.approvalTargetImageReference === 'string'
+    ? input.approvalTargetImageReference.trim() : '';
+  if (explicit) return explicit;
+  const fallback = typeof input.imageUrl === 'string' ? input.imageUrl.trim() : '';
+  return fallback || undefined;
+}
+
+/** The server-side safe form of the same shared image-reference decision. */
+export function normalizeApprovalTargetImageReference(input: {
+  imageUrl?: string | null;
+  approvalTargetImageReference?: string | null;
+}) {
+  const reference = resolveApprovalTargetImageReference(input);
+  if (!reference) return null;
+  try {
+    const protocol = new URL(reference).protocol;
+    return protocol === 'https:' || protocol === 'http:' ? reference : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Visual review uses the image actually submitted for this request. */
+export function normalizeVisualTargetImageReference(input: { imageUrl?: string | null }) {
+  const reference = typeof input.imageUrl === 'string' ? input.imageUrl.trim() : '';
+  if (!reference) return null;
+  try {
+    const protocol = new URL(reference).protocol;
+    return protocol === 'https:' || protocol === 'http:' ? reference : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Final signing must require the independently carried binding reference. */
+export function normalizeRequiredApprovalTargetImageReference(input: {
+  approvalTargetImageReference?: string | null;
+}) {
+  return normalizeApprovalTargetImageReference({ approvalTargetImageReference: input.approvalTargetImageReference });
+}
+
 /** Keep the existing search and reviewed image selection; add binding only. */
 export function buildSoldCompsApprovalInput<T extends { imageUrl?: string }>(
   input: T,
@@ -29,7 +91,7 @@ export function buildSoldCompsApprovalInput<T extends { imageUrl?: string }>(
   return {
     ...input,
     approvalTarget: buildApprovalTargetInput(effectiveItem),
-    approvalTargetImageReference: input.imageUrl,
+    approvalTargetImageReference: resolveApprovalTargetImageReference(input),
   };
 }
 

@@ -59,8 +59,9 @@ describe('Mercari status is not completed-price authority', () => {
   });
 
   it('reprojects stale Movie awards at the final transport boundary', () => {
-    const movieTarget = buildVisualTargetMetadata({ title: 'Conan CGC 8.0 VHS Tape', category: 'movies', itemType: 'individual_movie',
-      itemDetails: JSON.stringify({ title: 'Conan CGC 8.0 VHS Tape', format: 'VHS', isGraded: 'Yes', certificationCompany: 'CGC', grade: '8' }) });
+    const movieTargetDefinition = { title: 'Conan CGC 8.0 VHS Tape', category: 'movies', itemType: 'individual_movie',
+      itemDetails: JSON.stringify({ title: 'Conan CGC 8.0 VHS Tape', format: 'VHS', isGraded: 'Yes', certificationCompany: 'CGC', grade: '8' }) };
+    const movieTarget = buildVisualTargetMetadata(movieTargetDefinition);
     const row = { saleId: 'mercari:stale-movie', title: 'Conan CGC 8.0 A VHS Tape', price: 117, currency: 'USD',
       metadataMatchScore: 30, metadataScoreAwards: [
         { field: 'format', source: 'title', awardedPoints: 20 },
@@ -69,7 +70,8 @@ describe('Mercari status is not completed-price authority', () => {
       ], metadataFieldComparisons: [], visualReviewStatus: 'not_reviewed' };
     const original = { saleId: row.saleId, title: row.title, price: row.price, currency: row.currency, itemUrl: 'https://www.mercari.com/us/item/stale-movie/' };
     const result = finalizeMercariContextResult({ listings: [row], audit: { ledger: [row] } }, [original] as any,
-      { input: { title: movieTarget, category: 'movies', itemType: 'individual_movie' } as any, targetMetadata: movieTarget });
+      { input: movieTargetDefinition as any, effectiveTarget: movieTargetDefinition, targetMetadata: movieTarget,
+        targetImageReference: null, approvalImageReference: null });
     const returned = result.listings[0];
     expect(returned.metadataMatchScore).toBe(55);
     expect(returned.metadataScoreAwards).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'movieTitle', awardedPoints: 25 })]));

@@ -65,6 +65,7 @@ import { retrieveItemsAttempt, retrievalIssue, unavailableRetrievalAttempt, type
 import { collectionLotGuard, collectionLotNotComparable, isCollectionLotItemType } from '../shared/testAiItemType';
 import { bindMetadataRankingPopulation, freezeMetadataRankingPopulation, overlayMetadataRankingPopulation, type MetadataRankingPopulation, type MetadataScorerRole } from '../shared/testAiRankingPopulation';
 import { compareComparableGrades, hasExcludedSourceTitleGradeClaim, parseComparableGrade, readSourceGradeClaimsFromTitle, TITLE_GRADE_OBSERVATION_PATTERN, type ComparableGrade } from '../shared/testAiGradeComparison';
+import { buildEffectiveApprovalTarget, normalizeRequiredApprovalTargetImageReference, normalizeVisualTargetImageReference } from '../shared/testAiSoldCompsTransport';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 // eBay can take several seconds to return a Browse response even for a bounded
@@ -801,7 +802,10 @@ function mercariIdentityOnlyRationale(value: unknown): unknown {
 
 type MercariApprovalContext = {
   input: AdditionalSoldCompsInput & { imageUrl?: string; approvalTarget?: ComparableTarget; approvalTargetImageReference?: string };
+  effectiveTarget: ComparableTarget;
   targetMetadata: string;
+  targetImageReference: string | null;
+  approvalImageReference: string | null;
 };
 
 /** Only fresh private adapter observations plus the actual bound visual row can authorize this exception. */
@@ -838,12 +842,11 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
       ...(sourceConflict ? ['MERCARI_MARKETPLACE_CONFLICT: original marketplace conflicts with Mercari.'] : []),
     ]);
   }
-  const reviewedTarget: ComparableTarget = { title: context.input.title, category: context.input.category,
-    itemType: context.input.itemType, grade: context.input.grade, condition: context.input.condition,
-    certificationCompany: context.input.certificationCompany, itemDetails: context.input.itemDetails,
-    statedTradeValue: context.input.statedTradeValue };
-  const target = context.input.approvalTarget ?? reviewedTarget;
-  const imageReference = context.input.imageUrl;
+  // Review and signed approval must use the same inventory target and image.
+  // Rebuilding either from search fields recreates the target-drift defect.
+  const reviewedTarget = context.effectiveTarget;
+  const target = context.effectiveTarget;
+  const imageReference = context.targetImageReference;
   const candidateIdentityFields = row.soldCompsMetadata ?? normalizeSoldCompsMetadata(row);
   const originalIdentity = original as unknown as Record<string, unknown>;
   const providerUrl = [original.itemUrl, originalIdentity.url, originalIdentity.itemWebUrl, originalIdentity.link, originalIdentity.href]
@@ -871,8 +874,8 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
     ? row.visualAudit.retryConfidence : row.visualAudit.initialConfidence;
   const acquiredAt = new Date();
   const approvalFailures: string[] = [];
-  const approval = !hardConflict && imageReference ? createServerFinalIdentityApproval({ sale, target, reviewedTarget,
-    targetImageReference: imageReference, expectedImageReference: context.input.approvalTargetImageReference ?? imageReference,
+  const approval = !hardConflict && imageReference && context.approvalImageReference ? createServerFinalIdentityApproval({ sale, target, reviewedTarget,
+    targetImageReference: imageReference, expectedImageReference: context.approvalImageReference,
     targetMetadata: context.targetMetadata, acquiredAt, candidateIdentityFields,
     onRejected: reason => approvalFailures.push(reason),
     review: { candidateIndex: 0, verdict: 'match', confidence: confidence === 'high' || confidence === 'medium' ? confidence : 'low',
@@ -3366,15 +3369,7 @@ export const testAIRouter = router({
         // search fields.  Build the review metadata from that same target so
         // the visual review and final signed approval cannot validate different
         // target representations (for example, a normalized itemType or title).
-        const approvalTarget = input.approvalTarget ?? {
-          title: input.title,
-          category: input.category,
-          condition: input.condition,
-          itemType: input.itemType,
-          grade: input.grade,
-          certificationCompany: input.certificationCompany,
-          itemDetails: input.itemDetails,
-        };
+        const approvalTarget = buildEffectiveApprovalTarget(input, input.approvalTarget);
         const soldCompsTargetMetadata = buildVisualTargetMetadata({
           ...approvalTarget,
           certificationCompany: approvalTarget.certificationCompany ?? cert,
@@ -3665,15 +3660,8 @@ export const testAIRouter = router({
             : null;
         }).filter(Boolean);
 
-        const safeTargetImage = (() => {
-          if (!input.imageUrl) return null;
-          try {
-            const protocol = new URL(input.imageUrl).protocol;
-            return protocol === 'https:' || protocol === 'http:' ? input.imageUrl.trim() : null;
-          } catch {
-            return null;
-          }
-        })();
+        const safeTargetImage = normalizeVisualTargetImageReference(input);
+        const approvalImageReference = normalizeRequiredApprovalTargetImageReference(input);
         // Always run the deterministic shared preparation. With no target
         // image it returns after universal/category context classification and
         // makes no AI call; with an image it continues into bounded review.
@@ -3753,7 +3741,7 @@ export const testAIRouter = router({
           target: approvalTarget,
           targetMetadata: soldCompsTargetMetadata,
           targetImageReference: safeTargetImage,
-          expectedImageReference: input.approvalTargetImageReference,
+          expectedImageReference: approvalImageReference,
           query,
         });
         const valuationEligibleListings = canonicalListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible');
@@ -3894,9 +3882,10 @@ export const testAIRouter = router({
       const collectionLotBlock = collectionLotGuard(input);
       if (collectionLotBlock) return collectionLotBlock;
       const normalizedCategory = input.category.trim().toLowerCase().replace(/[\s-]+/g, '_');
-      const targetMetadata = buildVisualTargetMetadata({ title: input.title, category: normalizedCategory,
-        condition: input.condition, itemType: input.itemType, grade: input.grade,
-        certificationCompany: input.certificationCompany, itemDetails: input.itemDetails });
+      const approvalTarget = buildEffectiveApprovalTarget(input, input.approvalTarget);
+      const targetMetadata = buildVisualTargetMetadata(approvalTarget);
+      const safeTargetImage = normalizeVisualTargetImageReference(input);
+      const approvalImageReference = normalizeRequiredApprovalTargetImageReference(input);
       const result = await lookupMercariSoldComps(input, undefined, undefined, {
         requestedMode: 'sold',
         reviewOpportunity: rows => {
@@ -3932,15 +3921,6 @@ export const testAIRouter = router({
         });
         const rankingPopulation = ingress.population;
         const assessment = ingress.assessment;
-        const safeTargetImage = (() => {
-          if (!input.imageUrl) return null;
-          try {
-            const protocol = new URL(input.imageUrl).protocol;
-            return protocol === 'https:' || protocol === 'http:' ? input.imageUrl.trim() : null;
-          } catch {
-            return null;
-          }
-        })();
         visualDispatchStarted = true;
         const universalPreFilter = await filterVisualSourceCandidates({
           sourceRole: 'marketplace',
@@ -4059,17 +4039,8 @@ export const testAIRouter = router({
             preVisionExcluded: excluded.length,
             ledger: [...annotatedListings, ...excluded, ...visualContextListings],
           },
-        }, result.listings, { input, targetMetadata });
+        }, result.listings, { input, effectiveTarget: approvalTarget, targetMetadata, targetImageReference: safeTargetImage, approvalImageReference });
       }
-      const safeTargetImage = (() => {
-        if (!input.imageUrl) return null;
-        try {
-          const protocol = new URL(input.imageUrl).protocol;
-            return protocol === 'https:' || protocol === 'http:' ? input.imageUrl.trim() : null;
-        } catch {
-          return null;
-        }
-      })();
       const visualSourceLabel = normalizedCategory === 'coins'
         ? 'Mercari coin sold listings'
         : normalizedCategory === 'disney_pins'
@@ -4153,15 +4124,15 @@ export const testAIRouter = router({
           ...visualFilter,
           note: `Mercari ${normalizedCategory === 'coins' ? 'coin' : normalizedCategory === 'disney_pins' ? 'Disney Pin' : normalizedCategory.replace(/_/g, ' ')} results use the shared visual gate and signed reported-sold-price admission. Sale date remains Unknown under the Mercari-only exception. ${visualFilter.note}`,
         },
-        audit: {
-          rawReceived: result.listings.length,
-          retrievalCoverage,
-          valuationEligible: 0,
-          preVisionExcluded: visualContextListings.length,
-          warningReview: annotatedListings.length + visualContextListings.length,
-          ledger: [...annotatedListings, ...visualContextListings],
-        },
-      }, result.listings, { input, targetMetadata });
+          audit: {
+            rawReceived: result.listings.length,
+            retrievalCoverage,
+            valuationEligible: 0,
+            preVisionExcluded: visualContextListings.length,
+            warningReview: annotatedListings.length + visualContextListings.length,
+            ledger: [...annotatedListings, ...visualContextListings],
+          },
+        }, result.listings, { input, effectiveTarget: approvalTarget, targetMetadata, targetImageReference: safeTargetImage, approvalImageReference });
       } catch {
         // Retrieval succeeded; later metadata/preparation failures must not erase its union.
         const reason = 'Mercari candidate processing unavailable; all retrieved records retained as context, with no pricing authority.';

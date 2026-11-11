@@ -37,6 +37,7 @@ import { applyVisualSourceReviews, conservativeGradedVisualReviews, filterVisual
 import { getVerifiedIdentityApproval, sealCanonicalObservation, verifyCanonicalObservation } from './testAiCanonicalObservation';
 import { scoreComparable } from './testAiComparableEngine';
 import { buildDeterministicNarrativeFallback } from './testAiResponse';
+import { canonicalizeIdentityApprovalTarget } from '../shared/testAiIdentityApprovalTarget';
 import {
   buildApprovalTargetImageInput, buildSoldCompsAnalysisSales, buildSoldCompsApprovalInput,
 } from '../shared/testAiSoldCompsTransport';
@@ -369,7 +370,7 @@ describe('Stage 3 ACTUAL getSoldCompsData -> shared A/B transport -> ACTUAL anal
   });
 
   it.each(['missing effective target', 'missing binding reference', 'changed binding reference', 'changed effective card', 'new material variant'])
-  ('holds otherwise matching source rows when source binding is %s', async (scenario) => {
+  ('uses one effective target for review and signing while enforcing the image binding: %s', async (scenario) => {
     providerRows = rows('1996 Kobe Bryant PSA 10', 1);
     const input = sourceInput();
     if (scenario === 'missing effective target') (input as { approvalTarget?: unknown }).approvalTarget = undefined;
@@ -379,14 +380,25 @@ describe('Stage 3 ACTUAL getSoldCompsData -> shared A/B transport -> ACTUAL anal
     if (scenario === 'new material variant') input.approvalTarget.itemDetails = JSON.stringify({ ...JSON.parse(KOBE.itemDetails!), variant: 'Refractor' });
     const source = await acquire(input);
     expect(source.listings).toHaveLength(1);
-    expect(source.listings[0]).toMatchObject({ visualReviewStatus: 'match', visualRequirement: 'required', evidenceDisposition: 'context_only' });
-    expect(source.listings[0].identityApproval).toBeUndefined();
-    expect(source.listings[0].evidenceReasons!.join(' ')).toContain('binding changed');
-    expect(source.audit!.valuationEligible).toBe(0);
-    expect(source.metrics).toBeNull();
-    const result = await analyze(buildSoldCompsAnalysisSales(source, true));
-    expectHeld(result.leftMarketProfile);
-    expectHeld(result.rightMarketProfile);
+    const row = source.listings[0];
+    expect(row).toMatchObject({ visualReviewStatus: 'match', visualRequirement: 'required' });
+    if (scenario === 'missing binding reference' || scenario === 'changed binding reference') {
+      expect(row.evidenceDisposition).toBe('context_only');
+      expect(row.identityApproval).toBeUndefined();
+      expect(row.evidenceReasons!.join(' ')).toMatch(/binding|target image/i);
+      expect(source.audit!.valuationEligible).toBe(0);
+      expect(source.metrics).toBeNull();
+      const result = await analyze(buildSoldCompsAnalysisSales(source, true));
+      expectHeld(result.leftMarketProfile);
+      expectHeld(result.rightMarketProfile);
+    } else {
+      expect(row.evidenceDisposition).toBe('valuation_eligible');
+      expect(row.identityApproval).toBeTruthy();
+      expect(source.audit!.valuationEligible).toBe(1);
+      expect(source.metrics).not.toBeNull();
+      const expectedTarget = input.approvalTarget ?? KOBE;
+      expect(row.identityApproval!.targetFields).toEqual(canonicalizeIdentityApprovalTarget(expectedTarget).fields);
+    }
   });
 
   it.each(['changed image', 'missing image', 'changed target'])
