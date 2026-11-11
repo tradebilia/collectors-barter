@@ -69,14 +69,15 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
         shared: false, evidence: award.evidence,
       }]);
       const rendered = cells(comparison);
-      expect(rendered).toHaveLength(7);
-      expect(visible(rendered[0])).toContain(`${award.awardedPoints} awarded points`);
+      expect(rendered).toHaveLength(8);
+      expect(visible(rendered[0])).not.toContain('awarded points');
       expect(visible(rendered[3])).toBe('Unknown');
       expect(visible(rendered[4])).toContain('Title evidence');
       expect(visible(rendered[4])).toContain(`${award.evidence![0].field}: ${award.evidence![0].value}`);
       expect(visible(rendered[4])).toContain('Recorded scoring witness, not a structured or extracted field value');
       expect(visible(rendered[5])).toBe(String(award.awardedPoints));
-      expect(visible(rendered[6])).toBe('match');
+      expect(visible(rendered[6])).toBe(String(award.awardedPoints));
+      expect(visible(rendered[7])).toBe('match');
     }
     expect(row(rows, 'boxSetName')).toMatchObject({ titleDerivedValue: 'Moonlighting', titleDerivedStatus: 'match' });
     expect(row(rows, 'numberOfMovies')).toMatchObject({ titleDerivedValue: '2', titleDerivedStatus: 'match' });
@@ -186,7 +187,7 @@ describe('rule/composite provenance and grading/CIB/Board Game protections', () 
     expect(comparison).toMatchObject({ candidateValue: 'Unknown', titleDerivedValue: 'Unknown', status: 'unknown',
       rankingContribution: { matched: true, structured: false, titleDerived: false, awardedPoints: 5 } });
     const rendered = cells(comparison);
-    expect(visible(rendered[0])).toContain('5 awarded points');
+    expect(visible(rendered[0])).not.toContain('awarded points');
     expect(visible(rendered[4])).toContain(`Rule/combined scoring evidence (${source})`);
     expect(visible(rendered[4])).toContain('No field value recorded');
     expect(rendered[2]).not.toContain('bg-cyan');
@@ -214,7 +215,7 @@ describe('rule/composite provenance and grading/CIB/Board Game protections', () 
       awardField: 'gradingDetails', source: 'title', awardedPoints: 10, shared: true,
       evidence: [{ field: 'grade', source: 'title', value: '9.8' }],
     }]);
-    expect(visible(cells(row(rows, 'grade'))[4])).toContain('shared term, not additional points');
+    expect(visible(cells(row(rows, 'grade'))[4])).toContain('shared scoring term');
     expect(row(rows, 'gradingDetails').rankingContribution?.scoringEvidence?.[0].evidence).toHaveLength(2);
   });
 

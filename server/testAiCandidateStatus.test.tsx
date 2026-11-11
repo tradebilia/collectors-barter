@@ -72,13 +72,13 @@ describe('Stage 5 actual status render component', () => {
     expect(decision.reason).not.toContain('REQUIRED_APPROVAL_MISSING');
     expect(decision.reason).not.toContain('SOURCE_DISPOSITION_RESTRICTIVE');
   });
-  it('preserves seven metadata columns, source highlights, target/candidate images and one master list', () => {
+  it('preserves eight metadata columns, Potential Points, source highlights, target/candidate images and one master list', () => {
     const frozen = freezeMetadataRankingPopulation([{ title: target.title, imageUrl: 'https://example.test/candidate.jpg', currency: 'CAD', price: 100 }], { sourceId: 'fixture', populationId: 'rank-run' });
     const row = { ...frozen.listings[0], metadataMatchScore: 100, metadataFieldComparisons: [{ targetField: 'Player', targetValue: 'Ken Griffey Jr', candidateField: 'player', candidateValue: 'Ken Griffey Jr', titleDerivedValue: 'Ken Griffey Jr', status: 'match', rankingContribution: { matched: true, structured: true, titleDerived: true, awardedPoints: 20, sources: ['structured', 'title'] } }] };
     const [ranked] = bindMetadataRankingPopulation(frozen, [row]).listings;
     const html = renderToStaticMarkup(<TestAiCandidateMasterList listings={mergeCandidateDisplayGroups([[ranked], [{ ...ranked, visualExecution: receipt() }]])} sourceLabel="Fixture" targetImageUrl="https://example.test/target.jpg" scope={{ side: 'item_a' }} />);
-    expect((html.match(/<th /g) ?? []).length).toBe(7); expect((html.match(/<img /g) ?? []).length).toBe(2);
-    expect(html).toContain('20 awarded points'); expect(html).toContain('Candidate title-derived value'); expect(html).toContain('Final decisions — ranked candidates (1)');
+    expect((html.match(/<th /g) ?? []).length).toBe(8); expect((html.match(/<img /g) ?? []).length).toBe(2);
+    expect(html).toContain('Potential Points'); expect(html).not.toContain('20 awarded points'); expect(html).toContain('Candidate title-derived value'); expect(html).toContain('Final decisions — ranked candidates (1)');
     expect(html).toContain('VALUATION NOT RUN'); expect(html).not.toContain('NOT ACCEPTED'); expect(html).toContain('Full metadata comparison'); expect(html).not.toContain('Hard exception — not sent to AI');
   });
   it('currency-unknown records and source aggregate summaries never assume dollars or add overlapping populations', () => {

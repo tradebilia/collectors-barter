@@ -51,6 +51,7 @@ export type MetadataFieldComparison = {
     matched: boolean;
     structured: boolean;
     titleDerived: boolean;
+    potentialPoints?: number;
     reasons: string[];
     awards?: RankingAward[];
     awardedPoints?: number;
@@ -2305,10 +2306,34 @@ function normalizedRankingReason(value: unknown): string {
 function compactRankingReason(value: unknown): string {
 	return normalizedRankingReason(value).replace(/\s+/g, "");
 }
+function rankingPotentialPointsForField(category: string, itemType: string, field: string): number {
+  const categoryKey = normalizedChoice(category);
+  const typeKey = normalizedChoice(itemType);
+  let fields: readonly (readonly [string, number])[] = [];
+  if (categoryKey === 'video_games') fields = typeKey === 'console' ? VIDEO_GAME_CONSOLE_SCORE_FIELDS : typeKey === 'accessory' ? VIDEO_GAME_ACCESSORY_SCORE_FIELDS : VIDEO_GAME_GAME_SCORE_FIELDS;
+  else if (categoryKey === 'movies') fields = typeKey === 'box_set' ? MOVIES_BOX_SET_SCORE_FIELDS : MOVIES_INDIVIDUAL_SCORE_FIELDS;
+  else if (categoryKey === 'sports_cards') fields = typeKey.includes('set') ? SPORTS_CARD_SET_SCORE_FIELDS : typeKey.includes('unopened') || typeKey.includes('sealed') ? SPORTS_CARD_UNOPENED_SCORE_FIELDS : SPORTS_CARD_SCORE_FIELDS;
+  else if (categoryKey === 'pokemon') fields = POKEMON_SCORE_FIELDS[typeKey as keyof typeof POKEMON_SCORE_FIELDS] ?? [];
+  else if (categoryKey === 'vintage_toys') {
+    const toyType = Object.keys(VINTAGE_TOY_SCORE_FIELDS).find(key => normalizedChoice(key).replace(/[^a-z0-9]/g, '') === typeKey.replace(/[^a-z0-9]/g, ''));
+    fields = toyType ? VINTAGE_TOY_SCORE_FIELDS[toyType as keyof typeof VINTAGE_TOY_SCORE_FIELDS] : [];
+  } else if (categoryKey === 'disney_pins') fields = typeKey === 'pin_set' ? DISNEY_PINS_SET_SCORE_FIELDS : DISNEY_PINS_INDIVIDUAL_SCORE_FIELDS;
+  else if (categoryKey === 'music') fields = MUSIC_SCORE_FIELDS;
+  else if (categoryKey === 'coins') fields = typeKey.includes('set') ? COIN_SET_SCORE_FIELDS : COIN_SINGLE_SCORE_FIELDS;
+  else if (categoryKey === 'paper_money') fields = PAPER_MONEY_SCORE_FIELDS;
+  else if (categoryKey === 'stamps') fields = typeKey.includes('set') ? STAMPS_SET_SCORE_FIELDS : STAMPS_SINGLE_SCORE_FIELDS;
+  else if (categoryKey === 'comics') fields = COMICS_SINGLE_SCORE_FIELDS;
+  else if (categoryKey === 'original_art') fields = ORIGINAL_ART_SCORE_FIELDS;
+  const fieldKey = rankingAwardFieldKey(field, category, itemType);
+  return fields.filter(([candidateField]) => rankingAwardFieldKey(candidateField, category, itemType) === fieldKey)
+    .reduce((sum, [, points]) => sum + points, 0);
+}
 function rankingContributionForField(listing: VisualSourceCandidate, key: string, _fieldLabel: string, candidateValue: string, titleDerivedValue: string, category = "", itemType = ""): MetadataFieldComparison["rankingContribution"] {
   const contribution = rankingAwardContribution(listing.metadataScoreAwards, key, category, itemType);
+  const modelPotentialPoints = rankingPotentialPointsForField(category, itemType, key);
+  const potentialPoints = modelPotentialPoints || contribution.awards.reduce((sum, award) => sum + award.awardedPoints, 0) || (contribution as { awardedPoints?: number }).awardedPoints || 0;
   if (/^(?:isgraded|graded|gradingstatus|gradingstate)$/.test(normalizedFieldKey(key)) && key !== 'isGraded') {
-    return { ...contribution, matched: false, structured: false, titleDerived: false, awardedPoints: 0, awards: [], sources: [], scoringEvidence: [] };
+    return { ...contribution, matched: false, structured: false, titleDerived: false, potentialPoints: 0, awardedPoints: 0, awards: [], sources: [], scoringEvidence: [] };
   }
   const rowKey = rankingAwardFieldKey(key, category, itemType);
   const scoringEvidence = contribution.awards.map((award) => {
@@ -2356,6 +2381,7 @@ function rankingContributionForField(listing: VisualSourceCandidate, key: string
   return { ...contribution,
     structured: contribution.structured && columnAwarded("structured", candidateValue),
     titleDerived: movieIdentityTitleAwarded || contribution.titleDerived && columnAwarded("title", titleDerivedValue),
+    potentialPoints,
     awardedPoints: contribution.awards.reduce((sum, award) => sum + award.awardedPoints, 0),
     sources: [...new Set(contribution.awards.map((award) => award.source))],
     scoringEvidence,
@@ -2476,18 +2502,7 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
 						rankingContribution,
 				});
   }
-		return boundedMetadataComparisonRows([{
-		fieldKey: "title",
-			targetField: "Target listing title",
-    targetValue: comparisonValue(extractTargetTitle(targetMetadata)),
-		candidateField: "Candidate listing title",
-		candidateValue: comparisonValue(listing.title),
-			status: category === 'movies' && movieValuesAgree(extractTargetTitle(targetMetadata), comparisonValue(listing.title)) ? 'match' : "unknown",
-				titleDerivedField: "Candidate title (source)",
-				titleDerivedValue: category === 'movies' ? movieTitleDerivedValue(comparisonValue(listing.title), 'title') : comparisonValue(listing.title),
-				titleDerivedStatus: category === 'movies' && movieValuesAgree(extractTargetTitle(targetMetadata), comparisonValue(listing.title)) ? 'match' : "unknown",
-			rankingContribution: rankingContributionForField(listing, "title", "Target listing title", comparisonValue(listing.title), comparisonValue(listing.title), category, targetType),
-		}, ...rows]);
+		return boundedMetadataComparisonRows(rows);
 }
 
 /**

@@ -13,6 +13,7 @@ type RankingContribution = {
   matched?: boolean;
   structured?: boolean;
   titleDerived?: boolean;
+  potentialPoints?: number;
   points?: number;
   awardedPoints?: number;
   sources?: string[];
@@ -24,10 +25,9 @@ type RankingContribution = {
 /** Presentation only: an award explains points, never identity or price authority. */
 export function metadataContributionTooltip(contribution?: RankingContribution): string | undefined {
   if (!contribution?.matched) return undefined;
-  const points = contribution.awardedPoints ?? contribution.points;
   const source = contribution.sources?.join(', ') || (contribution.structured && contribution.titleDerived
     ? 'mixed evidence' : contribution.structured ? 'structured evidence' : contribution.titleDerived ? 'title-derived evidence' : 'combined or rule evidence');
-  return `${points !== undefined ? `${points} awarded point${points === 1 ? '' : 's'} · ` : ''}${source}`;
+  return source;
 }
 
 function scoringSourceLabel(source: string): string {
@@ -91,7 +91,7 @@ export function MetadataComparisonTable({ listing }: { listing: any }) {
       <span>Highlighted field names contributed to the ranking score. Selected scoring evidence is separate from structured values and independent title parsing; it does not confirm identity or valuation.</span>
     </div>
     <div className="mt-1 overflow-x-auto"><table className="w-full min-w-[620px] border-collapse text-[11px] leading-snug">
-      <thead><tr className="border-b border-cyan-800/50 text-left text-cyan-200/80"><th className="p-1">Target field</th><th className="p-1">Target value</th><th className="p-1">Candidate field</th><th className="p-1">Candidate value</th><th className="p-1">Candidate title-derived value / scoring evidence</th><th className="p-1">Score</th><th className="p-1">Result</th></tr></thead>
+      <thead><tr className="border-b border-cyan-800/50 text-left text-cyan-200/80"><th className="p-1">Target field</th><th className="p-1">Target value</th><th className="p-1">Candidate field</th><th className="p-1">Candidate value</th><th className="p-1">Candidate title-derived value / scoring evidence</th><th className="p-1">Potential Points</th><th className="p-1">Score</th><th className="p-1">Result</th></tr></thead>
       <tbody>{comparisons.map((comparison: any, comparisonIndex: number) => {
         const contribution = comparison.rankingContribution as RankingContribution | undefined;
         const label = metadataContributionTooltip(contribution);
@@ -105,18 +105,19 @@ export function MetadataComparisonTable({ listing }: { listing: any }) {
           <td className="max-w-[250px] break-words p-1 text-gray-200">
             <div><span className={titleClass(contribution)} title={contribution?.titleDerived ? label : undefined}>{comparison.titleDerivedValue || 'Unknown'}</span>{comparison.titleDerivedStatus && <span className={`ml-1 font-semibold uppercase ${statusClass[comparison.titleDerivedStatus] ?? statusClass.unknown}`}>({comparison.titleDerivedStatus})</span>}</div>
             {scoringEvidence.map((award, awardIndex) => <div key={`${award.awardField}-${awardIndex}`} className="mt-1 border-t border-gray-700/70 pt-1" data-selected-scoring-evidence>
-              <div className="font-semibold text-sky-200">{scoringSourceLabel(award.source)} · {award.awardField} · {award.awardedPoints} awarded point{award.awardedPoints === 1 ? '' : 's'}{award.shared ? ' (shared term, not additional points)' : ''}</div>
+              <div className="font-semibold text-sky-200">{scoringSourceLabel(award.source)} · {award.awardField}{award.shared ? ' (shared scoring term)' : ''}</div>
               {award.evidence.length > 0 ? <>
                 <div className="text-gray-400">Recorded scoring witness, not a structured or extracted field value:</div>
                 {award.evidence.map((evidence, evidenceIndex) => <div key={`${evidence.field}-${evidenceIndex}`} className={evidence.source === 'title' ? 'text-violet-200' : 'text-cyan-200'}>{scoringSourceLabel(evidence.source)} · {evidence.field}: {evidence.value || 'Unknown (no value recorded)'}</div>)}
               </> : <div className="text-gray-400">No field value recorded by this scoring term. Unknown values remain Unknown.</div>}
             </div>)}
           </td>
+          <td className="p-1 text-center font-semibold text-slate-300" data-ranking-potential-points title="Maximum points available for this field under the active ranking model">{contribution?.potentialPoints ?? contribution?.awardedPoints ?? contribution?.points ?? 0}</td>
           <td className="p-1 text-center font-semibold text-amber-200" data-ranking-score>{rowScores.scores[comparisonIndex] ?? 0}</td>
           <td className={`p-1 font-semibold uppercase ${statusClass[titleMatch ? 'match' : comparison.status] ?? statusClass.unknown}`}>{titleMatch ? 'match' : comparison.status || 'unknown'}</td>
         </tr>;
       })}</tbody>
-      <tfoot><tr className="border-t border-cyan-700/60 text-cyan-100"><td className="p-1 font-semibold" colSpan={5}>Total ranking score</td><td className="p-1 text-center font-bold text-amber-200" data-ranking-score-total>{rowScores.total}</td><td className="p-1 text-right text-gray-400">{rowScores.total === rankingTotal ? `of ${rankingTotal}` : `reported ${rankingTotal}`}</td></tr></tfoot>
+      <tfoot><tr className="border-t border-cyan-700/60 text-cyan-100"><td className="p-1 font-semibold" colSpan={6}>Total ranking score</td><td className="p-1 text-center font-bold text-amber-200" data-ranking-score-total>{rowScores.total}</td><td className="p-1 text-right text-gray-400">{rowScores.total === rankingTotal ? `of ${rankingTotal}` : `reported ${rankingTotal}`}</td></tr></tfoot>
       </table></div>
   </details>;
 }
