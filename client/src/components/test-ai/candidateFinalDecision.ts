@@ -216,6 +216,20 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
     code: 'AUDIT_TRANSPORT_CAP', className: amber };
   if (isHardCandidateDisplayException(row)) return { label: 'NOT USED — HARD EXCLUSION',
     reason: evidence || execution.reason || 'Hard exclusion recorded; supporting reason was not recorded.', code: 'HARD_EXCLUDED', className: red };
+  if (row.evidenceDisposition === 'pre_vision_score_excluded') {
+    const rationale = String(row.visualReviewRationale ?? '');
+    const threshold = rationale.match(/below (?:the )?(?:visual-review )?minimum(?: of)?\s*\(?\s*(\d+)/i)?.[1]
+      ?? rationale.match(/below minimum\s*\(?\s*(\d+)/i)?.[1];
+    const score = Number(row.metadataMatchScore);
+    if (threshold && Number.isFinite(score)) {
+      return { label: 'NOT USED — SCORE TOO LOW',
+        reason: `Not sent to visual review: metadata score was ${score}/100, below the required minimum of ${threshold}/100.`,
+        code: 'PRE_VISUAL_SCORE_EXCLUDED', className: amber };
+    }
+    return { label: 'NOT USED — PRE-REVIEW EXCLUSION',
+      reason: rationale || 'Not sent to visual review because it did not meet the pre-review requirements.',
+      code: 'PRE_VISUAL_EXCLUDED', className: amber };
+  }
   if (pricing.code === 'UNRESOLVED_AUDIT_LINK') return { label: 'NOT USED — REVIEW UNRESOLVED',
     reason: `${pricing.label}; no verified final valuation-use decision is available for this occurrence.`, code: pricing.code, className: amber };
   if (pricing.code === 'NOT_SUBMITTED_NOT_ASSESSED') return { label: 'NOT USED — NOT ASSESSED',

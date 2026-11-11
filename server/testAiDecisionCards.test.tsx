@@ -67,6 +67,18 @@ describe('Test AI candidate decision cards (real component)', () => {
     expect(html).not.toContain('NOT ACCEPTED');
     expect(html).not.toContain('NOT USED — IDENTITY MISMATCH');
   });
+  it('explains when a candidate was stopped before visual review for a low metadata score', () => {
+    const decision = candidateFinalDecision({
+      title: 'Barry Bonds Signed Baseball',
+      metadataMatchScore: 60,
+      evidenceDisposition: 'pre_vision_score_excluded',
+      visualReviewRationale: 'Autographs metadata score 60/100 is below the visual-review minimum of 70.',
+      candidatePricingLink: 'not_submitted',
+    });
+    expect(decision.label).toBe('NOT USED — SCORE TOO LOW');
+    expect(decision.reason).toContain('metadata score was 60/100, below the required minimum of 70/100');
+    expect(decision.reason).not.toContain('final valuation analysis');
+  });
   it('never fabricates mismatch or live processing from a legacy missing receipt', () => {
     const html = cards([{ title: 'Legacy', visualReviewStatus: 'mismatch', visualAudit: { initialModel: 'legacy' } }]);
     expect(html).toContain('NOT USED — REVIEW UNRESOLVED');

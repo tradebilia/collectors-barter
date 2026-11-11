@@ -360,6 +360,12 @@ function autographObjectType(value: unknown): string {
   return "";
 }
 
+function autographCategoryFromTitle(title: string): string {
+  const sportsEvidence = /\b(?:sports?|baseball|softball|football|basketball|hockey|jersey|bat|glove|helmet|ball)\b/i.test(title)
+    || /\bsports?\s+memorabilia\b/i.test(title);
+  return sportsEvidence || autographObjectType(title) ? "sports" : "";
+}
+
 function autographTargetObjectType(targetMetadata: string, details: Record<string, unknown>): string {
   const structuredType = metadataValue(targetMetadata, "signedItemType") || String(details.signedItemType ?? "");
   return autographObjectType(structuredType) || autographObjectType(extractTargetTitle(targetMetadata));
@@ -472,7 +478,9 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
   const objectWitness: ScoreEvidence = structuredObject && objectRead ? objectRead : { value: candidate.title, source: 'title', field: 'signedItemType' };
   const categoryRead = scoreCandidateEvidence(listing, ['autographCategory', 'category', 'sport', 'entertainmentType']);
   const categoryWitness: ScoreEvidence = categoryRead ?? { value: candidate.title, source: 'title', field: 'autographCategory' };
-  const candidateCategory = categoryRead ? autographMarketValue(categoryRead.value) : '';
+  const candidateCategory = categoryRead
+    ? autographMarketValue(categoryRead.value)
+    : autographCategoryFromTitle(candidate.title);
   const authRead = scoreCandidateEvidence(listing, ['authenticationCompany', 'customAuthenticationCompany', 'certificationCompany', 'authenticator', 'gradingCompany']);
   const candidateAuth = autographCandidateAuthentication(listing, authRead ? autographMarketValue(authRead.value) : '');
   const candidateDetails = candidateStructuredDetails(listing);
@@ -2295,10 +2303,8 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 				return objectType ? `${objectType.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
 			}
 			if (/^(?:autographCategory|signatureCategory)$/i.test(key)) {
-				const objectType = autographObjectType(title);
-				const sportsEvidence = /\b(?:sports?|baseball|softball|football|basketball|hockey|jersey|bat|glove|helmet|ball)\b/i.test(title);
-				return sportsEvidence || /\bsports?\s+memorabilia\b/i.test(title)
-					? "Sports (detected in title)" : objectType ? "Sports (inferred from signed object)" : "Unknown";
+				const category = autographCategoryFromTitle(title);
+				return category ? `${category.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
 			}
 			if (/^(?:authentication|authenticated|authenticationIncluded|authenticationStatus|isAuthenticated)$/i.test(key)) {
 				const authentication = autographCandidateAuthentication(listing, "");
