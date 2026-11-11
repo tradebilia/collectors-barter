@@ -162,6 +162,28 @@ describe('candidate final decision presentation (no filtering or pricing authori
     expect(result.reason).not.toContain('INSUFFICIENT_CURRENT_SUPPORT');
     expect(result.reason).not.toContain('MERCARI_UNDATED_TIMING_UNVERIFIED');
   });
+  it('translates an eBay approval rejection into the actual investigation reason', () => {
+    const result = candidateFinalDecision({
+      sourceId: 'sold_comps',
+      valuationUse: {
+        sourceAdmission: {
+          verification: 'verified',
+          reportedDisposition: 'valuation_eligible',
+          verifiedSourceDisposition: 'context_only',
+          blockerCodes: ['SOURCE_DISPOSITION_RESTRICTIVE', 'REQUIRED_APPROVAL_MISSING'],
+          reasonDetails: ['Final approval rejected: APPROVAL_IDENTITY_NOT_CONFIRMED: deciding visual evidence did not confirm identityMatches=true.'],
+        },
+        identityAdmission: { accepted: false },
+        use: { code: 'REVIEW_REQUIRED', reasonCodes: ['SOURCE_DISPOSITION_RESTRICTIVE', 'REQUIRED_APPROVAL_MISSING'] },
+      },
+    });
+    expect(result.label).toBe('NOT USED — REVIEW REQUIRED');
+    expect(result.reason).toContain('Not used in valuation.');
+    expect(result.reason).toContain('the visual evidence did not confirm the candidate was the same product identity');
+    expect(result.reason).toContain('The sale price was excluded from the valuation.');
+    expect(result.reason).not.toContain('server-final target/source/image-bound approval');
+    expect(result.reason).not.toContain('APPROVAL_IDENTITY_NOT_CONFIRMED');
+  });
   it('uses explicit asking-price economics, never arbitrary title text, for active context', () => {
     const active = candidateFinalDecision({ title: 'Ordinary candidate', saleStatus: 'active', visualExecution: receipt() });
     expect(active.label).toBe('MATCH CONFIRMED — CURRENT MARKET CONTEXT'); expect(active.reason).toContain('current asking-price activity');

@@ -1849,10 +1849,12 @@ export function sealSoldCompsFinalVisualListings<T extends MarketSale>(sales: T[
       || signedComparableFormConflicts(context.reviewedTarget, sale.saleForm).length > 0;
     const candidateIdentityFields = (sale as MarketSale & { soldCompsMetadata?: Record<string, string> }).soldCompsMetadata
       ?? normalizeSoldCompsMetadata(sale);
+    const approvalFailures: string[] = [];
     const approval = !knownHardConflict && context.target && audit && context.targetImageReference && context.expectedImageReference
       ? createServerFinalIdentityApproval({ sale, target: context.target, reviewedTarget: context.reviewedTarget,
           targetImageReference: context.targetImageReference, expectedImageReference: context.expectedImageReference,
-          targetMetadata: context.targetMetadata, review, candidateIdentityFields, acquiredAt })
+          targetMetadata: context.targetMetadata, review, candidateIdentityFields, acquiredAt,
+          onRejected: reason => approvalFailures.push(reason) })
       : null;
     // Required-visual legacy/missing-binding rows remain visible, but their
     // source panel must not claim an approval that final analysis cannot verify.
@@ -1860,7 +1862,9 @@ export function sealSoldCompsFinalVisualListings<T extends MarketSale>(sales: T[
       ? { ...sale, evidenceDisposition: 'context_only' as const,
           evidenceReasons: [...(sale.evidenceReasons ?? []), knownHardConflict
             ? `Known identity conflict prevents final approval: ${knownIdentity.categoryIdentity.conflicts.join('; ') || knownIdentity.reasons.filter((reason) => /conflict|differs/.test(reason)).join('; ')}`
-            : 'Server-final identity approval is unavailable or target/image binding changed; retained for review.'] }
+            : approvalFailures.length
+              ? `Final approval rejected: ${approvalFailures.join('; ')}`
+              : 'Final approval was not attempted because the target or image binding was missing; retained for review.'] }
       : sale;
     const sealed = sealCanonicalObservation('sold_comps', sealedSale, {
       acquiredAt, signingKey: context.signingKey, query: context.query, identityApproval: approval ?? undefined,

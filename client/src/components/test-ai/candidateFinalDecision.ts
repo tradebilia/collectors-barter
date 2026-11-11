@@ -128,6 +128,18 @@ function sourceDispositionExplanation(row: CandidateDisplayRow): string {
   const details = (admission?.reasonDetails ?? []).filter((detail: unknown) => typeof detail === 'string' && detail.trim()
     && !/^source disposition retained:/i.test(detail)).map((detail: unknown) => String(detail).trim());
   const specificDetails = details.map((specific: string) => specific
+    .replace(/^Final approval rejected:\s*APPROVAL_TARGET_BINDING_INVALID:.*$/i, 'the target information changed between the item review and the final approval check')
+    .replace(/^Final approval rejected:\s*APPROVAL_REVIEW_METADATA_BINDING_INVALID:.*$/i, 'the metadata sent to visual review did not exactly match the target metadata used for final approval')
+    .replace(/^Final approval rejected:\s*APPROVAL_TARGET_IMAGE_BINDING_INVALID:.*$/i, 'the target image used for visual review did not match the target image used for final approval')
+    .replace(/^Final approval rejected:\s*APPROVAL_FACTS_OR_REVIEW_INVALID:.*$/i, 'the sale record or visual review did not contain all required verified facts for approval')
+    .replace(/^Final approval rejected:\s*APPROVAL_CONFIDENCE_INSUFFICIENT:.*$/i, 'the visual match did not have enough confidence for final approval')
+    .replace(/^Final approval rejected:\s*APPROVAL_DECIDING_EVIDENCE_MISSING:.*$/i, 'the visual review did not preserve the evidence needed to prove the match')
+    .replace(/^Final approval rejected:\s*APPROVAL_IDENTITY_NOT_CONFIRMED:.*$/i, 'the visual evidence did not confirm the candidate was the same product identity')
+    .replace(/^Final approval rejected:\s*APPROVAL_GRADED_EVIDENCE_INCOMPLETE:.*$/i, 'the visual evidence did not confirm all required grading details')
+    .replace(/^Final approval rejected:\s*APPROVAL_UNGRADED_STATE_UNCONFIRMED:.*$/i, 'the visual evidence did not confirm that this target and candidate were both ungraded')
+    .replace(/^Final approval rejected:\s*APPROVAL_VISUAL_IDENTITY_CONFLICT:\s*deciding evidence reports false for (.+)$/i, 'the visual evidence reported a conflict in $1')
+    .replace(/^Final approval rejected:\s*APPROVAL_MATERIAL_VISUAL_DIFFERENCE:\s*(.+)$/i, 'the visual review found a material difference in $1')
+    .replace(/^Final approval rejected:\s*APPROVAL_TRANSACTION_FORM_CONFLICT:.*$/i, 'the candidate was identified as a lot, bundle, or incomplete product rather than one comparable item')
     .replace(/^APPROVAL_VISUAL_IDENTITY_CONFLICT:\s*deciding evidence reports false for dateMatches\.?$/i, 'the final identity check did not confirm that the candidate date matched the target')
     .replace(/^APPROVAL_VISUAL_IDENTITY_CONFLICT:\s*/i, 'the final identity check found a conflict: ')
     .replace(/^meaningful observed provider record ID or valid listing\/transaction URL is missing; retained as context only$/i, 'the listing did not include a verified provider ID or valid listing URL')
@@ -137,7 +149,9 @@ function sourceDispositionExplanation(row: CandidateDisplayRow): string {
     .replace(/^unsupported currency (.+); retained as context only$/i, 'the sale was reported in $1 instead of USD')
     .replace(/^missing or non-positive realized price$/i, 'the reported sale amount was missing or not positive')
     .replace(/^Qualified undated Mercari exception: sale date remains Unknown; timing is unverified and sold=true reported sold price is used as reported, not proof of a recent sale or a private accepted-offer amount\.?$/i, 'Mercari reported this as sold, but the sale date and final accepted amount were not independently verified'));
-  return `The source classified this record as ${disposition.replace(/_/g, ' ')} rather than valuation-eligible${specificDetails.length ? ` because ${specificDetails.join('; ')}` : ''}. That is why the matching item was not allowed to affect the value.`;
+  return `Not used in valuation. ${specificDetails.length
+    ? `The item looked like a possible match, but ${specificDetails.join('; ')}.`
+    : 'The source did not provide the verified evidence required for final valuation.'} The sale price was excluded from the valuation.`;
 }
 function evidenceReasons(row: CandidateDisplayRow): string {
   return Array.isArray(row.evidenceReasons) ? row.evidenceReasons.filter((reason: unknown) => typeof reason === 'string' && reason.trim()).join('; ') : '';
