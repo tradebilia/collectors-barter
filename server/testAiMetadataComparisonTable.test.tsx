@@ -93,10 +93,13 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     const candidate = { title: 'Canon CGC 8.0 A VHS Tape', format: 'VHS' };
     const scored = moviesIndividualVisualScore(candidate, target);
     const output = withMetadataFieldComparisons(target, { ...candidate, metadataScoreAwards: scored.awards, metadataMatchScore: scored.score });
+    const titleRow = (output.metadataFieldComparisons ?? []).find(row => ['title', 'movieTitle'].includes(row.fieldKey ?? ''));
+    expect(titleRow).toMatchObject({ rankingContribution: { matched: true, titleDerived: true, awardedPoints: 25 } });
     const gradeRow = (output.metadataFieldComparisons ?? []).find(row => row.fieldKey === 'grade');
     expect(gradeRow).toMatchObject({ titleDerivedValue: '8', titleDerivedStatus: 'match' });
     expect(gradeRow?.rankingContribution).toMatchObject({ matched: true, titleDerived: true, awardedPoints: 5 });
     expect(scored.score).toBe(55);
+    expect((output.metadataFieldComparisons ?? []).reduce((total, row) => total + (row.rankingContribution?.awardedPoints ?? 0), 0)).toBe(55);
   });
   it('attaches the Movie title award to a generic MATCH Title row for individual_movie', () => {
     const target = buildVisualTargetMetadata({ title: 'Canon CGC 8.0 VHS Tape', category: 'individual_movie', itemType: 'individual_movie', fullItemDetails: {

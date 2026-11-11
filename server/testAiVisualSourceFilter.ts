@@ -4035,6 +4035,11 @@ function movieCanonicalText(value: unknown): string {
 }
 function movieTitleComparable(value: unknown): string {
   return movieCanonicalText(value)
+    // Grader and numeric grade are separate Movie scoring fields. Remove the
+    // complete holder-grade phrase from product-title comparison so harmless
+    // title variants such as `CGC 8.0` versus `CGC 8.0 A` do not lose the
+    // 25-point movie-identity award while grade/company are scored separately.
+    .replace(/\b(?:psa|cgc|wata|bgs|sgc|vga|pca)\s*\d+(?:\.\d+)?(?:\s*[a-z](?:\+{1,3})?)?\b/gi, ' ')
     .replace(/\b(?:19|20)\d{2}\b/g, '')
     .replace(/\b(?:special|standard|edition|new|used|tested)\b/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
