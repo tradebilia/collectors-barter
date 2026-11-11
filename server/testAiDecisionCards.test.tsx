@@ -143,8 +143,24 @@ describe('candidate final decision presentation (no filtering or pricing authori
   ])('preserves the specific %s final code and reasonCodes', (code, label, reason) => {
     const result = candidateFinalDecision({ valuationUse: { use: { code, reasonCodes: ['HIGH_VALUE_PRICE_TOO_LOW', 'RECORDED_POLICY_REASON'] } } });
     expect(result.label).toBe(label); expect(result.reason).toContain(reason); expect(result.code).toBe(code);
-    expect(result.reason).toContain('below the approved high-value owner-reference safety range');
-    expect(result.reason).toContain('RECORDED_POLICY_REASON');
+    expect(result.reason).not.toContain('HIGH_VALUE_PRICE_TOO_LOW');
+    expect(result.reason).not.toContain('RECORDED_POLICY_REASON');
+  });
+  it('explains an approved matching candidate that was not selected because current support is insufficient', () => {
+    const result = candidateFinalDecision({
+      valuationUse: {
+        identityAdmission: { serverFinalApprovalVerified: true },
+        sourceAdmission: { blockerCodes: [], reasonDetails: [] },
+        use: { code: 'SOURCE_ELIGIBLE_NOT_SELECTED', reasonCodes: ['MERCARI_UNDATED_QUALIFIED_EXCEPTION', 'MERCARI_UNDATED_TIMING_UNVERIFIED', 'INSUFFICIENT_CURRENT_SUPPORT'] },
+      },
+    });
+    expect(result.label).toBe('MATCH CONFIRMED — NOT USED IN VALUE');
+    expect(result.reason).toContain('The item is a confirmed match');
+    expect(result.reason).toContain('not enough reliable current sales evidence');
+    expect(result.reason).toContain('One matching sale by itself is not enough');
+    expect(result.reason).toContain('no verified sale date');
+    expect(result.reason).not.toContain('INSUFFICIENT_CURRENT_SUPPORT');
+    expect(result.reason).not.toContain('MERCARI_UNDATED_TIMING_UNVERIFIED');
   });
   it('uses explicit asking-price economics, never arbitrary title text, for active context', () => {
     const active = candidateFinalDecision({ title: 'Ordinary candidate', saleStatus: 'active', visualExecution: receipt() });

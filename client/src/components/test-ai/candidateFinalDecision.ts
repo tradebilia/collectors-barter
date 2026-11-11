@@ -10,7 +10,7 @@ const green = 'border-emerald-600/50 bg-emerald-950/30 text-emerald-200';
 const finalLabels: Record<string, string> = {
   CURRENT_SALES_DIAGNOSTIC_ONLY: 'NOT USED — SALES DIAGNOSTICS ONLY',
   HISTORICAL_DIAGNOSTIC_ONLY: 'NOT USED — HISTORICAL DIAGNOSTICS ONLY',
-  SOURCE_ELIGIBLE_NOT_SELECTED: 'NOT USED — NOT SELECTED',
+  SOURCE_ELIGIBLE_NOT_SELECTED: 'MATCH CONFIRMED — NOT USED IN VALUE',
   OMITTED_BY_CAP: 'NOT USED — OMITTED BY CAP', EXACT_DUPLICATE: 'NOT USED — EXACT DUPLICATE',
   PROBABLE_DUPLICATE: 'NOT USED — PROBABLE DUPLICATE', OUTLIER_EXCLUDED: 'NOT USED — OUTLIER',
   SECONDARY_ONLY: 'NOT USED — SECONDARY EVIDENCE', REVIEW_REQUIRED: 'NOT USED — REVIEW REQUIRED',
@@ -57,6 +57,36 @@ const finalAnalysisBlockerLabels: Record<string, string> = {
   PROBABLE_DUPLICATE_POLICY: 'A probable duplicate transaction was suppressed.',
   MERCARI_UNDATED_QUALIFIED_EXCEPTION: 'Mercari qualified for the signed sold=true undated-sale exception.',
 };
+function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: string[]): string | undefined {
+  if (code === 'CURRENT_SALES_PRIMARY') return undefined;
+  const reasonCodes = new Set([
+    ...(row.valuationUse?.sourceAdmission?.blockerCodes ?? []),
+    ...(row.valuationUse?.use?.reasonCodes ?? []),
+  ]);
+  if (code === 'SOURCE_ELIGIBLE_NOT_SELECTED' || reasonCodes.has('INSUFFICIENT_CURRENT_SUPPORT')) {
+    const mercariDateNote = reasonCodes.has('MERCARI_UNDATED_TIMING_UNVERIFIED')
+      ? ' This Mercari sale has no verified sale date, so it is kept as supporting evidence while more comparable sales are gathered.' : '';
+    return `The item is a confirmed match, but this sale was not used to set the value because there is not enough reliable current sales evidence yet. One matching sale by itself is not enough to establish a dependable market value.${mercariDateNote}`;
+  }
+  if (code === 'CURRENT_SALES_DIAGNOSTIC_ONLY') {
+    return 'The item is a confirmed match, but this sale is being shown for comparison only and was not used to calculate the primary value.';
+  }
+  if (code === 'HISTORICAL_DIAGNOSTIC_ONLY') {
+    return 'The item is a confirmed match, but this sale is too old to set today’s primary value. It is retained as historical reference.';
+  }
+  if (code === 'GUIDE_FALLBACK_PRIMARY') {
+    return 'This match did not provide enough usable recent sale evidence, so the system used a guide value instead.';
+  }
+  if (code === 'OUTLIER_EXCLUDED') return 'The item matched, but its price was unusually far from the other comparable sales, so it was left out of the value calculation.';
+  if (code === 'EXACT_DUPLICATE' || code === 'PROBABLE_DUPLICATE') return 'The item matched, but this sale duplicates another sale already counted, so it was not counted twice.';
+  if (code === 'OMITTED_BY_CAP') return 'The item matched, but the source limit was reached before it could be included in the final calculation.';
+  if (reasonCodes.has('INVALID_PRICE')) return 'The item looks like a match, but the reported sale price is missing, zero, or invalid, so it cannot be used in the value.';
+  if (reasonCodes.has('SOURCE_DISPOSITION_RESTRICTIVE')) return 'The item looks like a match, but the source marked this record as restricted, so it cannot be used in the value.';
+  if (code === 'REVIEW_REQUIRED' || reasonCodes.has('REQUIRED_APPROVAL_MISSING')) return 'The item looks like a match, but a required verification step was not completed, so it cannot be used for the value yet.';
+  if (code === 'UNSUPPORTED_CURRENCY') return 'The item matched, but the sale is not reported in US dollars, so it cannot be used in the value calculation.';
+  if (code === 'FINAL_HARD_EXCLUDED') return 'The item was stopped because a required identity or transaction detail conflicts with the target.';
+  return exactReasons.length ? 'The item was not used because a final valuation rule prevented this sale from contributing to the value.' : undefined;
+}
 function finalAnalysisReasons(row: CandidateDisplayRow): string[] {
   const codes = [...(row.valuationUse?.sourceAdmission?.blockerCodes ?? []), ...(row.valuationUse?.use?.reasonCodes ?? [])];
   const details = (row.valuationUse?.sourceAdmission?.reasonDetails ?? []).filter((reason: unknown) => typeof reason === 'string' && reason.trim());
@@ -97,10 +127,11 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
     const primary = pricing.code === 'CURRENT_SALES_PRIMARY';
     const hard = pricing.code === 'FINAL_HARD_EXCLUDED';
     const exactFinalReasons = finalAnalysisReasons(row);
-    const details = [pricing.reason, exactFinalReasons.length ? exactFinalReasons.join(' · ') : undefined,
+    const plainReason = plainFinalReason(row, pricing.code, exactFinalReasons);
+    const details = [plainReason ?? pricing.reason,
       hard ? evidence || (receipt?.hardExclusion ? execution.reason : undefined) : undefined,
       pricing.code === 'CONTEXT_ONLY' ? contextReason : undefined,
-      hasMercariUndatedSoldAdmission(row) ? mercariPriceContextLabel(row) : undefined].filter(Boolean).join(' · ');
+      hasMercariUndatedSoldAdmission(row) && !plainReason ? mercariPriceContextLabel(row) : undefined].filter(Boolean).join(' · ');
     return { label: primary ? 'USED IN VALUATION' : finalLabels[pricing.code] ?? 'NOT USED — FINAL DECISION RECORDED',
       reason: `${pricing.label}${details ? ` · ${details}` : ''}`, code: pricing.code,
       className: primary ? green : hard ? red : amber };

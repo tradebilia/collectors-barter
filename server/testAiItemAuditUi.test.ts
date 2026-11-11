@@ -49,10 +49,13 @@ describe('Automatic Item A-only audit', () => {
     await render(); await tick(); await render({ ...item }, JSON.parse(JSON.stringify(sources))); await tick();
     expect(mocks.mutate).toHaveBeenCalledTimes(1);
   });
-  it('shows exact final reasons in the actual card and never invents a zero-value estimate', async () => {
+  it('shows a basic explanation in the actual card and never invents a zero-value estimate', async () => {
     await render(); await tick(); await act(async () => respond());
     expect(container.textContent).toContain('Final Item A audit completed');
-    expect(container.textContent).toContain('APPROVAL_UNGRADED_STATE_UNCONFIRMED');
+    const decisionReason = container.querySelector('[data-final-decision-code] p')?.textContent ?? '';
+    expect(decisionReason).toContain('required verification step was not completed');
+    expect(decisionReason).not.toContain('APPROVAL_UNGRADED_STATE_UNCONFIRMED');
+    expect(decisionReason).not.toContain('REQUIRED_APPROVAL_MISSING');
     expect(container.textContent).toContain('REQUIRED_APPROVAL_MISSING');
     expect(container.textContent).toContain('NOT USED — CONTEXT ONLY');
     expect(container.textContent).not.toContain('USD 0');

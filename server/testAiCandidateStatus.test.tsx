@@ -61,12 +61,13 @@ describe('Stage 5 actual status render component', () => {
     const html = renderToStaticMarkup(<TestAiFinalLedgerRow comparable={{ ...row, currency: 'CAD', price: 12, valuationUse: { use: { code: 'OUTLIER_EXCLUDED', reasonCodes: [], primaryMarketSales: false, postPolicySaleDiagnostics: false, currentSaleMedianDiagnostics: false, historicalPromptIncluded: null }, identityAdmission: {}, selection: 'selected_pre_outlier' } }} />);
     expect(html).toContain('Outlier excluded'); expect(html).toContain('CAD 12'); expect(html).not.toContain('Used in direct valuation'); expect(html).not.toContain('$12');
   });
-  it('renders the exact final-analysis financial and identity blockers instead of a generic not-used reason', () => {
+  it('renders a plain-language final-analysis blocker instead of a technical code chain', () => {
     const decision = candidateFinalDecision({ valuationUse: { use: { code: 'REVIEW_REQUIRED', reasonCodes: ['INVALID_PRICE', 'REQUIRED_APPROVAL_MISSING'], primaryMarketSales: false }, sourceAdmission: { blockerCodes: ['SOURCE_DISPOSITION_RESTRICTIVE'] } } });
     expect(decision.label).toBe('NOT USED — REVIEW REQUIRED');
-    expect(decision.reason).toContain('INVALID_PRICE: The reported price is missing, zero, or non-positive.');
-    expect(decision.reason).toContain('REQUIRED_APPROVAL_MISSING: Required server-final identity approval is missing or not bound to this target and image.');
-    expect(decision.reason).toContain('SOURCE_DISPOSITION_RESTRICTIVE: The source disposition remained restrictive at final analysis.');
+    expect(decision.reason).toContain('reported sale price is missing, zero, or invalid');
+    expect(decision.reason).not.toContain('INVALID_PRICE');
+    expect(decision.reason).not.toContain('REQUIRED_APPROVAL_MISSING');
+    expect(decision.reason).not.toContain('SOURCE_DISPOSITION_RESTRICTIVE');
   });
   it('preserves six metadata columns, source highlights, target/candidate images and one master list', () => {
     const frozen = freezeMetadataRankingPopulation([{ title: target.title, imageUrl: 'https://example.test/candidate.jpg', currency: 'CAD', price: 100 }], { sourceId: 'fixture', populationId: 'rank-run' });
