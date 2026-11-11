@@ -62,9 +62,12 @@ describe('Stage 5 actual status render component', () => {
     expect(html).toContain('Outlier excluded'); expect(html).toContain('CAD 12'); expect(html).not.toContain('Used in direct valuation'); expect(html).not.toContain('$12');
   });
   it('renders a plain-language final-analysis blocker instead of a technical code chain', () => {
-    const decision = candidateFinalDecision({ valuationUse: { use: { code: 'REVIEW_REQUIRED', reasonCodes: ['INVALID_PRICE', 'REQUIRED_APPROVAL_MISSING'], primaryMarketSales: false }, sourceAdmission: { blockerCodes: ['SOURCE_DISPOSITION_RESTRICTIVE'] } } });
+    const decision = candidateFinalDecision({ valuationUse: { use: { code: 'REVIEW_REQUIRED', reasonCodes: ['INVALID_PRICE', 'REQUIRED_APPROVAL_MISSING'], primaryMarketSales: false }, sourceAdmission: { blockerCodes: ['SOURCE_DISPOSITION_RESTRICTIVE'], verifiedSourceDisposition: 'context_only', reasonDetails: ['meaningful observed provider record ID or valid listing/transaction URL is missing; retained as context only', 'APPROVAL_VISUAL_IDENTITY_CONFLICT: deciding evidence reports false for dateMatches.'] } } });
     expect(decision.label).toBe('NOT USED — REVIEW REQUIRED');
-    expect(decision.reason).toContain('reported sale price is missing, zero, or invalid');
+    expect(decision.reason).toContain('context only');
+    expect(decision.reason).toContain('did not include a verified provider ID or valid listing URL');
+    expect(decision.reason).toContain('final identity check did not confirm that the candidate date matched the target');
+    expect(decision.reason).not.toContain('dateMatches');
     expect(decision.reason).not.toContain('INVALID_PRICE');
     expect(decision.reason).not.toContain('REQUIRED_APPROVAL_MISSING');
     expect(decision.reason).not.toContain('SOURCE_DISPOSITION_RESTRICTIVE');

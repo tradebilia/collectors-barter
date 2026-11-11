@@ -80,8 +80,8 @@ function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: 
   if (code === 'OUTLIER_EXCLUDED') return 'The item matched, but its price was unusually far from the other comparable sales, so it was left out of the value calculation.';
   if (code === 'EXACT_DUPLICATE' || code === 'PROBABLE_DUPLICATE') return 'The item matched, but this sale duplicates another sale already counted, so it was not counted twice.';
   if (code === 'OMITTED_BY_CAP') return 'The item matched, but the source limit was reached before it could be included in the final calculation.';
+  if (reasonCodes.has('SOURCE_DISPOSITION_RESTRICTIVE')) return sourceDispositionExplanation(row);
   if (reasonCodes.has('INVALID_PRICE')) return 'The item looks like a match, but the reported sale price is missing, zero, or invalid, so it cannot be used in the value.';
-  if (reasonCodes.has('SOURCE_DISPOSITION_RESTRICTIVE')) return 'The item looks like a match, but the source marked this record as restricted, so it cannot be used in the value.';
   if (code === 'REVIEW_REQUIRED' || reasonCodes.has('REQUIRED_APPROVAL_MISSING')) return 'The item looks like a match, but a required verification step was not completed, so it cannot be used for the value yet.';
   if (code === 'UNSUPPORTED_CURRENCY') return 'The item matched, but the sale is not reported in US dollars, so it cannot be used in the value calculation.';
   if (code === 'FINAL_HARD_EXCLUDED') return 'The item was stopped because a required identity or transaction detail conflicts with the target.';
@@ -91,6 +91,23 @@ function finalAnalysisReasons(row: CandidateDisplayRow): string[] {
   const codes = [...(row.valuationUse?.sourceAdmission?.blockerCodes ?? []), ...(row.valuationUse?.use?.reasonCodes ?? [])];
   const details = (row.valuationUse?.sourceAdmission?.reasonDetails ?? []).filter((reason: unknown) => typeof reason === 'string' && reason.trim());
   return [...new Set(codes)].map((code) => `${code}: ${finalAnalysisBlockerLabels[code] ?? 'Final analysis recorded this code as a reason the candidate was not used.'}`).concat(details);
+}
+function sourceDispositionExplanation(row: CandidateDisplayRow): string {
+  const admission = row.valuationUse?.sourceAdmission;
+  const disposition = admission?.verifiedSourceDisposition || admission?.reportedDisposition || 'restrictive';
+  const details = (admission?.reasonDetails ?? []).filter((detail: unknown) => typeof detail === 'string' && detail.trim()
+    && !/^source disposition retained:/i.test(detail)).map((detail: unknown) => String(detail).trim());
+  const specificDetails = details.map((specific: string) => specific
+    .replace(/^APPROVAL_VISUAL_IDENTITY_CONFLICT:\s*deciding evidence reports false for dateMatches\.?$/i, 'the final identity check did not confirm that the candidate date matched the target')
+    .replace(/^APPROVAL_VISUAL_IDENTITY_CONFLICT:\s*/i, 'the final identity check found a conflict: ')
+    .replace(/^meaningful observed provider record ID or valid listing\/transaction URL is missing; retained as context only$/i, 'the listing did not include a verified provider ID or valid listing URL')
+    .replace(/^completed-sale status is not verifiable for this source$/i, 'the source did not verify that this was a completed sale')
+    .replace(/^price basis is not verifiable as sold, closed, or realized$/i, 'the source did not verify that the amount was a completed-sale price')
+    .replace(/^sale currency is unknown; retained as context only$/i, 'the sale currency was not identified')
+    .replace(/^unsupported currency (.+); retained as context only$/i, 'the sale was reported in $1 instead of USD')
+    .replace(/^missing or non-positive realized price$/i, 'the reported sale amount was missing or not positive')
+    .replace(/^Qualified undated Mercari exception: sale date remains Unknown; timing is unverified and sold=true reported sold price is used as reported, not proof of a recent sale or a private accepted-offer amount\.?$/i, 'Mercari reported this as sold, but the sale date and final accepted amount were not independently verified'));
+  return `The source classified this record as ${disposition.replace(/_/g, ' ')} rather than valuation-eligible${specificDetails.length ? ` because ${specificDetails.join('; ')}` : ''}. That is why the matching item was not allowed to affect the value.`;
 }
 function evidenceReasons(row: CandidateDisplayRow): string {
   return Array.isArray(row.evidenceReasons) ? row.evidenceReasons.filter((reason: unknown) => typeof reason === 'string' && reason.trim()).join('; ') : '';
