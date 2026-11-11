@@ -209,6 +209,14 @@ describe('readSourceGradeClaimsFromTitle', () => {
     }
     expect(parseSourceGradeFromTitle('PCGS MS65+ PL')).toMatchObject({ grade: 'MS65+ PL', grader: 'PCGS' });
   });
+  it('normalizes a CGC numeric title grade without an invalid letter suffix', () => {
+    const parsed = parseSourceGradeFromTitle('Canon CGC 8.0 A VHS Tape', { category: 'movies' });
+    expect(parsed).toMatchObject({ grade: '8.0', grader: 'CGC', comparable: { numeric: '8', designation: null, qualifiers: [] } });
+  });
+  it('preserves valid A-plus title suffixes for video-game grading', () => {
+    const parsed = parseSourceGradeFromTitle('Game WATA 9 A+', { category: 'video_games' });
+    expect(parsed).toMatchObject({ grade: '9 A+', grader: 'WATA', comparable: { numeric: '9', qualifiers: [] } });
+  });
 
   it('retains incomplete qualifiers without manufacturing aggregate agreement', () => {
     const claims = readSourceGradeClaimsFromTitle('PSA 9 (OC) CGC 9');

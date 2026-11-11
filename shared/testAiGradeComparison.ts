@@ -103,6 +103,12 @@ export function readSourceGradeClaimsFromTitle(value: unknown, options: Pick<Com
           || (options.category ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '') !== 'vintagetoys') continue;
         grade = grade.replace(/^[QC]\s*/i, '');
       }
+      // CGC numeric grades do not use the A/A+/A++ soft suffix used by some
+      // game-title conventions. Treat that stray title letter as listing
+      // noise so `CGC 8 A` becomes the comparable numeric grade `8`.
+      if (index === 0 && match[1].toUpperCase() === 'CGC') {
+        grade = grade.replace(/\s+A\+{0,3}(?=\s|$)/gi, '').trim();
+      }
 
       // A grader-level opening parenthesis is outside the captured grade.
       // Remove only unmatched outer closing parentheses, not (OC)/(PL).

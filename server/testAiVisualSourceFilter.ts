@@ -2529,6 +2529,9 @@ export function withMetadataFieldComparisons<T extends Record<string, any>>(targ
     ? listing.metadataFieldComparisons as MetadataFieldComparison[] : fresh;
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   const itemType = targetItemTypeValue(targetMetadata);
+  const canonicalComparisonKey = (field: string): string => category === 'movies'
+    && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(field) ? 'movieTitle' : normalizedFieldKey(field);
+  const comparisonQuality = (row: MetadataFieldComparison): number => [row.targetValue, row.candidateValue, row.titleDerivedStatus === 'match' ? row.titleDerivedValue : ''].filter(value => meaningfulMetadataText(value)).length;
   const freshByKey = new Map(fresh.map((row) => [normalizedFieldKey(row.fieldKey ?? row.targetField), row]));
   const freshByLabel = new Map(fresh.map((row) => [normalizedFieldKey(row.targetField), row]));
   const rows: MetadataFieldComparison[] = existing.map((previous) => {
@@ -2540,9 +2543,22 @@ export function withMetadataFieldComparisons<T extends Record<string, any>>(targ
   });
   const present = new Set(rows.map((row) => normalizedFieldKey(row.fieldKey ?? row.targetField)));
   for (const row of fresh) {
-    if (!present.has(normalizedFieldKey(row.fieldKey ?? row.targetField))) rows.push(row);
+    if (!present.has(canonicalComparisonKey(row.fieldKey ?? row.targetField))) rows.push(row);
   }
-  return { ...listing, metadataFieldComparisons: boundedMetadataComparisonRows(rows) } as T & { metadataFieldComparisons: MetadataFieldComparison[] };
+  const deduplicated = rows.reduce<MetadataFieldComparison[]>((result, row) => {
+    const canonical = canonicalComparisonKey(row.fieldKey ?? row.targetField);
+    const duplicateIndex = result.findIndex(existingRow => canonicalComparisonKey(existingRow.fieldKey ?? existingRow.targetField) === canonical);
+    if (duplicateIndex < 0) {
+      result.push(row);
+      return result;
+    }
+    // Keep the richer transport row (usually the one with the real target and
+    // candidate values) so the single award is visible on the matched row,
+    // rather than stranded on a synthetic alias row with Unknown values.
+    if (comparisonQuality(row) > comparisonQuality(result[duplicateIndex])) result[duplicateIndex] = row;
+    return result;
+  }, []);
+  return { ...listing, metadataFieldComparisons: boundedMetadataComparisonRows(deduplicated) } as T & { metadataFieldComparisons: MetadataFieldComparison[] };
 }
 
 type ExplicitState = "yes" | "no" | "unknown";
