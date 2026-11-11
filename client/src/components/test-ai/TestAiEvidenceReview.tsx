@@ -2,6 +2,7 @@ import React from 'react';
 import type { NormalizedEvidenceSummary } from '../../../../shared/testAiEvidenceNormalization';
 import { collectEbayCandidateDisplayOccurrences, mergeCandidateDisplayGroups, reconcileCandidateFinalUse } from '../../../../shared/testAiCandidateLedger';
 import { sourceVisualDisplayGroups, sourceRetainedDisplayGroups } from '../../../../shared/testAiSourceDisplay';
+import { isCurrentMarketContextSource } from '../../../../shared/testAiMarketContext';
 import { TestAiCandidateMasterList } from '../TestAiCandidateMasterList';
 import { TestAiSafeImage } from '../TestAiSafeImage';
 import { useTestAiCandidateDisplay } from '../TestAiCandidateStatus';
@@ -21,6 +22,13 @@ export function evidenceReviewCandidates(source: EvidenceReviewSource): any[] {
 }
 
 export type UsedValuationPriceSummary = { count: number; low: number | null; high: number | null; average: number | null };
+export type CurrentMarketPriceSummary = UsedValuationPriceSummary;
+
+export function isConfirmedCurrentMarketMatch(row: any): boolean {
+  return row?.visualReviewStatus === 'match'
+    || row?.visualExecution?.identity?.result === 'match'
+    || row?.visualIdentityResult === 'match';
+}
 
 function candidatePrice(row: any): number | null {
   for (const value of [row?.price, row?.soldPrice, row?.finalPrice, row?.transactionPrice]) {
@@ -33,6 +41,18 @@ function candidatePrice(row: any): number | null {
 export function summarizeUsedValuationPrices(rows: any[]): UsedValuationPriceSummary {
   const prices = rows.filter((row) => row?.valuationUse?.use?.code === 'CURRENT_SALES_PRIMARY')
     .map(candidatePrice).filter((price): price is number => price !== null);
+  if (!prices.length) return { count: 0, low: null, high: null, average: null };
+  return { count: prices.length, low: Math.min(...prices), high: Math.max(...prices), average: prices.reduce((total, price) => total + price, 0) / prices.length };
+}
+
+export function summarizeCurrentMarketPrices(rows: any[]): CurrentMarketPriceSummary {
+  const prices = rows.filter((row) => isCurrentMarketContextSource({
+    sourceId: row?.sourceId,
+    role: row?.role ?? row?.sourceRole,
+    kind: row?.kind,
+    saleStatus: row?.saleStatus,
+    priceBasis: row?.priceBasis,
+  }) && isConfirmedCurrentMarketMatch(row)).map(candidatePrice).filter((price): price is number => price !== null);
   if (!prices.length) return { count: 0, low: null, high: null, average: null };
   return { count: prices.length, low: Math.min(...prices), high: Math.max(...prices), average: prices.reduce((total, price) => total + price, 0) / prices.length };
 }
@@ -51,6 +71,14 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
   const displayed = groups.flatMap(source => reconcileCandidateFinalUse(source.candidates, context.outcome, { side: scopeSide, sourceId: source.id }));
   const used = displayed.filter(row => row.valuationUse?.use?.code === 'CURRENT_SALES_PRIMARY').length;
   const usedPriceSummary = summarizeUsedValuationPrices(displayed);
+  const currentMarketRows = displayed.filter(row => isCurrentMarketContextSource({
+    sourceId: row?.sourceId,
+    role: row?.role ?? row?.sourceRole,
+    kind: row?.kind,
+    saleStatus: row?.saleStatus,
+    priceBasis: row?.priceBasis,
+  }) && isConfirmedCurrentMarketMatch(row));
+  const currentMarketPriceSummary = summarizeCurrentMarketPrices(currentMarketRows);
   const resolved = displayed.filter(row => row.valuationUse?.use?.code).length;
   const valuationNotRun = !context.outcome;
   return <section className="space-y-4 rounded-xl border border-cyan-800/40 bg-slate-950/40 p-4" aria-label={`${scopeSide === 'item_a' ? 'Item A' : 'Item B'} evidence review`}>
@@ -71,10 +99,11 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
         {item.primaryPhotoUrl ? <TestAiSafeImage src={item.primaryPhotoUrl} alt="Target item reference" className="h-24 w-20 rounded border border-cyan-800/40 bg-slate-950 object-contain" /> : <div className="flex h-24 w-20 items-center justify-center rounded border border-slate-700 text-center text-xs text-slate-500">Target image unavailable</div>}
         <div className="min-w-0"><p className="break-words text-sm font-semibold text-slate-100">{item.id ? <a className="hover:text-cyan-200 hover:underline" href={`/item/${item.id}`} target="_blank" rel="noreferrer">{item.title}</a> : item.title}</p><p className="mt-1 text-xs text-slate-400">{item.category.replace(/_/g, ' ')}{item.itemType ? ` · ${item.itemType.replace(/_/g, ' ')}` : ''}</p></div>
       </div></div>
-      <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-3"><h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Run summary · displayed candidates only</h3><div className="grid grid-cols-3 gap-2 text-center">
+      <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-3"><h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Run summary · displayed candidates only</h3><div className="grid grid-cols-2 gap-2 text-center md:grid-cols-4">
         <div><p className="text-xl font-semibold text-cyan-200">{displayed.length}</p><p className="text-xs text-slate-400">Candidates</p></div>
         <div><p className="text-xl font-semibold text-emerald-200">{used}</p><p className="text-xs text-slate-400">Used in valuation</p></div>
         <div><p className="text-xl font-semibold text-amber-200">{Math.max(0, displayed.length - used)}</p><p className="text-xs text-slate-400">Not used</p></div>
+        <div><p className="text-xl font-semibold text-sky-200">{currentMarketRows.length}</p><p className="text-xs text-slate-400">Current market context</p></div>
       </div>
       <div className="mt-3 rounded border border-emerald-800/40 bg-emerald-950/20 p-2" aria-label="Prices from items used in valuation">
         <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">Prices from items used in valuation</p>
@@ -84,6 +113,15 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
           <div><p className="text-sm font-semibold text-emerald-100">{formatRunSummaryPrice(usedPriceSummary.average)}</p><p className="text-[10px] text-slate-400">Average Price</p></div>
         </div>
         <p className="mt-1 text-[10px] text-slate-500">Based only on {usedPriceSummary.count} candidate{usedPriceSummary.count === 1 ? '' : 's'} with the final primary-sales valuation-use decision.</p>
+      </div>
+      <div className="mt-3 rounded border border-sky-800/40 bg-sky-950/20 p-2" aria-label="Prices from current market context">
+        <p className="text-xs font-semibold uppercase tracking-wide text-sky-200">Prices from current market context</p>
+        <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+          <div><p className="text-sm font-semibold text-sky-100">{formatRunSummaryPrice(currentMarketPriceSummary.low)}</p><p className="text-[10px] text-slate-400">Low Asking Price</p></div>
+          <div><p className="text-sm font-semibold text-sky-100">{formatRunSummaryPrice(currentMarketPriceSummary.high)}</p><p className="text-[10px] text-slate-400">High Asking Price</p></div>
+          <div><p className="text-sm font-semibold text-sky-100">{formatRunSummaryPrice(currentMarketPriceSummary.average)}</p><p className="text-[10px] text-slate-400">Average Asking Price</p></div>
+        </div>
+        <p className="mt-1 text-[10px] text-slate-500">Based on {currentMarketPriceSummary.count} active listing{currentMarketPriceSummary.count === 1 ? '' : 's'} with a reported asking price. These prices are context only and do not set the primary sold-comps value.</p>
       </div>
       {valuationNotRun ? <p className="mt-2 text-xs text-amber-200">Final valuation analysis has not run yet; current valuation counts are 0.</p> : resolved < displayed.length && <p className="mt-2 text-xs text-amber-200">{displayed.length - resolved} candidate decisions have no resolved final valuation record; their cards explain what is known.</p>}</div>
     </div>

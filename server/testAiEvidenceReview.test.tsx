@@ -2,7 +2,7 @@ import React, { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { TestAiEvidenceReview, evidenceReviewCandidates, summarizeUsedValuationPrices } from '../client/src/components/test-ai/TestAiEvidenceReview';
+import { TestAiEvidenceReview, evidenceReviewCandidates, summarizeCurrentMarketPrices, summarizeUsedValuationPrices } from '../client/src/components/test-ai/TestAiEvidenceReview';
 import { MetadataComparisonTable, TestAiVisualComparison } from '../client/src/components/TestAiMetadataComparisonTable';
 import { normalizeTestAiEvidence } from '../shared/testAiEvidenceNormalization';
 const item = { id: 1, title: 'Target LaserDisc', category: 'movies', itemType: 'individual_movie' };
@@ -46,7 +46,24 @@ describe('Evidence Review is the complete candidate decision view', () => {
       { price: 11, valuationUse: { use: { code: 'CURRENT_SALES_PRIMARY' } } },
       { price: 25, valuationUse: { use: { code: 'CURRENT_SALES_PRIMARY' } } },
       { price: 999, valuationUse: { use: { code: 'CURRENT_SALES_DIAGNOSTIC_ONLY' } } },
-    ])).toEqual({ count: 2, low: 11, high: 25, average: 18 });
+      ])).toEqual({ count: 2, low: 11, high: 25, average: 18 });
+  });
+  it('summarizes active asking prices separately from sold valuation prices', () => {
+    expect(summarizeCurrentMarketPrices([
+      { sourceId: 'ebay_active', price: 19.99, visualReviewStatus: 'match' },
+      { sourceId: 'ebay_active', price: 24.99, visualReviewStatus: 'mismatch' },
+      { sourceId: 'sold_comps', price: 999 },
+    ])).toEqual({ count: 1, low: 19.99, high: 19.99, average: 19.99 });
+  });
+  it('renders the current-market count and asking-price summary for active listings', () => {
+    const html = review([{ id: 'ebay_active', label: 'eBay Active', packet: { listings: [{ title: 'Active listing', price: 19.99, saleStatus: 'active', visualReviewStatus: 'match' }, { title: 'Unmatched active listing', price: 24.99, saleStatus: 'active', visualReviewStatus: 'mismatch' }] } }]);
+    expect(html).toContain('Current market context');
+    expect(html).toContain('Prices from current market context');
+    expect(html).toContain('Low Asking Price'); expect(html).toContain('$19.99');
+    expect(html).toContain('High Asking Price'); expect(html).toContain('$19.99');
+    expect(html).toContain('Average Asking Price'); expect(html).toContain('$19.99');
+    expect(html).toContain('Based on 1 active listing');
+    expect(html).toContain('These prices are context only');
   });
   it('renders the three valuation price labels and keeps them unavailable before final use', () => {
     const html = review([]);
