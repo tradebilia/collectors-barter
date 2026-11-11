@@ -12,9 +12,13 @@ import viteConfig from "../../vite.config";
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
 export async function setupVite(app: Express, server: Server) {
+  // WebDev forwards both HTTP and WebSocket traffic through Express. Without
+  // an explicit clientPort, Vite advertises its standalone default (5173),
+  // so the browser HMR client connects to a port that is not listening.
+  const hmrClientPort = Number(process.env.PORT ?? 3000);
   const serverOptions = {
     middlewareMode: true,
-    hmr: { server },
+    hmr: { server, clientPort: hmrClientPort },
     allowedHosts: true as const,
   };
 

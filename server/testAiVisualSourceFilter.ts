@@ -2305,7 +2305,7 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 				const state = autographAuthenticationState(authentication);
 				return state === "yes" ? "Yes (inferred from title)" : state === "no" ? "No (inferred from title)" : "Unknown";
 			}
-			if (/^(?:authenticationCompany|customAuthenticationCompany|authenticator)$/i.test(key)) {
+			if (/^(?:authenticationCompany|customAuthenticationCompany|certificationCompany|authenticator)$/i.test(key)) {
 				const authentication = autographCandidateAuthentication(listing, "");
 				return authentication && !/^(?:authenticated|yes)$/i.test(authentication)
 					? `${authentication.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
@@ -2667,6 +2667,10 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
     }
     keys.add("authenticationIncluded");
   }
+  // The listing title supplies evidence for specific metadata fields; it is
+  // not itself a scored metadata field. Movie identity is the one deliberate
+  // exception because the Movie model awards points on its canonical title row.
+  if (!movieContext) keys.delete("title");
   // Movies expose the same product identity through both the generic listing
   // title and the category-specific movieTitle field. Prefer the canonical
   // movieTitle row so the comparison does not show the same value twice.

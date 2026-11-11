@@ -87,6 +87,11 @@ describe('title evidence transparency: screenshot scorer and real rendered witne
       expect(row(rows, field)).toMatchObject({ titleDerivedValue: value, titleDerivedStatus: 'match', rankingContribution: { awardedPoints: expect.any(Number) } });
       expect(row(rows, field).titleDerivedValue).not.toBe('Unknown');
     }
+    expect(row(rows, 'certificationCompany')).toMatchObject({
+      titleDerivedValue: 'Steiner (detected in title)',
+      titleDerivedStatus: 'unknown',
+    });
+    expect(rows.find(entry => entry.fieldKey === 'title')).toBeUndefined();
   });
 
   it('keeps Original Art title-scored fields from displaying Unknown', () => {
