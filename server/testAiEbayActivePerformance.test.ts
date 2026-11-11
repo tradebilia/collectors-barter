@@ -6,6 +6,7 @@ import {
   EBAY_ACTIVE_RESULTS_PER_TIER,
   EBAY_ACTIVE_EXACT_PAGE_LIMIT,
   EBAY_ACTIVE_DISPLAY_TARGET,
+  EBAY_ACTIVE_DETAIL_ENRICHMENT_CAP,
   computeMetrics,
   readEbayBrowsePage,
 } from "./testAIRouter";
@@ -85,7 +86,10 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(section).toContain("EBAY_ACTIVE_RESULTS_PER_TIER");
     expect(routerSource).toContain("buyingOptions%3A%7BFIXED_PRICE%7CAUCTION%7D");
     expect(routerSource).toContain("offset=${offset}");
-    expect(routerSource).toContain("fieldgroups=COMPACT");
+    expect(routerSource).toContain("/buy/browse/v1/item/${encodeURIComponent(itemId)}");
+    expect(routerSource).not.toContain("fieldgroups=COMPACT");
+    expect(routerSource).toContain("enrichEbayItemDetails");
+    expect(routerSource).toContain("slice(0, EBAY_ACTIVE_DETAIL_ENRICHMENT_CAP)");
     expect(routerSource).toContain("uniqueBidderCount");
     expect(section).not.toContain("fetchEbayListings(candidateQuery || candidate, token, 100)");
   });
@@ -122,6 +126,12 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(routerSource).toContain("normalizedStructuredMetadata: marketplaceCandidate.structuredMetadata");
     expect(routerSource).toContain("imageUrl: marketplaceCandidate.imageUrl");
     expect(routerSource).toContain("imageUrls: marketplaceCandidate.imageUrls");
+  });
+
+  it("keeps full item enrichment bounded at the existing 120-record safety cap", () => {
+    expect(EBAY_ACTIVE_DETAIL_ENRICHMENT_CAP).toBe(120);
+    expect(routerSource).toContain("exactSummaries = await enrichEbayItemDetails(exactSummaries, token)");
+    expect(routerSource).toContain("eligibility = filterEbayCandidates(exactSummaries)");
   });
 
   it("preserves ranking metadata in both eBay listing transport arrays", () => {
@@ -209,7 +219,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain(`function sortRankedCandidates<T extends Record<string, any>>(listings: T[]): T[] {
   return sortMetadataRankedCandidates(listings);
 }`);
-    expect(masterListSource).toContain("const candidates = reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);");
+    expect(masterListSource).toContain("const candidates = reconciled ? listings : reconcileCandidateFinalUse(mergeCandidateDisplayGroups([listings], scope), context.outcome, scope);");
     expect(candidateLedgerSource).toContain("return sortMetadataRankedCandidates([...merged.values()]);");
     expect(masterListSource).toContain("candidates.map((listing, index)");
     expect(pageSource).toContain("const rankedDisplayListings = sortRankedCandidates(");

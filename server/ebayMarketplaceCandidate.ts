@@ -52,6 +52,33 @@ function ebayImageValues(item: Record<string, unknown>): unknown[] {
   ].map(imageUrl);
 }
 
+function normalizedAspectKey(value: unknown): string {
+  return String(value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function ebayLocalizedAspectFields(value: unknown): Record<string, unknown> {
+  if (!Array.isArray(value)) return {};
+  const aliases: Record<string, string> = {
+    autographauthentication: 'authenticationCompany',
+    authenticationcompany: 'authenticationCompany',
+    authentication: 'authenticationCompany',
+    signeditemtype: 'signedItemType',
+    autographcategory: 'autographCategory',
+    autographincluded: 'authenticationIncluded',
+    autographed: 'authenticationIncluded',
+  };
+  return value.reduce<Record<string, unknown>>((fields, aspect) => {
+    if (!aspect || typeof aspect !== 'object') return fields;
+    const record = aspect as Record<string, unknown>;
+    const name = record.name ?? record.label ?? record.propertyName;
+    const field = aliases[normalizedAspectKey(name)];
+    if (!field || fields[field] !== undefined) return fields;
+    const aspectValue = record.value ?? record.values ?? record.propertyValue;
+    if (aspectValue !== undefined && aspectValue !== null && String(aspectValue).trim()) fields[field] = aspectValue;
+    return fields;
+  }, {});
+}
+
 export function normalizeEbayMarketplaceCandidate(
   item: Record<string, unknown>,
   defaults: EbayCandidateDefaults = {},
@@ -68,8 +95,11 @@ export function normalizeEbayMarketplaceCandidate(
   const date = firstText(item.endedAt, item.soldAt, item.itemEndDate, item.date);
   const condition = firstText(item.marketplaceCondition, item.condition);
   const seller = firstText(item.sellerUsername, (item.seller as Record<string, unknown> | undefined)?.username);
+  const localizedAspectFields = ebayLocalizedAspectFields(item.localizedAspects);
   const structuredMetadata = {
-    ...(item.itemSpecifics && typeof item.itemSpecifics === 'object' ? { itemSpecifics: item.itemSpecifics } : {}),
+    ...(Object.keys(localizedAspectFields).length > 0 || item.itemSpecifics && typeof item.itemSpecifics === 'object'
+      ? { itemSpecifics: { ...localizedAspectFields, ...(item.itemSpecifics as Record<string, unknown> | undefined) } } : {}),
+    ...(Array.isArray(item.localizedAspects) ? { localizedAspects: item.localizedAspects } : {}),
     ...(item.aspects && typeof item.aspects === 'object' ? { aspects: item.aspects } : {}),
     ...(item.specifics && typeof item.specifics === 'object' ? { specifics: item.specifics } : {}),
     ...(item.itemDetails && typeof item.itemDetails === 'object' ? { itemDetails: item.itemDetails } : {}),

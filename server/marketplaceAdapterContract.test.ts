@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeEbayMarketplaceCandidate } from './ebayMarketplaceCandidate';
 import { normalizeMercariSoldCandidate } from './soldCompsAdditionalMarketData';
+import { extractCandidateStructuredMetadata } from '../shared/testAiMetadataValues';
 
 type AdapterCase = {
   name: string;
@@ -93,6 +94,25 @@ describe('shared eBay/Mercari marketplace adapter contract', () => {
       'https://img.test/fallback-label.jpg',
     ]);
     expect(candidate.imageUrl).toBe('https://img.test/fallback-front.jpg');
+  });
+
+  it('preserves eBay getItem localizedAspects as structured metadata', () => {
+    const candidate = normalizeEbayMarketplaceCandidate({
+      itemId: 'ebay-active-brando',
+      title: 'Marlon Brando Signed Cut Signature Film Movie',
+      localizedAspects: [
+        { name: 'Autograph Authentication', value: 'East Coast Authenticators' },
+        { name: 'Signed Item Type', value: 'Paper' },
+        { name: 'Autograph Category', value: 'Entertainment' },
+      ],
+    }, { sourceId: 'ebay_active', saleStatus: 'active', priceBasis: 'asking' });
+
+    expect(candidate.structuredMetadata.localizedAspects).toHaveLength(3);
+    expect(extractCandidateStructuredMetadata({ normalizedStructuredMetadata: candidate.structuredMetadata })).toMatchObject({
+      authenticationCompany: 'East Coast Authenticators',
+      signedItemType: 'Paper',
+      autographCategory: 'Entertainment',
+    });
   });
 
   it.each([

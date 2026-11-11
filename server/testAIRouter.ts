@@ -80,6 +80,7 @@ export const EBAY_ACTIVE_QUERY_TIER_LIMIT = 6;
 export const EBAY_ACTIVE_RESULTS_PER_TIER = 40;
 export const EBAY_ACTIVE_EXACT_PAGE_LIMIT = 3;
 export const EBAY_ACTIVE_DISPLAY_TARGET = 20;
+export const EBAY_ACTIVE_DETAIL_ENRICHMENT_CAP = 120;
 
 function normalizedPcgsAuctionGrade(value: unknown): string {
   return String(value ?? '').replace(/\s+/g, '').toUpperCase();
@@ -263,9 +264,9 @@ async function fetchEbayExactTierPages(query: string, token: string, failures: E
   return pages;
 }
 
-async function fetchEbayAuctionDetails(itemId: string, token: string) {
+async function fetchEbayItemDetails(itemId: string, token: string) {
   const res = await fetch(
-    `https://api.ebay.com/buy/browse/v1/item/${encodeURIComponent(itemId)}?fieldgroups=COMPACT`,
+    `https://api.ebay.com/buy/browse/v1/item/${encodeURIComponent(itemId)}`,
     {
       headers: { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' },
       signal: AbortSignal.timeout(EBAY_BROWSE_TIMEOUT_MS),
@@ -275,6 +276,7 @@ async function fetchEbayAuctionDetails(itemId: string, token: string) {
   const data = await res.json().catch(() => null) as any;
   return data && typeof data === 'object'
     ? {
+        ...data,
         imageUrls: collectEbayImageUrls(data),
         bidCount: Number.isFinite(Number(data.bidCount)) ? Number(data.bidCount) : null,
         uniqueBidderCount: Number.isFinite(Number(data.uniqueBidderCount)) ? Number(data.uniqueBidderCount) : null,
@@ -285,27 +287,25 @@ async function fetchEbayAuctionDetails(itemId: string, token: string) {
     : null;
 }
 
-async function enrichEbayAuctionDetails(items: any[], token: string) {
-  const auctionItems = items
-    .filter((item) => Array.isArray(item?.buyingOptions) && item.buyingOptions.includes('AUCTION') && item.itemId)
-    .slice(0, 40);
+async function enrichEbayItemDetails(items: any[], token: string) {
+  const enrichableItems = items.filter((item) => item?.itemId).slice(0, EBAY_ACTIVE_DETAIL_ENRICHMENT_CAP);
   let cursor = 0;
   const worker = async () => {
-    while (cursor < auctionItems.length) {
-      const item = auctionItems[cursor++];
+    while (cursor < enrichableItems.length) {
+      const item = enrichableItems[cursor++];
       try {
-        const details = await fetchEbayAuctionDetails(String(item.itemId), token);
+        const details = await fetchEbayItemDetails(String(item.itemId), token);
         if (details) {
           const searchImageUrls = collectEbayImageUrls(item);
           Object.assign(item, details);
           item.imageUrls = Array.from(new Set([...searchImageUrls, ...(Array.isArray(details.imageUrls) ? details.imageUrls : [])])).slice(0, 8);
         }
       } catch {
-        // Bid metadata is supplementary. Keep the listing when getItem is unavailable.
+        // Full metadata is supplementary. Keep the listing when getItem is unavailable.
       }
     }
   };
-  await Promise.all(Array.from({ length: Math.min(6, auctionItems.length) }, () => worker()));
+  await Promise.all(Array.from({ length: Math.min(6, enrichableItems.length) }, () => worker()));
   return items;
 }
 
@@ -2339,7 +2339,7 @@ export const testAIRouter = router({
           fetchedByQuery.set(key, item);
         });
         addResults(exactResults);
-        let exactSummaries = await enrichEbayAuctionDetails([...fetchedByQuery.values()], token);
+        let exactSummaries = [...fetchedByQuery.values()];
         let eligibility = filterEbayCandidates(exactSummaries);
         const fallbackQueries: string[] = [];
         for (let index = 1; index < boundedSearchQueries.length && eligibility.filteredSummaries.length < EBAY_ACTIVE_DISPLAY_TARGET; index += 1) {
@@ -2359,12 +2359,14 @@ export const testAIRouter = router({
           fallbackQueries.push(candidate);
           queryResults.push(results);
           addResults(results);
-          exactSummaries = await enrichEbayAuctionDetails([...fetchedByQuery.values()], token);
+          exactSummaries = [...fetchedByQuery.values()];
           eligibility = filterEbayCandidates(exactSummaries);
         }
         // Query tiers are complementary: a non-empty precise page does not
         // establish retrieval completeness. Union every bounded tier before
         // objective identity filtering and label the resulting coverage.
+        exactSummaries = await enrichEbayItemDetails(exactSummaries, token);
+        eligibility = filterEbayCandidates(exactSummaries);
         const targetMetadata = buildVisualTargetMetadata({
           title: input.title,
           category: input.category,
