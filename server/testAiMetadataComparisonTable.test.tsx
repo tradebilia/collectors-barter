@@ -98,6 +98,22 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
     expect(gradeRow?.rankingContribution).toMatchObject({ matched: true, titleDerived: true, awardedPoints: 5 });
     expect(scored.score).toBe(55);
   });
+  it('attaches the Movie title award to a generic MATCH Title row for individual_movie', () => {
+    const target = buildVisualTargetMetadata({ title: 'Canon CGC 8.0 VHS Tape', category: 'individual_movie', itemType: 'individual_movie', fullItemDetails: {
+      title: 'Canon CGC 8.0 VHS Tape', format: 'VHS', grade: '8',
+    } });
+    const output = withMetadataFieldComparisons(target, {
+      title: 'Canon CGC 8.0 A VHS Tape',
+      metadataScoreAwards: [{ field: 'movieTitle', source: 'title', awardedPoints: 25,
+        evidence: [{ field: 'title', source: 'title', value: 'Canon CGC 8.0 A VHS Tape' }] }],
+      metadataFieldComparisons: [{ fieldKey: 'title', targetField: 'Title', targetValue: 'Canon CGC 8.0 VHS Tape',
+        candidateField: 'Title', candidateValue: 'Canon CGC 8.0 A VHS Tape', titleDerivedValue: 'Canon CGC 8.0 A VHS Tape',
+        titleDerivedStatus: 'match', status: 'match' }],
+    });
+    const titleRows = (output.metadataFieldComparisons ?? []).filter(row => ['title', 'movieTitle'].includes(row.fieldKey ?? ''));
+    expect(titleRows).toHaveLength(1);
+    expect(titleRows[0]).toMatchObject({ fieldKey: 'title', rankingContribution: { matched: true, titleDerived: true, awardedPoints: 25 } });
+  });
 });
 
 

@@ -81,11 +81,16 @@ const ALIAS_KEYS = new Map(FIELD_ALIASES.flatMap(([canonical, aliases]) =>
   [canonical, ...aliases].map((alias) => [identifier(alias), identifier(canonical)] as const)));
 
 /** Exact aliases only. Optional context prevents category-specific false aliases. */
-export function rankingAwardFieldKey(field: string, category = "", _itemType = ""): string {
+export function rankingAwardFieldKey(field: string, category = "", itemType = ""): string {
   const key = identifier(field);
   const categoryKey = identifier(category);
+  const itemTypeKey = identifier(itemType);
   // The Movie scorer's exact movieTitle term reads the existing title row.
-  if (categoryKey === "movies" && key === "movietitle") return "title";
+  // Some live source payloads carry the item role (`individual_movie`) more
+  // reliably than the category label, so both paths must share this alias.
+  const isMovieContext = categoryKey === "movies" || categoryKey === "movie"
+    || itemTypeKey.includes("movie");
+  if (isMovieContext && key === "movietitle") return "title";
   // Pokémon finish is identity finish, not a Coin designation/strike term.
   if (categoryKey === "pokemon" && ["finish", "finishvariant"].includes(key)) return "finish";
   if (categoryKey === "pokemon" && ["editionera", "edition", "era"].includes(key)) return "editionera";

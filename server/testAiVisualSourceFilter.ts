@@ -2529,7 +2529,8 @@ export function withMetadataFieldComparisons<T extends Record<string, any>>(targ
     ? listing.metadataFieldComparisons as MetadataFieldComparison[] : fresh;
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   const itemType = targetItemTypeValue(targetMetadata);
-  const canonicalComparisonKey = (field: string): string => category === 'movies'
+  const movieContext = category === 'movies' || category === 'movie' || normalizedFieldKey(itemType).includes('movie');
+  const canonicalComparisonKey = (field: string): string => movieContext
     && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(field) ? 'movieTitle' : normalizedFieldKey(field);
   const comparisonQuality = (row: MetadataFieldComparison): number => [row.targetValue, row.candidateValue, row.titleDerivedStatus === 'match' ? row.titleDerivedValue : ''].filter(value => meaningfulMetadataText(value)).length;
   const freshByKey = new Map(fresh.map((row) => [normalizedFieldKey(row.fieldKey ?? row.targetField), row]));
