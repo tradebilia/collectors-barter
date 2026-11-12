@@ -119,7 +119,7 @@ export function extractSignatureNames(input: { title?: string | null; itemDetail
   return [...new Set(names.map((name) => normalizeSignatureName(name)).filter(Boolean))];
 }
 
-export function extractIdentityState(input: { title?: string | null; grade?: string | null; certificationCompany?: string | null; condition?: string | null; itemDetails?: string | null }): IdentityStateSnapshot {
+export function extractIdentityState(input: { category?: string | null; title?: string | null; grade?: string | null; certificationCompany?: string | null; condition?: string | null; itemDetails?: string | null }): IdentityStateSnapshot {
   let details: Record<string, unknown> = {};
   try {
     const parsed = input.itemDetails ? JSON.parse(input.itemDetails) : {};
@@ -130,7 +130,12 @@ export function extractIdentityState(input: { title?: string | null; grade?: str
   const grade = input.grade?.trim() || findGrade(text, grader);
   const gradedSignal = Boolean(grader || input.grade || /\b(?:graded|slab|certified|encapsulated)\b/i.test(text));
   const rawSignal = /\b(?:raw|ungraded|ungraded copy|no grade|未评级)\b/i.test(text);
-  const autograph = /\b(?:autograph|autographed|signed|signature|auto)\b/i.test(text) ? 'auto' : 'unknown';
+  // The inventory category is already the user's declaration of an autograph.
+  // Targets retain their category at both final and specialist identity checks;
+  // candidate callers deliberately omit it and still require source evidence.
+  // Authentication Included = No means unauthenticated, not unsigned.
+  const declaredAutograph = normalized(input.category) === 'autographs';
+  const autograph = declaredAutograph || /\b(?:autograph|autographed|signed|signature|auto)\b/i.test(text) ? 'auto' : 'unknown';
   const signatureNames = extractSignatureNames(input);
   const lot = /\b(?:lot|bundle|collection)\b|\b(?:near\s+)?complete\s+(?:set|collection)\b|\b\d+\s*(?:cards|comics|pins|games|records)\b/i.test(text);
   const negativeSignals = NEGATIVE_PATTERNS.filter(([pattern]) => pattern.test(text)).map(([, label]) => label);

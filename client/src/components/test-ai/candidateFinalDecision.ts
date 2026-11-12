@@ -76,6 +76,36 @@ function terminalFinalBlocker(row: CandidateDisplayRow, reasonCodes: Set<string>
   const ignored = mercariDateException ? new Set(['INVALID_DATE', 'MERCARI_UNDATED_TIMING_UNVERIFIED', 'MERCARI_SOLD_TRUE_PRICE_AS_REPORTED']) : new Set<string>();
   return finalBlockerPriority.find((code) => reasonCodes.has(code) && !ignored.has(code) && finalAnalysisBlockerLabels[code]);
 }
+function plainIdentityConflict(detail: string): string {
+  const reason = detail.trim().replace(/^identity state conflict:\s*/i, '');
+  if (reason === 'sale declares an autograph/signature not declared by target') {
+    return 'The final check did not recognize the target as autographed, while the listing states that it is signed.';
+  }
+  if (reason === 'single item versus lot/bundle differs') {
+    return 'One record describes a single item and the other describes a lot or bundle. They are not the same transaction type.';
+  }
+  const difference = reason.match(/^(.+?) differs \((.+) vs (.+)\)$/i);
+  if (difference) {
+    const labels: Record<string, string> = {
+      'raw/graded state': 'Grading status', 'grading company': 'Grading company',
+      grade: 'Grade', 'parallel/variant': 'Variant',
+      'signature name': 'Signer', 'signature name set': 'Signers',
+    };
+    const label = labels[difference[1].toLowerCase()] ?? difference[1];
+    return `${label} does not match: target “${difference[3]}”; listing “${difference[2]}”.`;
+  }
+  const negativeSignal = reason.match(/^negative listing signal:\s*(.+)$/i);
+  if (negativeSignal) {
+    const descriptions: Record<string, string> = {
+      'custom/reprint/proxy': 'The listing describes a custom item, reprint, or proxy rather than an original item.',
+      'case-break spot': 'The listing sells a place in a case break, not the item itself.',
+      'lot/bundle': 'The listing describes multiple items rather than one comparable item.',
+      'condition alteration': 'The listing contains wording indicating damage or alteration.',
+    };
+    return descriptions[negativeSignal[1]] ?? `The listing was flagged for: ${negativeSignal[1]}.`;
+  }
+  return `The recorded identity conflict is: ${reason}${/[.!?]$/.test(reason) ? '' : '.'}`;
+}
 function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: string[]): string | undefined {
   if (code === 'CURRENT_SALES_PRIMARY') return row.valuationUse?.identityAdmission?.basis === 'server_autograph_market_relevance'
     ? `This reported sold price was used as Autographs market evidence. Exact image review is not required.${row.sourceId === 'mercari_sold_comps' ? ' Sale date remains Unknown under the Mercari date exception.' : ''}` : undefined;
@@ -131,6 +161,17 @@ function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: 
   if (reasonCodes.has('SOURCE_DISPOSITION_RESTRICTIVE')) return sourceDispositionExplanation(row);
   const blocker = terminalFinalBlocker(row, reasonCodes);
   const identity = row.valuationUse?.identityAdmission;
+  if (blocker === 'UNIVERSAL_IDENTITY_CONFLICT') {
+    const detail = identity?.reasonDetails?.find((reason: unknown): reason is string => typeof reason === 'string'
+      && /raw\/graded state differs|single item versus lot\/bundle differs|negative listing signal|parallel\/variant differs|sale declares an autograph|signature name(?: set)? differs/.test(reason));
+    return detail ? plainIdentityConflict(detail)
+      : 'The final analysis recorded an identity conflict but did not preserve the specific conflicting field. The detailed exclusion reason is missing.';
+  }
+  if (blocker === 'CATEGORY_IDENTITY_CONFLICT') {
+    const detail = identity?.categoryIdentity?.conflicts?.find((reason: unknown): reason is string => typeof reason === 'string' && Boolean(reason.trim()));
+    return detail ? plainIdentityConflict(detail)
+      : 'The final analysis recorded an item-specific conflict but did not preserve the specific field or values. The detailed exclusion reason is missing.';
+  }
   if (blocker === 'UNIVERSAL_REVIEW_REQUIRED') {
     const detail = identity?.reasonDetails?.find((reason: unknown) => typeof reason === 'string' && reason.includes('not stated'));
     if (detail === 'autograph status is not stated') return 'The listing title does not state that the item is signed or autographed; the final signed-item market-evidence approval was not established.';
@@ -145,7 +186,7 @@ function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: 
   if (blocker) return `The item looks like a match, but ${finalAnalysisBlockerLabels[blocker]}`;
   if (code === 'REVIEW_REQUIRED') return 'The item looks like a match, but a required verification step was not completed, so it cannot be used for the value yet.';
   if (code === 'UNSUPPORTED_CURRENCY') return 'The item matched, but the sale is not reported in US dollars, so it cannot be used in the value calculation.';
-  if (code === 'FINAL_HARD_EXCLUDED') return 'The item was stopped because a required identity or transaction detail conflicts with the target.';
+  if (code === 'FINAL_HARD_EXCLUDED') return 'The final analysis recorded a hard exclusion but did not preserve its specific reason. The detailed exclusion reason is missing.';
   return exactReasons.length ? 'The item was not used because a final valuation rule prevented this sale from contributing to the value.' : undefined;
 }
 function finalAnalysisReasons(row: CandidateDisplayRow): string[] {
@@ -265,7 +306,7 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
     const exactFinalReasons = finalAnalysisReasons(row);
     const plainReason = plainFinalReason(row, pricing.code, exactFinalReasons);
     const details = [plainReason ?? pricing.reason,
-      hard ? evidence || (receipt?.hardExclusion ? execution.reason : undefined) : undefined,
+      hard && !plainReason ? evidence || (receipt?.hardExclusion ? execution.reason : undefined) : undefined,
       pricing.code === 'CONTEXT_ONLY' ? contextReason : undefined,
       hasMercariUndatedSoldAdmission(row) && !plainReason ? mercariPriceContextLabel(row) : undefined].filter(Boolean).join(' · ');
     return { label: primary ? 'USED IN VALUATION' : finalLabels[pricing.code] ?? 'NOT USED — FINAL DECISION RECORDED',
