@@ -30,7 +30,7 @@ import { extractMarketplaceLotQuantity, isExplicitMultiItemListing, normalizeMar
 import { formatTestAiEvidenceForAnalysis, TEST_AI_VALUE_UNAVAILABLE_MESSAGE } from '../shared/testAiEvidenceNormalization';
 import { deterministicTradeComparison, marketProfileForPrompt, scoreComparable, signedComparableFormConflicts, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
-import { normalizeAnalysisMarketSales } from './testAiMarketEvidence';
+import { normalizeAnalysisMarketSale, normalizeAnalysisMarketSales } from './testAiMarketEvidence';
 import { attachCanonicalProvenance as attachCanonicalSourceProvenance, createServerFinalIdentityApproval, sealCanonicalObservation } from './testAiCanonicalObservation';
 import { auditItemValuation, itemAuditTargetSchema } from './testAiItemAudit';
 import { prepareSourceTransactionIdentity } from './testAiEconomicIntegrity';
@@ -66,6 +66,7 @@ import { collectionLotGuard, collectionLotNotComparable, isCollectionLotItemType
 import { bindMetadataRankingPopulation, freezeMetadataRankingPopulation, overlayMetadataRankingPopulation, type MetadataRankingPopulation, type MetadataScorerRole } from '../shared/testAiRankingPopulation';
 import { compareComparableGrades, hasExcludedSourceTitleGradeClaim, parseComparableGrade, readSourceGradeClaimsFromTitle, TITLE_GRADE_OBSERVATION_PATTERN, type ComparableGrade } from '../shared/testAiGradeComparison';
 import { buildEffectiveApprovalTarget, normalizeRequiredApprovalTargetImageReference, normalizeVisualTargetImageReference } from '../shared/testAiSoldCompsTransport';
+import { applyAutographSoldCompsOfferPricePolicy } from './testAiSoldCompsOfferPrice';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 // eBay can take several seconds to return a Browse response even for a bounded
@@ -3390,7 +3391,10 @@ export const testAIRouter = router({
           });
         const seenSoldKeys = new Set<string>();
         for (const fetchQuery of queryCandidates) {
-          const url = `https://api.sold-comps.com/v1/scrape?keyword=${encodeURIComponent(fetchQuery)}&count=100&sortOrder=endedRecently&ebaySite=ebay.com`;
+          // Hydrate Best Offer prices only in this repaired Autographs path.
+          // The provider may miss; a missing accepted amount remains context.
+          const offerHydration = input.category === 'autographs' && input.itemType === 'signed_item' ? '&hydrateBoa=true' : '';
+          const url = `https://api.sold-comps.com/v1/scrape?keyword=${encodeURIComponent(fetchQuery)}&count=100&sortOrder=endedRecently&ebaySite=ebay.com${offerHydration}`;
           // Keep eBay's existing lack of a request timeout and all-tier union.
           const result = await retrieveItemsAttempt(() => fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } }),
             { query: fetchQuery, stage: 'search', attempt: retrievalCoverage.length + 1 },
@@ -3492,13 +3496,9 @@ export const testAIRouter = router({
         const filtered = filterListingsByGrade(byCertification, targetGrade, input.category);
         console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target: ${targetSport || 'none'})`);
 
-        const autographTargetMetadata = buildVisualTargetMetadata({
-          title: input.title,
-          category: input.category,
-          itemType: input.itemType,
-          certificationCompany: input.certificationCompany,
-          itemDetails: input.itemDetails,
-        });
+        // Search/ranking, the eligibility issuer, and final audit must assess
+        // one effective target, not a separately rebuilt search-field target.
+        const autographTargetMetadata = soldCompsTargetMetadata;
         if (isAutographSignedItemTarget(autographTargetMetadata)) {
           const autographItems = rawItems.filter((item: any) => !autographMarketExclusionReason(autographTargetMetadata, item));
           const rankedAutographItems = autographItems
@@ -3522,6 +3522,9 @@ export const testAIRouter = router({
               sourceLabel: 'eBay Sold-Comps',
               retrievalQuery: item.retrievalQuery ?? null,
               evidenceDisposition: eligibility.eligible ? 'valuation_eligible' : 'context_only',
+              // This Boolean is server-issued, not a provider/browser approval.
+              // The economics mapper deliberately requires both representations.
+              valuationEligible: eligibility.eligible,
               evidenceReasons: eligibility.eligible
                 ? ['Autographs / Signed Item passed the signer, object-type, and 70-point valuation gate.']
                 : eligibility.reasons,
@@ -3540,10 +3543,6 @@ export const testAIRouter = router({
             };
           });
           const gatedMarketListings = applyAutographPriceTailGate(marketListings);
-          const metrics = computeMetrics(gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible' && item.currency === 'USD').map((item: any) => ({
-            ...item,
-            price: { value: item.price, currency: item.currency },
-          })));
           const heldMarketListings = rawItems.flatMap((item: any) => {
             const reason = autographMarketExclusionReason(autographTargetMetadata, item);
             return reason ? [withMetadataFieldComparisons(autographTargetMetadata, { ...item,
@@ -3556,13 +3555,22 @@ export const testAIRouter = router({
               visualReviewRationale: reason, evidenceReasons: [reason],
             })] : [];
           });
-          const sealedMarketListings = attachCanonicalProvenance('sold_comps', gatedMarketListings.map((item: any) =>
+          const economicallyCheckedListings = gatedMarketListings.map(applyAutographSoldCompsOfferPricePolicy);
+          const sealedMarketListings = attachCanonicalProvenance('sold_comps', economicallyCheckedListings.map((item: any) =>
             mapNamedSourceEconomics('sold_comps', item, { role: 'signed_item_relevance', partition: 'sales' })), { query });
           const sealedHeldListings = attachCanonicalProvenance('sold_comps', heldMarketListings.map((item: any) =>
             mapNamedSourceEconomics('sold_comps', item, { role: 'signed_item_relevance', partition: 'context' })), { query });
+          // Report the actual post-mapping/post-signing economic admission, not
+          // an earlier relevance pass. This is still not final valuation use.
+          const sourceAdmissionTime = new Date();
+          const sourceAdmittedListings = sealedMarketListings.filter((item: any) =>
+            normalizeAnalysisMarketSale(item, sourceAdmissionTime, { target: approvalTarget, category: input.category }).valuationEligible);
+          const metrics = computeMetrics(sourceAdmittedListings.map((item: any) => ({
+            ...item, price: { value: item.price, currency: item.currency },
+          })));
           return {
             query,
-            marketContextOnly: gatedMarketListings.every((item: any) => item.evidenceDisposition !== 'valuation_eligible'),
+            marketContextOnly: sourceAdmittedListings.length === 0,
             retrievalCoverage,
             attemptIssues,
             partial,
@@ -3576,9 +3584,9 @@ export const testAIRouter = router({
               rawReceived: rawItems.length,
               retrievalCoverage,
               ledger: [...sealedMarketListings, ...sealedHeldListings],
-              valuationEligible: gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').length,
+              valuationEligible: sourceAdmittedListings.length,
               sourceRelevanceEligible: gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').length,
-              warningReview: gatedMarketListings.filter((item: any) => item.evidenceDisposition !== 'valuation_eligible').length,
+              warningReview: sealedMarketListings.length - sourceAdmittedListings.length,
               objectiveConflicts: 0,
               notVisuallyReviewed: gatedMarketListings.length,
             },

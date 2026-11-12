@@ -88,7 +88,8 @@ function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: 
   const autographNoVisual = row.visualRequirement === 'not_required'
     || typeof row.visualRequirement === 'string' && row.visualRequirement.startsWith('not_required_autograph')
     || row.metadataRanking?.scorerRole === 'signed_item_relevance';
-  if (autographNoVisual && row.evidenceDisposition !== 'valuation_eligible') {
+  const hasSourceHoldDetails = reasonCodes.has('SOURCE_DISPOSITION_RESTRICTIVE') && sourceDispositionBlockerDetails(row).length > 0;
+  if (autographNoVisual && row.evidenceDisposition !== 'valuation_eligible' && !hasSourceHoldDetails) {
     const sourceReason = Array.isArray(row.evidenceReasons) ? row.evidenceReasons.find((reason: unknown) =>
       typeof reason === 'string' && /^(?:signer is|signed object type|market relevance score|Autograph candidate)/i.test(reason)) : undefined;
     if (sourceReason) return `The signed-item check stopped this listing: ${sourceReason}`;
@@ -150,11 +151,22 @@ function finalAnalysisReasons(row: CandidateDisplayRow): string[] {
   const details = (row.valuationUse?.sourceAdmission?.reasonDetails ?? []).filter((reason: unknown) => typeof reason === 'string' && reason.trim());
   return [...new Set(codes)].map((code) => `${code}: ${finalAnalysisBlockerLabels[code] ?? 'Final analysis recorded this code as a reason the candidate was not used.'}`).concat(details);
 }
+function sourceDispositionBlockerDetails(row: CandidateDisplayRow): string[] {
+  // These describe successful or qualified checks, not reasons for a hold.
+  // Keep the exclusion list narrow: unknown details may still be real blockers.
+  const informationalDetails = [
+    /^source disposition retained:/i,
+    /^Autographs \/ Signed Item passed the signer, object-type, and 70-point valuation gate\.?$/i,
+    /^Best Offer accepted amount was verified by Sold-Comps price hydration\.?$/i,
+    /^Qualified undated Mercari exception: sale date remains Unknown; timing is unverified and sold=true reported sold price is used as reported, not proof of a recent sale or a private accepted-offer amount\.?$/i,
+  ];
+  return (row.valuationUse?.sourceAdmission?.reasonDetails ?? [])
+    .filter((detail: unknown): detail is string => typeof detail === 'string' && Boolean(detail.trim()))
+    .map((detail: string) => detail.trim())
+    .filter((detail: string) => !informationalDetails.some((pattern) => pattern.test(detail)));
+}
 function sourceDispositionExplanation(row: CandidateDisplayRow): string {
-  const admission = row.valuationUse?.sourceAdmission;
-  const disposition = admission?.verifiedSourceDisposition || admission?.reportedDisposition || 'restrictive';
-  const details = (admission?.reasonDetails ?? []).filter((detail: unknown) => typeof detail === 'string' && detail.trim()
-    && !/^source disposition retained:/i.test(detail)).map((detail: unknown) => String(detail).trim());
+  const details = sourceDispositionBlockerDetails(row);
   const specificDetails = details.map((specific: string) => specific
     .replace(/^Final approval rejected:\s*APPROVAL_TARGET_BINDING_INVALID:.*$/i, 'the target information changed between the item review and the final approval check')
     .replace(/^Final approval rejected:\s*APPROVAL_REVIEW_METADATA_BINDING_INVALID:.*$/i, 'the metadata sent to visual review did not exactly match the target metadata used for final approval')
@@ -175,21 +187,25 @@ function sourceDispositionExplanation(row: CandidateDisplayRow): string {
     .replace(/^price basis is not verifiable as sold, closed, or realized$/i, 'the source did not verify that the amount was a completed-sale price')
     .replace(/^sale currency is unknown; retained as context only$/i, 'the sale currency was not identified')
     .replace(/^unsupported currency (.+); retained as context only$/i, 'the sale was reported in $1 instead of USD')
-    .replace(/^missing or non-positive realized price$/i, 'the reported sale amount was missing or not positive')
-    .replace(/^Qualified undated Mercari exception: sale date remains Unknown; timing is unverified and sold=true reported sold price is used as reported, not proof of a recent sale or a private accepted-offer amount\.?$/i, 'Mercari reported this as sold, but the sale date and final accepted amount were not independently verified'));
+    .replace(/^missing or non-positive realized price$/i, 'the reported sale amount was missing or not positive'));
   // The decision label already says whether the row was used. Once a candidate
   // has a blocking reason, listing every downstream consequence (price excluded,
   // date excluded, retained as context, etc.) obscures the one fact an operator
   // needs to investigate. Show only the first actionable reason in source order.
+  // The Sold-Comps unverified Best Offer amount explanation is already plain
+  // English; preserve it directly rather than converting it to a technical code.
   const primaryDetail = specificDetails[0];
   return primaryDetail
-    ? `The primary reason this candidate was stopped is: ${primaryDetail}. The record remains context only.`
-    : `The source did not provide the verified evidence required for final valuation (${disposition}).`;
+    ? `The primary reason this candidate was stopped is: ${primaryDetail}${/[.!?]$/.test(primaryDetail) ? '' : '.'} The record remains context only.`
+    : 'The source did not provide the verified evidence required for final valuation. The record remains context only.';
 }
 function evidenceReasons(row: CandidateDisplayRow): string {
   return Array.isArray(row.evidenceReasons) ? row.evidenceReasons.filter((reason: unknown) => typeof reason === 'string' && reason.trim()).join('; ') : '';
 }
 function explicitContextReason(row: CandidateDisplayRow): string | undefined {
+  // A reconciled final source-admission report supersedes browser economics and
+  // source-role diagnostics. Do not append a second, potentially stale reason.
+  if (row.valuationUse?.use?.code && row.valuationUse?.sourceAdmission) return undefined;
   if (hasMercariUndatedSoldAdmission(row)) return undefined;
   if (row.sourceId === 'mercari_sold_comps' && row.requestedMode !== 'active' && row.mercariObservation?.requestedMode !== 'active'
     && (row.requestedMode === 'sold' || row.mercariObservation?.requestedMode === 'sold')) {

@@ -71,6 +71,79 @@ describe('Stage 5 actual status render component', () => {
     expect(decision.reason).not.toContain('REQUIRED_APPROVAL_MISSING');
     expect(decision.reason).not.toContain('SOURCE_DISPOSITION_RESTRICTIVE');
   });
+  it.each([
+    'Autographs / Signed Item passed the signer, object-type, and 70-point valuation gate.',
+    'Best Offer accepted amount was verified by Sold-Comps price hydration.',
+    'Qualified undated Mercari exception: sale date remains Unknown; timing is unverified and sold=true reported sold price is used as reported, not proof of a recent sale or a private accepted-offer amount.',
+  ])('skips informational admission detail %s before the actual Sold-Comps offer hold', (informationalDetail) => {
+    const offerHold = 'The seller accepted a Best Offer, but Sold-Comps did not verify the accepted amount; the displayed price is an asking-price upper bound, not a confirmed sale price.';
+    const listing = {
+      sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', requestedMode: 'sold',
+      title: 'Michael Jordan Signed Autographed Jordan Brand Basketball UDA Upper Deck COA',
+      metadataMatchScore: 90, visualRequirement: 'not_required_autograph_market_context',
+      metadataRanking: { scorerRole: 'signed_item_relevance' }, evidenceDisposition: 'context_only',
+      evidenceReasons: ['Autographs / Signed Item passed the signer, object-type, and 70-point valuation gate.'],
+      sourceEconomics: { finalContextOnly: true },
+      valuationUse: {
+        sourceAdmission: { verification: 'verified', verifiedSourceDisposition: 'context_only',
+          blockerCodes: ['SOURCE_DISPOSITION_RESTRICTIVE'],
+          reasonDetails: [informationalDetail, offerHold, 'source disposition retained: context_only'] },
+        use: { code: 'CONTEXT_ONLY', reasonCodes: ['SOURCE_DISPOSITION_RESTRICTIVE'], primaryMarketSales: false },
+      },
+    };
+    const decision = candidateFinalDecision(listing);
+    expect(decision.label).toBe('NOT USED — CONTEXT ONLY');
+    expect(decision.code).toBe('CONTEXT_ONLY');
+    expect(decision.reason).toContain(offerHold);
+    expect(decision.reason).toContain('The primary reason this candidate was stopped is:');
+    expect(decision.reason).not.toContain(informationalDetail);
+    expect(decision.reason).not.toContain('Recorded source economics');
+    expect(decision.reason).not.toContain('SOURCE_DISPOSITION_RESTRICTIVE');
+    expect(decision.reason).not.toContain('price..');
+    expect(decision.reason.match(/The record remains context only\./g)).toHaveLength(1);
+    const html = renderToStaticMarkup(<TestAiCandidateMasterList listings={[listing]} sourceLabel="eBay Sold-Comps" reconciled />);
+    const finalDecisionMarkup = html.match(/<div class="mt-2" data-final-decision-code="CONTEXT_ONLY">([\s\S]*?)<\/div>/)?.[1];
+    expect(finalDecisionMarkup).toContain('NOT USED — CONTEXT ONLY');
+    expect(finalDecisionMarkup).toContain(offerHold);
+    expect(finalDecisionMarkup).not.toContain(informationalDetail);
+    expect(finalDecisionMarkup).not.toContain('Recorded source economics');
+    expect(finalDecisionMarkup).not.toContain('SOURCE_DISPOSITION_RESTRICTIVE');
+  });
+  it('prefers server admission hold details over stale browser Autographs and economics diagnostics', () => {
+    const offerHold = 'The seller accepted a Best Offer, but Sold-Comps did not verify the accepted amount; the displayed price is an asking-price upper bound, not a confirmed sale price.';
+    const decision = candidateFinalDecision({ sourceId: 'sold_comps', requestedMode: 'sold',
+      metadataMatchScore: 90, visualRequirement: 'not_required_autograph_market_context', evidenceDisposition: 'context_only',
+      evidenceReasons: ['signed object type is missing or does not match the target'],
+      sourceEconomics: { convention: 'active_ask', finalContextOnly: true },
+      valuationUse: {
+        sourceAdmission: { verification: 'verified', verifiedSourceDisposition: 'context_only',
+          blockerCodes: ['SOURCE_DISPOSITION_RESTRICTIVE'], reasonDetails: [offerHold] },
+        use: { code: 'CONTEXT_ONLY', reasonCodes: ['SOURCE_DISPOSITION_RESTRICTIVE'] },
+      },
+    });
+    expect(decision.reason).toContain(offerHold);
+    expect(decision.reason).not.toContain('signed object type is missing');
+    expect(decision.reason).not.toContain('Active asking-price context only');
+    expect(decision.reason).not.toContain('Recorded source economics');
+  });
+  it('does not promote an informational success into a blocker when no actionable detail is recorded', () => {
+    const decision = candidateFinalDecision({ sourceId: 'sold_comps', sourceEconomics: { finalContextOnly: true },
+      valuationUse: {
+        sourceAdmission: { verification: 'verified', verifiedSourceDisposition: 'context_only',
+          blockerCodes: ['SOURCE_DISPOSITION_RESTRICTIVE'], reasonDetails: [
+            'Autographs / Signed Item passed the signer, object-type, and 70-point valuation gate.',
+            'Best Offer accepted amount was verified by Sold-Comps price hydration.',
+            'source disposition retained: context_only',
+          ] },
+        use: { code: 'CONTEXT_ONLY', reasonCodes: ['SOURCE_DISPOSITION_RESTRICTIVE'] },
+      },
+    });
+    expect(decision.reason).toContain('The source did not provide the verified evidence required for final valuation');
+    expect(decision.reason).not.toContain('passed the');
+    expect(decision.reason).not.toContain('price hydration');
+    expect(decision.reason).not.toContain('context_only');
+    expect(decision.reason).not.toContain('Recorded source economics');
+  });
   it('reports the authoritative Mercari final blocker instead of blaming a missing visual response', () => {
     const decision = candidateFinalDecision({ sourceId: 'mercari_sold_comps', requestedMode: 'sold', visualReviewStatus: 'not_reviewed',
       visualExecution: receipt({ state: 'dispatched_inconclusive', reasonCode: 'provider_error', identity: { origin: 'none', result: 'not_established' },
