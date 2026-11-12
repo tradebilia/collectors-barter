@@ -287,3 +287,18 @@ The Barry Bonds example is the reference pattern for this protocol. The visible 
 7. Browser HMR served stale modules because the forwarded WebSocket port was wrong.
 
 The final proof used the actual target, the actual Mercari candidate, the complete audit path, a fresh browser module, negative safeguards, and live summary counts. This is the required standard for future cross-layer defects.
+
+## 7. Autographs authentication field mapping
+
+The following mappings link the master/display field names to the internal camelcase keys. Authentication describes signature certification, not the object's numeric grade or graded/ungraded status.
+
+| Master/display field | Internal key | Matching and evidence rule |
+|---|---|---|
+| Authentication Company | `authenticationCompany` | PSA, PSA/DNA, PSA DNA, PSA_DNA and PSA-DNA are one Autographs authenticator. Source scoring, comparison results, metadata-conflict screening and the final company comparison must share this equivalence. Provider wording may remain visible. |
+| Custom Authentication Company | `customAuthenticationCompany` | Legacy/custom company values use the same Autographs alias comparison. This field is separate from `customGradingCompany` and does not modify grading dropdowns. |
+| Authentication Included | `authenticationIncluded` | Explicit yes/no remains distinct from authentication company identity. Missing title evidence is not invented. |
+| Authentication Type | `authenticationType` | Explicit LOA, Letter of Authenticity, Letter of Authentication, or an authenticator's letter description maps to `LOA (Letter)` in the candidate title-derived column. An unrelated letter or explicitly absent LOA must remain Unknown. `LOA`, `Letter`, and `LOA (Letter)` compare as equivalent in this field. |
+
+Title-derived evidence must remain separate from structured provider metadata: parsing a title does not fill the structured Candidate value column or claim that a certificate was independently verified. Authentication Type currently carries zero ranking points; displaying its match does not change the 100-point scoring model or financial admission rules.
+
+Implementation note, November 11, 2026: the legacy final grader-company gate can receive an Autographs authentication company through its target fallback. It must apply the shared Autographs company comparator rather than treating PSA/DNA and PSA as different. The exemption is category-scoped; genuine differences, other categories' grading comparisons, numeric grade safeguards, provenance and economic checks remain in force. These changes are source-reviewed only; testing and live outcome verification remain user-owned under section 1.2.

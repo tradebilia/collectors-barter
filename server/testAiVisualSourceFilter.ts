@@ -398,6 +398,16 @@ function autographCandidateAuthentication(listing: VisualSourceCandidate, struct
   return /\b(?:authenticated|authentic(?:ated|ity)?)\b/i.test(title) ? "authenticated" : "";
 }
 
+function autographAuthenticationTypeFromTitle(title: string): string {
+  // A generic letter is not proof of authentication. Require an explicit LOA,
+  // a letter-of-authenticity phrase, or an authenticator's letter description.
+  const letterEvidence = String.raw`(?:LOAs?|letters?\s+of\s+(?:authenticity|authentication)|(?:PSA(?:[\s/_-]*DNA)?|JSA|BAS|Beckett)\s+(?:full\s+)?letter)`;
+  const absentBefore = new RegExp(String.raw`\b(?:no|without|missing)\s+(?:an?\s+)?${letterEvidence}\b`, "i");
+  const absentAfter = new RegExp(String.raw`\b${letterEvidence}\b\s+(?:(?:is|was|are|were)\s+)?(?:missing|absent|unavailable|not\s+(?:included|provided|available|present)|(?:isn['’]t|wasn['’]t|aren['’]t|weren['’]t)\s+(?:included|provided|available|present))\b`, "i");
+  if (absentBefore.test(title) || absentAfter.test(title)) return "";
+  return new RegExp(String.raw`\b${letterEvidence}\b`, "i").test(title) ? "LOA (Letter)" : "";
+}
+
 export const AUTOGRAPH_VALUATION_MIN_SCORE = 70;
 
 function autographCandidateObjectType(listing: VisualSourceCandidate): string {
@@ -2323,12 +2333,16 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 			}
 			if (/^(?:authenticationCompany|customAuthenticationCompany|certificationCompany|authenticator)$/i.test(key)) {
 				const authentication = autographCandidateAuthentication(listing, "");
-				return authentication && !/^(?:authenticated|yes)$/i.test(authentication)
-					? `${authentication.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
-			}
-			}
-			if (category === "original_art") {
-				if (/^(?:artistName|artist|creator|artworkTitleCharacter|artworkTitle|character|artType|comicTitle|coverSketchComicTitle|issueNumber|issueNo|number|publisher)$/i.test(key)) {
+					return authentication && !/^(?:authenticated|yes)$/i.test(authentication)
+						? `${authentication.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
+				}
+				if (/^authenticationType$/i.test(key)) {
+					const type = autographAuthenticationTypeFromTitle(title);
+					return type ? `${type} (detected in title)` : "Unknown";
+				}
+				}
+				if (category === "original_art") {
+					if (/^(?:artistName|artist|creator|artworkTitleCharacter|artworkTitle|character|artType|comicTitle|coverSketchComicTitle|issueNumber|issueNo|number|publisher)$/i.test(key)) {
 					if (/^(?:issueNumber|issueNo|number)$/i.test(key)) {
 						const issue = comparisonValue(targetValue).match(/\d+[A-Za-z]?/)?.[0];
 						return issue && new RegExp(`(?:^|\\D)#?${issue.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\D|$)`, "i").test(title)
@@ -2621,6 +2635,14 @@ function normalizeModelPotentialPoints(rows: MetadataFieldComparison[], category
 }
 function comparisonStatus(targetValue: string, candidateValue: string, category = "", key = ""): MetadataFieldComparison["status"] {
 	if (!meaningfulMetadataText(targetValue) || !meaningfulMetadataText(candidateValue)) return "unknown";
+	if (category === "autographs" && /^authenticationType$/i.test(key)) {
+		const normalizedType = (value: string) => {
+			const bare = value.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, "");
+			const normalized = bare.toLowerCase().replace(/[^a-z0-9]/g, "");
+			return /^(?:loa|letter|loaletter|letterofauthenticity|letterofauthentication)$/.test(normalized) ? "loa" : normalized;
+		};
+		return normalizedType(targetValue) === normalizedType(candidateValue) ? "match" : "different";
+	}
 	if (category === "movies" && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(key)) return movieValuesAgree(targetValue, candidateValue) ? "match" : "different";
 	if (category === "movies" && /^(?:condition|mediaCondition)$/i.test(key)) {
 		const targetComparable = comparisonComparable(targetValue);

@@ -4,6 +4,7 @@ import { extractIdentityState, identityStateConflicts } from './testAiIdentitySt
 import { isVerifiedGuideAnchor } from './testAiGuideEvidence';
 import { TEST_AI_VALUE_UNAVAILABLE_MESSAGE, nullableTestAiPrice, type GuideValueAnchor } from '../shared/testAiEvidenceNormalization';
 import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
+import { autographAuthenticationCompaniesEquivalent } from '../shared/testAiMetadataConflict';
 import { getVerifiedIdentityApproval, hasVerifiedMercariUndatedSale, transferVerifiedIdentityApproval, verifyCanonicalObservation } from './testAiCanonicalObservation';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 import { signedTransactionLotConflict, transactionIdentity, type TransactionIdentity } from './testAiEconomicIntegrity';
@@ -1987,7 +1988,11 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     ? '' : normalizeCompany(resolvedTargetCompany);
   const saleCompanyMatch = isDisneyPins ? undefined : title.match(/\b(psa|cgc|bgs|sgc|pcgs|ngc|afa|wata|vga)\b/i)?.[1];
   const saleCompany = normalizeCompany(saleCompanyMatch);
-  const companiesEquivalent = videoGameGradersEquivalent(categoryKey, targetCompany, saleCompany);
+  // This legacy grader check also receives Autographs authentication companies.
+  // Use the same aliases as source scoring and display instead of reopening
+  // a PSA/DNA-versus-PSA conflict after the Autographs gate has accepted it.
+  const companiesEquivalent = videoGameGradersEquivalent(categoryKey, targetCompany, saleCompany)
+    || (categoryKey === 'autographs' && autographAuthenticationCompaniesEquivalent(targetCompany, saleCompany));
   const isPcgsCoin = target.category === 'coins' && targetCompany === 'pcgs';
   const targetPcgsGrade = isPcgsCoin ? normalizePcgsCoinGrade(target.grade) : null;
   const salePcgsGrade = isPcgsCoin && saleCompany === 'pcgs' ? extractPcgsCoinGrade(title) : null;
