@@ -4,7 +4,9 @@ This handbook defines the minimum engineering process for changes to Tradebilia,
 
 ## 1. Project-start protocol
 
-Before making code changes at the start of a session or a new investigation:
+Apply the full review below at the start of a new session or a major development stage. For a small repair within an established session, use section 1.1. The user approved this narrower within-session workflow on November 11, 2026.
+
+Before making code changes at the start of a session or major development stage:
 
 1. Pull the latest GitHub repository and verify the active branch, commit, remote tracking state, and working tree.
 2. Read project documentation in this order when the files exist:
@@ -26,6 +28,31 @@ Before making code changes at the start of a session or a new investigation:
 6. If a required document is absent, record that fact. Do not invent its contents.
 
 A passing build or a green helper test does not replace this project-understanding step.
+
+### 1.1 Shorter within-session checklist
+
+Use this checklist when the project context and development scope are established:
+
+1. Capture the exact failure and requested outcome. Retain the current restrictions, including who owns testing.
+2. Check the working tree and latest development-branch changes. Preserve other sessions' work; do not overwrite it or force-push.
+3. Read the relevant code and any changed documentation. Reuse the project understanding already established instead of rereading the full documentation set for each repair.
+4. Trace each affected boundary and identify independent blockers before changing code. For multi-layer or recurring failures, follow section 2; the shorter checklist does not reduce diagnostic coverage.
+5. Make the related repairs together, double-check the source diff, and commit, push, and save one checkpoint after the repair is ready. Use an independent review for high-risk or cross-layer changes; a small wording edit does not require the same review process.
+6. Report what the evidence establishes, what changed, and what remains unverified. Do not call a saved change a proven fix without confirmation of the exact outcome.
+
+Return to the full project-start protocol after a session handoff, a major stage or architecture change, material changes from another session that invalidate the current understanding, or evidence that the current project assumptions are stale. A new screenshot alone does not require a full project restart.
+
+For routine work inside the user's approved scope, proceed without asking for the same approval again. Obtain fresh authorization for scope expansion, testing, sensitive external actions, or changes to protected systems.
+
+### 1.2 Current testing and restart restrictions
+
+The user owns testing. This direction supersedes the testing and live-verification steps elsewhere in this handbook until the user authorizes them again.
+
+- Do not run tests, builds, type checks, application-code probes, live provider/model requests, or validation RPC calls without new authorization.
+- Source inspection, review of existing logs or cached results, and repository/diff hygiene checks remain permitted. Describe these as source review, not testing.
+- Record skipped validation as **Not run: user owns testing**. A source-reviewed change remains unverified in the live path until the user confirms the outcome.
+- Do not manually restart the active preview unless the user requests or approves it. The development watcher may restart or reload after code changes; distinguish that behavior from a manual restart.
+- Preserve the existing restrictions on database writes, migrations, seeds, credentials, publishing, and domain changes.
 
 ## 2. Standard boundary-by-boundary debugging protocol
 
@@ -225,6 +252,8 @@ The following rules are mandatory for marketplace and valuation investigations:
 - Preserve candidate caps, source boundaries, Collection/Lot safeguards, provenance checks, and fail-closed approval behavior while debugging.
 
 ## 5. Change and handoff checklist
+
+For small within-session repairs, use section 1.1 and the applicable entries below. Apply section 1.2 to all testing and runtime-verification entries; record them as not run when the user has not authorized them.
 
 Before handing a repair to the user:
 
