@@ -2664,9 +2664,12 @@ function comparisonStatus(targetValue: string, candidateValue: string, category 
   }
   const targetComparable = comparisonComparable(targetValue);
   const candidateComparable = comparisonComparable(candidateValue.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, ""));
-  return /^(?:certificationcompany|gradingcompany|grader)$/.test(normalizedFieldKey(key))
+  // Autographs use Authentication Company (and, for legacy target records,
+  // Custom Authentication Company). Keep these keys inside the company gate
+  // so the category-specific UDA/Upper Deck equivalence below is reachable.
+  return /^(?:certificationcompany|authenticationcompany|customauthenticationcompany|gradingcompany|grader)$/.test(normalizedFieldKey(key))
       && (videoGameGradersEquivalent(category, targetComparable, candidateComparable)
-        || (category === 'autographs' && /^(?:authenticationcompany|certificationcompany)$/.test(normalizedFieldKey(key))
+        || (category === 'autographs' && /^(?:authenticationcompany|customauthenticationcompany|certificationcompany)$/.test(normalizedFieldKey(key))
           && autographAuthenticationCompaniesEquivalent(targetComparable, candidateComparable)))
     ? "match" : targetComparable === candidateComparable ? "match" : "different";
 }

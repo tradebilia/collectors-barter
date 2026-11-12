@@ -3298,6 +3298,47 @@ describe("visual source filter", () => {
     ]));
   });
 
+  it("treats decorated Upper_deck title evidence as equivalent to UDA for Autographs", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Michael Jordan Signed Autographed Jordan Brand Basketball UDA COA",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: {
+        signer: "Michael Jordan",
+        signedItemType: "Basketball",
+        autographCategory: "Sports",
+        authenticationIncluded: "Yes",
+        authenticationCompany: "UDA",
+        customAuthenticationCompany: "UDA",
+        inscriptionPresent: "No",
+        certificateNumber: "14542115",
+      },
+    });
+    const rows = buildMetadataFieldComparisons(target, {
+      title: "Michael Jordan Signed Autographed Jordan Brand Basketball UDA Upper Deck COA",
+      itemType: "signed_item",
+      category: "autographs",
+      fullItemDetails: {},
+    });
+
+    expect(rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        targetField: "Authentication Company",
+        targetValue: "UDA",
+        titleDerivedValue: "Upper_deck (detected in title)",
+        status: "match",
+        titleDerivedStatus: "match",
+      }),
+      expect.objectContaining({
+        targetField: "Custom Authentication Company",
+        targetValue: "UDA",
+        titleDerivedValue: "Upper_deck (detected in title)",
+        status: "match",
+        titleDerivedStatus: "match",
+      }),
+    ]));
+  });
+
   it("keeps ranking score and rank on candidates retained outside visual review", () => {
     const target = buildVisualTargetMetadata({
       title: "Call of Duty: World at War Xbox 360",
