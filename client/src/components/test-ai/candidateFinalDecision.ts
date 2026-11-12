@@ -159,6 +159,7 @@ function sourceDispositionBlockerDetails(row: CandidateDisplayRow): string[] {
   const informationalDetails = [
     /^source disposition retained:/i,
     /^Autographs \/ Signed Item passed the signer, object-type, and 70-point valuation gate\.?$/i,
+    /^Autographs \/ Signed Item market-range workflow does not use visual analysis\.?$/i,
     /^Best Offer accepted amount was verified by Sold-Comps price hydration\.?$/i,
     /^Qualified undated Mercari exception: sale date remains Unknown; timing is unverified and sold=true reported sold price is used as reported, not proof of a recent sale or a private accepted-offer amount\.?$/i,
   ];

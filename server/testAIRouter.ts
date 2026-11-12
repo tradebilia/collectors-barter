@@ -3200,10 +3200,16 @@ export const testAIRouter = router({
       );
       const sealedReviewed = attachCanonicalProvenance('goldin', allReviewed.map((record) => mapNamedSourceEconomics('goldin', record,
         { partition: valuationRecords.includes(record) ? 'sales' : 'context' })), { query: result.query });
+      // Use the post-mapping signed fields for both partitions and all display
+      // consumers. The existing final batch audit still verifies provenance,
+      // transaction identity, recency and target-specific market relevance.
+      const admittedSourceRows = new Set(sealedReviewed.filter((record) =>
+        record.completed === true && record.evidenceDisposition === 'valuation_eligible'
+          && record.valuationEligible !== false));
       return {
         ...result,
-        sales: sealedReviewed.filter((_, index) => valuationRecords.includes(allReviewed[index])),
-        context: sealedReviewed.filter((_, index) => !valuationRecords.includes(allReviewed[index])),
+        sales: sealedReviewed.filter((record) => admittedSourceRows.has(record)),
+        context: sealedReviewed.filter((record) => !admittedSourceRows.has(record)),
         visualReviewListings: sealedReviewed,
         visualFilter,
       };

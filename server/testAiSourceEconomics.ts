@@ -98,15 +98,20 @@ export function mapNamedSourceEconomics<T extends SourceRow>(
   // No named mapping path is an approval issuer. Retain image verdict/audit and
   // raw provider metadata, but never advertise a copied final approval payload.
   delete mapped.identityApproval;
-  let hold = options?.partition === 'context' || restrictive.has(row.evidenceDisposition)
-    || row.valuationEligible === false || Boolean(text(row.exclusionReason));
   const observedCompleted = row.completed === true;
-  const eligibleAutographSale = adapterId === 'sold_comps'
+  const eligibleAutographSale = (adapterId === 'sold_comps' || adapterId === 'goldin' && observedCompleted)
     && role === 'signed_item_relevance'
     && options?.partition !== 'context'
     && row.evidenceDisposition === 'valuation_eligible'
-    && row.valuationEligible === true
+    && (adapterId === 'goldin' || row.valuationEligible === true)
     && String(row.visualRequirement ?? '').includes('not_required_autograph');
+  // Goldin's raw flag includes a broad search-title match. The completed lot
+  // must use the later signer/object/authentication gate, not that retrieval
+  // shortcut. Preserve the raw decision in sourceRelevance above; the actual
+  // sale facts still face all Goldin checks below and final normalization.
+  const goldinAutographGateApproved = adapterId === 'goldin' && eligibleAutographSale;
+  let hold = options?.partition === 'context' || restrictive.has(row.evidenceDisposition)
+    || !goldinAutographGateApproved && (row.valuationEligible === false || Boolean(text(row.exclusionReason)));
   switch (adapterId) {
     case 'sold_comps':
       // Scope is ONLY the existing special completed-endpoint early returns.
@@ -192,18 +197,54 @@ export function mapNamedSourceEconomics<T extends SourceRow>(
       caveats.push('ComicConnect dates retain final 365-day / conditional 730-day policy; no 36-month current authorization.');
       break;
     case 'weiss':
-    case 'goldin':
-      mapped.originMarketplace = adapterId;
+      mapped.originMarketplace = 'weiss';
       mapped.saleStatus = observedCompleted ? 'completed' : row.saleStatus ?? 'unknown';
-      mapped.completedStatusBasis = adapterId === 'weiss'
-        ? 'Weiss completed-webcast final leading bid' : 'Goldin Lot Sold record';
+      mapped.completedStatusBasis = 'Weiss completed-webcast final leading bid';
       mapped.priceBasis = row.priceBasis ?? 'unknown';
       mapped.buyerPremium = inclusion(row.buyerPremiumIncluded);
-      convention = adapterId === 'weiss' && mapped.buyerPremium === 'excluded'
+      convention = mapped.buyerPremium === 'excluded'
         ? 'hammer_excluded' : mapped.buyerPremium === 'included' ? 'reported_included_total' : 'premium_unresolved';
       hold = true;
-      caveats.push(adapterId === 'weiss' ? 'Weiss final hammer remains context; no premium added.'
-        : 'Goldin source proof is context only; no approved final identity issuer migration.');
+      caveats.push('Weiss final hammer remains context; no premium added.');
+      break;
+    case 'goldin':
+      mapped.originMarketplace = 'goldin';
+      mapped.saleStatus = observedCompleted ? 'completed' : row.saleStatus ?? 'unknown';
+      mapped.completedStatusBasis = observedCompleted ? 'Goldin Lot Sold record' : null;
+      mapped.priceBasis = row.priceBasis ?? 'unknown';
+      mapped.buyerPremium = inclusion(row.buyerPremiumIncluded);
+      convention = mapped.buyerPremium === 'included' ? 'reported_included_total' : 'premium_unresolved';
+      if (!observedCompleted) {
+        hold = true;
+        caveats.push('Goldin did not confirm that this lot sold.');
+      }
+      if (!['sold', 'closed', 'realized'].includes(mapped.priceBasis)) {
+        hold = true;
+        caveats.push('Goldin did not identify the amount as a completed-sale price.');
+      }
+      if (positiveScalar(row.price) === null) {
+        hold = true;
+        caveats.push('Goldin did not provide a positive sale amount.');
+      }
+      if (row.currency !== 'USD') {
+        hold = true;
+        caveats.push('Goldin did not report the sale amount in USD.');
+      }
+      const saleDate = text(mapped.date);
+      if (!saleDate || !Number.isFinite(Date.parse(saleDate))) {
+        hold = true;
+        caveats.push('Goldin did not provide a valid completed-sale date.');
+      }
+      if (mapped.buyerPremium !== 'included') {
+        hold = true;
+        caveats.push('Goldin did not confirm that the reported price includes the buyer premium.');
+      }
+      if (reportedHammerOrExcluded(row)) {
+        hold = true;
+        mapped.buyerPremium = 'excluded';
+        convention = 'hammer_excluded';
+        caveats.push('Goldin reported a hammer-only price rather than a price including the buyer premium.');
+      }
       break;
   }
   if (role !== 'source_observation' && !eligibleAutographSale) hold = true;
@@ -215,6 +256,10 @@ export function mapNamedSourceEconomics<T extends SourceRow>(
   if (row.visualRequirement === 'required') {
     hold = true;
     caveats.push('Required final image approval is not issued by this source mapping.');
+  }
+  if (!hold && goldinAutographGateApproved) {
+    mapped.valuationEligible = true;
+    mapped.exclusionReason = null;
   }
   if (hold) {
     mapped.evidenceDisposition = restrictive.has(row.evidenceDisposition) ? row.evidenceDisposition : 'context_only';
