@@ -308,13 +308,13 @@ describe('Stage 6 ACTUAL named source routes and restrictive source-fact sealing
     expect(source).toEqual(incoming); expect(source.context[0].provenanceToken).toBeUndefined();
     expect(lookup).toHaveBeenCalledTimes(1); expect(boundaries.llm).not.toHaveBeenCalled(); expect(boundaries.fetch).not.toHaveBeenCalled();
   });
-  it('seals special eBay relevance and all actual exclusions/tails as context without any image dispatch', async () => {
+  it('admits eligible eBay Autographs relevance sales while retaining exclusions as context without image dispatch', async () => {
     providerRows = [100, 105, 110, 115, 10000].map((price, index) => row(`signed-${index}`, {
       title: 'Muhammad Ali Signed EVERLAST Boxing Glove PSA/DNA', price, soldPrice: String(price), soldCurrency: 'USD',
       endedAt: '2026-11-01T00:00:00.000Z', date: undefined, url: `https://www.ebay.com/itm/123456789${index}`, rawSentinel: `signed-raw-${index}` }));
     providerRows.push(row('signed-replica', { title: 'Muhammad Ali facsimile signed boxing glove replica', soldPrice: '120', soldCurrency: 'USD', endedAt: '2026-11-01T00:00:00.000Z' }));
     const source = await caller().getSoldCompsData(SIGNED) as Row;
-    expect(source.marketContextOnly).toBe(true); expect(source.audit.valuationEligible).toBe(0);
+    expect(source.marketContextOnly).toBe(false); expect(source.audit.valuationEligible).toBeGreaterThan(0);
     expect(source.audit.sourceRelevanceEligible).toBeGreaterThan(0);
     expect(source.contextListings).toHaveLength(1);
     const requestsBeforeRender = boundaries.fetch.mock.calls.length;
@@ -325,19 +325,28 @@ describe('Stage 6 ACTUAL named source routes and restrictive source-fact sealing
     const all = [...source.listings, ...source.contextListings]; expect(all).toHaveLength(6);
     expect(source.audit.ledger).toEqual(all);
     for (const sale of all) {
-      expect(verify(sale)).toMatchObject({ originMarketplace: 'ebay', date: sale.endedAt, saleStatus: 'completed', priceBasis: 'sold', evidenceDisposition: 'context_only' });
+      const verified = verify(sale);
+      expect(verified).toMatchObject({ originMarketplace: 'ebay', date: sale.endedAt, saleStatus: 'completed', priceBasis: 'sold' });
       expect(sale.sourceRelevance.role).toBe('signed_item_relevance');
       expect(sale.metadataRanking).toBeDefined(); expect(sale.metadataScoreAwards).toBeDefined();
       const html = renderToStaticMarkup(createElement(TestAiCandidateStatus, { listing: sale }));
-      expect(html).toContain('signed item relevance'); expect(html).toContain('not exact image identity or final pricing use');
-      expect(html).toContain('Source context / review'); expect(html).not.toContain('SOURCE_ELIGIBLE_BEFORE_ANALYSIS');
+      if (verified.evidenceDisposition === 'valuation_eligible') {
+        expect(html).toContain('signed item relevance');
+        expect(html).not.toContain('Source context / review');
+      } else {
+        expect(html).toContain('Source context / review');
+      }
+      if (verified.evidenceDisposition === 'valuation_eligible') expect(html).toContain('SOURCE_ELIGIBLE_BEFORE_ANALYSIS');
+      else expect(html).not.toContain('SOURCE_ELIGIBLE_BEFORE_ANALYSIS');
     }
     expect(source.listings.some((sale: Row) => sale.priceTailExcludedFromMetrics)).toBe(true);
     expect(source.contextListings[0].sourceRelevance.valuationEligible).toBe(false);
     // The existing tail gate changes disposition, not every raw Boolean alias.
     expect(source.listings.find((sale: Row) => sale.priceTailExcludedFromMetrics).sourceRelevance.disposition).toBe('context_only');
     const a = wire(buildSoldCompsAnalysisSales(source, true)), b = wire(buildSoldCompsAnalysisSales(source, true));
-    expect(a).toEqual(b); expectHeld(a as Row[], SIGNED as typeof CARD);
+    expect(a).toEqual(b);
+    expect(a.some((sale: Row) => sale.evidenceDisposition === 'valuation_eligible')).toBe(true);
+    expectHeld(a.filter((sale: Row) => sale.priceTailExcludedFromMetrics) as Row[], SIGNED as typeof CARD);
     expect(boundaries.fetch).toHaveBeenCalledTimes(requestsBeforeRender);
     expect(boundaries.llm).not.toHaveBeenCalled();
   });
@@ -373,7 +382,9 @@ describe('Stage 6 ACTUAL named source routes and restrictive source-fact sealing
     expect(source.retrievalCoverage).toEqual(source.audit.retrievalCoverage);
     expect(source.retrievalCoverage[0].status).toBe('success');
     expect(source.retrievalCoverage.slice(1).every((attempt: Row) => attempt.status === 'error')).toBe(true);
-    expectHeld(source.listings, target); expect(boundaries.llm).not.toHaveBeenCalled();
+    if (kind === 'signed_item') expect(source.listings[0].evidenceDisposition).toBe('valuation_eligible');
+    else expectHeld(source.listings, target);
+    expect(boundaries.llm).not.toHaveBeenCalled();
   });
   it('signs ComicConnect context partition restrictively and preserves nonvisual sales policy', async () => {
     boundaries.comic.mockResolvedValue(result([row('comic-sale', { title: COMIC.title, buyerPremiumIncluded: null })],

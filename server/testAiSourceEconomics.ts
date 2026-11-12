@@ -101,6 +101,12 @@ export function mapNamedSourceEconomics<T extends SourceRow>(
   let hold = options?.partition === 'context' || restrictive.has(row.evidenceDisposition)
     || row.valuationEligible === false || Boolean(text(row.exclusionReason));
   const observedCompleted = row.completed === true;
+  const eligibleAutographSale = adapterId === 'sold_comps'
+    && role === 'signed_item_relevance'
+    && options?.partition !== 'context'
+    && row.evidenceDisposition === 'valuation_eligible'
+    && row.valuationEligible === true
+    && String(row.visualRequirement ?? '').includes('not_required_autograph');
   switch (adapterId) {
     case 'sold_comps':
       // Scope is ONLY the existing special completed-endpoint early returns.
@@ -109,10 +115,12 @@ export function mapNamedSourceEconomics<T extends SourceRow>(
       mapped.completedStatusBasis = 'Sold-Comps completed-sale endpoint';
       mapped.priceBasis = 'sold';
       convention = 'reported_retail_sale';
-      hold = true;
-      caveats.push(role === 'original_art_relevance'
-        ? 'Original Art is broad context; never a primary comparable.'
-        : 'Signed-item source relevance is context, not exact image identity or primary pricing.');
+      if (!eligibleAutographSale) {
+        hold = true;
+        caveats.push(role === 'original_art_relevance'
+          ? 'Original Art is broad context; never a primary comparable.'
+          : 'Signed-item source relevance is context unless the server-authorized Autographs valuation gate has passed.');
+      }
       break;
     case 'the_card_api': {
       const origin = text(row.platform) ?? text(row.originMarketplace) ?? text(row.marketplace);
@@ -198,7 +206,7 @@ export function mapNamedSourceEconomics<T extends SourceRow>(
         : 'Goldin source proof is context only; no approved final identity issuer migration.');
       break;
   }
-  if (role !== 'source_observation') hold = true;
+  if (role !== 'source_observation' && !eligibleAutographSale) hold = true;
   if (adapterId !== 'sold_comps' && adapterId !== 'the_card_api' && row.completed === false) {
     hold = true;
     if (adapterId !== 'cardsight_ai') mapped.saleStatus = row.saleStatus === 'active' ? 'active' : 'unknown';

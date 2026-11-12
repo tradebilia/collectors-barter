@@ -63,6 +63,25 @@ function held(result: ReturnType<typeof chain>) {
 }
 
 describe('Stage 6 actual named source mapping and canonical economic handoff', () => {
+  it('admits an eligible no-visual Autographs Sold-Comps sale without converting it to context only', () => {
+    const result = chain('sold_comps', row({
+      valuationEligible: true,
+      visualRequirement: 'not_required_autograph_market_context',
+      metadataMatchScore: 90,
+    }), { role: 'signed_item_relevance', partition: 'sales' });
+    expect(result.mapped.sourceEconomics.finalContextOnly).toBe(false);
+    expect(result.normalized).toMatchObject({ valuationEligible: true, sale: { evidenceDisposition: 'valuation_eligible' } });
+  });
+
+  it('keeps context partitions and non-Autograph relevance held', () => {
+    const context = chain('sold_comps', row({ valuationEligible: true, visualRequirement: 'not_required_autograph_market_context' }),
+      { role: 'signed_item_relevance', partition: 'context' });
+    expect(context.normalized.valuationEligible).toBe(false);
+    const originalArt = chain('sold_comps', row({ valuationEligible: true, visualRequirement: 'not_required_original_art_market_context' }),
+      { role: 'original_art_relevance', partition: 'sales' });
+    expect(originalArt.normalized.valuationEligible).toBe(false);
+  });
+
   it('preserves confirmed eBay negotiated amount and maps Goldin hammer without borrowing premium', () => {
     const ebay = chain('the_card_api', row({ platform: 'eBay', listing_type: 'best_offer', original_price: 160, buyer_premium: 25 }));
     expect(ebay.mapped).toMatchObject({ price: 120, original_price: 160, listing_type: 'best_offer',

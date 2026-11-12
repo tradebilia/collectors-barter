@@ -3562,7 +3562,7 @@ export const testAIRouter = router({
             mapNamedSourceEconomics('sold_comps', item, { role: 'signed_item_relevance', partition: 'context' })), { query });
           return {
             query,
-            marketContextOnly: true,
+            marketContextOnly: gatedMarketListings.every((item: any) => item.evidenceDisposition !== 'valuation_eligible'),
             retrievalCoverage,
             attemptIssues,
             partial,
@@ -3576,13 +3576,13 @@ export const testAIRouter = router({
               rawReceived: rawItems.length,
               retrievalCoverage,
               ledger: [...sealedMarketListings, ...sealedHeldListings],
-              valuationEligible: 0,
+              valuationEligible: gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').length,
               sourceRelevanceEligible: gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').length,
               warningReview: gatedMarketListings.filter((item: any) => item.evidenceDisposition !== 'valuation_eligible').length,
               objectiveConflicts: 0,
               notVisuallyReviewed: gatedMarketListings.length,
             },
-            note: 'Autographs / Signed Item market range only: the results provide similar-signer/item/authentication evidence and price metrics; they are not exact comparables and are not sent to visual analysis.',
+            note: 'Autographs / Signed Item market evidence: eligible signed-item sales may support valuation without exact image review; rejected rows remain context only.',
           };
         }
 
