@@ -1255,6 +1255,7 @@ const AUTOGRAPH_AUTH_COMPANIES: Record<string, string[]> = {
   jsa: ['jsa', 'james spence'],
   psa_dna: ['psa dna', 'psadna'],
   bas: ['bas', 'beckett', 'beckett authentication'],
+  uda: ['uda', 'upper deck', 'upper deck authenticated'],
   fanatics: ['fanatics'],
   steiner: ['steiner'],
   tristar: ['tristar'],

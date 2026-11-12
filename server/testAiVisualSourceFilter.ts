@@ -1,7 +1,7 @@
 import { invokeLLM, type ImageContent, type TextContent, type LlmProvider } from "./_core/llm";
 import { parseAnalyzerResponse } from "./testAiResponse";
 import { diagnoseVisualResponse } from "../shared/testAiVisualFailure";
-import { findMaterialMetadataConflicts, metadataConflictReviewReason } from "../shared/testAiMetadataConflict";
+import { autographAuthenticationCompaniesEquivalent, findMaterialMetadataConflicts, metadataConflictReviewReason } from "../shared/testAiMetadataConflict";
 import { buildSoldReviewBudget } from "../shared/testAiSalesEvidencePolicy";
 import {
   buildMarketplaceTitleEvidence,
@@ -525,7 +525,8 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
   }
   const normalizedCandidateCompany = normalizedChoice(candidateAuth);
   if (meaningfulMetadataText(targetAuth) && candidateAuthState === "yes" && targetAuthState === "yes"
-    && normalizedCandidateCompany && (targetAuth === normalizedCandidateCompany || targetAuth.includes(normalizedCandidateCompany) || normalizedCandidateCompany.includes(targetAuth))) {
+    && normalizedCandidateCompany && (autographAuthenticationCompaniesEquivalent(targetAuth, normalizedCandidateCompany)
+      || targetAuth === normalizedCandidateCompany || targetAuth.includes(normalizedCandidateCompany) || normalizedCandidateCompany.includes(targetAuth))) {
     score += 10;
     matched.push("authentication company");
     awards.push(scoreAward('authenticationCompany', 10, scoreMatch(true, authWitness)));
@@ -2664,7 +2665,9 @@ function comparisonStatus(targetValue: string, candidateValue: string, category 
   const targetComparable = comparisonComparable(targetValue);
   const candidateComparable = comparisonComparable(candidateValue.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, ""));
   return /^(?:certificationcompany|gradingcompany|grader)$/.test(normalizedFieldKey(key))
-      && videoGameGradersEquivalent(category, targetComparable, candidateComparable)
+      && (videoGameGradersEquivalent(category, targetComparable, candidateComparable)
+        || (category === 'autographs' && /^(?:authenticationcompany|certificationcompany)$/.test(normalizedFieldKey(key))
+          && autographAuthenticationCompaniesEquivalent(targetComparable, candidateComparable)))
     ? "match" : targetComparable === candidateComparable ? "match" : "different";
 }
 export function buildMetadataFieldComparisons(targetMetadata: string, listing: VisualSourceCandidate): MetadataFieldComparison[] {

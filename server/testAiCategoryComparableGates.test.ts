@@ -249,6 +249,27 @@ describe('category-specific comparable identity gates', () => {
     expect(wrongCertificate.categoryIdentity.conflicts).toContain('Certificate differs (ZX9999)');
   });
 
+  it('treats UDA and Upper Deck Authenticated as the same Autographs company in final admission', () => {
+    const target: ComparableTarget = {
+      title: 'Michael Jordan Signed Basketball UDA COA',
+      category: 'autographs',
+      itemType: 'signed_item',
+      itemDetails: JSON.stringify({
+        signer: 'Michael Jordan',
+        signedItemType: 'Basketball',
+        authenticationIncluded: 'Yes',
+        authenticationCompany: 'UDA',
+      }),
+    };
+    const equivalent = scoreComparable(target, completed('Michael Jordan Signed Basketball Upper Deck Authenticated COA'));
+    const different = scoreComparable(target, completed('Michael Jordan Signed Basketball Steiner COA'));
+
+    expect(equivalent.categoryIdentity.status).toBe('direct_confirmed');
+    expect(equivalent.categoryIdentity.conflicts).not.toContain(expect.stringMatching(/authentication company/i));
+    expect(different.accepted).toBe(false);
+    expect(different.categoryIdentity.conflicts.some((value) => /authentication company/i.test(value))).toBe(true);
+  });
+
   it('requires movie title and supplied format, edition, region, and package state', () => {
     const target: ComparableTarget = {
       title: 'Blade Runner 2049 4K SteelBook United States Factory Sealed',

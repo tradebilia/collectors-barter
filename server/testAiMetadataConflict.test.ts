@@ -3,6 +3,38 @@ import { findMaterialMetadataConflicts } from "../shared/testAiMetadataConflict"
 import { buildVisualTargetMetadata } from "./testAiVisualSourceFilter";
 
 describe("shared metadata conflict comparison", () => {
+  it("treats UDA and Upper Deck as the same Autographs authentication company", () => {
+    const autographTarget = buildVisualTargetMetadata({
+      title: "Michael Jordan Autograph Signed Official Wilson Basketball UDA",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Michael Jordan", signedItemType: "Basketball", authenticationIncluded: "Yes", authenticationCompany: "UDA" },
+    });
+    const conflicts = findMaterialMetadataConflicts(autographTarget, {
+      title: "Michael Jordan Autograph Signed Official Wilson Basketball Upper Deck",
+      itemDetails: JSON.stringify({ authenticationCompany: "Upper Deck" }),
+    });
+    expect(conflicts).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: "authenticationCompany" }),
+    ]));
+  });
+
+  it("still flags a genuinely different Autographs authentication company", () => {
+    const autographTarget = buildVisualTargetMetadata({
+      title: "Michael Jordan Autograph Signed Official Wilson Basketball UDA",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Michael Jordan", signedItemType: "Basketball", authenticationIncluded: "Yes", authenticationCompany: "UDA" },
+    });
+    const conflicts = findMaterialMetadataConflicts(autographTarget, {
+      title: "Michael Jordan Autograph Signed Official Wilson Basketball PSA",
+      itemDetails: JSON.stringify({ authenticationCompany: "PSA" }),
+    });
+    expect(conflicts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: "authenticationCompany", targetValue: "UDA", candidateValue: "PSA" }),
+    ]));
+  });
+
   const target = buildVisualTargetMetadata({
     title: "1903-S Morgan Silver Dollar PCGS MS63",
     category: "coins",

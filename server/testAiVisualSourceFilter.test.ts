@@ -160,6 +160,22 @@ describe("visual source filter", () => {
     expect(score.matched).toEqual(expect.arrayContaining(["signer", "signed item type", "autograph category", "authentication company", "inscription"]));
   });
 
+  it("treats UDA and Upper Deck as the same Autographs authentication company", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Michael Jordan signed basketball UDA",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Michael Jordan", signedItemType: "Basketball", autographCategory: "Sports", authenticationIncluded: "Yes", authenticationCompany: "UDA" },
+    });
+    const listing = { title: "Michael Jordan Autograph Signed Official Wilson Basketball Upper Deck" };
+    const score = autographMarketRelevanceScore(listing, target);
+    expect(score.score).toBe(90);
+    expect(score.matched).toContain("authentication company");
+    const companyRow = buildMetadataFieldComparisons(target, { ...listing, authenticationCompany: "Upper Deck" })
+      .find(row => /authentication company/i.test(row.targetField));
+    expect(companyRow).toMatchObject({ status: "match", rankingContribution: { potentialPoints: 10, awardedPoints: 10 } });
+  });
+
   it("normalizes equivalent signed sports-object wording before scoring", () => {
     const boxingGloveTarget = buildVisualTargetMetadata({
       title: "Muhammad Ali signed boxing glove",

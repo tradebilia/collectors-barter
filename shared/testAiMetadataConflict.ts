@@ -66,6 +66,17 @@ function compact(value: unknown): string {
   return key(value).replace(/[^a-z0-9]+/g, '');
 }
 
+/** UDA is the standard abbreviation for Upper Deck Authenticated. */
+export function autographAuthenticationCompaniesEquivalent(left: unknown, right: unknown): boolean {
+  const normalize = (value: unknown): string => {
+    const compacted = compact(value);
+    return /^(?:uda|upperdeck|upperdeckauthenticated)$/.test(compacted) ? 'uda' : compacted;
+  };
+  const normalizedLeft = normalize(left);
+  const normalizedRight = normalize(right);
+  return Boolean(normalizedLeft && normalizedRight && normalizedLeft === normalizedRight);
+}
+
 function fieldComparable(field: string, value: string): string {
   if (/^(?:sealed|factorySealed|sealedStatus|sealStatus|complete|isComplete|completeness|completeInBox|originalPackaging|originalBoxIncluded|isGraded|graded)$/i.test(field)) {
     const state = metadataBooleanState(value);
@@ -429,6 +440,8 @@ export function findMaterialMetadataConflicts(
       }
       continue;
     }
+    if (category === 'autographs' && field === 'authenticationCompany'
+      && directCandidateValue && autographAuthenticationCompaniesEquivalent(targetValue, directCandidateValue)) continue;
     if (directCandidateValue && fieldComparable(field, directCandidateValue) !== fieldComparable(field, targetValue)) {
       const videoGameSpecializedStateField = category === 'video_games'
         && ['workingCondition', 'originalPackaging', 'originalBoxIncluded'].includes(field);
