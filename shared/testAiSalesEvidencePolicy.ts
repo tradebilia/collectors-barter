@@ -8,6 +8,7 @@ export type CategoryEvidenceThresholds = {
   category: string;
   minimumSelectedSales: number;
   minimumIndependentMarketplaces: number;
+  /** @deprecated Legacy response compatibility only; price spread never vetoes valuation. */
   maximumSpreadPct: number;
   rationale: string;
 };

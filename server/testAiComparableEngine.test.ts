@@ -297,7 +297,9 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.marketStability).toBe('low');
     expect(profile.liquidity).toBe('low');
     expect(profile.evidenceState).toBe('sparse_market_evidence');
-    expect(profile.marketRange.supported).toBe(false);
+    expect(profile.marketRange.supported).toBe(true);
+    // Unknown marketplace attribution remains a separate support check.
+    expect(profile.primaryValue).toBeNull();
   });
 
   it('allows one valid sold comparable through the temporary sandbox valuation floor', () => {
@@ -312,6 +314,19 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.marketRange.supported).toBe(true);
     expect(profile.evidenceState).toBe('sparse_market_evidence');
     expect(profile.valuationWarnings.join(' ')).toContain('IQR outlier filtering was not applied');
+  });
+  it.each(['comics', 'sports_cards', 'pokemon', 'coins', 'stamps', 'video_games', 'movies', 'music', 'vintage_toys', 'disney_pins', 'autographs'])
+  ('does not veto otherwise valid %s sales because their price spread is 248 percent', category => {
+    const support = {
+      marketRange: { low: 300, mid: 2100, high: 4351, supported: true },
+      categoryEvidenceThresholds: getCategoryEvidenceThresholds(category),
+      currentWindowSaleCount: 2, currentWindowIndependentMarketplaceCount: 1,
+      valuationEligibleSaleCount: 2, valuationEligibleIndependentMarketplaceCount: 1,
+      evidenceQuality: 'low' as const, spreadPct: 248,
+    };
+    expect(hasDefensibleCurrentSaleValue(support)).toBe(true);
+    expect(hasDefensibleCurrentSaleValue({ ...support, valuationEligibleSaleCount: 0, currentWindowSaleCount: 0 })).toBe(false);
+    expect(hasDefensibleCurrentSaleValue({ ...support, marketRange: { ...support.marketRange, low: 0 } })).toBe(false);
   });
 
   it('explains when valuation evidence has weak source attribution', () => {

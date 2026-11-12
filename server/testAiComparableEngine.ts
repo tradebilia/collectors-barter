@@ -2286,7 +2286,6 @@ export function hasDefensibleCurrentSaleValue(profile: SaleEvidenceSupport): pro
     // one sale, so low confidence remains visible as a warning rather than
     // preventing the candidate from reaching valuation.
     && (floor.minimumSelectedSales === 1 || profile.evidenceQuality !== 'low')
-    && profile.spreadPct !== null && profile.spreadPct <= floor.maximumSpreadPct
     && (marketplaceCount >= floor.minimumIndependentMarketplaces
       || saleCount >= floor.minimumSelectedSales + 2));
 }
@@ -2454,9 +2453,9 @@ export function buildMarketProfile(
   const identityReadiness = buildTestAiP0Identity(target).readiness;
   const itemIdentificationConfidence: ConfidenceLevel = exactMatchCount >= 3 ? 'high' : exactMatchCount >= 1 || accepted.length >= 3 ? 'medium' : 'low';
   const currentExactMatchCount = currentSales.filter(({ match }) => match.classification === 'exact').length;
-  const calculatedEvidenceQuality: ConfidenceLevel = valuationEligibleSaleCount >= categoryEvidenceThresholds.minimumSelectedSales + 1 && currentExactMatchCount >= 2 && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct)
+  const calculatedEvidenceQuality: ConfidenceLevel = valuationEligibleSaleCount >= categoryEvidenceThresholds.minimumSelectedSales + 1 && currentExactMatchCount >= 2
     ? 'high'
-    : valuationEligibleSaleCount >= categoryEvidenceThresholds.minimumSelectedSales && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct + 25)
+    : valuationEligibleSaleCount >= categoryEvidenceThresholds.minimumSelectedSales
       ? 'medium'
       : 'low';
   const evidenceQuality: ConfidenceLevel = currentEvidenceCoverage.sourceReliability === 'low' || currentEvidenceCoverage.sourceReliability === 'unavailable'
@@ -2476,8 +2475,7 @@ export function buildMarketProfile(
   const preliminarySupported = Boolean(!materialReviewRequired && saleMedianValue !== null && valuationEligibleSaleCount >= categoryEvidenceThresholds.minimumSelectedSales
     && currentMinimum !== null && currentMaximum !== null
     && [currentMinimum, saleMedianValue, currentMaximum].every((value) => Number.isFinite(value) && value > 0)
-    && currentMinimum <= saleMedianValue && saleMedianValue <= currentMaximum
-    && spreadPct !== null && spreadPct <= categoryEvidenceThresholds.maximumSpreadPct + 25);
+    && currentMinimum <= saleMedianValue && saleMedianValue <= currentMaximum);
   const marketRange: MarketProfile['marketRange'] = preliminarySupported
     ? { low: currentMinimum!, mid: saleMedianValue!, high: currentMaximum!, supported: true }
     : { low: null, mid: null, high: null, supported: false };
@@ -2485,12 +2483,10 @@ export function buildMarketProfile(
     currentWindowSaleCount, currentWindowIndependentMarketplaceCount, valuationEligibleSaleCount,
     valuationEligibleIndependentMarketplaceCount, evidenceQuality, spreadPct });
   // Reporting only. Mirror the existing support checks; do not substitute a
-  // generic sample-size explanation for spread, independence, or identity holds.
+  // generic sample-size explanation for independence or identity holds.
+  // Price spread is descriptive only and must never veto matching sales.
   const supportReasonDetails: string[] = [];
   if (materialReviewRequired) supportReasonDetails.push('An unresolved target identity conflict stopped the valuation for this run.');
-  if (spreadPct !== null && spreadPct > categoryEvidenceThresholds.maximumSpreadPct) {
-    supportReasonDetails.push(`The qualifying sale prices vary by ${spreadPct}%, above the ${categoryEvidenceThresholds.maximumSpreadPct}% limit. The run was withheld because of price spread, not the number of sales.`);
-  }
   if (valuationEligibleSaleCount < categoryEvidenceThresholds.minimumSelectedSales) {
     supportReasonDetails.push(`The run has ${valuationEligibleSaleCount} qualifying sale(s); the required minimum is ${categoryEvidenceThresholds.minimumSelectedSales}.`);
   }
@@ -2516,7 +2512,7 @@ export function buildMarketProfile(
     ? `${valuationEligibleSaleCount} accepted valuation-pool sales (${currentWindowSaleCount} dated within 365 days and ${qualifiedUndatedMercariSaleCount} qualified undated Mercari exceptions; timing unverified)`
     : `${currentWindowSaleCount} accepted current-window sales`;
   const valuationBasisReason = materialReviewRequired ? `${TEST_AI_VALUE_UNAVAILABLE_MESSAGE}. An unresolved material identity conflict blocks pricing, including guide fallback.`
-    : sufficientCurrentSales ? `${valuationPopulationDescription} meet the existing category quality, spread, and independence requirements; the value uses sales alone.`
+    : sufficientCurrentSales ? `${valuationPopulationDescription} meet the existing category quality and independence requirements; the value uses sales alone.`
     : guideProvisional ? `Guide fallback — limited market evidence: ${valuationPopulationDescription} do not meet the existing category evidence requirements; the verified applicable ${valuationGuideAnchor?.sourceLabel ?? 'guide'} value is used alone.`
     : `${TEST_AI_VALUE_UNAVAILABLE_MESSAGE}. Insufficient evidence: ${valuationPopulationDescription} do not meet the existing category evidence requirements and no verified applicable guide is available.`;
   const valuationWarnings: string[] = [];
@@ -2526,7 +2522,6 @@ export function buildMarketProfile(
   if (guideAnchor && !valuationGuideAnchor) valuationWarnings.push('The supplied guide has no valid target-bound server verification; it remains reference only and cannot determine the value.');
   if (guideAnchorValue !== null && guideProvisional) valuationWarnings.push(`The ${guideMatchDescription} ${valuationGuideAnchor?.sourceLabel ?? 'guide'} estimate of $${guideAnchorValue.toLocaleString()} is a provisional guide fallback value, not a market-supported completed-sale valuation or automatic cash basis.`);
   else if (guideAnchorValue !== null) valuationWarnings.push(`The verified ${valuationGuideAnchor?.sourceLabel ?? 'guide'} value is reference only because sufficient ${qualifiedUndatedMercariSaleCount ? 'qualified valuation-pool' : 'current comparable'} sales are used alone; guide contribution is 0%.`);
-  if (spreadPct !== null && spreadPct > categoryEvidenceThresholds.maximumSpreadPct) valuationWarnings.push(`Authoritative comparable prices exceed the ${categoryEvidenceThresholds.maximumSpreadPct}% ${categoryEvidenceThresholds.category} spread threshold.`);
   if (accepted.length < categoryEvidenceThresholds.minimumSelectedSales) valuationWarnings.push(`Fewer than ${categoryEvidenceThresholds.minimumSelectedSales} accepted completed sales are available for ${categoryEvidenceThresholds.category}; treat the range as preliminary review evidence.`);
   if (selectedAcceptedWithAge.length > 0 && selectedAcceptedWithAge.length < 5) valuationWarnings.push('IQR outlier filtering was not applied because fewer than five selected completed sales are available.');
   if (flaggedSmallSampleOutliers.size > 0) valuationWarnings.push(`${flaggedSmallSampleOutliers.size} suspicious price tail${flaggedSmallSampleOutliers.size === 1 ? '' : 's'} was flagged for review but retained because the selected sample has fewer than ten completed sales.`);
@@ -2567,7 +2562,7 @@ export function buildMarketProfile(
     recentCount ? `${recentCount} selected sale${recentCount === 1 ? '' : 's'} occurred within the last 90 days.` : qualifiedUndatedMercariSaleCount ? 'No selected sale has a verified date within the last 90 days; Mercari timing is Unknown.' : 'No selected sale occurred within the last 90 days.',
     spreadPct === null ? 'No stable price spread can be calculated from the selected evidence.' : `Selected-value spread is ${spreadPct}% (${marketStability} stability).`,
     `Source reliability is ${evidenceCoverage.sourceReliability}${evidenceCoverage.sourceReliabilityScore !== null ? ` (${evidenceCoverage.sourceReliabilityScore}/100)` : ''}; ${evidenceCoverage.attributedCount}/${evidenceCoverage.selectedCount} selected records are marketplace-attributed and ${evidenceCoverage.independentMarketplaceCount} independent marketplace${evidenceCoverage.independentMarketplaceCount === 1 ? '' : 's'} are represented.`,
-    `${categoryEvidenceThresholds.category} threshold: ${categoryEvidenceThresholds.minimumSelectedSales} selected sales, ${categoryEvidenceThresholds.minimumIndependentMarketplaces} independent marketplaces, and no more than ${categoryEvidenceThresholds.maximumSpreadPct}% spread for strong evidence.`,
+    `${categoryEvidenceThresholds.category} threshold: ${categoryEvidenceThresholds.minimumSelectedSales} selected sales and ${categoryEvidenceThresholds.minimumIndependentMarketplaces} independent marketplaces. Price spread does not restrict valuation admission.`,
     outlierExcludedCount ? `${outlierExcludedCount} price outlier${outlierExcludedCount === 1 ? '' : 's'} was withheld from the deterministic value.` : flaggedSmallSampleOutliers.size ? `${flaggedSmallSampleOutliers.size} suspicious price tail${flaggedSmallSampleOutliers.size === 1 ? '' : 's'} remains in the small-sample review set.` : 'No selected price was withheld by the IQR outlier rule.',
   ];
   // Everything below projects already-computed sets. It never feeds selection,

@@ -83,15 +83,19 @@ describe('provider-shaped Autographs eBay admission through final audit and card
     expect(decision?.label).toBe('USED IN VALUATION');
     expect(summarizeUsedValuationPrices(reconciled)).toMatchObject({ count: 1, low: 4351, high: 4351, average: 4351 });
   });
-  it('reports the actual price-spread hold instead of blaming the one-sale minimum', async () => {
+  it('uses all qualifying high-spread sales instead of withholding the entire valuation', async () => {
     rows = [300, 4351].map((price, index) => providerRow({ itemId: String(123456789012 + index),
       url: `https://www.ebay.com/itm/${123456789012 + index}`, soldPrice: String(price), endedAt: '2026-10-18',
       title: 'Michael Jordan Signed Autograph Basketball Ball Upper Deck Certified', buyingFormat: 'auction' }));
-    const { audit, decision } = await run();
+    const { audit, decision, reconciled } = await run();
     expect(audit.snapshot.profile.valuationEligibleSaleCount).toBe(2);
-    expect(audit.snapshot.profile.primaryValue).toBeNull();
-    expect(audit.snapshot.profile.comparables[0].valuationUse.use.supportReasonDetails?.[0]).toMatch(/prices.*above.*100%/i);
-    expect(decision?.reason).toMatch(/prices.*above.*100%/i);
+    expect(audit.snapshot.profile.spreadPct).toBeGreaterThan(100);
+    expect(audit.snapshot.profile.primaryValue).toBe(Math.round((300 + 4351) / 2));
+    expect(audit.snapshot.profile.marketRange.supported).toBe(true);
+    expect(audit.snapshot.profile.comparables.every((row: any) => row.valuationUse.use.code === 'CURRENT_SALES_PRIMARY')).toBe(true);
+    expect(decision?.label).toBe('USED IN VALUATION');
+    expect(summarizeUsedValuationPrices(reconciled)).toMatchObject({ count: 2, low: 300, high: 4351, average: (300 + 4351) / 2 });
+    expect(decision?.reason).not.toMatch(/above.*limit|withheld because of price spread/i);
     expect(decision?.reason).not.toContain('One matching sale by itself is not enough');
   });
   it('requests accepted-offer hydration within the existing bounded Autographs query tiers', async () => {

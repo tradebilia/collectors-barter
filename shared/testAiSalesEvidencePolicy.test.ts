@@ -255,9 +255,10 @@ describe('sales-policy dependency and financial boundaries (source-only)', () =>
     // one sale, so low confidence remains visible as a warning rather than
     // preventing the candidate from reaching valuation.
     && (floor.minimumSelectedSales === 1 || profile.evidenceQuality !== 'low')
-    && profile.spreadPct !== null && profile.spreadPct <= floor.maximumSpreadPct
     && (marketplaceCount >= floor.minimumIndependentMarketplaces
       || saleCount >= floor.minimumSelectedSales + 2));`);
+    expect(ENGINE_SOURCE).not.toContain('profile.spreadPct <= floor.maximumSpreadPct');
+    expect(ENGINE_SOURCE).not.toContain('spreadPct <= categoryEvidenceThresholds.maximumSpreadPct');
     expect(ENGINE_SOURCE).toContain('const evidenceIndependenceAdequate = independentMarketplaceCount >= categoryEvidenceThresholds.minimumIndependentMarketplaces || accepted.length >= categoryEvidenceThresholds.minimumSelectedSales + 2;');
   });
 });
