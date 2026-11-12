@@ -39,7 +39,7 @@ import {
   MessageCircle,
   MessagesSquare,
 } from "lucide-react";
-import { ChangeEvent, FormEvent, useMemo, useState, useEffect, useRef } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState, useRef } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
 import { TopBar } from "@/components/TopBar";
@@ -104,31 +104,6 @@ const fallbackTopTraders = ["BillyBob123", "DarthVader99", "JoeFalco22", "MarioL
 
 // Fallback data for highest trade value items (no longer used, data comes from backend)
 const fallbackTradeValues: any[] = [];
-
-// Hook to update user activity status
-function useUpdateActivity(isAuthenticated: boolean) {
-  const updateActivityMutation = trpc.onlineStatus.updateActivity.useMutation();
-  
-  useEffect(() => {
-    // Only update activity if user is authenticated
-    if (!isAuthenticated) return;
-    
-    // Update activity on component mount
-    updateActivityMutation.mutate();
-    
-    // Update activity every 2 minutes while user is on the page
-    const interval = setInterval(() => {
-      updateActivityMutation.mutate();
-    }, 2 * 60 * 1000); // 2 minutes
-    
-    return () => clearInterval(interval);
-    // NOTE: updateActivityMutation is intentionally excluded from the deps.
-    // The object returned by useMutation() is not referentially stable, and
-    // including it caused the effect to re-run on every render (mutate ->
-    // re-render -> new mutation object -> mutate again), flooding the server.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
-}
 
 function initials(name: string) {
   return name
@@ -246,9 +221,6 @@ export default function Home() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
-  
-  // Update user activity status while on the page
-  useUpdateActivity(isAuthenticated);
   
   // Unread counts are already polled by TopRightIcons (rendered on this page);
   // this duplicate 30s poll doubled the background load for no benefit.

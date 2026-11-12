@@ -4,8 +4,8 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
-import { useState, useEffect } from "react";
-import { trpc } from "@/lib/trpc";
+import { useState } from "react";
+import { useActivityHeartbeat } from "@/hooks/useActivityHeartbeat";
 import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";
 import {
   clearPreviewSessionToken,
@@ -43,13 +43,7 @@ export function TopBar({
   };
 
   // Global activity heartbeat — keeps online status accurate on every page
-  const updateActivityMutation = trpc.onlineStatus.updateActivity.useMutation();
-  useEffect(() => {
-    if (!visiblyAuthenticated) return;
-    updateActivityMutation.mutate();
-    const interval = setInterval(() => updateActivityMutation.mutate(), 2 * 60 * 1000); // every 2 minutes
-    return () => clearInterval(interval);
-  }, [visiblyAuthenticated]);
+  useActivityHeartbeat(visibleUser?.id);
   // Note: market.search is a query, not a mutation
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {

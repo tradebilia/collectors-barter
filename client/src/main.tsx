@@ -7,9 +7,11 @@ import { createTestAiRpcLinks } from './lib/testAiRpcTransport';
 import App from "./App";
 import { getLoginUrl } from "./const";
 import { getPreviewSessionToken } from "./lib/previewSession";
+import { isRpcConnectionInterruption } from "./lib/rpcConnectionErrors";
 import "./index.css";
 
 const queryClient = new QueryClient();
+let lastHeartbeatConnectionWarningAt = 0;
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
@@ -35,6 +37,13 @@ queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
     redirectToLoginIfUnauthorized(error);
+    if (event.mutation.options.meta?.backgroundActivityHeartbeat === true && isRpcConnectionInterruption(error)) {
+      if (Date.now() - lastHeartbeatConnectionWarningAt >= 60_000) {
+        lastHeartbeatConnectionWarningAt = Date.now();
+        console.warn("[Online status] Connection interrupted; the background activity update will retry automatically. This is not an item-save or valuation request.");
+      }
+      return;
+    }
     console.error("[API Mutation Error]", error);
   }
 });
