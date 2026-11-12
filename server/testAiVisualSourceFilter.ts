@@ -273,7 +273,7 @@ export function autographMultiSignatureReason(targetMetadata: string, listing: V
 
 function autographCandidateValue(listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): string {
   const candidate = normalizeVisualSourceCandidate(listing);
-  const structured = aliases.map((key) => listing[key] ?? candidate.details[key]).find((value) => String(value ?? "").trim());
+  const structured = aliases.flatMap((key) => [listing[key], candidate.details[key]]).find((value) => meaningfulMetadataText(value));
   if (structured != null) return autographMarketValue(structured);
   for (const pattern of titlePatterns) {
     const match = candidate.title.match(pattern);
@@ -282,22 +282,33 @@ function autographCandidateValue(listing: VisualSourceCandidate, aliases: string
   return "";
 }
 
+function autographSignerFromTitle(title: string, targetSigner = ""): string {
+  // An explicit named signer outranks a subject name mentioned in the title.
+  const explicit = title.match(/\b(?:signed|autographed)\s+(?:(?:baseball|basketball|football|ball|boxing\s+glove|glove|jersey|helmet|puck|photo(?:graph)?|paper|cut|document|poster|book|card|guitar)\s+)?by\s+([^,|;()]+?)(?=\s+(?:on|a|an|the)\s+|[,|;()]|$)/i);
+  if (explicit?.[1]) return autographMarketValue(explicit[1]);
+  const normalizedTarget = autographMarketValue(targetSigner);
+  // A title may mention a famous person without being signed by that person.
+  // Strip only leading authenticator labels, not arbitrary subject/context text.
+  // PSA DNA Babe Ruth Autographed Baseball therefore retains Babe Ruth as the
+  // leading signer; a Baseball signed by another person still does not match.
+  if (normalizedTarget) {
+    const normalizedTitle = normalizedChoice(title.replace(/\s*\/\s*/g, "_")).replace(
+      /^(?:(?:psa(?:[/_]dna)?|psadna|jsa|bas|beckett(?:_authentication(?:_services)?)?|uda|upper_deck(?:_authenticated)?|fanatics|steiner|tristar|mlb)(?:_(?:authenticated|certified))?_)+/,
+      "",
+    );
+    const distinctSuffixes = ["jr", "sr", "ii", "iii", "iv"];
+    const followingToken = normalizedTitle.startsWith(`${normalizedTarget}_`)
+      ? normalizedTitle.slice(normalizedTarget.length + 1).split("_")[0].replace(/\.$/, "") : "";
+    if (distinctSuffixes.includes(followingToken)) return "";
+    if (normalizedTitle === normalizedTarget || normalizedTitle.startsWith(`${normalizedTarget}_`)) return normalizedTarget;
+  }
+  return "";
+}
+
 function autographCandidateSigner(listing: VisualSourceCandidate, targetSigner = ""): string {
   const structured = autographCandidateValue(listing, ["signer", "autographSigner"]);
   if (structured) return structured;
-  const title = String(listing.title ?? "");
-  const normalizedTarget = autographMarketValue(targetSigner);
-  // A title may mention a famous person without being signed by that person.
-  // Accept title-derived identity only when the target leads the title or an
-  // explicit “signed by” / “autographed by” phrase names the signer.
-  if (normalizedTarget) {
-    const normalizedTitle = normalizedChoice(title);
-    const distinctSuffixes = ["jr", "sr", "ii", "iii", "iv"];
-    if (distinctSuffixes.some((suffix) => normalizedTitle === `${normalizedTarget}_${suffix}` || normalizedTitle.startsWith(`${normalizedTarget}_${suffix}_`))) return "";
-    if (normalizedTitle === normalizedTarget || normalizedTitle.startsWith(`${normalizedTarget}_`)) return normalizedTarget;
-  }
-  const explicit = title.match(/\b(?:signed|autographed)\s+by\s+([^,|;()]+?)(?=\s+(?:on|a|an|the)\s+|[,|;()]|$)/i);
-  return explicit?.[1] ? autographMarketValue(explicit[1]) : "";
+  return autographSignerFromTitle(canonicalCandidateTitle(listing), targetSigner);
 }
 
 export function autographReplicaReason(listing: VisualSourceCandidate): string | null {
@@ -381,7 +392,7 @@ function autographTargetObjectType(targetMetadata: string, details: Record<strin
 
 export function autographIdentityConflictReason(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   const targetTitle = extractTargetTitle(targetMetadata);
-  const candidateTitle = String(listing.title ?? "");
+  const candidateTitle = canonicalCandidateTitle(listing);
   const versionPattern = /\b(?:japanese|korean|chinese|taiwanese|foreign|international|european|mexican|canadian|australian|country)\s+(?:version|edition|variant|release|issue)\b|\b(?:version|edition|variant)\s+(?:of\s+)?(?:the\s+)?(?:japanese|korean|chinese|taiwanese|foreign|international|european|mexican|canadian|australian|country)\b/i;
   const candidateMatch = candidateTitle.match(versionPattern);
   if (!candidateMatch || versionPattern.test(targetTitle)) return null;
@@ -390,7 +401,7 @@ export function autographIdentityConflictReason(targetMetadata: string, listing:
 
 function autographCandidateAuthentication(listing: VisualSourceCandidate, structuredValue: string): string {
   if (structuredValue) return structuredValue;
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   if (/\b(?:no|without|missing)\s+(?:a\s+)?COAs?\b/i.test(title)) return "unauthenticated";
   const company = title.match(/\b(?:PSA(?:[\s/_-]*DNA)?|JSA|BAS|Beckett(?:\s+Authentication\s+Services)?|MLB|Fanatics|Upper\s+Deck|Steiner|TriStar)\b/i);
   if (company?.[0]) return autographMarketValue(company[0]);
@@ -2317,10 +2328,17 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
       const value = state ? movieBoolean(state) : "";
       return value ? `${value === 'yes' ? 'Yes' : 'No'} (inferred from title)` : "Unknown";
     }
-			if (category === "autographs") {
-			if (/^(?:signedItemType|autographItemType)$/i.test(key)) {
-				const objectType = autographObjectType(title);
-				return objectType ? `${objectType.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
+				if (category === "autographs") {
+				if (/^(?:signer|autographSigner)$/i.test(key)) {
+					const signer = autographSignerFromTitle(title, comparisonValue(targetValue));
+					if (!signer) return "Unknown";
+					const display = signer === autographMarketValue(targetValue)
+						? comparisonValue(targetValue) : signer.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+					return `${display} (detected in title)`;
+				}
+				if (/^(?:signedItemType|autographItemType)$/i.test(key)) {
+					const objectType = autographObjectType(title);
+					return objectType ? `${objectType.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
 			}
 			if (/^(?:autographCategory|signatureCategory)$/i.test(key)) {
 				const category = autographCategoryFromTitle(title);
