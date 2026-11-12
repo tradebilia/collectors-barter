@@ -392,7 +392,7 @@ function autographCandidateAuthentication(listing: VisualSourceCandidate, struct
   if (structuredValue) return structuredValue;
   const title = String(listing.title ?? "");
   if (/\b(?:no|without|missing)\s+(?:a\s+)?COAs?\b/i.test(title)) return "unauthenticated";
-  const company = title.match(/\b(?:PSA\/?DNA|JSA|BAS|Beckett(?:\s+Authentication\s+Services)?|MLB|Fanatics|Upper\s+Deck|Steiner|TriStar)\b/i);
+  const company = title.match(/\b(?:PSA(?:[\s/_-]*DNA)?|JSA|BAS|Beckett(?:\s+Authentication\s+Services)?|MLB|Fanatics|Upper\s+Deck|Steiner|TriStar)\b/i);
   if (company?.[0]) return autographMarketValue(company[0]);
   if (/\bCOAs?\b|\bcertificates?\s+of\s+authenticity\b/i.test(title)) return "authenticated";
   return /\b(?:authenticated|authentic(?:ated|ity)?)\b/i.test(title) ? "authenticated" : "";

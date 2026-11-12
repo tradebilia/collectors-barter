@@ -1253,7 +1253,7 @@ function autographItemForm(value: string | null | undefined): AutographItemForm 
 
 const AUTOGRAPH_AUTH_COMPANIES: Record<string, string[]> = {
   jsa: ['jsa', 'james spence'],
-  psa_dna: ['psa dna', 'psadna'],
+  psa_dna: ['psa dna', 'psadna', 'psa'],
   bas: ['bas', 'beckett', 'beckett authentication'],
   uda: ['uda', 'upper deck', 'upper deck authenticated'],
   fanatics: ['fanatics'],

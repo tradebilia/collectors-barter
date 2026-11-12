@@ -66,12 +66,13 @@ function compact(value: unknown): string {
   return key(value).replace(/[^a-z0-9]+/g, '');
 }
 
-/** Compare exact normalized UDA and Beckett authentication aliases. */
+/** Compare exact normalized Autographs authentication-company aliases. */
 export function autographAuthenticationCompaniesEquivalent(left: unknown, right: unknown): boolean {
   const normalize = (value: unknown): string => {
     const compacted = compact(value);
     if (/^(?:uda|upperdeck|upperdeckauthenticated)$/.test(compacted)) return 'uda';
     if (/^(?:bas|beckett|beckettauthentication(?:services?)?)$/.test(compacted)) return 'bas';
+    if (/^(?:psa|psadna)$/.test(compacted)) return 'psa';
     return compacted;
   };
   const normalizedLeft = normalize(left);
@@ -442,7 +443,7 @@ export function findMaterialMetadataConflicts(
       }
       continue;
     }
-    if (category === 'autographs' && field === 'authenticationCompany'
+    if (category === 'autographs' && /^(?:authenticationCompany|customAuthenticationCompany|authCompany|authenticator)$/i.test(field)
       && directCandidateValue && autographAuthenticationCompaniesEquivalent(targetValue, directCandidateValue)) continue;
     if (directCandidateValue && fieldComparable(field, directCandidateValue) !== fieldComparable(field, targetValue)) {
       const videoGameSpecializedStateField = category === 'video_games'
