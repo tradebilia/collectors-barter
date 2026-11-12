@@ -2484,6 +2484,26 @@ export function buildMarketProfile(
   const sufficientCurrentSales = hasDefensibleCurrentSaleValue({ marketRange, categoryEvidenceThresholds,
     currentWindowSaleCount, currentWindowIndependentMarketplaceCount, valuationEligibleSaleCount,
     valuationEligibleIndependentMarketplaceCount, evidenceQuality, spreadPct });
+  // Reporting only. Mirror the existing support checks; do not substitute a
+  // generic sample-size explanation for spread, independence, or identity holds.
+  const supportReasonDetails: string[] = [];
+  if (materialReviewRequired) supportReasonDetails.push('An unresolved target identity conflict stopped the valuation for this run.');
+  if (spreadPct !== null && spreadPct > categoryEvidenceThresholds.maximumSpreadPct) {
+    supportReasonDetails.push(`The qualifying sale prices vary by ${spreadPct}%, above the ${categoryEvidenceThresholds.maximumSpreadPct}% limit. The run was withheld because of price spread, not the number of sales.`);
+  }
+  if (valuationEligibleSaleCount < categoryEvidenceThresholds.minimumSelectedSales) {
+    supportReasonDetails.push(`The run has ${valuationEligibleSaleCount} qualifying sale(s); the required minimum is ${categoryEvidenceThresholds.minimumSelectedSales}.`);
+  }
+  if (valuationEligibleIndependentMarketplaceCount < categoryEvidenceThresholds.minimumIndependentMarketplaces
+    && valuationEligibleSaleCount < categoryEvidenceThresholds.minimumSelectedSales + 2) {
+    supportReasonDetails.push(`The qualifying sales identify ${valuationEligibleIndependentMarketplaceCount} independent marketplace(s); ${categoryEvidenceThresholds.minimumIndependentMarketplaces} is required, or ${categoryEvidenceThresholds.minimumSelectedSales + 2} qualifying sales must be available.`);
+  }
+  if (categoryEvidenceThresholds.minimumSelectedSales !== 1 && evidenceQuality === 'low') {
+    supportReasonDetails.push('The qualifying sale evidence did not meet the final evidence-quality requirement.');
+  }
+  if (!sufficientCurrentSales && supportReasonDetails.length === 0) {
+    supportReasonDetails.push('The qualifying sales did not produce a valid supported price range for this run.');
+  }
   const valuationBasis: MarketProfile['valuationBasis'] = sufficientCurrentSales ? 'market_sales'
     : !materialReviewRequired && guideAnchorValue !== null ? 'guide_fallback' : 'insufficient_evidence';
   const primaryValue = valuationBasis === 'market_sales' ? saleMedianValue
@@ -2639,6 +2659,8 @@ export function buildMarketProfile(
       sourceAdmission, identityAdmission,
       selection: preselected ? 'selected_pre_outlier' : omittedByCap ? 'omitted_by_cap' : 'not_selected',
       use: { code, reasonCodes: [...new Set(reasonCodes)], postPolicySaleDiagnostics, currentSaleMedianDiagnostics, primaryMarketSales,
+        supportReasonDetails: valuationPoolDiagnostics && !primaryMarketSales && valuationBasis === 'insufficient_evidence'
+          ? supportReasonDetails : [],
         historicalPromptIncluded: historicalPromptKnown ? historicalPromptSet.has(original) : null,
         possibleDuplicateWarning: sale.duplicateStatus === 'possible_duplicate',
         smallSampleOutlierWarning: Boolean(rawMatch && flaggedSmallSampleOutliers.has(rawMatch)) },

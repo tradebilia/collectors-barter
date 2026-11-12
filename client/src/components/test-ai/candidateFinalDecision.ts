@@ -109,10 +109,12 @@ function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: 
       ? `The visual AI was called but did not return a usable review${detail}. Because no visual match was confirmed, this candidate could not proceed to valuation.`
       : 'The visual AI review was not completed for this candidate. Because no visual match was confirmed, this candidate could not proceed to valuation.';
   }
-  if (code === 'SOURCE_ELIGIBLE_NOT_SELECTED' || reasonCodes.has('INSUFFICIENT_CURRENT_SUPPORT')) {
-    const mercariDateNote = reasonCodes.has('MERCARI_UNDATED_TIMING_UNVERIFIED')
-      ? ' This Mercari sale has no verified sale date, so it is kept as supporting evidence while more comparable sales are gathered.' : '';
-    return `The item is a confirmed match, but this sale was not used to set the value because there is not enough reliable current sales evidence yet. One matching sale by itself is not enough to establish a dependable market value.${mercariDateNote}`;
+  if (reasonCodes.has('INSUFFICIENT_CURRENT_SUPPORT') || code === 'SOURCE_ELIGIBLE_NOT_SELECTED' && !hasAuthoritativeFinalBlocker) {
+    const supportReason = row.valuationUse?.use?.supportReasonDetails?.find((reason: unknown) =>
+      typeof reason === 'string' && Boolean(reason.trim()));
+    return supportReason
+      ? `The item is a confirmed match, but its price was not used. ${supportReason}`
+      : 'The item is a confirmed match, but this run was withheld by a separate evidence-support check. One qualifying sale is sufficient during sandbox testing. The final analysis did not supply the specific reason for this hold.';
   }
   if (code === 'CURRENT_SALES_DIAGNOSTIC_ONLY') {
     return 'The item is a confirmed match, but this sale is being shown for comparison only and was not used to calculate the primary value.';

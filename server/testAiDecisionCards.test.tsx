@@ -168,9 +168,10 @@ describe('candidate final decision presentation (no filtering or pricing authori
     });
     expect(result.label).toBe('MATCH CONFIRMED — NOT USED IN VALUE');
     expect(result.reason).toContain('The item is a confirmed match');
-    expect(result.reason).toContain('not enough reliable current sales evidence');
-    expect(result.reason).toContain('One matching sale by itself is not enough');
-    expect(result.reason).toContain('no verified sale date');
+    expect(result.reason).toContain('One qualifying sale is sufficient during sandbox testing');
+    expect(result.reason).toContain('did not supply the specific reason');
+    expect(result.reason).not.toContain('One matching sale by itself is not enough');
+    expect(result.reason).not.toContain('no verified sale date');
     expect(result.reason).not.toContain('INSUFFICIENT_CURRENT_SUPPORT');
     expect(result.reason).not.toContain('MERCARI_UNDATED_TIMING_UNVERIFIED');
   });

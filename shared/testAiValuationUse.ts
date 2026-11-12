@@ -88,6 +88,8 @@ export type FinalValuationUse = FinalIntakeReport & {
   use: {
     code: TerminalValuationUseCode;
     reasonCodes: string[];
+    /** Reporting only: failed final support checks, never inbound pricing authority. */
+    supportReasonDetails?: string[];
     postPolicySaleDiagnostics: boolean;
     currentSaleMedianDiagnostics: boolean;
     primaryMarketSales: boolean;

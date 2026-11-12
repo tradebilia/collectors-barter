@@ -73,6 +73,27 @@ describe('provider-shaped Autographs eBay admission through final audit and card
     expect(decision?.label).toBe('USED IN VALUATION');
     expect(summarizeUsedValuationPrices(reconciled)).toMatchObject({ count: 1, low: 3400, high: 3400, average: 3400 });
   });
+  it('uses the single recent Jordan auction under the approved one-sale minimum', async () => {
+    rows = [providerRow({ title: 'Michael Jordan Signed Autograph Basketball Ball Upper Deck Certified 🔥',
+      soldPrice: '4351', endedAt: '2026-10-18', buyingFormat: 'auction', bestOfferAccepted: false, bidCount: 35 })];
+    const { audit, decision, reconciled } = await run();
+    expect(audit.snapshot.profile.categoryEvidenceThresholds.minimumSelectedSales).toBe(1);
+    expect(audit.snapshot.profile.valuationEligibleSaleCount).toBe(1);
+    expect(audit.snapshot.profile.primaryValue).toBe(4351);
+    expect(decision?.label).toBe('USED IN VALUATION');
+    expect(summarizeUsedValuationPrices(reconciled)).toMatchObject({ count: 1, low: 4351, high: 4351, average: 4351 });
+  });
+  it('reports the actual price-spread hold instead of blaming the one-sale minimum', async () => {
+    rows = [300, 4351].map((price, index) => providerRow({ itemId: String(123456789012 + index),
+      url: `https://www.ebay.com/itm/${123456789012 + index}`, soldPrice: String(price), endedAt: '2026-10-18',
+      title: 'Michael Jordan Signed Autograph Basketball Ball Upper Deck Certified', buyingFormat: 'auction' }));
+    const { audit, decision } = await run();
+    expect(audit.snapshot.profile.valuationEligibleSaleCount).toBe(2);
+    expect(audit.snapshot.profile.primaryValue).toBeNull();
+    expect(audit.snapshot.profile.comparables[0].valuationUse.use.supportReasonDetails?.[0]).toMatch(/prices.*above.*100%/i);
+    expect(decision?.reason).toMatch(/prices.*above.*100%/i);
+    expect(decision?.reason).not.toContain('One matching sale by itself is not enough');
+  });
   it('requests accepted-offer hydration within the existing bounded Autographs query tiers', async () => {
     await run(); expect(requested.length).toBeGreaterThan(0); expect(requested.length).toBeLessThanOrEqual(3);
     for (const url of requested) expect(url.searchParams.get('hydrateBoa')).toBe('true');
