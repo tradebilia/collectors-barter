@@ -66,11 +66,13 @@ function compact(value: unknown): string {
   return key(value).replace(/[^a-z0-9]+/g, '');
 }
 
-/** UDA is the standard abbreviation for Upper Deck Authenticated. */
+/** Compare exact normalized UDA and Beckett authentication aliases. */
 export function autographAuthenticationCompaniesEquivalent(left: unknown, right: unknown): boolean {
   const normalize = (value: unknown): string => {
     const compacted = compact(value);
-    return /^(?:uda|upperdeck|upperdeckauthenticated)$/.test(compacted) ? 'uda' : compacted;
+    if (/^(?:uda|upperdeck|upperdeckauthenticated)$/.test(compacted)) return 'uda';
+    if (/^(?:bas|beckett|beckettauthentication(?:services?)?)$/.test(compacted)) return 'bas';
+    return compacted;
   };
   const normalizedLeft = normalize(left);
   const normalizedRight = normalize(right);
