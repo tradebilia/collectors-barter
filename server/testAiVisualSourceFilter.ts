@@ -2307,6 +2307,25 @@ function titleGradeEvidence(title: string, category = ""): { grader: string; gra
   const grade = `${comparable.designation ?? ""}${comparable.numeric}${comparable.plus ? "+" : ""}${comparable.qualifiers.length ? ` ${comparable.qualifiers.join(" ")}` : ""}${comparable.qualifierUncertain ? " (unknown)" : ""}`;
   return { grader: observed.grader ?? "", grade };
 }
+const DISNEY_PINS_CHARACTER_STOP_WORDS = /^(?:disney|parks|easter|christmas|halloween|holiday|limited|exclusive|open|edition|single|trading|pin|pins|set|collection|series|\d{4})$/i;
+/** Extract a character pair from the candidate title without borrowing target metadata. */
+export function disneyPinsCharactersFromTitle(title: string): string | null {
+  const text = String(title ?? "").replace(/[–—]/g, "-").replace(/\s+/g, " ").trim();
+  if (!text) return null;
+  const pair = /([^&,]{1,48})\s*(?:&|and)\s*([^&,]{1,48})/gi;
+  const matches = [...text.matchAll(pair)];
+  for (let index = matches.length - 1; index >= 0; index -= 1) {
+    const leftTokens = (matches[index]?.[1] ?? "").replace(/[^A-Za-z0-9'’ -]/g, " ").trim().split(/\s+/).filter(Boolean);
+    const rightTokens = (matches[index]?.[2] ?? "").replace(/[^A-Za-z0-9'’ -]/g, " ").trim().split(/\s+/).filter(Boolean);
+    while (leftTokens.length && DISNEY_PINS_CHARACTER_STOP_WORDS.test(leftTokens[0])) leftTokens.shift();
+    const left = leftTokens.slice(-3).filter((token) => !DISNEY_PINS_CHARACTER_STOP_WORDS.test(token)).join(" ").trim();
+    const rightStop = rightTokens.findIndex((token) => DISNEY_PINS_CHARACTER_STOP_WORDS.test(token));
+    const right = rightTokens.slice(0, rightStop < 0 ? 3 : rightStop).join(" ").trim();
+    if (!left || !right || DISNEY_PINS_CHARACTER_STOP_WORDS.test(left) || DISNEY_PINS_CHARACTER_STOP_WORDS.test(right)) continue;
+    return `${left} & ${right}`;
+  }
+  return null;
+}
 function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string, targetValue: string, category = "", identityValues: readonly unknown[] = []): string {
   if (category === "music" && /^(?:condition|mediaCondition)$/i.test(key)) {
     const condition = musicTitleMediaCondition(listing, identityValues);
@@ -2373,12 +2392,16 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 					return authentication && !/^(?:authenticated|yes)$/i.test(authentication)
 						? `${authentication.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
 				}
-				if (/^authenticationType$/i.test(key)) {
-					const type = autographAuthenticationTypeFromTitle(title);
-					return type ? `${type} (detected in title)` : "Unknown";
-				}
-				}
-				if (category === "original_art") {
+					if (/^authenticationType$/i.test(key)) {
+						const type = autographAuthenticationTypeFromTitle(title);
+						return type ? `${type} (detected in title)` : "Unknown";
+					}
+					}
+					if (category === "disney_pins" && /^(?:character|characterName|characters)$/i.test(key)) {
+						const characters = disneyPinsCharactersFromTitle(title);
+						if (characters) return `${characters} (detected in title)`;
+					}
+					if (category === "original_art") {
 					if (/^(?:artistName|artist|creator|artworkTitleCharacter|artworkTitle|character|artType|comicTitle|coverSketchComicTitle|issueNumber|issueNo|number|publisher)$/i.test(key)) {
 					if (/^(?:issueNumber|issueNo|number)$/i.test(key)) {
 						const issue = comparisonValue(targetValue).match(/\d+[A-Za-z]?/)?.[0];

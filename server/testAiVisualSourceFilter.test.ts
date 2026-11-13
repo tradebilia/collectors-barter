@@ -62,6 +62,7 @@ import {
   disneyPinsIndividualVisualScore,
   disneyPinsSetVisualScore,
   disneyPinsVisualCap,
+  disneyPinsCharactersFromTitle,
   stampsSingleVisualCap,
   stampsSingleVisualScore,
 	  stampsSetVisualCap,
@@ -4037,6 +4038,20 @@ describe("visual source filter", () => {
     }, target);
     expect(score.score).toBe(100);
     expect(score.matched).toEqual(expect.arrayContaining(["pinName", "character", "series", "year", "pinTradingEvent", "limitedEdition", "openEdition"]));
+  });
+
+  it("independently displays both characters from a multi-character Disney pin title", () => {
+    expect(disneyPinsCharactersFromTitle("Disney Parks Chip & Dale Easter 2016 Limited Edition Single Trading Pin")).toBe("Chip & Dale");
+    const target = buildVisualTargetMetadata({
+      title: "Easter Chip Pin",
+      category: "disney_pins",
+      itemType: "single_pin",
+      fullItemDetails: { pinName: "Easter Chip", character: "Chip" },
+    });
+    const characterRow = buildMetadataFieldComparisons(target, {
+      title: "Disney Parks Chip & Dale Easter 2016 Limited Edition Single Trading Pin",
+    }).find((row) => row.fieldKey === "character");
+    expect(characterRow?.titleDerivedValue).toBe("Chip & Dale (detected in title)");
   });
 
   it("normalizes the stored single_pin value before scoring Disney Pins", () => {
