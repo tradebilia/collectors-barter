@@ -2316,6 +2316,16 @@ function musicFormatsAgree(left: unknown, right: unknown): boolean {
   const b = musicItemTypeLabel(stripEvidence(right));
   return Boolean(a && b && a === b);
 }
+function musicRecordSizesAgree(left: unknown, right: unknown): boolean {
+  const normalize = (value: unknown) => {
+    const raw = String(value ?? '').replace(/″/g, '"').trim().toLowerCase();
+    const match = raw.match(/^(\d+(?:\.\d+)?)\s*(?:"|in|inch|inches)$/i);
+    return match ? `${Number(match[1])}inch` : musicComparableValue(raw);
+  };
+  const a = normalize(left);
+  const b = normalize(right);
+  return Boolean(a && b && a === b);
+}
 function musicMaterialConflicts(targetMetadata: string, listing: VisualSourceCandidate, options?: { ignoreSubjectiveConditionDifferences?: boolean }) {
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   return findMaterialMetadataConflicts(targetMetadata, listing, options)
@@ -2828,6 +2838,7 @@ function comparisonStatus(targetValue: string, candidateValue: string, category 
 	}
 	if (category === "movies" && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(key)) return movieValuesAgree(targetValue, candidateValue) ? "match" : "different";
 	if (category === "music" && /^(?:format|mediaFormat)$/i.test(key)) return musicFormatsAgree(targetValue, candidateValue) ? "match" : "different";
+	if (category === "music" && /^(?:recordSize|record_size|size)$/i.test(key)) return musicRecordSizesAgree(targetValue, candidateValue) ? "match" : "different";
 		if (category === "music" && /^recordLabel$/i.test(key)) return musicRecordLabelsAgree(targetValue, candidateValue) ? "match" : "different";
 		if (category === "music" && /^(?:artist|performer|artistName)$/i.test(key)) return musicArtistsAgree(targetValue, candidateValue) ? "match" : "different";
 	if (category === "movies" && /^(?:condition|mediaCondition)$/i.test(key)) {

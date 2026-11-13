@@ -244,6 +244,25 @@ describe("Music identity and diagnostic boundaries", () => {
     expect(formatRow?.status).toBe("match");
   });
 
+  it.each([["12\"", "12_inch"], ["12 inch", "12_inch"], ["12-inch", "12_inch"], ["12 inches", "12_inch"]])
+  ("treats equivalent Music record-size labels %s and %s as the same identity fact", (candidateSize, targetSize) => {
+    const metadata = buildVisualTargetMetadata({
+      title: "Purple Rain", category: "music", itemType: "vinyl_record",
+      fullItemDetails: { artist: "Prince", releaseTitle: "Purple Rain", format: "Vinyl Record", recordSize: targetSize },
+    });
+    const listing = {
+      title: `Prince Purple Rain ${candidateSize} Vinyl Record`,
+      itemDetails: JSON.stringify({ artist: "Prince", releaseTitle: "Purple Rain", format: "Vinyl Record", recordSize: candidateSize }),
+    };
+    expect(findMaterialMetadataConflicts(metadata, listing)).toEqual([]);
+    expect(buildDeclaredIdentityReviews([listing], metadata)).toEqual([]);
+    expect(buildMetadataFieldComparisons(metadata, listing).find(row => row.fieldKey === "recordSize")).toMatchObject({
+      targetValue: targetSize,
+      candidateValue: candidateSize,
+      status: "match",
+    });
+  });
+
   it.each(["DGC", "DGCC", "Geffen Records"])("treats %s as Geffen Records for Music label scoring and identity", (label) => {
     const metadata = target("good", { recordLabel: "Geffen Records" });
     const listing = candidate(`Nirvana Nevermind Cassette ${label}`, { recordLabel: label });

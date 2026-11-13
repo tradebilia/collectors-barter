@@ -75,6 +75,11 @@ function musicFormatComparable(value: unknown): string {
   if (['8track', '8tracktape', 'eighttrack', 'eighttracktape'].includes(normalized)) return '8tracktape';
   return normalized;
 }
+function musicRecordSizeComparable(value: unknown): string {
+  const raw = key(value).replace(/″/g, '"');
+  const match = raw.match(/^(\d+(?:\.\d+)?)\s*(?:"|in|inch|inches)$/i);
+  return match ? `${Number(match[1])}inch` : compact(value);
+}
 
 function musicRecordLabelComparable(value: unknown): string {
   const normalized = key(value);
@@ -469,6 +474,8 @@ export function findMaterialMetadataConflicts(
       && directCandidateValue && autographAuthenticationCompaniesEquivalent(targetValue, directCandidateValue)) continue;
     if (category === 'music' && field === 'format'
       && musicFormatComparable(targetValue) && musicFormatComparable(targetValue) === musicFormatComparable(directCandidateValue)) continue;
+    if (category === 'music' && /^(?:recordSize|record_size|size)$/i.test(field)
+      && musicRecordSizeComparable(targetValue) && musicRecordSizeComparable(targetValue) === musicRecordSizeComparable(directCandidateValue)) continue;
     if (category === 'music' && field === 'recordLabel'
       && musicRecordLabelComparable(targetValue) === 'geffenrecords'
       && musicRecordLabelComparable(directCandidateValue) === 'geffenrecords') continue;
