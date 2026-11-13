@@ -4178,6 +4178,26 @@ describe("visual source filter", () => {
     }
   });
 
+  it("ignores harmless articles when awarding the Aurora Pin Name points", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Disney Designer Ultimate Princess Collection",
+      category: "disney_pins",
+      itemType: "single_pin",
+      fullItemDetails: {
+        pinName: "The Disney Designer Ultimate Princess Collection Aurora",
+        character: "Princess Aurora",
+        series: "Disney Designer Ultimate Princess Collection",
+        limitedEdition: "yes",
+      },
+    });
+    const listing = { title: "Disney Designer Ultimate Princess Collection Aurora Hinged Pin Limited Edition" };
+    const score = disneyPinsIndividualVisualScore(listing, target);
+    expect(score.score).toBe(65);
+    expect(score.matched).toEqual(expect.arrayContaining(["pinName", "character", "series", "limitedEdition"]));
+    expect(score.awards.find((award) => award.field === "pinName")).toMatchObject({ source: "title", awardedPoints: 25 });
+    const pinNameRow = buildMetadataFieldComparisons(target, { ...listing, metadataScoreAwards: score.awards }).find((row) => row.fieldKey === "pinName");
+    expect(pinNameRow).toMatchObject({ titleDerivedStatus: "match", rankingContribution: { awardedPoints: 25 } });
+  });
   it("scores Disney Pins / Pin Set and excludes Collection/Lot from ranking", () => {
     const target = buildVisualTargetMetadata({
       title: "Villains Collection",

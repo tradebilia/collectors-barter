@@ -2356,7 +2356,7 @@ export function disneyPinsCharactersFromTitle(title: string): string | null {
   return null;
 }
 const DISNEY_PINS_PIN_NAME_STOP_WORDS = new Set([
-  "disney", "parks", "princess", "princesses", "series", "trading", "pin", "pins", "single", "limited", "edition",
+  "a", "an", "the", "disney", "parks", "princess", "princesses", "series", "trading", "pin", "pins", "single", "limited", "edition",
   "exclusive", "open", "collection", "set", "mirror", "jumbo", "glitter", "le", "dangle", "fantasy", "wdw", "dlr",
 ]);
 function disneyPinsPinNameTokens(value: unknown): string[] {
