@@ -3,6 +3,7 @@ import { extractCandidateStructuredMetadata, meaningfulMetadataText, readMetadat
 import { compareComparableGrades, findStructuredGradeConflict, parseSourceGradeFromTitle } from './testAiGradeComparison';
 import { comparePokemonCardNumbers, parsePokemonCardNumber, readPokemonCardNumbersFromTitle } from './testAiPokemonCardNumber';
 import { parseToyNumericValue, extractToyNumericTitleEvidence, type ToyNumericField } from './testAiToyNumericEvidence';
+import { autographAuthenticatorsEquivalent } from './testAiAutographAuthentication';
 
 export type MetadataConflict = {
   field: string;
@@ -68,17 +69,7 @@ function compact(value: unknown): string {
 
 /** Compare exact normalized Autographs authentication-company aliases. */
 export function autographAuthenticationCompaniesEquivalent(left: unknown, right: unknown): boolean {
-  const normalize = (value: unknown): string => {
-    const compacted = compact(value);
-    if (/^(?:uda|upperdeck|upperdeckauthenticated)$/.test(compacted)) return 'uda';
-    if (/^(?:bas|beckett|beckettauthentication(?:services?)?)$/.test(compacted)) return 'bas';
-    if (/^(?:psa|psadna)$/.test(compacted)) return 'psa';
-    if (/^(?:paas|paasc)$/.test(compacted)) return 'paas';
-    return compacted;
-  };
-  const normalizedLeft = normalize(left);
-  const normalizedRight = normalize(right);
-  return Boolean(normalizedLeft && normalizedRight && normalizedLeft === normalizedRight);
+  return autographAuthenticatorsEquivalent(left, right);
 }
 
 function fieldComparable(field: string, value: string): string {

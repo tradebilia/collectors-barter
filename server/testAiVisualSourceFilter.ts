@@ -2,6 +2,7 @@ import { invokeLLM, type ImageContent, type TextContent, type LlmProvider } from
 import { parseAnalyzerResponse } from "./testAiResponse";
 import { diagnoseVisualResponse } from "../shared/testAiVisualFailure";
 import { autographAuthenticationCompaniesEquivalent, findMaterialMetadataConflicts, metadataConflictReviewReason } from "../shared/testAiMetadataConflict";
+import { findAutographAuthenticatorInText, normalizeAutographAuthenticator } from "../shared/testAiAutographAuthentication";
 import { buildSoldReviewBudget } from "../shared/testAiSalesEvidencePolicy";
 import {
   buildMarketplaceTitleEvidence,
@@ -415,12 +416,11 @@ export function autographIdentityConflictReason(targetMetadata: string, listing:
 }
 
 function autographCandidateAuthentication(listing: VisualSourceCandidate, structuredValue: string): string {
-  if (structuredValue) return structuredValue;
+  if (structuredValue) return normalizeAutographAuthenticator(structuredValue) || structuredValue;
   const title = canonicalCandidateTitle(listing);
   if (/\b(?:no|without|missing)\s+(?:a\s+)?COAs?\b/i.test(title)) return "unauthenticated";
-  const company = title.match(/\b(?:PSA(?:[\s/_-]*DNA)?|JSA|BAS|Beckett(?:\s+Authentication\s+Services)?|PAAS(?:C)?|MLB|Fanatics|Upper\s+Deck|Steiner|TriStar)\b/i);
-  if (company?.[0] && /^PAASC?$/i.test(company[0])) return "PAAS";
-  if (company?.[0]) return autographMarketValue(company[0]);
+  const company = findAutographAuthenticatorInText(title);
+  if (company) return company;
   if (/\bCOAs?\b|\bcertificates?\s+of\s+authenticity\b/i.test(title)) return "authenticated";
   return /\b(?:authenticated|authentic(?:ated|ity)?)\b/i.test(title) ? "authenticated" : "";
 }

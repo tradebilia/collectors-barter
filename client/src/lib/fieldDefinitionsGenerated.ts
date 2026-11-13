@@ -3,6 +3,7 @@
 
 import type { FieldDefinition } from './formFieldDefinitions';
 import { COUNTRIES_LIST } from './countries';
+import { AUTOGRAPH_AUTHENTICATION_OPTIONS } from '@shared/testAiAutographAuthentication';
 
 // Autographs - Collection/Lot
 export const AUTOGRAPHS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
@@ -139,7 +140,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     label: 'Authentication Company',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['PSA/DNA', 'JSA', 'UDA', 'Steiner', 'Beckett Authentication Services', 'Other'],
+    dropdownOptions: AUTOGRAPH_AUTHENTICATION_OPTIONS,
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Authentication Company',

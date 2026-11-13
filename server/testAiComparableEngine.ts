@@ -6,6 +6,7 @@ import { TEST_AI_VALUE_UNAVAILABLE_MESSAGE, nullableTestAiPrice, type GuideValue
 import { hasVerifiedHistoricSaleEconomics } from './testAiHistoricMarketContext';
 import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
 import { autographAuthenticationCompaniesEquivalent } from '../shared/testAiMetadataConflict';
+import { normalizeAutographAuthenticator, findAutographAuthenticatorInText } from '../shared/testAiAutographAuthentication';
 import { getVerifiedIdentityApproval, hasVerifiedMercariUndatedSale, transferVerifiedIdentityApproval, verifyCanonicalObservation } from './testAiCanonicalObservation';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 import { signedTransactionLotConflict, transactionIdentity, type TransactionIdentity } from './testAiEconomicIntegrity';
@@ -1258,28 +1259,13 @@ function autographItemForm(value: string | null | undefined): AutographItemForm 
   return 'unknown';
 }
 
-const AUTOGRAPH_AUTH_COMPANIES: Record<string, string[]> = {
-  jsa: ['jsa', 'james spence'],
-  psa_dna: ['psa dna', 'psadna', 'psa'],
-  bas: ['bas', 'beckett', 'beckett authentication'],
-  paas: ['paas', 'paasc'],
-  uda: ['uda', 'upper deck', 'upper deck authenticated'],
-  fanatics: ['fanatics'],
-  steiner: ['steiner'],
-  tristar: ['tristar'],
-};
-
 function autographAuthenticationCompany(value: string | null | undefined): string | null {
-  const normalized = normalizedIdentityText(value);
-  if (!normalized) return null;
-  return Object.entries(AUTOGRAPH_AUTH_COMPANIES)
-    .find(([, aliases]) => aliases.some((alias) => normalized === alias || normalized.includes(alias)))?.[0] ?? normalized;
+  const normalized = normalizeAutographAuthenticator(value);
+  return normalized || null;
 }
 
 function autographAuthenticationInTitle(title: string): string | null {
-  const normalizedTitle = ` ${normalizedIdentityText(title)} `;
-  return Object.entries(AUTOGRAPH_AUTH_COMPANIES)
-    .find(([, aliases]) => aliases.some((alias) => normalizedTitle.includes(` ${alias} `)))?.[0] ?? null;
+  return findAutographAuthenticatorInText(title);
 }
 
 function autographCertificateInTitle(title: string): string | null {
