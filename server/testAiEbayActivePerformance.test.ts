@@ -126,6 +126,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(routerSource).toContain("normalizedStructuredMetadata: marketplaceCandidate.structuredMetadata");
     expect(routerSource).toContain("imageUrl: marketplaceCandidate.imageUrl");
     expect(routerSource).toContain("imageUrls: marketplaceCandidate.imageUrls");
+    expect(routerSource).toContain("sourceId: 'ebay_active',");
+    expect(routerSource).toContain("sourceLabel: 'eBay active listings',");
   });
 
   it("keeps full item enrichment bounded at the existing 120-record safety cap", () => {

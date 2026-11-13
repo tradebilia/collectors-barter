@@ -2434,7 +2434,14 @@ export const testAIRouter = router({
           // collectible identity assertion. Explicit sealed, parts, grade,
           // grader, lot, and sports-card feature conflicts remain hard gates.
           ignoreSubjectiveConditionDifferences: true,
-          listings: preVisionEligibleSummaries,
+          // Browse rows do not carry the adapter-owned source identity until
+          // the visual-input mapping below. Preserve it here as well so the
+          // Music eBay Active condition exemption is applied at this gate.
+          listings: preVisionEligibleSummaries.map((listing: any) => ({
+            ...listing,
+            sourceId: 'ebay_active',
+            sourceLabel: 'eBay active listings',
+          })),
         });
         const preVisionExcludedListings = [
           ...summaries.filter((listing: any) => !filteredSummaries.includes(listing)).map((listing: any) => ({
@@ -2489,6 +2496,8 @@ export const testAIRouter = router({
             normalizedStructuredMetadata: marketplaceCandidate.structuredMetadata,
             imageUrl: marketplaceCandidate.imageUrl,
             imageUrls: marketplaceCandidate.imageUrls,
+            sourceId: 'ebay_active',
+            sourceLabel: 'eBay active listings',
           };
         });
         const autographMarketContext = isAutographSignedItemTarget(targetMetadata);
