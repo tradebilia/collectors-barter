@@ -4620,7 +4620,7 @@ export default function TestAI() {
   const [tradeTestingEnabled, setTradeTestingEnabled] = useState(false);
   const [leftSources, setLeftSources] = useState<Set<SourceId>>(new Set());
   const [rightSources, setRightSources] = useState<Set<SourceId>>(new Set());
-  const [visualProvider, setVisualProvider] = useState<'manus_forge' | 'openai'>('manus_forge');
+  const [visualProvider, setVisualProvider] = useState<'manus_forge' | 'openai'>('openai');
   const [finalDisplayOutcomes, setFinalDisplayOutcomes] = useState<{ left: CandidateFinalDisplayOutcome; right: CandidateFinalDisplayOutcome } | null>(null);
   const leftIsCollectionLot = isCollectionLotItemType(leftItem?.itemType);
   const rightIsCollectionLot = isCollectionLotItemType(rightItem?.itemType);
@@ -5005,8 +5005,8 @@ export default function TestAI() {
         <div className="max-w-7xl mx-auto mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-violet-500/30 bg-violet-950/20 px-3 py-2 text-xs">
           <span className="font-semibold text-violet-200">Visual analysis provider</span>
           <select aria-label="Visual analysis provider" value={visualProvider} onChange={(event) => setVisualProvider(event.target.value as 'manus_forge' | 'openai')} className="rounded border border-violet-400/40 bg-slate-950 px-2 py-1 text-violet-100">
-            <option value="manus_forge">Manus Forge (default)</option>
-            <option value="openai">OpenAI (sandbox test)</option>
+            <option value="openai">OpenAI (default)</option>
+            <option value="manus_forge">Manus Forge</option>
           </select>
           <span className="text-slate-400">Changing this reruns enabled visual-review sources with the selected provider.</span>
         </div>

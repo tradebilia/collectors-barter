@@ -78,7 +78,8 @@ describe('Test AI analyzer input compatibility', () => {
       expect(clientSource.slice(queryStart, queryStart + 900), `${queryName} must send visualProvider`).toContain('visualProvider');
     }
     expect(routerSource).toContain("visualProvider: z.enum(['manus_forge', 'openai']).optional()");
-    expect(clientSource).toContain('const [visualProvider, setVisualProvider]');
+    expect(clientSource).toContain("const [visualProvider, setVisualProvider] = useState<'manus_forge' | 'openai'>('openai')");
+    expect(clientSource).toContain('<option value="openai">OpenAI (default)</option>');
   });
 
   it('supports a separate A/B toggle for temporary visual missing-field context', () => {
