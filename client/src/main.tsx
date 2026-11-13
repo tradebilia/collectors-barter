@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { getQueryKey } from "@trpc/react-query";
 import { TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import { createTestAiRpcLinks } from './lib/testAiRpcTransport';
@@ -11,6 +12,14 @@ import { isRpcConnectionInterruption } from "./lib/rpcConnectionErrors";
 import "./index.css";
 
 const queryClient = new QueryClient();
+// A completed sandbox run must not restart when the user returns to the tab.
+// Background refetches repeat provider work and can invalidate final-audit
+// receipts. Scope this to Test AI; initial loads, changed query inputs, explicit
+// refetch/invalidation and other application queries keep their normal behavior.
+queryClient.setQueryDefaults(getQueryKey(trpc.testAI), {
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+});
 let lastHeartbeatConnectionWarningAt = 0;
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {

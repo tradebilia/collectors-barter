@@ -343,6 +343,9 @@ export function autographReplicaReason(listing: VisualSourceCandidate): string |
 function autographObjectType(value: unknown): string {
   const text = String(value ?? "").trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
   if (!text || /^(?:other|unknown|n\/a|not applicable)$/.test(text)) return "";
+  // Envelope is the signed surface (Paper), even in a "baseball envelope"
+  // title. Theme words, dimensions and COA-card mentions do not change it.
+  if (/\benvelopes?\b/.test(text)) return "paper";
   if (/\b(?:trading\s+card|sports\s+card|baseball\s+card|card)\b/.test(text)) return "card";
   if (/\b(?:8\s*[x×]\s*10|8x10|photographs?|photos?|pictures?)\b/.test(text)) return "photo";
   if (/\b(?:baseball\s+(?:glove|mitt)|catcher(?:'s)?\s+mitt|first\s+baseman(?:'s)?\s+mitt)\b/.test(text)) return "baseball glove";
@@ -422,6 +425,8 @@ function autographAuthenticationTypeFromTitle(title: string): string {
 export const AUTOGRAPH_VALUATION_MIN_SCORE = 70;
 
 function autographCandidateObjectType(listing: VisualSourceCandidate): string {
+  // An explicit envelope title outranks broad/stale provider type metadata.
+  if (/\benvelopes?\b/i.test(canonicalCandidateTitle(listing))) return "paper";
   const details = candidateStructuredDetails(listing);
   const structuredType = labeledCandidateValue(details, ["signedItemType", "autographItemType", "itemType", "productType", "form"])
     ?? [listing.signedItemType, listing.autographItemType, listing.itemType, listing.productType, listing.form]
@@ -456,11 +461,11 @@ export function autographObjectTypeMismatchReason(targetMetadata: string, listin
   const targetDetails = extractTargetItemDetails(targetMetadata);
   const targetType = autographTargetObjectType(targetMetadata, targetDetails);
   if (!targetType) return null;
-  const candidate = normalizeVisualSourceCandidate(listing);
-  const autographDetails = candidateStructuredDetails(listing);
-  const structuredType = labeledCandidateValue(autographDetails, ["signedItemType", "autographItemType", "itemType", "productType", "form"]) ?? listing.signedItemType;
-  const candidateType = autographObjectType(structuredType) || autographObjectType(candidate.title);
+  const candidateType = autographCandidateObjectType(listing);
   if (!candidateType || candidateType === targetType) return null;
+  if (/\benvelopes?\b/i.test(canonicalCandidateTitle(listing))) {
+    return `This listing is a signed envelope (Paper), but your item is a signed ${targetType}. A signed envelope cannot be used to value a different signed object.`;
+  }
   return `Autograph candidate is a signed ${candidateType}, but the target is a signed ${targetType}; different signed object types are excluded from market-range evidence.`;
 }
 
@@ -503,8 +508,9 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
   const candidateSigner = autographMarketValue(signerWitness.value);
   const objectRead = scoreCandidateEvidence(listing, ['signedItemType', 'autographItemType', 'itemType', 'productType', 'form']);
   const structuredObject = autographObjectType(objectRead?.value);
-  const candidateItemType = structuredObject || autographObjectType(candidate.title);
-  const objectWitness: ScoreEvidence = structuredObject && objectRead ? objectRead : { value: candidate.title, source: 'title', field: 'signedItemType' };
+  const candidateItemType = autographCandidateObjectType(listing);
+  const envelopeTitle = /\benvelopes?\b/i.test(candidate.title);
+  const objectWitness: ScoreEvidence = !envelopeTitle && structuredObject && objectRead ? objectRead : { value: candidate.title, source: 'title', field: 'signedItemType' };
   const categoryRead = scoreCandidateEvidence(listing, ['autographCategory', 'category', 'sport', 'entertainmentType']);
   const categoryWitness: ScoreEvidence = categoryRead ?? { value: candidate.title, source: 'title', field: 'autographCategory' };
   const candidateCategory = categoryRead
@@ -2811,12 +2817,17 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
               const rankingContributionBase = rankingContributionForField(listing, key, fieldLabel, candidateValue, titleDerivedValue, comparisonCategory, targetType);
                         const titleDerivedStatus = states?.candidate.state === 'conflicted' || states?.target.state === 'conflicted'
               ? 'unknown' : comparisonStatus(targetValue, titleDerivedValue, comparisonCategory, key);
-					const rankingContribution = titleDerivedStatus === 'match' && rankingContributionBase?.matched && (rankingContributionBase.sources ?? []).includes('title')
+						const rankingContribution = titleDerivedStatus === 'match' && rankingContributionBase?.matched && (rankingContributionBase.sources ?? []).includes('title')
               ? { ...rankingContributionBase, titleDerived: true } : rankingContributionBase;
-					const structuredStatus = comparisonStatus(targetValue, candidateValue, category, key);
-					const finalStatus = structuredStatus === 'different' ? 'different' : titleDerivedStatus !== 'unknown' ? titleDerivedStatus : structuredStatus;
-					rows.push({
-					fieldKey: key,
+						const structuredStatus = comparisonStatus(targetValue, candidateValue, category, key);
+						const envelopeObject = category === 'autographs' && /^(?:signedItemType|autographItemType)$/i.test(key)
+              && /\benvelopes?\b/i.test(canonicalCandidateTitle(listing));
+            // Keep raw provider metadata visible, but compare the signed surface
+            // identified by the envelope title, just as scoring/admission do.
+						const finalStatus = envelopeObject ? titleDerivedStatus
+              : structuredStatus === 'different' ? 'different' : titleDerivedStatus !== 'unknown' ? titleDerivedStatus : structuredStatus;
+						rows.push({
+						fieldKey: key,
           targetField: fieldLabel,
 				targetValue,
 				candidateField: fieldLabel,

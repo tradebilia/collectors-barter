@@ -1232,10 +1232,13 @@ function toyVariantsInTitle(title: string): string[] {
 
 const TOY_BRANDS = ['hasbro', 'mattel', 'kenner', 'lego', 'mega bloks', 'fisher price', 'playmates', 'bandai', 'takara', 'mattel', 'mego', 'ideal', 'tonka'];
 
-type AutographItemForm = 'jersey' | 'baseball' | 'football' | 'basketball' | 'hockey_puck' | 'helmet' | 'bat' | 'glove' | 'photo' | 'card' | 'guitar' | 'book' | 'poster' | 'unknown';
+type AutographItemForm = 'jersey' | 'baseball' | 'football' | 'basketball' | 'hockey_puck' | 'helmet' | 'bat' | 'glove' | 'photo' | 'card' | 'guitar' | 'book' | 'poster' | 'paper' | 'unknown';
 
 function autographItemForm(value: string | null | undefined): AutographItemForm {
   const normalized = normalizedIdentityText(value);
+  // Envelope is a Paper signed object, not the baseball theme it depicts.
+  // Keep this final identity boundary consistent with source classification.
+  if (/\benvelopes?\b/.test(normalized)) return 'paper';
   if (/hockey puck|puck/.test(normalized)) return 'hockey_puck';
   if (/jersey/.test(normalized)) return 'jersey';
   if (/baseball/.test(normalized)) return 'baseball';
@@ -1249,6 +1252,7 @@ function autographItemForm(value: string | null | undefined): AutographItemForm 
   if (/guitar/.test(normalized)) return 'guitar';
   if (/book\b/.test(normalized)) return 'book';
   if (/poster/.test(normalized)) return 'poster';
+  if (/\bpaper\b|\bcut(?:\s+(?:signature|autograph))?\b/.test(normalized)) return 'paper';
   return 'unknown';
 }
 
