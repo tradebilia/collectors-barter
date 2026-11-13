@@ -67,6 +67,15 @@ function compact(value: unknown): string {
   return key(value).replace(/[^a-z0-9]+/g, '');
 }
 
+function musicFormatComparable(value: unknown): string {
+  const normalized = compact(value);
+  if (['cassette', 'cassettetape', 'audiocassette'].includes(normalized)) return 'cassettetape';
+  if (['cd', 'compactdisc', 'compactdisk'].includes(normalized)) return 'compactdisc';
+  if (['vinyl', 'vinylrecord', 'record', 'lp', 'ep'].includes(normalized)) return 'vinylrecord';
+  if (['8track', '8tracktape', 'eighttrack', 'eighttracktape'].includes(normalized)) return '8tracktape';
+  return normalized;
+}
+
 /** Compare exact normalized Autographs authentication-company aliases. */
 export function autographAuthenticationCompaniesEquivalent(left: unknown, right: unknown): boolean {
   return autographAuthenticatorsEquivalent(left, right);
@@ -440,6 +449,8 @@ export function findMaterialMetadataConflicts(
     }
     if (category === 'autographs' && /^(?:authenticationCompany|customAuthenticationCompany|authCompany|authenticator)$/i.test(field)
       && directCandidateValue && autographAuthenticationCompaniesEquivalent(targetValue, directCandidateValue)) continue;
+    if (category === 'music' && field === 'format'
+      && musicFormatComparable(targetValue) && musicFormatComparable(targetValue) === musicFormatComparable(directCandidateValue)) continue;
     if (directCandidateValue && fieldComparable(field, directCandidateValue) !== fieldComparable(field, targetValue)) {
       const videoGameSpecializedStateField = category === 'video_games'
         && ['workingCondition', 'originalPackaging', 'originalBoxIncluded'].includes(field);

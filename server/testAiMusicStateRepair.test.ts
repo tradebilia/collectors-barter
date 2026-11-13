@@ -12,6 +12,7 @@ import {
   withMetadataFieldComparisons,
   type VisualSourceCandidate,
 } from "./testAiVisualSourceFilter";
+import { findMaterialMetadataConflicts } from "../shared/testAiMetadataConflict";
 
 const identity = { artist: "Nirvana", releaseTitle: "Nevermind", format: "cassette_tape" };
 const target = (condition: string | undefined = "good", details: Record<string, unknown> = {}) => buildVisualTargetMetadata({
@@ -225,6 +226,17 @@ describe("Music identity and diagnostic boundaries", () => {
       itemDetails: JSON.stringify({ format: "Cassette" }),
     }], metadata);
     expect(reviews).toEqual([]);
+  });
+
+  it("does not report equivalent Music formats in the shared outer metadata gate", () => {
+    const metadata = buildVisualTargetMetadata({
+      title: "Nevermind", category: "music", itemType: "cassette_tape",
+      fullItemDetails: { artist: "Nirvana", releaseTitle: "Nevermind", format: "Cassette Tape" },
+    });
+    expect(findMaterialMetadataConflicts(metadata, {
+      title: "Nevermind by Nirvana (Cassette, 2016)",
+      itemDetails: JSON.stringify({ format: "Cassette" }),
+    })).not.toEqual(expect.arrayContaining([expect.objectContaining({ field: "format" })]));
   });
 
   it.each(["DGC", "DGCC", "Geffen Records"])("treats %s as Geffen Records for Music label scoring and identity", (label) => {
