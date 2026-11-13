@@ -2300,10 +2300,18 @@ function musicRecordLabelsAgree(left: unknown, right: unknown): boolean {
   const b = musicRecordLabelComparable(right);
   return Boolean(a && b && (a === b || a.includes(b) || b.includes(a)));
 }
+function musicFormatsAgree(left: unknown, right: unknown): boolean {
+  const a = musicItemTypeLabel(left);
+  const b = musicItemTypeLabel(right);
+  return Boolean(a && b && a === b);
+}
 function musicMaterialConflicts(targetMetadata: string, listing: VisualSourceCandidate, options?: { ignoreSubjectiveConditionDifferences?: boolean }) {
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   return findMaterialMetadataConflicts(targetMetadata, listing, options)
-    .filter((conflict) => !(category === "music" && conflict.field === "recordLabel" && musicRecordLabelsAgree(conflict.targetValue, conflict.candidateValue)));
+    .filter((conflict) => !(category === "music" && (
+      conflict.field === "recordLabel" && musicRecordLabelsAgree(conflict.targetValue, conflict.candidateValue)
+      || conflict.field === "format" && musicFormatsAgree(conflict.targetValue, conflict.candidateValue)
+    )));
 }
 function comparisonMetadataAliases(key: string): string[] {
   const groups = [

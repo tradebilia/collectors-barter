@@ -215,6 +215,18 @@ describe("Music identity and diagnostic boundaries", () => {
     expect(formatRow).toMatchObject({ targetValue: "Cassette Tape", titleDerivedValue: "Cassette Tape (detected in title)", titleDerivedStatus: "match" });
   });
 
+  it("does not hard-exclude equivalent structured Music format labels", () => {
+    const metadata = buildVisualTargetMetadata({
+      title: "Nevermind", category: "music", itemType: "cassette_tape",
+      fullItemDetails: { artist: "Nirvana", releaseTitle: "Nevermind", format: "Cassette Tape" },
+    });
+    const reviews = buildDeclaredIdentityReviews([{
+      title: "Nirvana Nevermind Cassette",
+      itemDetails: JSON.stringify({ format: "Cassette" }),
+    }], metadata);
+    expect(reviews).toEqual([]);
+  });
+
   it.each(["DGC", "DGCC", "Geffen Records"])("treats %s as Geffen Records for Music label scoring and identity", (label) => {
     const metadata = target("good", { recordLabel: "Geffen Records" });
     const listing = candidate(`Nirvana Nevermind Cassette ${label}`, { recordLabel: label });
