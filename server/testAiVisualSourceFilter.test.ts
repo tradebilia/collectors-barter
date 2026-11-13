@@ -176,6 +176,20 @@ describe("visual source filter", () => {
     expect(companyRow).toMatchObject({ status: "match", rankingContribution: { potentialPoints: 10, awardedPoints: 10 } });
   });
 
+  it("parses PAAS/PAASC and excludes certified candidates for unauthenticated targets", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Wayne Gretzky signed hockey puck",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Wayne Gretzky", signedItemType: "Hockey Puck", autographCategory: "Sports", authenticationIncluded: "No" },
+    });
+    const listing = { title: "Wayne Gretzky Los Angeles Kings Autographed Logo Hockey Puck in Case With PAASC" };
+    expect(autographMarketRelevanceScore(listing, target).score).toBe(70);
+    expect(autographAuthenticationConflictReason(target, listing)).toMatch(/PAAS.*hard exclusion/i);
+    expect(autographMarketExclusionReason(target, listing)).toMatch(/PAAS.*hard exclusion/i);
+    expect(autographValuationEligibility(listing, target).eligible).toBe(false);
+  });
+
   it("normalizes equivalent signed sports-object wording before scoring", () => {
     const boxingGloveTarget = buildVisualTargetMetadata({
       title: "Muhammad Ali signed boxing glove",

@@ -73,6 +73,7 @@ export function autographAuthenticationCompaniesEquivalent(left: unknown, right:
     if (/^(?:uda|upperdeck|upperdeckauthenticated)$/.test(compacted)) return 'uda';
     if (/^(?:bas|beckett|beckettauthentication(?:services?)?)$/.test(compacted)) return 'bas';
     if (/^(?:psa|psadna)$/.test(compacted)) return 'psa';
+    if (/^(?:paas|paasc)$/.test(compacted)) return 'paas';
     return compacted;
   };
   const normalizedLeft = normalize(left);
