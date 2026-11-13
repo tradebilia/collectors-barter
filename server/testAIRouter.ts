@@ -1902,15 +1902,17 @@ export function sealSoldCompsFinalVisualListings<T extends MarketSale>(sales: T[
           targetMetadata: context.targetMetadata, review, candidateIdentityFields, acquiredAt,
           onRejected: reason => approvalFailures.push(reason) })
       : null;
+    const finalApprovalReason = knownHardConflict
+      ? `Known identity conflict prevents final approval: ${knownIdentity.categoryIdentity.conflicts.join('; ') || knownIdentity.reasons.filter((reason) => /conflict|differs/.test(reason)).join('; ')}`
+      : approvalFailures.length
+        ? `Final approval rejected: ${approvalFailures.join('; ')}`
+        : 'Final approval was not attempted because the target or image binding was missing; retained for review.';
     // Required-visual legacy/missing-binding rows remain visible, but their
     // source panel must not claim an approval that final analysis cannot verify.
-    const sealedSale = sale.visualRequirement === 'required' && !approval && sale.evidenceDisposition === 'valuation_eligible'
-      ? { ...sale, evidenceDisposition: 'context_only' as const,
-          evidenceReasons: [...(sale.evidenceReasons ?? []), knownHardConflict
-            ? `Known identity conflict prevents final approval: ${knownIdentity.categoryIdentity.conflicts.join('; ') || knownIdentity.reasons.filter((reason) => /conflict|differs/.test(reason)).join('; ')}`
-            : approvalFailures.length
-              ? `Final approval rejected: ${approvalFailures.join('; ')}`
-              : 'Final approval was not attempted because the target or image binding was missing; retained for review.'] }
+    const sealedSale = sale.visualRequirement === 'required' && !approval
+      ? { ...sale,
+          ...(sale.evidenceDisposition === 'valuation_eligible' ? { evidenceDisposition: 'context_only' as const } : {}),
+          evidenceReasons: [...new Set([...(sale.evidenceReasons ?? []), finalApprovalReason])] }
       : sale;
     const sealed = sealCanonicalObservation('sold_comps', sealedSale, {
       acquiredAt, signingKey: context.signingKey, query: context.query, identityApproval: approval ?? undefined,

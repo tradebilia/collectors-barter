@@ -268,6 +268,48 @@ describe('Stage 6 transaction integrity — actual signed normalization and fina
     if (!eligible) expect(readServerNormalizationReport(decision.sale)?.sourceAdmission.blockerCodes).toContain('TRANSACTION_IDENTITY_MISSING');
   });
 
+  it('preserves the exact approval rejection on a required-visual row already held as context-only', () => {
+    const sale: MarketSale = {
+      title: target.title,
+      price: 1000,
+      currency: 'USD',
+      date: '2026-09-01T00:00:00.000Z',
+      sourceId: 'sold_comps',
+      saleId: 'transaction-context-only',
+      originMarketplace: 'eBay',
+      saleStatus: 'completed',
+      priceBasis: 'sold',
+      evidenceDisposition: 'context_only',
+      evidenceReasons: ['existing source hold'],
+      visualRequirement: 'required',
+      visualReviewStatus: 'match',
+      visualReviewRationale: 'The images appear to show the same item.',
+      visualAudit: {
+        imageCount: 1,
+        initialVerdict: 'match',
+        initialConfidence: 'high',
+        initialRationale: 'The images appear to show the same item.',
+        retryStatus: 'not_needed',
+        finalPass: 'initial',
+      },
+    };
+    const sealed = sealSoldCompsFinalVisualListings([sale], {
+      acquiredAt: now,
+      signingKey,
+      reviewedTarget: target,
+      target,
+      targetMetadata: buildVisualTargetMetadata(target),
+      targetImageReference: image,
+      expectedImageReference: image,
+      query: 'context-only approval failure',
+    })[0]!;
+
+    expect(sealed.evidenceDisposition).toBe('context_only');
+    expect(sealed.evidenceReasons).toContain(
+      'Final approval rejected: APPROVAL_FACTS_OR_REVIEW_INVALID: source facts failed the approval policy, or a matched visual audit is missing.',
+    );
+  });
+
   it('does not replace signed missing identity with a browser ID, URL, canonical reference or fake private receipt', () => {
     const input = signed({ saleId: null, url: null });
     Object.assign(input, { saleId: 'browser-minted', url: 'https://www.ebay.com/itm/123456789', canonicalTransactionId: 'record:sold_comps:browser-minted',
