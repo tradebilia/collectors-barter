@@ -125,7 +125,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("'autographs:ebay_active': 'match'");
     expect(source).toContain("'autographs:sold_comps': 'match'");
     expect(source).toContain("'autographs:goldin': 'match'");
-    expect(source).toContain('const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set<string>([]);');
+    expect(source).toContain("'autographs:mercari_sold_comps'");
     expect(source).toContain('SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key)');
     expect(source).toContain('!SOURCE_COVERAGE_CONFIRMED_MATCHES.has(`${category}:${source.sourceId}`)');
     expect(source).toContain('const categories = SOURCE_COVERAGE_CATEGORY_ORDER.map((category) => {');
@@ -135,12 +135,20 @@ describe('manual Test AI selector boundary', () => {
     expect(source).not.toContain('SOURCE_COVERAGE_RESET_TO_PENDING');
     expect(source).toContain('Historical match results remain above for');
     expect(source).toContain('Historical manual source-test outcomes, retained for audit only.');
-    expect(source).toContain('const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set<string>([]);');
-    expect(source).toContain('All category/source pairs remain Pending until Rich explicitly confirms them');
+    expect(source).toContain("'movies:ebay_active'");
+    expect(source).toContain("'movies:sold_comps'");
+    expect(source).toContain("'movies:mercari_sold_comps'");
+    expect(source).toContain("'autographs:ebay_active'");
+    expect(source).toContain("'autographs:sold_comps'");
+    expect(source).toContain("'autographs:mercari_sold_comps'");
+    expect(source).toContain("'autographs:goldin'");
     expect(source).toContain("return SOURCE_TEST_RESULTS[key] === 'match' && SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key);");
     const runtime = extractCoverageRuntime(source);
     expect(Object.keys(runtime.SOURCE_TEST_RESULTS).length).toBeGreaterThan(0);
-    expect(runtime.SOURCE_COVERAGE_CONFIRMED_MATCHES.size).toBe(0);
+    expect(runtime.SOURCE_COVERAGE_CONFIRMED_MATCHES).toEqual(new Set([
+      'movies:ebay_active', 'movies:sold_comps', 'movies:mercari_sold_comps',
+      'autographs:ebay_active', 'autographs:sold_comps', 'autographs:mercari_sold_comps', 'autographs:goldin',
+    ]));
   });
 
   it('keeps historical Disney Pins results pending until this run confirms them', () => {
@@ -160,14 +168,13 @@ describe('manual Test AI selector boundary', () => {
   it('executes the current source coverage tracker with isolated fixtures and only Rich confirmations promote matches', () => {
     const runtime = extractCoverageRuntime(source);
     const initialMarkup = renderToStaticMarkup(React.createElement(runtime.SourceCoverageTracker));
-    expect(initialMarkup).toContain('0 matched');
-    expect(initialMarkup).not.toContain('Matched');
+    expect(initialMarkup).toContain('7 matched');
     expect(initialMarkup).toContain('Movies');
     expect(initialMarkup).toContain('Music');
     expect(initialMarkup).toContain('Autographs');
     expect(initialMarkup).toContain('Disney Pins');
-    expect(initialMarkup).toContain('34 pending');
-    expect((initialMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(34);
+    expect(initialMarkup).toContain('27 pending');
+    expect((initialMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(27);
     expect((initialMarkup.match(/eBay Active/g) ?? []).length).toBe(11);
     expect((initialMarkup.match(/eBay Sold/g) ?? []).length).toBe(11);
     expect((initialMarkup.match(/Mercari Sold/g) ?? []).length).toBe(11);
@@ -176,11 +183,11 @@ describe('manual Test AI selector boundary', () => {
 
     runtime.SOURCE_COVERAGE_CONFIRMED_MATCHES.add('music:ebay_active');
     const confirmedMarkup = renderToStaticMarkup(React.createElement(runtime.SourceCoverageTracker));
-    expect(confirmedMarkup).toContain('1 matched');
+    expect(confirmedMarkup).toContain('8 matched');
     expect(confirmedMarkup).toContain('eBay Active');
     expect(confirmedMarkup).toContain('Matched');
-    expect(confirmedMarkup).toContain('33 pending');
-    expect((confirmedMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(33);
+    expect(confirmedMarkup).toContain('26 pending');
+    expect((confirmedMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(26);
     expect((confirmedMarkup.match(/eBay Active/g) ?? []).length).toBe(11);
     expect((confirmedMarkup.match(/eBay Sold/g) ?? []).length).toBe(11);
     expect((confirmedMarkup.match(/Mercari Sold/g) ?? []).length).toBe(11);

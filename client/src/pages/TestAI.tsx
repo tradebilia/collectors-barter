@@ -507,6 +507,7 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'movies:mercari_sold_comps': 'match',
   'autographs:ebay_active': 'match',
   'autographs:sold_comps': 'match',
+  'autographs:mercari_sold_comps': 'match',
   'autographs:goldin': 'match',
   'disney pins:ebay_active': 'match',
   'disney pins:sold_comps': 'match',
@@ -516,11 +517,18 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'music:mercari_sold_comps': 'match',
 };
 
-// New testing run, reset by Rich on November 10, 2026 at 14:54 EST.
-// Historical match results remain above for auditability, not current approval.
-// All category/source pairs remain Pending until Rich explicitly confirms them
-// during this run. Only add explicitly approved category:sourceId keys here.
-const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set<string>([]);
+// Current-run confirmations explicitly approved by Rich after testing.
+// Historical match results remain above for auditability; only this set moves
+// a category/source pair from Pending into Current matching sources.
+const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set<string>([
+  'movies:ebay_active',
+  'movies:sold_comps',
+  'movies:mercari_sold_comps',
+  'autographs:ebay_active',
+  'autographs:sold_comps',
+  'autographs:mercari_sold_comps',
+  'autographs:goldin',
+]);
 
 const SOURCE_COVERAGE_CATEGORY_ORDER = ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'] as const;
 
@@ -542,15 +550,18 @@ function SourceCoverageTracker() {
       const applies = source.categories === '*' || source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category);
       return applies && !isSandboxSiteBlockedSource(source.sourceId);
     });
-    const activeSources = applicableSources.filter((source) => {
-      const key = `${category}:${source.sourceId}`;
+    const specialistSourceIds = SANDBOX_SPECIALIST_SOURCES
+      .filter((source) => source.evidenceMode === 'context_only_until_adapter' && !SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS.has(source.id) && source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category))
+      .map((source) => source.id);
+    const activeSourceIds = [...applicableSources.map((source) => source.sourceId), ...specialistSourceIds].filter((sourceId) => {
+      const key = `${category}:${sourceId}`;
       return SOURCE_TEST_RESULTS[key] === 'match' && SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key);
     });
     const pendingSourceIds = Array.from(new Set([
       ...applicableSources.filter((source) => !SOURCE_COVERAGE_CONFIRMED_MATCHES.has(`${category}:${source.sourceId}`)).map((source) => source.sourceId),
-      ...SANDBOX_SPECIALIST_SOURCES.filter((source) => source.evidenceMode === 'context_only_until_adapter' && !SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS.has(source.id) && source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category)).map((source) => source.id),
+      ...specialistSourceIds.filter((sourceId) => !SOURCE_COVERAGE_CONFIRMED_MATCHES.has(`${category}:${sourceId}`)),
     ]));
-    return { category, activeSources, pendingSourceIds };
+    return { category, activeSources: activeSourceIds, pendingSourceIds };
   });
 
   const sourceLabel = (sourceId: string, fallback: string) => DATA_SOURCES[sourceId]?.label ?? PERMISSION_PENDING_SOURCE_REGISTRY[sourceId]?.label ?? SANDBOX_SPECIALIST_SOURCES.find((source) => source.id === sourceId)?.label ?? fallback;
@@ -570,12 +581,12 @@ function SourceCoverageTracker() {
     <div>
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Source coverage tracker</p>
       <h2 id="source-coverage-heading" className="mt-1 text-xl font-bold text-white">Which sources apply to each category?</h2>
-      <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-400">This reference is generated from the sandbox source registries. A source can appear under more than one category. New testing run: previous confirmations have been reset. Sources remain pending until you explicitly confirm a match for this run; an AI match does not automatically update this checklist.</p>
+      <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-400">This reference is generated from the sandbox source registries. A source can appear under more than one category. Sources move from Pending only after an explicit confirmed test result; an AI match does not automatically update this checklist.</p>
     </div>
     <div className="grid gap-5 xl:grid-cols-2">
       <div className="rounded-xl border border-emerald-800/50 bg-emerald-950/10 p-4">
         <div className="mb-4 flex items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-emerald-200">Current matching sources</h3><p className="mt-1 text-[11px] text-slate-500">Only sources with a confirmed matching test result appear here.</p></div><span className="rounded-full bg-emerald-900/40 px-2 py-1 text-[10px] font-bold text-emerald-300">{categories.reduce((total, entry) => total + entry.activeSources.length, 0)} matched</span></div>
-        <div className="space-y-4">{categories.map(({ category, activeSources }) => <div key={`active-${category}`}><h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-300">{formatCoverageCategory(category)}</h4><div className="grid gap-2 sm:grid-cols-2">{activeSources.length ? activeSources.map((source) => sourcePill(source.sourceId, category, false)) : <p className="text-[11px] text-slate-500">No confirmed matching source yet.</p>}</div></div>)}</div>
+        <div className="space-y-4">{categories.map(({ category, activeSources }) => <div key={`active-${category}`}><h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-300">{formatCoverageCategory(category)}</h4><div className="grid gap-2 sm:grid-cols-2">{activeSources.length ? activeSources.map((sourceId) => sourcePill(sourceId, category, false)) : <p className="text-[11px] text-slate-500">No confirmed matching source yet.</p>}</div></div>)}</div>
       </div>
       <div className="rounded-xl border border-amber-800/50 bg-amber-950/10 p-4">
         <div className="mb-4 flex items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-amber-200">Pending sources to check</h3><p className="mt-1 text-[11px] text-slate-500">Includes active sources without a confirmed match plus sources still needing adapter, permission, contract, or evidence review.</p></div><span className="rounded-full bg-amber-900/40 px-2 py-1 text-[10px] font-bold text-amber-300">{categories.reduce((total, entry) => total + entry.pendingSourceIds.length, 0)} pending</span></div>
