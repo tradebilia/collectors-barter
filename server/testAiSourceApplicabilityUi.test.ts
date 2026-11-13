@@ -148,13 +148,17 @@ describe('manual Test AI selector boundary', () => {
     expect(runtime.SOURCE_COVERAGE_CONFIRMED_MATCHES).toEqual(new Set([
       'movies:ebay_active', 'movies:sold_comps', 'movies:mercari_sold_comps',
       'autographs:ebay_active', 'autographs:sold_comps', 'autographs:mercari_sold_comps', 'autographs:goldin',
+      'disney pins:ebay_active', 'disney pins:sold_comps', 'disney pins:mercari_sold_comps',
     ]));
   });
 
-  it('keeps historical Disney Pins results pending until this run confirms them', () => {
+  it('promotes the user-confirmed Disney Pins marketplace sources into matching', () => {
     expect(source).toContain("'disney pins:ebay_active': 'match'");
     expect(source).toContain("'disney pins:sold_comps': 'match'");
     expect(source).toContain("'disney pins:mercari_sold_comps': 'match'");
+    expect(source).toContain("'disney pins:ebay_active',");
+    expect(source).toContain("'disney pins:sold_comps',");
+    expect(source).toContain("'disney pins:mercari_sold_comps',");
     expect(source).toContain('const testResult = coverageKey && SOURCE_COVERAGE_CONFIRMED_MATCHES.has(coverageKey) ? SOURCE_TEST_RESULTS[coverageKey] : undefined;');
   });
 
@@ -168,13 +172,13 @@ describe('manual Test AI selector boundary', () => {
   it('executes the current source coverage tracker with isolated fixtures and only Rich confirmations promote matches', () => {
     const runtime = extractCoverageRuntime(source);
     const initialMarkup = renderToStaticMarkup(React.createElement(runtime.SourceCoverageTracker));
-    expect(initialMarkup).toContain('7 matched');
+    expect(initialMarkup).toContain('10 matched');
     expect(initialMarkup).toContain('Movies');
     expect(initialMarkup).toContain('Music');
     expect(initialMarkup).toContain('Autographs');
     expect(initialMarkup).toContain('Disney Pins');
-    expect(initialMarkup).toContain('27 pending');
-    expect((initialMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(27);
+    expect(initialMarkup).toContain('24 pending');
+    expect((initialMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(24);
     expect((initialMarkup.match(/eBay Active/g) ?? []).length).toBe(11);
     expect((initialMarkup.match(/eBay Sold/g) ?? []).length).toBe(11);
     expect((initialMarkup.match(/Mercari Sold/g) ?? []).length).toBe(11);
@@ -183,11 +187,11 @@ describe('manual Test AI selector boundary', () => {
 
     runtime.SOURCE_COVERAGE_CONFIRMED_MATCHES.add('music:ebay_active');
     const confirmedMarkup = renderToStaticMarkup(React.createElement(runtime.SourceCoverageTracker));
-    expect(confirmedMarkup).toContain('8 matched');
+    expect(confirmedMarkup).toContain('11 matched');
     expect(confirmedMarkup).toContain('eBay Active');
     expect(confirmedMarkup).toContain('Matched');
-    expect(confirmedMarkup).toContain('26 pending');
-    expect((confirmedMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(26);
+    expect(confirmedMarkup).toContain('23 pending');
+    expect((confirmedMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(23);
     expect((confirmedMarkup.match(/eBay Active/g) ?? []).length).toBe(11);
     expect((confirmedMarkup.match(/eBay Sold/g) ?? []).length).toBe(11);
     expect((confirmedMarkup.match(/Mercari Sold/g) ?? []).length).toBe(11);

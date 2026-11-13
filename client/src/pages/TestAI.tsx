@@ -528,6 +528,9 @@ const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set<string>([
   'autographs:sold_comps',
   'autographs:mercari_sold_comps',
   'autographs:goldin',
+  'disney pins:ebay_active',
+  'disney pins:sold_comps',
+  'disney pins:mercari_sold_comps',
 ]);
 
 const SOURCE_COVERAGE_CATEGORY_ORDER = ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'] as const;
