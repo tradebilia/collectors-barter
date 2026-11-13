@@ -2874,8 +2874,10 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
               && /\benvelopes?\b/i.test(canonicalCandidateTitle(listing));
             // Keep raw provider metadata visible, but compare the signed surface
             // identified by the envelope title, just as scoring/admission do.
-						const finalStatus = envelopeObject ? titleDerivedStatus
-              : structuredStatus === 'different' ? 'different' : titleDerivedStatus !== 'unknown' ? titleDerivedStatus : structuredStatus;
+					const finalStatus = envelopeObject ? titleDerivedStatus
+	              : category === 'disney_pins' && /^(?:condition|mediaCondition)$/i.test(key) && structuredStatus === 'different'
+	                ? 'soft_difference'
+	                : structuredStatus === 'different' ? 'different' : titleDerivedStatus !== 'unknown' ? titleDerivedStatus : structuredStatus;
 						rows.push({
 						fieldKey: key,
           targetField: fieldLabel,

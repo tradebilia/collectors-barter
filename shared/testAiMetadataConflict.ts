@@ -349,6 +349,9 @@ export function findMaterialMetadataConflicts(
     && !((options.ignoreSubjectiveConditionDifferences || targetIsGraded) && ['condition', 'mediaCondition'].includes(field))
     && !((options.ignoreSubjectiveConditionDifferences || targetIsGraded) && field === 'sealedStatus' && !targetHasExplicitSealedState)
     && !(category === 'music' && ['condition', 'mediaCondition'].includes(field))
+    // Disney Pins are identity-matched by the pin itself, character, series,
+    // year, and edition facts; marketplace condition is informational only.
+    && !(category === 'disney_pins' && ['condition', 'mediaCondition'].includes(field))
     // Working-feature status is optional operational context for Vintage Toys,
     // not a hard identity discriminator for visual matching.
     && !(category === 'vintage_toys' && field === 'workingFeatures')

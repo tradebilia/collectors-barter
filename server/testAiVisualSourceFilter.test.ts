@@ -4265,12 +4265,28 @@ describe("visual source filter", () => {
       itemDetails: JSON.stringify({ condition: "good" }),
       imageUrl: "https://example.com/candidate.jpg",
     };
-    expect(buildDeclaredIdentityReviews([candidate], targetMetadata)).toHaveLength(category === "movies" || category === "music" ? 0 : 1);
+    expect(buildDeclaredIdentityReviews([candidate], targetMetadata)).toHaveLength(category === "movies" || category === "music" || category === "disney_pins" ? 0 : 1);
     expect(buildDeclaredIdentityReviews(
       [candidate],
       targetMetadata,
       { ignoreSubjectiveConditionDifferences: true },
     )).toEqual([]);
+  });
+
+  it("shows Disney Pins condition differences as soft information, not identity differences", () => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "Easter Chip Hidden Mickey Pin",
+      category: "disney_pins",
+      itemType: "individual_pin",
+      condition: "near_mint",
+      fullItemDetails: { pinName: "Easter Chip", character: "Chip", condition: "near_mint" },
+    });
+    const rows = buildMetadataFieldComparisons(targetMetadata, {
+      title: "Easter Chip Hidden Mickey Pin",
+      condition: "Pre-Owned",
+      itemDetails: JSON.stringify({ condition: "Pre-Owned" }),
+    });
+    expect(rows.find((row) => row.targetField === "Condition")?.status).toBe("soft_difference");
   });
 
   it("still pre-excludes a normal Music target against For Parts", () => {
