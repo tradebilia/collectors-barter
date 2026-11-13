@@ -228,6 +228,20 @@ describe("Music identity and diagnostic boundaries", () => {
     expect(reviews).toEqual([]);
   });
 
+  it.each([
+    ["Good", "Excellent"],
+    ["Good", "Factory Sealed"],
+    ["Sealed", "For Parts"],
+  ])("does not hard-exclude Music eBay Active condition differences (%s vs %s)", (targetCondition, candidateCondition) => {
+    const metadata = target(targetCondition);
+    const listing = {
+      ...candidate(`Nirvana Nevermind Cassette ${candidateCondition}`, { condition: candidateCondition }),
+      sourceId: "ebay_active",
+    };
+    expect(buildDeclaredIdentityReviews([listing], metadata)).toEqual([]);
+    expect(applyDeclaredIdentityFilter([listing], metadata).listings).toEqual([listing]);
+  });
+
   it("does not report equivalent Music formats in the shared outer metadata gate", () => {
     const metadata = buildVisualTargetMetadata({
       title: "Nevermind", category: "music", itemType: "cassette_tape",

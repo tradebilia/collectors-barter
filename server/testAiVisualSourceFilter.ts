@@ -3972,6 +3972,7 @@ function musicCandidateMediaCondition(listing: VisualSourceCandidate, targetMeta
 
 function musicMediaConditionConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "music") return null;
+  if (normalizedChoice(listing.sourceId) === "ebay_active") return null;
   const details = extractTargetItemDetails(targetMetadata);
   const targetCondition = musicMediaCondition(details.condition ?? details.mediaCondition ?? metadataValue(targetMetadata, "condition"));
   const candidateCondition = musicCandidateMediaCondition(listing, targetMetadata);
