@@ -4772,4 +4772,25 @@ describe("Stage 1 safe visual confirmation", () => {
     expect(result.listings[0].visualReviewStatus).toBe('match');
     expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: 'mismatch', initialRationale: initial.rationale, retryVerdict: 'unreadable', retryConfidence: 'low', retryRationale: suffix, finalPass: 'high_resolution_retry' });
   });
+  it('does not spend sold-source review slots on hard-excluded image-bearing candidates', async () => {
+    mockedInvokeLLM.mockResolvedValue(structuredVisualResponse({
+      reviews: [{ candidateIndex: 1, verdict: 'match', confidence: 'high', rationale: 'The same Cinderella pin is shown.' }],
+    }) as any);
+    const target = buildVisualTargetMetadata({
+      title: 'The Matrix', category: 'movies', itemType: 'individual_movie',
+      fullItemDetails: { title: 'The Matrix', format: 'Blu-ray', releaseYear: 1999, edition: 'Standard', region: 'Region 1', sealed: 'No' },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: 'marketplace', sourceLabel: 'Mercari Movies sold listings', reviewBudgetRole: 'sold_source',
+      targetImageUrl: 'https://example.com/target-movie.jpg', targetMetadata: target,
+      listings: [
+        { title: 'The Godfather', fullItemDetails: { title: 'The Godfather', format: 'DVD', releaseYear: 1972, edition: 'Standard', region: 'Region 1', sealed: 'No' }, imageUrl: 'https://example.com/wrong-movie.jpg' },
+        { title: 'The Matrix', fullItemDetails: { title: 'The Matrix', format: 'Blu-ray', releaseYear: 1999, edition: 'Standard', region: 'Region 1', sealed: 'No' }, imageUrl: 'https://example.com/matching-movie.jpg' },
+      ],
+    });
+    expect(result.reviewBudget?.eligibleImageBearingCount).toBe(1);
+    expect(result.reviewBudget?.selectedCount).toBe(1);
+    expect(result.contextListings?.some((listing) => String(listing.title).includes('Godfather'))).toBe(true);
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(1);
+  });
 });

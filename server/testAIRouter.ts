@@ -68,6 +68,7 @@ import { bindMetadataRankingPopulation, freezeMetadataRankingPopulation, overlay
 import { compareComparableGrades, hasExcludedSourceTitleGradeClaim, parseComparableGrade, readSourceGradeClaimsFromTitle, TITLE_GRADE_OBSERVATION_PATTERN, type ComparableGrade } from '../shared/testAiGradeComparison';
 import { buildEffectiveApprovalTarget, normalizeRequiredApprovalTargetImageReference, normalizeVisualTargetImageReference } from '../shared/testAiSoldCompsTransport';
 import { applyAutographSoldCompsOfferPricePolicy } from './testAiSoldCompsOfferPrice';
+import { ENV } from './_core/env';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 // eBay can take several seconds to return a Browse response even for a bounded
@@ -4973,7 +4974,7 @@ export const testAIRouter = router({
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       // Counts and server run ID only: never log images, provider tokens or payloads.
       console.info(`[Item A audit] started candidates=${input.sales.length}`);
-      const result = auditItemValuation({ item: input.item, sales: input.sales as MarketSale[], evidenceSummary: input.evidenceSummary });
+      const result = auditItemValuation({ item: input.item, sales: input.sales as MarketSale[], evidenceSummary: input.evidenceSummary }, { signingKey: ENV.jwtSecret });
       const finalRows = result.snapshot.profile.comparables;
       console.info(`[Item A audit] completed run=${result.analysisRunId} candidates=${finalRows.length} used=${finalRows.filter(row => row.valuationUse?.use.code === 'CURRENT_SALES_PRIMARY').length}`);
       return result;

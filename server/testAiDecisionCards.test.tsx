@@ -79,6 +79,21 @@ describe('Test AI candidate decision cards (real component)', () => {
     expect(decision.reason).toContain('metadata score was 60/100, below the required minimum of 70/100');
     expect(decision.reason).not.toContain('final valuation analysis');
   });
+  it('puts the below-threshold score ahead of downstream provenance blockers', () => {
+    const decision = candidateFinalDecision({
+      title: 'Nirvana Nevermind Cassette Tape', metadataMatchScore: 50,
+      evidenceDisposition: 'pre_vision_score_excluded',
+      visualReviewRationale: 'Music metadata score 50/100 is below the visual-review minimum of 60.',
+      candidatePricingLink: 'not_submitted',
+      valuationUse: {
+        sourceAdmission: { blockerCodes: ['PROVENANCE_UNVERIFIED', 'SOURCE_DISPOSITION_RESTRICTIVE'] },
+        use: { code: 'REVIEW_REQUIRED', reasonCodes: ['PROVENANCE_UNVERIFIED', 'CATEGORY_REVIEW_REQUIRED'] },
+      },
+    });
+    expect(decision.label).toBe('NOT USED — SCORE TOO LOW');
+    expect(decision.reason).toBe('Not sent to visual review: metadata score was 50/100, below the required minimum of 60/100. Because visual review was not completed, this candidate could not proceed to valuation.');
+    expect(decision.reason).not.toContain('provenance');
+  });
   it('never fabricates mismatch or live processing from a legacy missing receipt', () => {
     const html = cards([{ title: 'Legacy', visualReviewStatus: 'mismatch', visualAudit: { initialModel: 'legacy' } }]);
     expect(html).toContain('NOT USED — REVIEW UNRESOLVED');

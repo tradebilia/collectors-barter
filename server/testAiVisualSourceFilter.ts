@@ -2435,6 +2435,10 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
       const format = title.match(/\b(?:DVD|Blu[- ]?ray|4K\s+UHD|VHS|LaserDisc|Laserdic)\b/i)?.[0];
 			return format ? `${format} (detected in title)` : "Unknown";
     }
+		if (category === "music" && /^(?:format|mediaFormat)$/i.test(key)) {
+			const format = musicCandidateFormat(listing);
+			return format ? `${format.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
+		}
 		if (category === "movies" && /^(?:sealed|sealedStatus|packaging)$/i.test(key)) {
       const state = title.match(/\b(?:factory\s+sealed|sealed|opened|used)\b/i)?.[0];
       const value = state ? movieBoolean(state) : "";
@@ -2908,7 +2912,9 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
     if (excluded.has(key) || /^(?:id|url|saleId|sourceId|providerReference|price|currency|date)$/i.test(key)) continue;
       const movieIdentity = movieContext && /^(?:title|movieTitle)$/i.test(key)
         && movieTargetItemType(targetMetadata) === 'individual_movie';
-      const targetRaw = category === "autographs" && /^(?:authenticationIncluded|authenticated|authenticationStatus|isAuthenticated)$/i.test(key)
+	      const targetRaw = category === "music" && /^(?:format|mediaFormat)$/i.test(key)
+	        ? (musicItemTypeLabel(targetDetails.format) || musicItemTypeLabel(targetType) || undefined)?.replace(/\b\w/g, (letter) => letter.toUpperCase())
+	        : category === "autographs" && /^(?:authenticationIncluded|authenticated|authenticationStatus|isAuthenticated)$/i.test(key)
         ? autographTargetAuthenticationState(targetDetails)
         : movieIdentity
         ? firstMeaningfulValue(targetDetails.title, targetDetails.movieTitle, extractTargetTitle(targetMetadata))
@@ -7686,7 +7692,13 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
   let rankedSelection = selectionPreparation.rankedSelection;
   if (args.reviewBudgetRole === 'sold_source' && rankedSelection) {
     const minimum = selectionPreparation.minimumMetadataScore!;
-    const eligible = rankedSelection.ranked.filter(candidate => candidate.imageUrls.length > 0
+    const eligible = rankedSelection.ranked.filter(candidate => !preVisualExcludedIndexes.has(candidate.candidateIndex)
+      && candidate.item.evidenceDisposition !== 'context_only'
+      && candidate.item.evidenceDisposition !== 'rejected_objective_conflict'
+      && candidate.item.evidenceDisposition !== 'pre_vision_excluded'
+      && candidate.item.evidenceDisposition !== 'omitted_by_cap'
+      && candidate.item.evidenceDisposition !== 'not_visually_reviewed_window'
+      && candidate.imageUrls.length > 0
       && Number(candidate.item.metadataMatchScore ?? 0) >= minimum)
       .sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex);
     const budget = buildSoldReviewBudget(metadataValue(targetMetadata, 'category'), rankedSelection.cap, eligible.length, VISUAL_REVIEW_MAX_CANDIDATES);

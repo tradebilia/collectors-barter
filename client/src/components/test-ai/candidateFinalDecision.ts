@@ -274,6 +274,23 @@ function sourceDispositionExplanation(row: CandidateDisplayRow): string {
     ? `The primary reason this candidate was stopped is: ${primaryDetail}${/[.!?]$/.test(primaryDetail) ? '' : '.'} The record remains context only.`
     : 'The source did not provide the verified evidence required for final valuation. The record remains context only.';
 }
+function lowScoreReviewDecision(row: CandidateDisplayRow): CandidateFinalDecision | undefined {
+  if (isHardCandidateDisplayException(row) === true || hasActualVisualResponse(row) || hasActualVisualDispatch(row)) return undefined;
+  const score = Number(row.metadataMatchScore);
+  if (!Number.isFinite(score)) return undefined;
+  const execution = candidateExecutionFact(row);
+  const text = [row.visualReviewRationale, execution.reason, ...(row.evidenceReasons ?? [])]
+    .filter((value): value is string => typeof value === 'string' && Boolean(value.trim())).join(' · ');
+  const threshold = text.match(/below (?:the )?(?:visual-review )?minimum(?: of)?\s*\(?\s*(\d+)/i)?.[1]
+    ?? text.match(/below minimum\s*\(?\s*(\d+)/i)?.[1];
+  if (!threshold || score >= Number(threshold)) return undefined;
+  return {
+    label: 'NOT USED — SCORE TOO LOW',
+    reason: `Not sent to visual review: metadata score was ${score}/100, below the required minimum of ${threshold}/100. Because visual review was not completed, this candidate could not proceed to valuation.`,
+    code: 'PRE_VISUAL_SCORE_EXCLUDED',
+    className: amber,
+  };
+}
 function evidenceReasons(row: CandidateDisplayRow): string {
   return Array.isArray(row.evidenceReasons) ? row.evidenceReasons.filter((reason: unknown) => typeof reason === 'string' && reason.trim()).join('; ') : '';
 }
@@ -341,6 +358,8 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
       code: 'ACTIVE_MARKET_CONTEXT', className: reviewed ? green : amber };
   }
   if (row.valuationUse?.use?.code) {
+    const lowScore = lowScoreReviewDecision(row);
+    if (lowScore) return lowScore;
     const primary = pricing.code === 'CURRENT_SALES_PRIMARY';
     const hard = pricing.code === 'FINAL_HARD_EXCLUDED';
     const exactFinalReasons = finalAnalysisReasons(row);

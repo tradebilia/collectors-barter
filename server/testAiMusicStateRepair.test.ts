@@ -202,6 +202,19 @@ describe("Music identity and diagnostic boundaries", () => {
     expect(applyDeclaredIdentityFilter([sealed], metadata).contextListings).toEqual([sealed]);
   });
 
+  it("uses cassette item type and candidate title evidence in both scoring and the comparison table", () => {
+    const metadata = buildVisualTargetMetadata({
+      title: "Nevermind", category: "music", itemType: "cassette_tape",
+      fullItemDetails: { artist: "Nirvana", releaseTitle: "Nevermind" },
+    });
+    const listing = candidate("Nirvana Nevermind Cassette Tape");
+    const score = musicVisualScore(listing, metadata);
+    const formatRow = buildMetadataFieldComparisons(metadata, listing).find(row => row.fieldKey === "format");
+    expect(score.matched).toContain("format");
+    expect(score.awards.find(award => award.field === "format")?.awardedPoints).toBe(15);
+    expect(formatRow).toMatchObject({ targetValue: "Cassette Tape", titleDerivedValue: "Cassette Tape (detected in title)", titleDerivedStatus: "match" });
+  });
+
   it("does not bypass the independent artist identity gate when sealed states match", () => {
     const listing = candidate("Nirvana Nevermind Cassette Factory Sealed", { artist: "Pearl Jam", condition: "Good" });
     expect(buildDeclaredIdentityReviews([listing], target("sealed"))[0]?.rationale).toContain("Music artist differs");
