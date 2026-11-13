@@ -26,6 +26,18 @@ describe('universal analyzer identity state', () => {
     expect(candidate.grader).toBe('wata');
   });
 
+  it('recognizes AMG in the final identity-state comparison without weakening real grader conflicts', () => {
+    const target = extractIdentityState({ title: 'Guns N Roses Lies', grade: '5', certificationCompany: 'AMG' });
+    const candidate = extractIdentityState({ title: 'Guns N Roses Lies Graded AMG 5' });
+    expect(candidate.state).toBe('graded');
+    expect(candidate.grader).toBe('amg');
+    expect(candidate.grade).toBe('5');
+    expect(identityStateConflicts(target, candidate, false, 'music')).toEqual([]);
+
+    const differentGrader = extractIdentityState({ title: 'Guns N Roses Lies Graded PSA 5' });
+    expect(identityStateConflicts(target, differentGrader, false, 'music').join(' ')).toContain('grading company differs');
+  });
+
   it('does not equate two different nonnumeric grades merely because both numeric parsers return null', () => {
     const target = extractIdentityState({ title: 'Coin PCGS', grade: 'MS65', certificationCompany: 'PCGS' });
     const candidate = extractIdentityState({ title: 'Coin PCGS', grade: 'MS66', certificationCompany: 'PCGS' });

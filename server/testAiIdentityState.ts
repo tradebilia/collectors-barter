@@ -14,7 +14,7 @@ export type IdentityStateSnapshot = {
   negativeSignals: string[];
 };
 
-const GRADERS = ['psa', 'cgc', 'cbcs', 'bgs', 'sgc', 'pgs', 'csg', 'hga', 'pcgs', 'ngc', 'wata', 'vga', 'afa'];
+const GRADERS = ['psa', 'cgc', 'cbcs', 'bgs', 'sgc', 'pgs', 'csg', 'hga', 'pcgs', 'ngc', 'wata', 'vga', 'afa', 'amg'];
 const NEGATIVE_PATTERNS: Array<[RegExp, string]> = [
   [/\bcustom\s*(?:card|reprint|replica)\b|\breprint\b|\bproxy\b/i, 'custom/reprint/proxy'],
   [/\bcase\s*break\s*spot\b|\bbreak\s*spot\b/i, 'case-break spot'],
