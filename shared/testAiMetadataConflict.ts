@@ -358,6 +358,9 @@ export function findMaterialMetadataConflicts(
     && !((options.ignoreSubjectiveConditionDifferences || targetIsGraded) && ['condition', 'mediaCondition'].includes(field))
     && !((options.ignoreSubjectiveConditionDifferences || targetIsGraded) && field === 'sealedStatus' && !targetHasExplicitSealedState)
     && !(category === 'music' && ['condition', 'mediaCondition'].includes(field))
+    // Genre labels are broad marketplace classifications (for example Rock
+    // versus Grunge), not exact release identity. Keep them informational.
+    && !(category === 'music' && field === 'genre')
     // Disney Pins are identity-matched by the pin itself, character, series,
     // year, and edition facts; marketplace condition is informational only.
     && !(category === 'disney_pins' && ['condition', 'mediaCondition'].includes(field))

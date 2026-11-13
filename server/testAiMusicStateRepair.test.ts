@@ -235,8 +235,13 @@ describe("Music identity and diagnostic boundaries", () => {
     });
     expect(findMaterialMetadataConflicts(metadata, {
       title: "Nevermind by Nirvana (Cassette, 2016)",
-      itemDetails: JSON.stringify({ format: "Cassette" }),
-    })).not.toEqual(expect.arrayContaining([expect.objectContaining({ field: "format" })]));
+      itemDetails: JSON.stringify({ format: "Cassette", genre: "Rock" }),
+    })).toEqual([]);
+    const formatRow = buildMetadataFieldComparisons(metadata, {
+      title: "Nevermind by Nirvana (Cassette, 2016)",
+      itemDetails: JSON.stringify({ format: "Cassette", genre: "Rock" }),
+    }).find(row => row.fieldKey === "format");
+    expect(formatRow?.status).toBe("match");
   });
 
   it.each(["DGC", "DGCC", "Geffen Records"])("treats %s as Geffen Records for Music label scoring and identity", (label) => {

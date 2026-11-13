@@ -2301,8 +2301,9 @@ function musicRecordLabelsAgree(left: unknown, right: unknown): boolean {
   return Boolean(a && b && (a === b || a.includes(b) || b.includes(a)));
 }
 function musicFormatsAgree(left: unknown, right: unknown): boolean {
-  const a = musicItemTypeLabel(left);
-  const b = musicItemTypeLabel(right);
+  const stripEvidence = (value: unknown) => String(value ?? '').replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, '');
+  const a = musicItemTypeLabel(stripEvidence(left));
+  const b = musicItemTypeLabel(stripEvidence(right));
   return Boolean(a && b && a === b);
 }
 function musicMaterialConflicts(targetMetadata: string, listing: VisualSourceCandidate, options?: { ignoreSubjectiveConditionDifferences?: boolean }) {
@@ -2816,6 +2817,7 @@ function comparisonStatus(targetValue: string, candidateValue: string, category 
 		return normalizedType(targetValue) === normalizedType(candidateValue) ? "match" : "different";
 	}
 	if (category === "movies" && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(key)) return movieValuesAgree(targetValue, candidateValue) ? "match" : "different";
+	if (category === "music" && /^(?:format|mediaFormat)$/i.test(key)) return musicFormatsAgree(targetValue, candidateValue) ? "match" : "different";
 	if (category === "music" && /^recordLabel$/i.test(key)) return musicRecordLabelsAgree(targetValue, candidateValue) ? "match" : "different";
 	if (category === "movies" && /^(?:condition|mediaCondition)$/i.test(key)) {
 		const targetComparable = comparisonComparable(targetValue);
