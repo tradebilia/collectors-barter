@@ -6241,11 +6241,13 @@ export function musicVisualScore(listing: VisualSourceCandidate, targetMetadata:
   return contingentGradingScore(listing, targetMetadata, MUSIC_SCORE_FIELDS, { score, matched, unknown, awards });
 }
 
+const MUSIC_VISUAL_REVIEW_MINIMUM = 50;
+
 export function musicVisualCap(score: number): number {
   if (score >= 90) return 8;
   if (score >= 80) return 6;
   if (score >= 70) return 4;
-  if (score >= 60) return 2;
+  if (score >= MUSIC_VISUAL_REVIEW_MINIMUM) return 2;
   return 0;
 }
 
@@ -7137,16 +7139,16 @@ function selectMusicVisualCandidates<T extends VisualSourceCandidate>(candidates
     .map((candidate, index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
   const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
   const cap = musicVisualCap(highestScore);
-  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 60).slice(0, cap);
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= MUSIC_VISUAL_REVIEW_MINIMUM).slice(0, cap);
   const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
   const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((entry) => ({
     ...entry.item,
     evidenceDisposition: 'pre_vision_score_excluded',
     visualReviewStatus: 'not_reviewed',
-    visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < 60
-      ? `Music metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.`
+    visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < MUSIC_VISUAL_REVIEW_MINIMUM
+      ? `Music metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of ${MUSIC_VISUAL_REVIEW_MINIMUM}.`
       : `Music visual cap reached (${cap}); higher-scoring candidates were selected first.`,
-    evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < 60 ? 'metadata score below minimum (60)' : `visual-review cap reached (${cap})`],
+    evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < MUSIC_VISUAL_REVIEW_MINIMUM ? `metadata score below minimum (${MUSIC_VISUAL_REVIEW_MINIMUM})` : `visual-review cap reached (${cap})`],
   } as T));
   return { selected, excluded, cap, ranked };
 }
@@ -7477,7 +7479,8 @@ function prepareVisualSourceReviewSelection<T extends VisualSourceCandidate>(arg
   const minimumMetadataScore = !rankedSelection ? null
     : rankedSelection === videoGameSelection || rankedSelection === comicsSelection ? 50
     : rankedSelection === sportsCardSelection ? sportsCardUnopenedTarget(targetMetadata) ? 55 : 50
-    : rankedSelection === disneyPinsSelection ? 40 : 60;
+    : rankedSelection === disneyPinsSelection ? 40
+      : rankedSelection === musicSelection ? MUSIC_VISUAL_REVIEW_MINIMUM : 60;
   return { preVisualUniversalReasons, preVisualLotReasons, declaredReviews, declaredReviewByIndex,
     preVisualExcludedIndexes, preVisualContextListings, preVisualContextItems, eligibleListings,
     allCandidates, rankedItems, rankedSelection, minimumMetadataScore };

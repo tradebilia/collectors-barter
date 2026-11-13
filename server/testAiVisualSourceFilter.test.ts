@@ -4223,7 +4223,8 @@ describe("visual source filter", () => {
     expect(musicVisualCap(85)).toBe(6);
     expect(musicVisualCap(75)).toBe(4);
     expect(musicVisualCap(65)).toBe(2);
-    expect(musicVisualCap(59)).toBe(0);
+    expect(musicVisualCap(50)).toBe(2);
+    expect(musicVisualCap(49)).toBe(0);
     const collectionTarget = buildVisualTargetMetadata({ title: "Mixed Music Collection", category: "music", itemType: "collection_lot", fullItemDetails: { artist: "Various Artists", format: "collection_lot" } });
     expect(musicVisualScore({ title: "Mixed Vinyl and CD Lot", imageUrl: "https://example.com/music.jpg" }, collectionTarget).score).toBe(0);
   });

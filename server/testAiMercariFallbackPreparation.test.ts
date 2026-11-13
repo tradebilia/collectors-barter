@@ -196,6 +196,7 @@ describe('Step6 exact category minimums and unchanged unsupported workflows', ()
   const pinTarget = target('Mickey Mouse Pin', 'disney_pins', 'individual_pin', { pinName: 'Mickey Mouse', character: 'Mickey Mouse' });
   const savedPinTarget = target('Mickey Mouse Pin', 'disney_pins', 'single_pin', { pinName: 'Mickey Mouse', character: 'Mickey Mouse' });
   const unopenedTarget = target('Factory Box', 'sports_cards', 'unopened_product', { productName: 'Factory Box', productFormat: 'Box', productType: 'Box' });
+  const musicTarget = target('Nirvana Nevermind', 'music', 'cassette_tape', { artist: 'Nirvana', releaseTitle: 'Nevermind', format: 'Cassette Tape' });
 
   it.each([
     { label: 'movie', metadata: movieTarget, minimum: 60, below: { title: 'Alien', format: 'DVD' }, boundary: { title: 'Alien', format: 'DVD', releaseYear: '1979' }, belowScore: 45, boundaryScore: 60 },
@@ -203,6 +204,7 @@ describe('Step6 exact category minimums and unchanged unsupported workflows', ()
     { label: 'pin', metadata: pinTarget, minimum: 40, below: { title: 'Pin', pinName: 'Mickey Mouse' }, boundary: { title: 'Mickey Mouse Pin', character: 'Mickey Mouse' }, belowScore: 25, boundaryScore: 40 },
     { label: 'saved single_pin', metadata: savedPinTarget, minimum: 40, below: { title: 'Pin', pinName: 'Mickey Mouse' }, boundary: { title: 'Mickey Mouse Pin', character: 'Mickey Mouse' }, belowScore: 25, boundaryScore: 40 },
     { label: 'unopened sports product', metadata: unopenedTarget, minimum: 55, below: { title: 'Factory Box', productFormat: 'Box' }, boundary: { title: 'Factory Box', productFormat: 'Box', productType: 'Box' }, belowScore: 40, boundaryScore: 55 },
+    { label: 'music', metadata: musicTarget, minimum: 50, below: { title: 'Nirvana Cassette Tape' }, boundary: { title: 'Nirvana Nevermind Cassette Tape' }, belowScore: 35, boundaryScore: 50 },
   ])('uses the actual $label selector, including its inclusive $minimum minimum', ({ metadata, minimum, below, boundary, belowScore, boundaryScore }) => {
     const low = prepare([{ id: 'below', ...below, imageUrl: image('below') }], metadata);
     const exact = prepare([{ id: 'boundary', ...boundary, imageUrl: image('boundary') }], metadata);
@@ -221,7 +223,7 @@ describe('Step6 exact category minimums and unchanged unsupported workflows', ()
     ['movies', 'individual_movie', 60], ['movies', 'box_set', 60],
     // `single_pin` is the key the inventory form actually saves for an individual pin.
     ['disney_pins', 'individual_pin', 40], ['disney_pins', 'single_pin', 40], ['disney_pins', 'pin_set', 40],
-    ['music', 'vinyl_record', 60], ['music', 'box_set', 60], ['vintage_toys', 'lego', 60],
+    ['music', 'vinyl_record', 50], ['music', 'box_set', 50], ['vintage_toys', 'lego', 60],
     ['pokemon', 'single_card', 60], ['pokemon', 'set', 60], ['pokemon', 'unopened_product', 60],
   ])('reports support from existing %s / %s dispatch even for an empty population', (category, itemType, minimum) => {
     const result = prepare([], target('Synthetic target', category, String(itemType)));
@@ -247,7 +249,7 @@ describe('Step6 exact category minimums and unchanged unsupported workflows', ()
   it('routes a Music box-set target to the Music scorer, never the Movies selector', () => {
     const musicBox = target('Beatles Anthology', 'music', 'box_set', { albumTitle: 'Anthology', artist: 'The Beatles', format: 'CD' });
     const result = prepare([{ id: 'unrelated', title: 'Pin', imageUrl: image('unrelated') }], musicBox);
-    expect(result).toMatchObject({ supported: true, minimumMetadataScore: 60 });
+    expect(result).toMatchObject({ supported: true, minimumMetadataScore: 50 });
     expect(heldById(result, 'unrelated').reason).toMatch(/^Music metadata score/);
     expect(heldById(result, 'unrelated').reason).not.toMatch(/Movies/);
   });
