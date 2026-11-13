@@ -3891,6 +3891,7 @@ export const testAIRouter = router({
           targetImageReference: safeTargetImage,
           expectedImageReference: approvalImageReference,
           query,
+          signingKey: ENV.jwtSecret,
         });
         const valuationEligibleListings = canonicalListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible');
 
