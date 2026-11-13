@@ -84,6 +84,12 @@ function musicRecordLabelComparable(value: unknown): string {
   if (/\b(?:dgc|dgcc|geffen(?:\s+records?)?)\b/i.test(normalized)) return 'geffenrecords';
   return compact(value);
 }
+function musicArtistComparable(value: unknown): string {
+  // Marketplace metadata may qualify an artist with a release region, such
+  // as “Nirvana (US)”. That suffix is not a different artist identity.
+  const withoutRegion = key(value).replace(/\s*\((?:us|usa|uk|gb|ca|canada|au|australia|jp|japan|de|germany|fr|france|it|italy|es|spain|eu|europe|nl|netherlands)\)\s*$/i, '');
+  return compact(withoutRegion);
+}
 
 /** Compare exact normalized Autographs authentication-company aliases. */
 export function autographAuthenticationCompaniesEquivalent(left: unknown, right: unknown): boolean {
@@ -466,6 +472,9 @@ export function findMaterialMetadataConflicts(
     if (category === 'music' && field === 'recordLabel'
       && musicRecordLabelComparable(targetValue) === 'geffenrecords'
       && musicRecordLabelComparable(directCandidateValue) === 'geffenrecords') continue;
+    if (category === 'music' && field === 'artist'
+      && musicArtistComparable(targetValue)
+      && musicArtistComparable(targetValue) === musicArtistComparable(directCandidateValue)) continue;
     if (directCandidateValue && fieldComparable(field, directCandidateValue) !== fieldComparable(field, targetValue)) {
       const videoGameSpecializedStateField = category === 'video_games'
         && ['workingCondition', 'originalPackaging', 'originalBoxIncluded'].includes(field);

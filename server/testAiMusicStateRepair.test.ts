@@ -262,6 +262,18 @@ describe("Music identity and diagnostic boundaries", () => {
     expect(buildDeclaredIdentityReviews([listing], metadata)).toEqual([]);
   });
 
+  it("treats an eBay Active artist region suffix as the same Music artist", () => {
+    const metadata = target("good", { recordLabel: "Geffen" });
+    const listing = candidate("Nevermind by Nirvana (US) (Cassette, 2006)", { artist: "Nirvana (US)" });
+    const score = musicVisualScore(listing, metadata);
+    const artistRow = buildMetadataFieldComparisons(metadata, listing).find(row => row.fieldKey === "artist");
+    expect(score.matched).toContain("artist");
+    expect(score.awards.find(award => award.field === "artist")?.awardedPoints).toBe(20);
+    expect(artistRow).toMatchObject({ status: "match" });
+    expect(findMaterialMetadataConflicts(metadata, listing)).toEqual([]);
+    expect(buildDeclaredIdentityReviews([listing], metadata)).toEqual([]);
+  });
+
   it("keeps an unrelated Music record label as a real identity conflict", () => {
     const metadata = target("good", { recordLabel: "Geffen Records" });
     const listing = candidate("Nirvana Nevermind Cassette Columbia", { recordLabel: "Columbia" });
