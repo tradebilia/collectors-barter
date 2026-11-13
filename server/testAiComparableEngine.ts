@@ -1643,9 +1643,10 @@ export function assessComparableCategoryIdentity(
     const targetForm = pinForm(firstString(details, ['itemForm', 'format', 'pinFormat']) || target.itemType || target.title);
     const candidateForm = pinForm(title);
 
-    const titleDerivedPinName = firstString(details, ['pinName', 'name'])
-      ? null
-      : disneyPinsTitleDerivedPinNameEvidence(pinName, character, title);
+    // The target's structured Pin Name being known is expected. The missing
+    // fact is the candidate's provider Pin Name, so always evaluate the
+    // candidate title with the same bounded parser used by the scorer.
+    const titleDerivedPinName = disneyPinsTitleDerivedPinNameEvidence(pinName, character, title);
     record('Pin name', pinName, Boolean(titleDerivedPinName) || titleContainsExpectedPhrase(title, pinName));
     record('Character', character, titleContainsExpectedPhrase(title, character));
     if (number) {
