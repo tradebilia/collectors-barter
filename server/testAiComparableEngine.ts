@@ -1631,7 +1631,10 @@ export function assessComparableCategoryIdentity(
     record('Release title', releaseTitle, titleContainsExpectedPhrase(title, releaseTitle), releaseConflict);
     record('Catalog #', catalogNumber, catalogMatch.matches, catalogMatch.conflict);
     record('Label', label, titleContainsExpectedPhrase(title, label), labelConflict);
-    record('Country', country, countryMatch.matches, countryMatch.conflict);
+    // Marketplace titles commonly omit pressing country. Missing country is
+    // neutral for Music; an explicitly different country remains a conflict.
+    if (countryMatch.conflict) record('Country', country, false, countryMatch.conflict);
+    else if (countryMatch.matches) confirmedFields.push('Country');
     if (targetFormat) {
       const formatConflict = observedFormat && observedFormat !== targetFormat ? observedFormat : null;
       record('Format', format, observedFormat === targetFormat, formatConflict);

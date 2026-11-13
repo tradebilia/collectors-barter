@@ -89,6 +89,41 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(identity.conflicts).toContain('Pin form differs (lot)');
   });
 
+  it('does not hard-hold a Music match when the candidate title omits Country', () => {
+    const identity = assessComparableCategoryIdentity(
+      {
+        title: 'Guns N Roses Lies',
+        category: 'music',
+        itemDetails: JSON.stringify({ artist: 'Guns N Roses', releaseTitle: 'Lies', country: 'United States' }),
+      },
+      { artist: 'Guns N Roses', releaseTitle: 'Lies', country: 'United States' },
+      'Guns N Roses G N R Lies First Press Graded AMG 5 Unsold Cover',
+      null,
+    );
+
+    expect(identity.status).toBe('direct_confirmed');
+    expect(identity.confirmedFields).toContain('Artist');
+    expect(identity.confirmedFields).toContain('Release title');
+    expect(identity.unconfirmedFields).not.toContain('Country');
+    expect(identity.conflicts).toHaveLength(0);
+  });
+
+  it('still rejects an explicitly different Music Country', () => {
+    const identity = assessComparableCategoryIdentity(
+      {
+        title: 'Guns N Roses Lies',
+        category: 'music',
+        itemDetails: JSON.stringify({ artist: 'Guns N Roses', releaseTitle: 'Lies', country: 'United States' }),
+      },
+      { artist: 'Guns N Roses', releaseTitle: 'Lies', country: 'United States' },
+      'Guns N Roses Lies UK Pressing',
+      null,
+    );
+
+    expect(identity.status).toBe('objective_conflict');
+    expect(identity.conflicts).toContain('Country differs (uk)');
+  });
+
   it('scores exact identity and grade matches above weaker comparables', () => {
     const exact = scoreComparable(target, sale('1996 Topps Kobe Bryant #138 PSA 10', 1200, '2026-09-01'));
     const wrongGrade = scoreComparable(target, sale('1996 Topps Kobe Bryant #138 PSA 9', 450, '2026-09-01'));
