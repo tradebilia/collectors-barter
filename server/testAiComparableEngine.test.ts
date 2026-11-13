@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMarketProfile, deduplicateMarketSales, deterministicTradeComparison, getCategoryEvidenceThresholds, hasDefensibleCurrentSaleValue, normalizeCanonicalSaleUrl, scoreComparable, selectBalancedComparableSales, type MarketProfile, type MarketSale } from './testAiComparableEngine';
+import { assessComparableCategoryIdentity, buildMarketProfile, deduplicateMarketSales, deterministicTradeComparison, getCategoryEvidenceThresholds, hasDefensibleCurrentSaleValue, normalizeCanonicalSaleUrl, scoreComparable, selectBalancedComparableSales, type MarketProfile, type MarketSale } from './testAiComparableEngine';
 import { TEST_AI_VALUE_UNAVAILABLE_MESSAGE } from '../shared/testAiEvidenceNormalization';
 
 const target = {
@@ -13,6 +13,41 @@ const target = {
 const sale = (title: string, price: number, date: string) => ({ title, price, currency: 'USD', date, saleStatus: 'completed' as const, priceBasis: 'sold' as const });
 
 describe('Trade Analyzer 2.0 comparable engine', () => {
+  it('uses the validated title-derived Disney Pin Name witness in final category admission', () => {
+    const identity = assessComparableCategoryIdentity(
+      {
+        title: 'Disney Cinderella & Gus Glitter Portrait Pin',
+        category: 'disney_pins',
+        itemType: 'individual_pin',
+        itemDetails: JSON.stringify({ pinName: 'Disney Cinderella & Gus Glitter Portrait Pin', character: 'Cinderella & Gus', year: '2025' }),
+      },
+      { pinName: 'Disney Cinderella & Gus Glitter Portrait Pin', character: 'Cinderella & Gus', year: '2025' },
+      '2025 Open Edition Disney Princess Glitter Portraits Pin - Cinderella with Gus',
+      null,
+    );
+
+    expect(identity.status).toBe('needs_review');
+    expect(identity.confirmedFields).toContain('Pin name');
+    expect(identity.unconfirmedFields).not.toContain('Pin name');
+  });
+
+  it('does not use title-derived Pin Name evidence for an explicit conflicting title', () => {
+    const identity = assessComparableCategoryIdentity(
+      {
+        title: 'Disney Cinderella & Gus Glitter Portrait Pin',
+        category: 'disney_pins',
+        itemType: 'individual_pin',
+        itemDetails: JSON.stringify({ pinName: 'Disney Cinderella & Gus Glitter Portrait Pin', character: 'Cinderella & Gus' }),
+      },
+      { pinName: 'Disney Cinderella & Gus Glitter Portrait Pin', character: 'Cinderella & Gus' },
+      '2025 Disney Princess Glitter Portraits Pin - Snow White',
+      null,
+    );
+
+    expect(identity.confirmedFields).not.toContain('Pin name');
+    expect(identity.unconfirmedFields).toContain('Pin name');
+  });
+
   it('scores exact identity and grade matches above weaker comparables', () => {
     const exact = scoreComparable(target, sale('1996 Topps Kobe Bryant #138 PSA 10', 1200, '2026-09-01'));
     const wrongGrade = scoreComparable(target, sale('1996 Topps Kobe Bryant #138 PSA 9', 450, '2026-09-01'));

@@ -2386,6 +2386,20 @@ function disneyPinsPinNameTitleValue(targetValue: unknown, targetCharacter: unkn
   if (connector) return `${connector[1].trim()} with ${connector[2].trim()}`;
   return targetTokens.map((token) => token).join(" ");
 }
+
+/**
+ * Return the same validated title-derived Pin Name witness used by the scorer
+ * and comparison table. This is evidence only; it must not populate the
+ * candidate's structured provider metadata field.
+ */
+export function disneyPinsTitleDerivedPinNameEvidence(
+  targetValue: unknown,
+  targetCharacter: unknown,
+  title: string,
+): string | null {
+  return disneyPinsPinNameTitleValue(targetValue, targetCharacter, title);
+}
+
 function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string, targetValue: string, category = "", identityValues: readonly unknown[] = []): string {
   if (category === "music" && /^(?:condition|mediaCondition)$/i.test(key)) {
     const condition = musicTitleMediaCondition(listing, identityValues);

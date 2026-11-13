@@ -11,7 +11,7 @@ import { getVerifiedIdentityApproval, hasVerifiedMercariUndatedSale, transferVer
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 import { signedTransactionLotConflict, transactionIdentity, type TransactionIdentity } from './testAiEconomicIntegrity';
 import { autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility,
-  buildVisualTargetMetadata, type VisualEvidence } from './testAiVisualSourceFilter';
+  buildVisualTargetMetadata, disneyPinsTitleDerivedPinNameEvidence, type VisualEvidence } from './testAiVisualSourceFilter';
 import { randomUUID } from 'node:crypto';
 import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAuditRef,
   readServerNormalizationReport, retainServerNormalizationReport, finalUsePopulation,
@@ -1643,7 +1643,10 @@ export function assessComparableCategoryIdentity(
     const targetForm = pinForm(firstString(details, ['itemForm', 'format', 'pinFormat']) || target.itemType || target.title);
     const candidateForm = pinForm(title);
 
-    record('Pin name', pinName, titleContainsExpectedPhrase(title, pinName));
+    const titleDerivedPinName = firstString(details, ['pinName', 'name'])
+      ? null
+      : disneyPinsTitleDerivedPinNameEvidence(pinName, character, title);
+    record('Pin name', pinName, Boolean(titleDerivedPinName) || titleContainsExpectedPhrase(title, pinName));
     record('Character', character, titleContainsExpectedPhrase(title, character));
     if (number) {
       const pinConflict = observedPinNumber && observedPinNumber !== number ? observedPinNumber : null;
