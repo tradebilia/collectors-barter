@@ -3457,6 +3457,32 @@ export const testAIRouter = router({
               const sourceIdentity = resolveEbaySoldSourceIdentity(item);
               const saleId = sourceIdentity.saleId;
               const sourceUrl = sourceIdentity.url;
+              if (saleId === null && sourceUrl === null) {
+                // A Sold-Comps row without either provider identity cannot be
+                // server-verified later. Do not let it enter ranking, visual
+                // review, or the final valuation-candidate ledger as a
+                // misleading "review required" candidate. Keep only the
+                // diagnostic record for retrieval auditing.
+                result.receipt.normalizationRejected += 1;
+                result.receipt.rejectionCounts.normalization_failure =
+                  (result.receipt.rejectionCounts.normalization_failure ?? 0) + 1;
+                normalizationHeld.push({
+                  ...item,
+                  rawMetadata: { ...item },
+                  sourceId: 'sold_comps',
+                  sourceLabel: 'eBay Sold-Comps',
+                  retrievalQuery: fetchQuery,
+                  evidenceDisposition: 'rejected_objective_conflict',
+                  valuationEligible: false,
+                  retrievalDiagnostic: true,
+                  evidenceReasons: [
+                    'Excluded before matching: eBay Sold-Comps record had no transaction ID or listing URL, so the server could not verify the source record.',
+                  ],
+                  visualReviewStatus: 'not_reviewed',
+                  visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }),
+                });
+                continue;
+              }
               const soldPrice = Number(item.soldPrice ?? item.price);
               const imageUrls = collectEbayImageUrls(item);
               const candidate = normalizeEbayMarketplaceCandidate({ ...item, saleId, url: sourceUrl, soldPrice, imageUrls,
