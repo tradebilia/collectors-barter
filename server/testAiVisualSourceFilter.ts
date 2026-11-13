@@ -7986,13 +7986,12 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
           candidateError = error;
         }
       }
-      if (!text.trim()) return { reviews: [] as VisualSourceReview[], error: candidateError };
-      const primaryPayload = parseAnalyzerResponse(text);
-      const primaryReviews = normalizeSingleCandidateVisualReview(
-        primaryPayload,
-        preparedListings.length,
-        candidate.candidateIndex,
-      );
+      const initialProviderFailure = !text.trim() && Boolean(candidateError);
+      if (!text.trim() && !initialProviderFailure) return { reviews: [] as VisualSourceReview[], error: candidateError };
+      const primaryPayload = text.trim() ? parseAnalyzerResponse(text) : {};
+      const primaryReviews = text.trim()
+        ? normalizeSingleCandidateVisualReview(primaryPayload, preparedListings.length, candidate.candidateIndex)
+        : [];
       if (initialResponseAttempt) {
         initialResponseAttempt.outcome = primaryReviews.length ? "usable_review" : "no_decision";
         Object.assign(initialResponseAttempt, diagnoseVisualResponse({ response: initialResponse, content: text,
@@ -8019,7 +8018,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
         review: primaryReview,
         title: String(candidate.item.title ?? ""),
         targetMetadata: targetMetadata,
-      }) || needsDisneyAdjudication || needsCoinAdjudication;
+      }) || needsDisneyAdjudication || needsCoinAdjudication || initialProviderFailure;
       const needsFocusedGradeEscalation = hasTitleDeclaredGradeVisualRawConflict({
         review: primaryReview,
         title: String(candidate.item.title ?? ""),

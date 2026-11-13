@@ -407,9 +407,10 @@ function normalizedFacts(
   if (facts.price === null) facts.validationErrors.push('provider record is missing a positive realized price');
   if (facts.currency === null) facts.validationErrors.push('provider record is missing a valid three-letter currency');
   const saleDatePolicy = (sale as MarketSale & { saleDatePolicy?: string | null }).saleDatePolicy;
+  const missingSaleDate = sale.date === null || sale.date === undefined;
   if (saleDatePolicy !== undefined && saleDatePolicy !== null) {
     if (adapter.id === 'mercari_sold_comps' && facts.originMarketplace === 'mercari'
-      && saleDatePolicy === MERCARI_UNDATED_SALE_POLICY && sale.date === null) {
+      && saleDatePolicy === MERCARI_UNDATED_SALE_POLICY && missingSaleDate) {
       facts.saleDatePolicy = MERCARI_UNDATED_SALE_POLICY;
     } else facts.validationErrors.push('sale date policy is invalid for this adapter, origin, or non-null date');
   }

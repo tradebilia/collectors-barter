@@ -124,6 +124,15 @@ describe('Mercari signed qualified undated exception: actual canonical-normalize
     expect(result.profile.valuationWarnings.join(' ')).toMatch(/Unknown.*timing is unverified/);
   });
 
+  it('admits an omitted Mercari sale date when the signed transaction identity is present', () => {
+    const result = chain({ date: undefined });
+    expect(result.sealed.validationErrors).toEqual([]);
+    expect(result.normalized.valuationEligible).toBe(true);
+    expect(result.normalized.sale.date).toBeNull();
+    expect(result.normalized.sale.analysisIntake?.sourceAdmission.blockerCodes).not.toContain('INVALID_DATE');
+    expect(result.match.accepted).toBe(true);
+  });
+
   it('uses multiple distinct approved undated sales for primary median without inventing recent-sale proof or changing age-null weights', () => {
     const inputs = [8, 9, 10, 11, 12, 13, 14].map((price, index) => wire(sale({ price,
       saleId: `m10000000000${index + 1}`, url: `https://www.mercari.com/us/item/m10000000000${index + 1}/` })).input);
@@ -256,7 +265,7 @@ describe('Mercari exception fails closed for flags, source-only signing, dates, 
     ['missing transaction', { saleId: null, url: null }], ['fake transaction', { saleId: 'unknown', url: 'https://www.mercari.com/search/' }],
     ['future date', { date: '2027-01-01' }], ['historical date', { date: '2023-01-01' }],
     ['known recent date', { date: '2026-11-01' }], ['malformed date', { date: 'not-a-sale-date' }],
-    ['empty non-null date', { date: '' }], ['missing date instead of explicit null', { date: undefined }], ['claimed recency', { recency: 'recent' }],
+    ['empty non-null date', { date: '' }], ['claimed recency', { recency: 'recent' }],
   ] as const)('does not mint or price %s under the exception', (_label, patch) => {
     const row = sale(patch);
     expect(mint(row)).toBeNull();
