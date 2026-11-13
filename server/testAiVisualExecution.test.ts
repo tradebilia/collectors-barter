@@ -33,7 +33,7 @@ const input = (count = 1): VisualSourceCandidate[] => Array.from({ length: count
   title: "Example collectible", saleId: `sale-${index}`, imageUrl: `https://example.invalid/candidate-${index}.jpg`,
 }));
 const run = (listings = input(), overrides: Partial<Parameters<typeof filterVisualSourceCandidates>[0]> = {}) => filterVisualSourceCandidates({
-  sourceRole: "marketplace", sourceLabel: "Stage 5 isolated source", targetImageUrl: "https://example.invalid/target.jpg",
+  sourceRole: "marketplace", sourceLabel: "Stage 5 isolated source", targetImageUrl: "https://example.invalid/target.jpg", visualProvider: "openai",
   targetMetadata: "title=Example collectible; category=other", listings, ...overrides,
 });
 const rows = (result: Awaited<ReturnType<typeof filterVisualSourceCandidates>>) => [...result.listings, ...(result.contextListings ?? [])];
@@ -62,7 +62,7 @@ const expectPinQueueFixture = () => {
 const expectDisneyRequests = () => {
   expect(model).toHaveBeenCalledTimes(4);
   expect(model.mock.calls.map(([params]) => params.response_format?.type)).toEqual(["json_schema", "json_schema", "json_object", "json_object"]);
-  for (const [params] of model.mock.calls) expect(params.model).toBe("gpt-5-mini");
+  for (const [params] of model.mock.calls) expect(params.model).toBe("gpt-6-luna");
   expect(JSON.stringify(model.mock.calls[0][0].messages)).toContain("CANDIDATE 0: title=Mickey Mouse Pin");
   for (const call of model.mock.calls.slice(1, 3)) {
     expect(JSON.stringify(call[0].messages)).toContain("INDEPENDENT DISNEY PINS IDENTITY ADJUDICATION");
@@ -71,6 +71,14 @@ const expectDisneyRequests = () => {
   expect(JSON.stringify(model.mock.calls[3][0].messages)).toContain("THIRD CONFIRMATION ATTEMPT");
   expect(JSON.stringify(model.mock.calls[3][0].messages)).toContain("CANDIDATE 0 INDEPENDENT HIGH-RESOLUTION IMAGE");
 };
+
+it("uses the Forge-compatible object response format when no visual provider is selected", async () => {
+  model.mockResolvedValue(response());
+  const result = await run([pinCandidate()], { visualProvider: undefined, targetMetadata: pinMetadata });
+  expect(result.reviews).toHaveLength(1);
+  expect(model).toHaveBeenCalledTimes(1);
+  expect(model.mock.calls[0]?.[0]).toMatchObject({ model: "gpt-5-mini", response_format: { type: "json_object" } });
+});
 
 // Wait for the real invokeVisualReview timer to abort, then reject the explicit
 // provider mock. Merely putting "timeout" in an Error message is not a timeout.

@@ -1330,9 +1330,24 @@ export function normalizeSingleCandidateVisualReview(
   listingCount: number,
   expectedCandidateIndex: number,
 ): VisualSourceReview[] {
-  const rawRows = Array.isArray((payload as { reviews?: unknown })?.reviews)
-    ? (payload as { reviews: unknown[] }).reviews
-    : [];
+  const payloadRecord = payload && typeof payload === "object" && !Array.isArray(payload)
+    ? payload as Record<string, unknown>
+    : null;
+  const wrappedRows = Array.isArray(payloadRecord?.reviews)
+    ? payloadRecord.reviews
+    : null;
+  // The json_object fallback is allowed to return the one review directly
+  // instead of wrapping it in { reviews: [...] }. Accept only a recognizable
+  // review object; all other shapes remain rejected and fail closed.
+  const singleReview = wrappedRows
+    ? null
+    : payloadRecord
+      && typeof payloadRecord.verdict === "string"
+      && typeof payloadRecord.confidence === "string"
+      && typeof payloadRecord.rationale === "string"
+      ? payloadRecord
+      : null;
+  const rawRows = wrappedRows ?? (singleReview ? [singleReview] : []);
   // Do not let a malformed, stale, or out-of-range model index discard an
   // otherwise valid review. The request itself is the authoritative binding.
   const reviews = normalizeVisualSourceReviews(
@@ -7723,7 +7738,11 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       type: "json_schema",
       json_schema: {
         name: "visual_source_filter",
-        strict: true,
+        // OpenAI accepts this schema in non-strict mode. The Forge endpoint
+        // does not reliably support response_format=json_schema, so Forge
+        // uses the json_object fallback below instead of receiving a request
+        // that is rejected with HTTP 400.
+        strict: false,
         schema: {
           type: "object",
           properties: {
@@ -7803,6 +7822,9 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
     const markUnreachedQueue = (reasonCode: VisualExecutionReasonCode) => reviewQueue.forEach((candidate) => {
       if (!receiptAt(candidate.candidateIndex).attempts.length) selectAt(candidate.candidateIndex, reasonCode);
     });
+    const responseFormats = args.visualProvider === "openai"
+      ? [strictResponseFormat, { type: "json_object" as const }]
+      : [{ type: "json_object" as const }];
     const reviews: VisualSourceReview[] = [];
     let completedBatches = 0;
     let reviewedCandidateCount = 0;
@@ -7841,7 +7863,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       let candidateError: unknown;
       let initialResponseAttempt: VisualExecutionAttempt | undefined;
       let initialResponse: unknown;
-      for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
+      for (const responseFormat of responseFormats) {
         const attempt = beginAttempt(candidate.candidateIndex, "initial", responseFormat.type);
         try {
           const response = await invokeVisualReview({ provider: args.visualProvider, model: visualReviewModel(args.visualProvider, "initial"), messages: [{ role: "user", content }], maxCompletionTokens: 3000, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
@@ -7985,7 +8007,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       let galleryReviews: VisualSourceReview[] = [];
       let galleryError: unknown;
       let galleryTimedOut = false;
-      for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
+      for (const responseFormat of responseFormats) {
         const attempt = beginAttempt(candidate.candidateIndex, "high_resolution_retry", responseFormat.type);
         try {
           const response = await invokeVisualReview({ provider: args.visualProvider, model: visualReviewModel(args.visualProvider, "retry", needsFocusedGradeEscalation), messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 3000, reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);

@@ -2773,6 +2773,29 @@ describe("visual source filter", () => {
     expect(result.listings[13]).toMatchObject({ visualReviewStatus: "match" });
   });
 
+  it("accepts a direct single-review fallback response and binds it to the dispatched candidate", () => {
+    const reviews = normalizeSingleCandidateVisualReview(
+      {
+        candidateIndex: 999,
+        verdict: "match",
+        confidence: "high",
+        rationale: "The target and candidate show the same visible pin identity.",
+        visualDifferences: [],
+        visualEvidence: {
+          characterMatches: true,
+          artworkMatches: true,
+          silhouetteMatches: true,
+          identityMatches: true,
+        },
+      },
+      4,
+      2,
+    );
+
+    expect(reviews).toHaveLength(1);
+    expect(reviews[0]).toMatchObject({ candidateIndex: 2, verdict: "match", confidence: "high" });
+  });
+
   it("uses original listing indexes after candidates without images are removed from the vision queue", () => {
     const listings = [
       { title: "No provider image" },
