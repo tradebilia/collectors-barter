@@ -475,6 +475,12 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("Auction activity:");
     expect(pageSource).toContain("unique bidders");
   });
+
+  it("counts rough visual matches in eBay Active current-market context without changing sold admission", () => {
+    expect(pageSource).toContain("listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match'");
+    expect(pageSource).toContain("rough matches remain asking-price context only");
+  });
+
   it("keeps adaptive visual review bounded and preserves the remaining candidates", () => {
     expect(visualSource).toContain("VISUAL_REVIEW_MAX_CANDIDATES");
     expect(visualSource).toContain("prioritizeVisualSourceCandidates");
