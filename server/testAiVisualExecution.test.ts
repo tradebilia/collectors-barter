@@ -57,7 +57,7 @@ const pinEvidence = { characterMatches: true, artworkMatches: true, silhouetteMa
 const expectPinQueueFixture = () => {
   const score = disneyPinsIndividualVisualScore(pinCandidate(), pinMetadata);
   expect(score).toMatchObject({ score: 40, matched: ["pinName", "character"] });
-  expect(disneyPinsVisualCap(score.score)).toBe(2);
+  expect(disneyPinsVisualCap(score.score)).toBe(4);
 };
 const expectDisneyRequests = () => {
   expect(model).toHaveBeenCalledTimes(4);

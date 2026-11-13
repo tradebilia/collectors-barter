@@ -6066,7 +6066,7 @@ export function disneyPinsSetVisualScore(listing: VisualSourceCandidate, targetM
   add('missingPins',5,disneyPinsMissingPinsMatches(details.missingPins,listing));
   return {score,matched,unknown,awards};
 }
-export function disneyPinsVisualCap(score: number): number { if(score>=90) return 8; if(score>=80) return 6; if(score>=70) return 4; if(score>=40) return 2; return 0; }
+export function disneyPinsVisualCap(score: number): number { if(score>=90) return 8; if(score>=80) return 6; if(score>=70) return 4; if(score>=40) return 4; return 0; }
 
 const MUSIC_SCORE_FIELDS = [
   ['artist', 20],

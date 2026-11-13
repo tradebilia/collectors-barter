@@ -4163,8 +4163,9 @@ describe("visual source filter", () => {
     expect(disneyPinsVisualCap(95)).toBe(8);
     expect(disneyPinsVisualCap(85)).toBe(6);
     expect(disneyPinsVisualCap(75)).toBe(4);
-    expect(disneyPinsVisualCap(65)).toBe(2);
-    expect(disneyPinsVisualCap(40)).toBe(2);
+    expect(disneyPinsVisualCap(69)).toBe(4);
+    expect(disneyPinsVisualCap(65)).toBe(4);
+    expect(disneyPinsVisualCap(40)).toBe(4);
     expect(disneyPinsVisualCap(39)).toBe(0);
     const lotTarget = buildVisualTargetMetadata({ title: "Mixed Disney Pin Lot", category: "disney_pins", itemType: "collection_lot", fullItemDetails: { setName: "Mixed", format: "collection_lot" } });
     expect(disneyPinsSetVisualScore({ title: "Mixed Disney Pin Lot" }, lotTarget).score).toBe(0);
