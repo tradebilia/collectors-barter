@@ -4127,20 +4127,20 @@ describe("visual source filter", () => {
       expect(score.matched).toContain("character");
     }
   });
-  it("does not award Pin Name points when Cinderella is present but the full pin name is not parsed", () => {
+  it("parses Cinderella with Gus as the Pin Name and awards its points", () => {
     const target = buildVisualTargetMetadata({
       title: "Disney Cinderella & Gus Glitter Portrait Pin",
       category: "disney_pins",
       itemType: "single_pin",
       fullItemDetails: { pinName: "Disney Cinderella & Gus Glitter Portrait Pin", character: "Cinderella", year: "2025" },
     });
-    const listing = { title: "Disney PALM - Cinderella, Gus, Jay - Mirror - JUMBO LE 200 Glitter Pin", itemDetails: JSON.stringify({ year: "2025" }) };
+    const listing = { title: "Disney Princess Portraits Series - Cinderella with Gus - Disney Pin 178657", itemDetails: JSON.stringify({ year: "2025" }) };
     const score = disneyPinsIndividualVisualScore(listing, target);
-    expect(score.score).toBe(25);
-    expect(score.matched).toEqual(["character", "year"]);
-    expect(score.awards.some((award) => award.field === "pinName")).toBe(false);
+    expect(score.score).toBe(35);
+    expect(score.matched).toEqual(["pinName", "year"]);
+    expect(score.awards.find((award) => award.field === "pinName")).toMatchObject({ awardedPoints: 25, source: "title" });
     const pinNameRow = buildMetadataFieldComparisons(target, listing).find((row) => row.fieldKey === "pinName");
-    expect(pinNameRow).toMatchObject({ titleDerivedValue: "Unknown", titleDerivedStatus: "unknown", rankingContribution: { awardedPoints: 0, matched: false } });
+    expect(pinNameRow).toMatchObject({ titleDerivedValue: "Cinderella with Gus (detected in title)", titleDerivedStatus: "match" });
   });
 
   it("scores Disney Designer Princess Collection title variants before visual review", () => {

@@ -2336,16 +2336,16 @@ function titleGradeEvidence(title: string, category = ""): { grader: string; gra
   const grade = `${comparable.designation ?? ""}${comparable.numeric}${comparable.plus ? "+" : ""}${comparable.qualifiers.length ? ` ${comparable.qualifiers.join(" ")}` : ""}${comparable.qualifierUncertain ? " (unknown)" : ""}`;
   return { grader: observed.grader ?? "", grade };
 }
-const DISNEY_PINS_CHARACTER_STOP_WORDS = /^(?:disney|parks|easter|christmas|halloween|holiday|limited|exclusive|open|edition|single|trading|pin|pins|set|collection|series|black|white|red|blue|green|yellow|pink|purple|orange|\d{4})$/i;
+const DISNEY_PINS_CHARACTER_STOP_WORDS = /^(?:disney|parks|easter|christmas|halloween|holiday|limited|exclusive|open|edition|single|trading|pin|pins|set|collection|series|portrait|portraits|black|white|red|blue|green|yellow|pink|purple|orange|\d{4})$/i;
 /** Extract a character pair from the candidate title without borrowing target metadata. */
 export function disneyPinsCharactersFromTitle(title: string): string | null {
   const text = String(title ?? "").replace(/[–—]/g, "-").replace(/\s+/g, " ").trim();
   if (!text) return null;
-  const pair = /([^&,]{1,48})\s*(?:&|and)\s*([^&,]{1,48})/gi;
+  const pair = /([^&,]{1,48})\s*(?:&|and|with)\s*([^&,]{1,48})/gi;
   const matches = [...text.matchAll(pair)];
   for (let index = matches.length - 1; index >= 0; index -= 1) {
-    const leftTokens = (matches[index]?.[1] ?? "").replace(/[^A-Za-z0-9'’ -]/g, " ").trim().split(/\s+/).filter(Boolean);
-    const rightTokens = (matches[index]?.[2] ?? "").replace(/[^A-Za-z0-9'’ -]/g, " ").trim().split(/\s+/).filter(Boolean);
+    const leftTokens = (matches[index]?.[1] ?? "").replace(/[^A-Za-z0-9'’ -]/g, " ").trim().split(/\s+/).filter((token) => /[A-Za-z0-9]/.test(token));
+    const rightTokens = (matches[index]?.[2] ?? "").replace(/[^A-Za-z0-9'’ -]/g, " ").trim().split(/\s+/).filter((token) => /[A-Za-z0-9]/.test(token));
     while (leftTokens.length && DISNEY_PINS_CHARACTER_STOP_WORDS.test(leftTokens[0])) leftTokens.shift();
     const left = leftTokens.slice(-3).filter((token) => !DISNEY_PINS_CHARACTER_STOP_WORDS.test(token)).join(" ").trim();
     const rightStop = rightTokens.findIndex((token) => DISNEY_PINS_CHARACTER_STOP_WORDS.test(token));
@@ -2354,6 +2354,37 @@ export function disneyPinsCharactersFromTitle(title: string): string | null {
     return `${left} & ${right}`;
   }
   return null;
+}
+const DISNEY_PINS_PIN_NAME_STOP_WORDS = new Set([
+  "disney", "parks", "princess", "princesses", "series", "trading", "pin", "pins", "single", "limited", "edition",
+  "exclusive", "open", "collection", "set", "mirror", "jumbo", "glitter", "le", "dangle", "fantasy", "wdw", "dlr",
+]);
+function disneyPinsPinNameTokens(value: unknown): string[] {
+  return disneyPinsScoreText(value)
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/gi, " ")
+    .split(/\s+/)
+    .map((token) => token.toLowerCase())
+    .filter((token) => token.length >= 2 && !DISNEY_PINS_PIN_NAME_STOP_WORDS.has(token) && !/^\d+$/.test(token));
+}
+function disneyPinsPinNameTitleValue(targetValue: unknown, targetCharacter: unknown, title: string): string | null {
+  const cleanTitle = String(title ?? "").replace(/[–—]/g, "-").replace(/\s+/g, " ").trim();
+  if (!cleanTitle) return null;
+  const targetTokens = disneyPinsPinNameTokens(targetValue);
+  if (!targetTokens.length) return null;
+  const titleTokens = new Set(disneyPinsPinNameTokens(cleanTitle));
+  const declaredCharacters = disneyPinsCharactersFromTitle(cleanTitle);
+  if (declaredCharacters) {
+    const targetNameTokens = new Set(targetTokens);
+    const targetCharacterTokens = disneyPinsMeaningfulTokens(targetCharacter);
+    const declaredCharacterTokens = disneyPinsMeaningfulTokens(declaredCharacters);
+    if (targetCharacterTokens.length && !targetCharacterTokens.every((token) => declaredCharacterTokens.includes(token))) return null;
+    if (declaredCharacterTokens.some((token) => !targetNameTokens.has(token))) return null;
+  } else if (!targetTokens.every((token) => titleTokens.has(token))) return null;
+  const connector = cleanTitle.match(/\b([A-Za-z][A-Za-z'’ -]{1,40}?)\s+(?:with|and)\s+([A-Za-z][A-Za-z'’ -]{1,40}?)(?=\s*(?:[-|•]|$))/i);
+  if (declaredCharacters) return declaredCharacters.replace(/\s*&\s*/g, " with ");
+  if (connector) return `${connector[1].trim()} with ${connector[2].trim()}`;
+  return targetTokens.map((token) => token).join(" ");
 }
 function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string, targetValue: string, category = "", identityValues: readonly unknown[] = []): string {
   if (category === "music" && /^(?:condition|mediaCondition)$/i.test(key)) {
@@ -2426,10 +2457,14 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 						return type ? `${type} (detected in title)` : "Unknown";
 					}
 					}
-					if (category === "disney_pins" && /^(?:character|characterName|characters)$/i.test(key)) {
-						const characters = disneyPinsCharactersFromTitle(title);
-						if (characters) return `${characters} (detected in title)`;
-					}
+			if (category === "disney_pins" && /^(?:character|characterName|characters)$/i.test(key)) {
+							const characters = disneyPinsCharactersFromTitle(title);
+							if (characters) return `${characters} (detected in title)`;
+						}
+						if (category === "disney_pins" && /^(?:pinName|name)$/i.test(key)) {
+							const pinName = disneyPinsPinNameTitleValue(targetValue, identityValues[0], title);
+							if (pinName) return `${pinName} (detected in title)`;
+						}
 					if (category === "original_art") {
 					if (/^(?:artistName|artist|creator|artworkTitleCharacter|artworkTitle|character|artType|comicTitle|coverSketchComicTitle|issueNumber|issueNo|number|publisher)$/i.test(key)) {
 					if (/^(?:issueNumber|issueNo|number)$/i.test(key)) {
@@ -2723,7 +2758,11 @@ function normalizeModelPotentialPoints(rows: MetadataFieldComparison[], category
   return result;
 }
 function comparisonStatus(targetValue: string, candidateValue: string, category = "", key = ""): MetadataFieldComparison["status"] {
-	if (!meaningfulMetadataText(targetValue) || !meaningfulMetadataText(candidateValue)) return "unknown";
+		if (!meaningfulMetadataText(targetValue) || !meaningfulMetadataText(candidateValue)) return "unknown";
+		if (category === "disney_pins" && /^(?:pinName|name)$/i.test(key)) {
+			const candidate = candidateValue.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, "");
+			return disneyPinsPinNameTitleValue(targetValue, undefined, candidate) ? "match" : "different";
+		}
 	if (category === "autographs" && /^authenticationType$/i.test(key)) {
 		const normalizedType = (value: string) => {
 			const bare = value.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, "");
@@ -5955,6 +5994,9 @@ function disneyPinsPinNameMatches(targetValue: unknown, listing: VisualSourceCan
   // Pin Name is its own identity field. Character evidence cannot manufacture
   // the separate 25-point Pin Name award when the candidate name is unknown.
   // The Character scorer below may still award its independent 15 points.
+  const title = canonicalCandidateTitle(listing);
+  const parsedTitleName = disneyPinsPinNameTitleValue(targetValue, undefined, title);
+  if (parsedTitleName) return scoreMatch(true, { value: parsedTitleName, source: 'title', field: 'pinName' });
   return disneyPinsValueMatches(targetValue, listing, ["pinName", "name"]);
 }
 function disneyPinsBooleanMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], positive: RegExp, negative: RegExp): ScorePredicate {
