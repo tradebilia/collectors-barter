@@ -255,6 +255,13 @@ describe("Music identity and diagnostic boundaries", () => {
     expect(buildDeclaredIdentityReviews([listing], metadata)).toEqual([]);
   });
 
+  it("does not hard-exclude the eBay Active expanded Geffen label value", () => {
+    const metadata = target("good", { recordLabel: "Geffen" });
+    const listing = candidate("Nevermind by Nirvana (Cassette, 2006)", { recordLabel: "Geffen Records, Gef" });
+    expect(findMaterialMetadataConflicts(metadata, listing)).toEqual([]);
+    expect(buildDeclaredIdentityReviews([listing], metadata)).toEqual([]);
+  });
+
   it("keeps an unrelated Music record label as a real identity conflict", () => {
     const metadata = target("good", { recordLabel: "Geffen Records" });
     const listing = candidate("Nirvana Nevermind Cassette Columbia", { recordLabel: "Columbia" });

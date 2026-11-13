@@ -76,6 +76,15 @@ function musicFormatComparable(value: unknown): string {
   return normalized;
 }
 
+function musicRecordLabelComparable(value: unknown): string {
+  const normalized = key(value);
+  // eBay Active can return an expanded label string such as
+  // "Geffen Records, Gef". The trailing provider abbreviation is not a
+  // second label; it is duplicate marketplace metadata for Geffen.
+  if (/\b(?:dgc|dgcc|geffen(?:\s+records?)?)\b/i.test(normalized)) return 'geffenrecords';
+  return compact(value);
+}
+
 /** Compare exact normalized Autographs authentication-company aliases. */
 export function autographAuthenticationCompaniesEquivalent(left: unknown, right: unknown): boolean {
   return autographAuthenticatorsEquivalent(left, right);
@@ -454,6 +463,9 @@ export function findMaterialMetadataConflicts(
       && directCandidateValue && autographAuthenticationCompaniesEquivalent(targetValue, directCandidateValue)) continue;
     if (category === 'music' && field === 'format'
       && musicFormatComparable(targetValue) && musicFormatComparable(targetValue) === musicFormatComparable(directCandidateValue)) continue;
+    if (category === 'music' && field === 'recordLabel'
+      && musicRecordLabelComparable(targetValue) === 'geffenrecords'
+      && musicRecordLabelComparable(directCandidateValue) === 'geffenrecords') continue;
     if (directCandidateValue && fieldComparable(field, directCandidateValue) !== fieldComparable(field, targetValue)) {
       const videoGameSpecializedStateField = category === 'video_games'
         && ['workingCondition', 'originalPackaging', 'originalBoxIncluded'].includes(field);
