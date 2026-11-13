@@ -628,6 +628,52 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(limitedEdition.reasons).not.toContain('explicit sale variant or release detail differs from the target');
   });
 
+  it('uses the target limitedEdition field in final Disney Pins variant admission', () => {
+    const pinTarget = {
+      title: 'Disney Designer Ultimate Princess Collection Aurora',
+      category: 'disney_pins',
+      itemType: 'single_pin',
+      itemDetails: JSON.stringify({
+        pinName: 'Disney Designer Ultimate Princess Collection Aurora',
+        character: 'Aurora',
+        series: 'Disney Designer Ultimate Princess Collection',
+        limitedEdition: 'yes',
+      }),
+    };
+    const result = scoreComparable(pinTarget, sale(
+      'Disney Designer Ultimate Princess Collection Aurora Hinged Pin Limited Edition',
+      30,
+      '2026-09-15',
+    ));
+
+    expect(result.reasons).toContain('Disney Pins edition status matches');
+    expect(result.reasons).not.toContain('sale declares a variant or release detail that the target does not state');
+    expect(result.identityBlockerCodes).not.toContain('VARIANT_REVIEW_REQUIRED');
+  });
+
+  it('keeps explicit Disney Pins edition conflicts and missing edition evidence fail-closed', () => {
+    const limitedTarget = {
+      title: 'Disney Pin Aurora',
+      category: 'disney_pins',
+      itemType: 'single_pin',
+      itemDetails: JSON.stringify({ pinName: 'Disney Pin Aurora', character: 'Aurora', limitedEdition: 'yes' }),
+    };
+    const openTarget = {
+      ...limitedTarget,
+      itemDetails: JSON.stringify({ pinName: 'Disney Pin Aurora', character: 'Aurora', openEdition: 'yes' }),
+    };
+    const openSale = scoreComparable(limitedTarget, sale('Disney Pin Aurora Open Edition', 20, '2026-09-15'));
+    const limitedSaleAgainstOpen = scoreComparable(openTarget, sale('Disney Pin Aurora Limited Edition', 20, '2026-09-15'));
+    const unknownTarget = scoreComparable(
+      { ...limitedTarget, itemDetails: JSON.stringify({ pinName: 'Disney Pin Aurora', character: 'Aurora' }) },
+      sale('Disney Pin Aurora Limited Edition', 20, '2026-09-15'),
+    );
+
+    expect(openSale.identityBlockerCodes).toContain('VARIANT_CONFLICT');
+    expect(limitedSaleAgainstOpen.identityBlockerCodes).toContain('VARIANT_CONFLICT');
+    expect(unknownTarget.identityBlockerCodes).toContain('VARIANT_REVIEW_REQUIRED');
+  });
+
   it('ignores stale grading and raw-versus-graded signals for Disney Pins', () => {
     const pinTarget = {
       title: 'Disney Pin Mickey Mouse D23 2020',

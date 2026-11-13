@@ -1158,6 +1158,21 @@ function pinEdition(value: string | null | undefined, size?: string | null): Pin
   return null;
 }
 
+function disneyPinsTargetEdition(
+  limitedEdition: string | null | undefined,
+  openEdition: string | null | undefined,
+  editionSize: string | null | undefined,
+): PinEdition | null {
+  const open = pinEdition(openEdition);
+  if (open) return open;
+  const limited = pinEdition(limitedEdition, editionSize);
+  if (limited) return limited;
+  if (/^(?:yes|true)$/i.test(normalizedIdentityText(limitedEdition))) {
+    return { kind: 'limited', size: String(editionSize ?? '').match(/\d{1,6}/)?.[0] ?? null };
+  }
+  return null;
+}
+
 function pinEditionInTitle(title: string): PinEdition | null {
   return pinEdition(title);
 }
@@ -1629,10 +1644,11 @@ export function assessComparableCategoryIdentity(
     const series = firstString(details, ['series']);
     const event = firstString(details, ['pinTradingEvent', 'event']);
     const limitedEdition = firstString(details, ['limitedEdition', 'edition']);
+    const openEdition = firstString(details, ['openEdition']);
     const editionSize = firstString(details, ['editionSize']);
     const number = normalizeComparableNumber(pinNumber);
     const observedPinNumber = extractComparableNumber(title);
-    const targetEdition = pinEdition(limitedEdition, editionSize);
+    const targetEdition = disneyPinsTargetEdition(limitedEdition, openEdition, editionSize);
     const observedEdition = pinEditionInTitle(title);
     const expectedEvent = event || series || '';
     const targetEvent = disneyContextInTitle(expectedEvent);
@@ -1960,10 +1976,37 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     ])].join(', ')}`);
   }
 
-  const targetVariant = firstString(details, ['variant', 'parallel', 'edition', 'pressing', 'releaseType', 'language']);
+  const targetDisneyEdition = isDisneyPins
+    ? disneyPinsTargetEdition(
+      firstString(details, ['limitedEdition', 'edition']),
+      firstString(details, ['openEdition']),
+      firstString(details, ['editionSize']),
+    )
+    : null;
+  const observedDisneyEdition = isDisneyPins ? pinEditionInTitle(title) : null;
+  const targetVariant = isDisneyPins ? null : firstString(details, ['variant', 'parallel', 'edition', 'pressing', 'releaseType', 'language']);
   let materialVariantConflict = false;
   let materialVariantReview = false;
-  if (targetVariant && title.toLowerCase().includes(targetVariant.toLowerCase())) {
+  if (isDisneyPins && targetDisneyEdition && observedDisneyEdition) {
+    const editionMatches = observedDisneyEdition.kind === targetDisneyEdition.kind
+      && (!targetDisneyEdition.size || observedDisneyEdition.size === targetDisneyEdition.size);
+    const editionConflicts = observedDisneyEdition.kind !== targetDisneyEdition.kind
+      || Boolean(targetDisneyEdition.size && observedDisneyEdition.size && observedDisneyEdition.size !== targetDisneyEdition.size);
+    if (editionMatches) {
+      score += 10;
+      reasons.push('Disney Pins edition status matches');
+    } else if (editionConflicts) {
+      score -= 18;
+      materialVariantConflict = true;
+      reasons.push('Disney Pins edition status differs from the target');
+    } else {
+      materialVariantReview = true;
+      reasons.push('Disney Pins edition status is not stated in the comparable title');
+    }
+  } else if (isDisneyPins && observedDisneyEdition) {
+    materialVariantReview = true;
+    reasons.push('sale declares a Disney Pins edition status that the target does not state');
+  } else if (targetVariant && title.toLowerCase().includes(targetVariant.toLowerCase())) {
     score += 10;
     reasons.push('variant or release detail matches');
   } else if (targetVariant && ['parallel', 'refractor', 'variant', 'pressing', 'first pressing', 'limited edition', 'open edition'].some((term) => title.toLowerCase().includes(term))) {
