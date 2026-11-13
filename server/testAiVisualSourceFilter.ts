@@ -300,6 +300,18 @@ function autographSignerFromTitle(title: string, targetSigner = ""): string {
     const followingToken = normalizedTitle.startsWith(`${normalizedTarget}_`)
       ? normalizedTitle.slice(normalizedTarget.length + 1).split("_")[0].replace(/\.$/, "") : "";
     if (distinctSuffixes.includes(followingToken)) return "";
+    // Promotional wording may precede the signer: "Unmatched and Spectacular
+    // Babe Ruth Single Signed Baseball" still names Babe Ruth as the signer.
+    // Require the complete target name at token boundaries immediately before
+    // signing wording; a famous subject merely mentioned elsewhere is not enough.
+    const escapedTarget = normalizedTarget.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const signingPosition = normalizedTitle.match(new RegExp(
+      `(?:^|_)${escapedTarget}_(?:single_|hand_)?(?:signed|autographed)(?:_|$)`,
+    ));
+    if (signingPosition) {
+      const preceding = normalizedTitle.slice(0, signingPosition.index ?? 0);
+      if (!/(?:^|_)(?:not|no|without)(?:_(?:a|an|the|by))?$/.test(preceding)) return normalizedTarget;
+    }
     if (normalizedTitle === normalizedTarget || normalizedTitle.startsWith(`${normalizedTarget}_`)) return normalizedTarget;
   }
   return "";
