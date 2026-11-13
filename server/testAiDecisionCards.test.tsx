@@ -79,6 +79,21 @@ describe('Test AI candidate decision cards (real component)', () => {
     expect(decision.reason).toContain('metadata score was 60/100, below the required minimum of 70/100');
     expect(decision.reason).not.toContain('final valuation analysis');
   });
+  it('shows the exact field and values for an outer metadata hard exclusion', () => {
+    const decision = candidateFinalDecision({
+      title: 'Nevermind by Nirvana (Cassette, 2016)',
+      preVisionExclusionReasons: [
+        'Metadata conflict: recordLabel differs in explicit provider metadata (target recordLabel=Geffen; candidate=Geffen Records, Geffen). Candidate retained for manual review.',
+      ],
+      visualExecution: { version: 1, state: 'not_dispatched', reasonCode: 'outer_metadata_hold', hardExclusion: true,
+        selectedForReview: false, identity: { origin: 'none', result: 'not_established' }, attempts: [] },
+    });
+    expect(decision.label).toBe('NOT USED — HARD EXCLUSION');
+    expect(decision.reason).toContain('Record label differs');
+    expect(decision.reason).toContain('target “Geffen”');
+    expect(decision.reason).toContain('candidate “Geffen Records, Geffen”');
+    expect(decision.reason).not.toBe('Outer metadata hold');
+  });
   it('puts the below-threshold score ahead of downstream provenance blockers', () => {
     const decision = candidateFinalDecision({
       title: 'Nirvana Nevermind Cassette Tape', metadataMatchScore: 49,

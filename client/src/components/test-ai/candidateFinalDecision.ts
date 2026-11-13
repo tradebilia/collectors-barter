@@ -294,6 +294,23 @@ function lowScoreReviewDecision(row: CandidateDisplayRow): CandidateFinalDecisio
 function evidenceReasons(row: CandidateDisplayRow): string {
   return Array.isArray(row.evidenceReasons) ? row.evidenceReasons.filter((reason: unknown) => typeof reason === 'string' && reason.trim()).join('; ') : '';
 }
+function hardExclusionReason(row: CandidateDisplayRow): string {
+  const raw = [
+    ...(Array.isArray(row.preVisionExclusionReasons) ? row.preVisionExclusionReasons : []),
+    ...(Array.isArray(row.evidenceReasons) ? row.evidenceReasons : []),
+    row.visualReviewRationale,
+  ].find((reason: unknown) => typeof reason === 'string' && reason.trim()
+    && !/^(?:outer_metadata_hold|outer identity filter|excluded before visual review)/i.test(reason.trim()));
+  if (typeof raw !== 'string') return evidenceReasons(row) || row.visualReviewRationale || '';
+  const conflict = raw.match(/Metadata conflict:\s*([^()]+?)\s*\((?:target\s+)?([^=]+)=([^;]+);\s*candidate=([^)]*)\)/i);
+  if (conflict) {
+    const fieldKey = conflict[2].trim();
+    const field = ({ recordLabel: 'Record label' } as Record<string, string>)[fieldKey]
+      ?? fieldKey.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').replace(/^./, (letter) => letter.toUpperCase()).trim();
+    return `Hard exclusion: ${field} differs — target “${conflict[3].trim()}”; candidate “${conflict[4].trim()}”.`;
+  }
+  return `Hard exclusion: ${raw.trim()}`;
+}
 function explicitContextReason(row: CandidateDisplayRow): string | undefined {
   // A reconciled final source-admission report supersedes browser economics and
   // source-role diagnostics. Do not append a second, potentially stale reason.
@@ -377,7 +394,7 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
     reason: 'Not submitted: the Item A audit transport limit is 120 retained candidates. No final decision was made for this row.',
     code: 'AUDIT_TRANSPORT_CAP', className: amber };
   if (isHardCandidateDisplayException(row)) return { label: 'NOT USED — HARD EXCLUSION',
-    reason: evidence || execution.reason || 'Hard exclusion recorded; supporting reason was not recorded.', code: 'HARD_EXCLUDED', className: red };
+    reason: hardExclusionReason(row) || evidence || execution.reason || 'Hard exclusion recorded; supporting reason was not recorded.', code: 'HARD_EXCLUDED', className: red };
   if (row.evidenceDisposition === 'pre_vision_score_excluded') {
     const rationale = String(row.visualReviewRationale ?? '');
     const threshold = rationale.match(/below (?:the )?(?:visual-review )?minimum(?: of)?\s*\(?\s*(\d+)/i)?.[1]
