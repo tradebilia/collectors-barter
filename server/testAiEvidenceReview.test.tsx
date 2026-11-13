@@ -72,7 +72,7 @@ describe('Evidence Review is the complete candidate decision view', () => {
       { sourceId: 'ebay_active', price: 19.99, currency: 'USD', visualReviewStatus: 'match', visualExecution: { ...receipt, identity: { origin: 'visual', result: 'match', reviewVerdict: 'match' } } },
       { sourceId: 'ebay_active', price: 24.99, currency: 'USD', visualReviewStatus: 'mismatch' },
       { sourceId: 'sold_comps', price: 999, currency: 'USD' },
-    ])).toEqual({ count: 1, low: 19.99, high: 19.99, average: 19.99 });
+    ])).toEqual({ count: 2, low: 19.99, high: 24.99, average: 22.49 });
   });
   it('uses the card price fallbacks when an active listing supplies only currentPrice', () => {
     expect(summarizeCurrentMarketPrices([
@@ -83,16 +83,22 @@ describe('Evidence Review is the complete candidate decision view', () => {
     expect(summarizeCurrentMarketPrices([
       { sourceId: 'ebay_active', price: 200, currency: 'USD', saleStatus: 'active', evidenceDisposition: 'valuation_eligible', visualReviewStatus: 'not_reviewed' },
       { sourceId: 'ebay_active', price: 999, currency: 'USD', saleStatus: 'active', evidenceDisposition: 'valuation_eligible', visualReviewStatus: 'mismatch' },
-    ])).toEqual({ count: 1, low: 200, high: 200, average: 200 });
+    ])).toEqual({ count: 2, low: 200, high: 999, average: 599.5 });
+  });
+  it('counts every active listing that the final card labels as current-market context, including rough matches', () => {
+    expect(summarizeCurrentMarketPrices([
+      { sourceId: 'ebay_active', price: 19.99, currency: 'USD', saleStatus: 'active', visualReviewStatus: 'match', visualExecution: { ...receipt, identity: { origin: 'visual', result: 'match', reviewVerdict: 'match' } } },
+      { sourceId: 'ebay_active', price: 24.99, currency: 'USD', saleStatus: 'active', visualReviewStatus: 'rough_match', visualExecution: { ...receipt, identity: { origin: 'visual', result: 'rough_match', reviewVerdict: 'rough_match' } } },
+    ])).toEqual({ count: 2, low: 19.99, high: 24.99, average: 22.49 });
   });
   it('renders the current-market count and asking-price summary for active listings', () => {
     const html = review([{ id: 'ebay_active', label: 'eBay Active', packet: { listings: [{ title: 'Active listing', price: 19.99, currency: 'USD', saleStatus: 'active', visualReviewStatus: 'match', visualExecution: { ...receipt, identity: { origin: 'visual', result: 'match', reviewVerdict: 'match' } } }, { title: 'Unmatched active listing', price: 24.99, currency: 'USD', saleStatus: 'active', visualReviewStatus: 'mismatch' }] } }]);
     expect(html).toContain('Current market context');
     expect(html).toContain('Prices from current market context');
     expect(html).toContain('Low Asking Price'); expect(html).toContain('$19.99');
-    expect(html).toContain('High Asking Price'); expect(html).toContain('$19.99');
-    expect(html).toContain('Average Asking Price'); expect(html).toContain('$19.99');
-    expect(html).toContain('Based on 1 active listing');
+    expect(html).toContain('High Asking Price'); expect(html).toContain('$24.99');
+    expect(html).toContain('Average Asking Price'); expect(html).toContain('$22.49');
+    expect(html).toContain('Based on 2 active listings');
     expect(html).toContain('These prices are context only');
   });
   it('renders the three valuation price labels and keeps them unavailable before final use', () => {

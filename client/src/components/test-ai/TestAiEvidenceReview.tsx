@@ -4,6 +4,7 @@ import { collectEbayCandidateDisplayOccurrences, mergeCandidateDisplayGroups, re
 import { sourceVisualDisplayGroups, sourceRetainedDisplayGroups } from '../../../../shared/testAiSourceDisplay';
 import { isCurrentMarketContextSource } from '../../../../shared/testAiMarketContext';
 import { candidateHistoricPrice, candidateHistoricSaleDate, hasActualVisualResponse } from '../../../../shared/testAiCandidateStatus';
+import { candidateFinalDecision } from './candidateFinalDecision';
 import { TestAiCandidateMasterList } from '../TestAiCandidateMasterList';
 import { TestAiSafeImage } from '../TestAiSafeImage';
 import { useTestAiCandidateDisplay } from '../TestAiCandidateStatus';
@@ -36,9 +37,12 @@ export function isConfirmedCurrentMarketMatch(row: any): boolean {
 }
 
 function isCurrentMarketContextCandidate(row: any): boolean {
-  if (row?.valuationUse?.use?.code === 'HISTORIC_MARKET_CONTEXT') return false;
-  return isConfirmedCurrentMarketMatch(row)
-    || (row?.evidenceDisposition === 'valuation_eligible' && row?.visualReviewStatus !== 'mismatch');
+  // Use the same final presentation decision as the candidate card. The old
+  // summary predicate required a separate source-stage eligibility flag, so a
+  // valid rough active match could be labeled CURRENT MARKET CONTEXT on its
+  // card while being omitted from the run-summary count and price range.
+  const decisionCode = candidateFinalDecision(row).code;
+  return decisionCode === 'ACTIVE_MARKET_CONTEXT_MATCH' || decisionCode === 'ACTIVE_MARKET_CONTEXT';
 }
 
 function candidatePrice(row: any): number | null {
