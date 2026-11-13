@@ -111,6 +111,10 @@ function plainIdentityConflict(detail: string): string {
 function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: string[]): string | undefined {
   if (code === 'CURRENT_SALES_PRIMARY') return row.valuationUse?.identityAdmission?.basis === 'server_autograph_market_relevance'
     ? `This reported sold price was used as Autographs market evidence. Exact image review is not required.${row.sourceId === 'mercari_sold_comps' ? ' Sale date remains Unknown under the Mercari date exception.' : ''}` : undefined;
+  if (code === 'FINAL_HARD_EXCLUDED') {
+    const specificHardReason = hardExclusionReason(row);
+    if (/^Hard exclusion: .+ differs — target “.+”; candidate “.+”\.$/.test(specificHardReason)) return specificHardReason;
+  }
   const reasonCodes = new Set([
     ...(row.valuationUse?.sourceAdmission?.blockerCodes ?? []),
     ...(row.valuationUse?.use?.reasonCodes ?? []),
@@ -188,7 +192,8 @@ function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: 
   if (blocker) return `The item looks like a match, but ${finalAnalysisBlockerLabels[blocker]}`;
   if (code === 'REVIEW_REQUIRED') return 'The item looks like a match, but a required verification step was not completed, so it cannot be used for the value yet.';
   if (code === 'UNSUPPORTED_CURRENCY') return 'The item matched, but the sale is not reported in US dollars, so it cannot be used in the value calculation.';
-  if (code === 'FINAL_HARD_EXCLUDED') return 'The final analysis recorded a hard exclusion but did not preserve its specific reason. The detailed exclusion reason is missing.';
+  if (code === 'FINAL_HARD_EXCLUDED') return hardExclusionReason(row)
+    || 'The final analysis recorded a hard exclusion but did not preserve its specific reason. The detailed exclusion reason is missing.';
   return exactReasons.length ? 'The item was not used because a final valuation rule prevented this sale from contributing to the value.' : undefined;
 }
 function isInformationalAgeReason(detail: string): boolean {
@@ -298,6 +303,9 @@ function hardExclusionReason(row: CandidateDisplayRow): string {
   const raw = [
     ...(Array.isArray(row.preVisionExclusionReasons) ? row.preVisionExclusionReasons : []),
     ...(Array.isArray(row.evidenceReasons) ? row.evidenceReasons : []),
+    ...(Array.isArray(row.valuationUse?.sourceAdmission?.reasonDetails) ? row.valuationUse.sourceAdmission.reasonDetails : []),
+    ...(Array.isArray(row.valuationUse?.identityAdmission?.reasonDetails) ? row.valuationUse.identityAdmission.reasonDetails : []),
+    row.valuationUse?.sourceAdmission?.approvalFailure?.detail,
     row.visualReviewRationale,
   ].find((reason: unknown) => typeof reason === 'string' && reason.trim()
     && !/^(?:outer_metadata_hold|outer identity filter|excluded before visual review)/i.test(reason.trim()));
@@ -305,7 +313,8 @@ function hardExclusionReason(row: CandidateDisplayRow): string {
   const conflict = raw.match(/Metadata conflict:\s*([^()]+?)\s*\((?:target\s+)?([^=]+)=([^;]+);\s*candidate=([^)]*)\)/i);
   if (conflict) {
     const fieldKey = conflict[2].trim();
-    const field = ({ recordLabel: 'Record label' } as Record<string, string>)[fieldKey]
+    const field = ({ recordLabel: 'Record label', format: 'Format', genre: 'Genre', edition: 'Edition',
+      gradingCompany: 'Grading company', certificationCompany: 'Grading company', grade: 'Grade' } as Record<string, string>)[fieldKey]
       ?? fieldKey.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').replace(/^./, (letter) => letter.toUpperCase()).trim();
     return `Hard exclusion: ${field} differs — target “${conflict[3].trim()}”; candidate “${conflict[4].trim()}”.`;
   }
@@ -382,7 +391,10 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
     const exactFinalReasons = finalAnalysisReasons(row);
     const structuredReasons = structuredFinalBlockerExplanation(row);
     const plainReason = plainFinalReason(row, pricing.code, exactFinalReasons);
-    const details = [structuredReasons.length ? structuredReasons.join(' · ') : plainReason ?? pricing.reason,
+    const fieldLevelHardReason = hard ? hardExclusionReason(row) : undefined;
+    const specificHardReason = fieldLevelHardReason && /^Hard exclusion: .+ differs — target “.+”; candidate “.+”\.$/.test(fieldLevelHardReason)
+      ? fieldLevelHardReason : undefined;
+    const details = [specificHardReason ?? (structuredReasons.length ? structuredReasons.join(' · ') : plainReason ?? pricing.reason),
       hard && !plainReason ? evidence || (receipt?.hardExclusion ? execution.reason : undefined) : undefined,
       pricing.code === 'CONTEXT_ONLY' ? contextReason : undefined,
       hasMercariUndatedSoldAdmission(row) && !plainReason ? mercariPriceContextLabel(row) : undefined].filter(Boolean).join(' · ');

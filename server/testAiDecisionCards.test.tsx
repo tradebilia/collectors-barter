@@ -94,6 +94,28 @@ describe('Test AI candidate decision cards (real component)', () => {
     expect(decision.reason).toContain('candidate “Geffen Records, Geffen”');
     expect(decision.reason).not.toBe('Outer metadata hold');
   });
+  it.each([
+    ['format', 'Cassette Tape', 'Cassette', 'Format'],
+    ['genre', 'Grunge', 'Rock', 'Genre'],
+    ['edition', 'Limited', 'Open', 'Edition'],
+    ['gradingCompany', 'PSA', 'BGS', 'Grading company'],
+  ])('shows the mapped %s conflict in a final valuation hard exclusion', (field, targetValue, candidateValue, label) => {
+    const decision = candidateFinalDecision({
+      title: 'Final valuation hard exclusion fixture',
+      valuationUse: {
+        sourceAdmission: {
+          verification: 'verified',
+          blockerCodes: ['APPROVAL_CANDIDATE_FIELDS_CONFLICT'],
+          reasonDetails: [`Metadata conflict: ${field} differs in explicit provider metadata (target ${field}=${targetValue}; candidate=${candidateValue}).`],
+        },
+        use: { code: 'FINAL_HARD_EXCLUDED', reasonCodes: [] },
+      },
+    });
+    expect(decision.label).toBe('NOT USED — HARD EXCLUSION');
+    expect(decision.reason).toContain(`Hard exclusion: ${label} differs`);
+    expect(decision.reason).toContain(`target “${targetValue}”`);
+    expect(decision.reason).toContain(`candidate “${candidateValue}”`);
+  });
   it('puts the below-threshold score ahead of downstream provenance blockers', () => {
     const decision = candidateFinalDecision({
       title: 'Nirvana Nevermind Cassette Tape', metadataMatchScore: 49,
