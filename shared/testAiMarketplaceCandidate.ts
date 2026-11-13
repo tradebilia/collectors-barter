@@ -1,4 +1,5 @@
 import { buildMarketplaceTitleEvidence } from './testAiTitleEvidence';
+import { classifyDisneyPinForm } from './testAiDisneyPinForm';
 
 /**
  * Extract an explicit multi-item quantity from marketplace title text.
@@ -96,6 +97,24 @@ export function isExplicitMultiItemListing(listing: unknown, targetMetadata = ""
     details.saleForm,
   ].filter((value) => value != null).map(String).map((value) => value.trim()).filter(Boolean);
   const structuredType = structuredTypes.join(" ");
+
+  if (disneyIndividualPin) {
+    return classifyDisneyPinForm({
+      title,
+      itemType: record.itemType,
+      productType: record.productType,
+      form: record.form,
+      saleForm: record.saleForm,
+      itemDetails: record.itemDetails ?? record.item_details ?? record.details ?? record.specifics,
+      lotQuantity: record.lotQuantity,
+      itemCount: record.itemCount,
+      numberOfItems: record.numberOfItems,
+      numberOfPins: record.numberOfPins,
+      quantity: record.quantity,
+      targetItemType: context.itemType,
+    }) === 'lot';
+  }
+
   const explicitStructuredMultiItem = structuredTypes.some((value) =>
     /(?:lot|bundle|mixed|assortment|group\s+of|multipack|multi\s*pack)/i.test(value)
     && !/^(?:collection|collection\s*[/_-]\s*lot)$/i.test(value),

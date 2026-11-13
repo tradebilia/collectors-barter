@@ -26,7 +26,7 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
       null,
     );
 
-    expect(identity.status).toBe('needs_review');
+    expect(identity.status).toBe('direct_confirmed');
     expect(identity.confirmedFields).toContain('Pin name');
     expect(identity.unconfirmedFields).not.toContain('Pin name');
   });
@@ -46,6 +46,47 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
 
     expect(identity.confirmedFields).not.toContain('Pin name');
     expect(identity.unconfirmedFields).toContain('Pin name');
+  });
+
+  it('does not treat a Disney Pins series name containing Collection as a lot', () => {
+    const princessTarget = {
+      title: 'Disney Designer Ultimate Princess Collection',
+      category: 'disney_pins',
+      itemType: 'single_pin',
+      itemDetails: JSON.stringify({
+        pinName: 'Disney Designer Ultimate Princess Collection Aurora',
+        character: 'Aurora',
+        series: 'Disney Designer Ultimate Princess Collection',
+      }),
+    };
+    const identity = assessComparableCategoryIdentity(
+      princessTarget,
+      { pinName: 'Disney Designer Ultimate Princess Collection Aurora', character: 'Aurora', series: 'Disney Designer Ultimate Princess Collection' },
+      'Disney Designer Ultimate Princess Collection Aurora Hinged Pin Limited Edition',
+      null,
+    );
+
+    expect(identity.conflicts).not.toContain('Pin form differs (lot)');
+  });
+
+  it.each([
+    'Disney Designer Ultimate Princess Collection Aurora Collection Lot of 3',
+    'Disney Designer Ultimate Princess Collection Aurora Lot of 5',
+    'Disney Designer Ultimate Princess Collection Aurora 3 Pins',
+  ])('still rejects an explicit Disney Pins multi-item title: %s', (title) => {
+    const identity = assessComparableCategoryIdentity(
+      {
+        title: 'Disney Designer Ultimate Princess Collection',
+        category: 'disney_pins',
+        itemType: 'single_pin',
+        itemDetails: JSON.stringify({ pinName: 'Disney Designer Ultimate Princess Collection Aurora', character: 'Aurora', series: 'Disney Designer Ultimate Princess Collection' }),
+      },
+      { pinName: 'Disney Designer Ultimate Princess Collection Aurora', character: 'Aurora', series: 'Disney Designer Ultimate Princess Collection' },
+      title,
+      null,
+    );
+
+    expect(identity.conflicts).toContain('Pin form differs (lot)');
   });
 
   it('scores exact identity and grade matches above weaker comparables', () => {

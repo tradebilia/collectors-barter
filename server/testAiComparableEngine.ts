@@ -20,6 +20,7 @@ import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAu
 import type { MetadataRankingBinding } from '../shared/testAiRankingPopulation';
 import { comparePokemonCardNumbers, parsePokemonCardNumber, readPokemonCardNumbersFromTitle,
   type PokemonCardNumberComparison } from '../shared/testAiPokemonCardNumber';
+import { classifyDisneyPinForm, disneyPinFormsConflict } from '../shared/testAiDisneyPinForm';
 
 import { getCategoryEvidenceThresholds, type CategoryEvidenceThresholds } from '../shared/testAiSalesEvidencePolicy';
 export { getCategoryEvidenceThresholds } from '../shared/testAiSalesEvidencePolicy';
@@ -1163,12 +1164,8 @@ function pinEditionInTitle(title: string): PinEdition | null {
 
 type PinForm = 'single' | 'lot' | 'set' | 'unknown';
 
-function pinForm(value: string | null | undefined): PinForm {
-  const normalized = normalizedIdentityText(value);
-  if (/\blot\b|\bbundle\b|\bcollection\b|additional disney pins|\d+\s+pins/.test(normalized)) return 'lot';
-  if (/\bset\b/.test(normalized)) return 'set';
-  if (/single pin|single|\bpin\b/.test(normalized)) return 'single';
-  return 'unknown';
+function pinForm(value: string | null | undefined, targetItemType?: string | null): PinForm {
+  return classifyDisneyPinForm({ title: value, itemType: value, targetItemType });
 }
 
 const DISNEY_CONTEXT_TERMS = ['d23', 'epcot', 'disneyland', 'disney world', 'walt disney world', 'disneyland paris', 'disney cruise line', 'disney store', 'disney auction', 'pin trading night', 'mickey s of glendale', 'cast member', 'wdi'];
@@ -1640,8 +1637,11 @@ export function assessComparableCategoryIdentity(
     const expectedEvent = event || series || '';
     const targetEvent = disneyContextInTitle(expectedEvent);
     const observedEvent = disneyContextInTitle(title);
-    const targetForm = pinForm(firstString(details, ['itemForm', 'format', 'pinFormat']) || target.itemType || target.title);
-    const candidateForm = pinForm(title);
+    const targetForm = pinForm(
+      firstString(details, ['itemForm', 'format', 'pinFormat']) || target.itemType || target.title,
+      target.itemType,
+    );
+    const candidateForm = pinForm(title, target.itemType);
 
     // The target's structured Pin Name being known is expected. The missing
     // fact is the candidate's provider Pin Name, so always evaluate the
@@ -1666,7 +1666,7 @@ export function assessComparableCategoryIdentity(
       record('Edition', limitedEdition || editionSize, editionMatches, editionConflict);
     }
     if (targetForm !== 'unknown') {
-      const formConflict = candidateForm !== 'unknown' && candidateForm !== targetForm ? candidateForm : null;
+      const formConflict = disneyPinFormsConflict(targetForm, candidateForm) ? candidateForm : null;
       record('Pin form', targetForm, candidateForm === targetForm, formConflict);
     }
   } else if (category === 'vintage_toys') {
