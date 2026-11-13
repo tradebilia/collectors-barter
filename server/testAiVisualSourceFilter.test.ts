@@ -2516,7 +2516,7 @@ describe("visual source filter", () => {
     const listing = { title: "Chip & Dale Happy Easter 2003 Limited Edition Dangle Pin", imageUrl: "https://example.com/chip-dale.jpg" };
     const score = disneyPinsIndividualVisualScore(listing, target);
     expect(score.awards.some((award) => award.field === "character")).toBe(false);
-    expect(score.score).toBe(25);
+    expect(score.score).toBe(0);
     expect(buildDeclaredIdentityReviews([listing], target)[0]?.rationale).toContain("character differs");
   });
 
@@ -4108,7 +4108,7 @@ describe("visual source filter", () => {
     expect(score.score).toBeGreaterThan(0);
     expect(score.matched).toEqual(expect.arrayContaining(["pinName", "character", "series"]));
   });
-  it("credits character-only marketplace titles enough to reach the Disney single-pin visual threshold", () => {
+  it("does not award Pin Name points when marketplace titles identify only the character", () => {
     const target = buildVisualTargetMetadata({
       title: "Around the World Eeyore Pin",
       category: "disney_pins",
@@ -4121,10 +4121,26 @@ describe("visual source filter", () => {
       "2003 Official WDW Walt Disney World Pin EEYORE Donkey Pink Bow Winnie the Pooh",
     ]) {
       const score = disneyPinsIndividualVisualScore({ title }, target);
-      expect(score.score).toBeGreaterThanOrEqual(40);
-      expect(disneyPinsVisualCap(score.score)).toBeGreaterThan(0);
-      expect(score.matched).toContain("pinName");
+      expect(score.score).toBe(15);
+      expect(disneyPinsVisualCap(score.score)).toBe(0);
+      expect(score.matched).not.toContain("pinName");
+      expect(score.matched).toContain("character");
     }
+  });
+  it("does not award Pin Name points when Cinderella is present but the full pin name is not parsed", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Disney Cinderella & Gus Glitter Portrait Pin",
+      category: "disney_pins",
+      itemType: "single_pin",
+      fullItemDetails: { pinName: "Disney Cinderella & Gus Glitter Portrait Pin", character: "Cinderella", year: "2025" },
+    });
+    const listing = { title: "Disney PALM - Cinderella, Gus, Jay - Mirror - JUMBO LE 200 Glitter Pin", itemDetails: JSON.stringify({ year: "2025" }) };
+    const score = disneyPinsIndividualVisualScore(listing, target);
+    expect(score.score).toBe(25);
+    expect(score.matched).toEqual(["character", "year"]);
+    expect(score.awards.some((award) => award.field === "pinName")).toBe(false);
+    const pinNameRow = buildMetadataFieldComparisons(target, listing).find((row) => row.fieldKey === "pinName");
+    expect(pinNameRow).toMatchObject({ titleDerivedValue: "Unknown", titleDerivedStatus: "unknown", rankingContribution: { awardedPoints: 0, matched: false } });
   });
 
   it("scores Disney Designer Princess Collection title variants before visual review", () => {

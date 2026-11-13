@@ -5951,17 +5951,11 @@ function disneyPinsValueMatches(targetValue: unknown, listing: VisualSourceCandi
   if (!explicit && disneyPinsTokenEvidenceMatches(targetValue, candidate, characterAliases ? ['princess', 'prince', 'queen', 'king'] : [])) return scoreMatch(true, witness);
   return patterns.some((pattern) => pattern.test(title)) ? scoreMatch(true, { value: title, source: 'title', field: aliases[0] }) : explicit ? false : null;
 }
-function disneyPinsPinNameMatches(targetValue: unknown, targetCharacter: unknown, listing: VisualSourceCandidate): ScorePredicate {
-  const direct = disneyPinsValueMatches(targetValue, listing, ["pinName", "name"]);
-  if (scoreResult(direct) === true) return direct;
-  const details = disneyPinsCandidateDetails(listing);
-  const explicitPinName = firstMeaningfulValue(details.pinName, details.name, labeledCandidateValue(details, ["pinName", "name"]));
-  // If the provider supplied a specific pin name, respect that declaration.
-  // Only use character evidence as a fallback when the provider omitted the
-  // structured pin name and the title clearly names the target character.
-  if (explicitPinName) return direct;
-  const characterMatch = disneyPinsValueMatches(targetCharacter, listing, ["character", "characters"]);
-  return scoreResult(characterMatch) === true ? characterMatch : direct;
+function disneyPinsPinNameMatches(targetValue: unknown, listing: VisualSourceCandidate): ScorePredicate {
+  // Pin Name is its own identity field. Character evidence cannot manufacture
+  // the separate 25-point Pin Name award when the candidate name is unknown.
+  // The Character scorer below may still award its independent 15 points.
+  return disneyPinsValueMatches(targetValue, listing, ["pinName", "name"]);
 }
 function disneyPinsBooleanMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], positive: RegExp, negative: RegExp): ScorePredicate {
   const target = disneyPinsScoreText(targetValue);
@@ -6038,7 +6032,7 @@ export function disneyPinsIndividualVisualScore(listing: VisualSourceCandidate, 
   const matched: string[] = [], unknown: string[] = []; let score = 0;
   const awards: RankingAward[] = [];
   const add=(field: typeof DISNEY_PINS_INDIVIDUAL_SCORE_FIELDS[number][0], points:number, result:ScorePredicate)=>{ if(scoreResult(result)===true){score+=points;matched.push(field);awards.push(scoreAward(field,points,result));} else if(scoreResult(result)===null) unknown.push(field); };
-  add('pinName',25,disneyPinsPinNameMatches(disneyPinsTargetValue(details,['pinName','name'],extractTargetTitle(targetMetadata)),details.character,listing));
+  add('pinName',25,disneyPinsPinNameMatches(disneyPinsTargetValue(details,['pinName','name'],extractTargetTitle(targetMetadata)),listing));
   add('character',15,disneyPinsValueMatches(details.character,listing,['character','characters']));
   add('series',15,disneyPinsValueMatches(details.series,listing,['series']));
   add('year',10,disneyPinsYearMatches(details.year,listing));

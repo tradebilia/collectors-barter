@@ -332,7 +332,7 @@ describe("source-specific positive awards", () => {
     expect(scorer({}, target).awards.some((award) => award.field === field)).toBe(false);
   });
 
-  it("character-only Pin-name fallback keeps its 25 points without inventing full Pin-name evidence", () => {
+  it("does not award Pin Name points from character-only evidence", () => {
     const target = buildVisualTargetMetadata({ title: "Around the World Eeyore Pin", category: "disney_pins", itemType: "individual_pin", fullItemDetails: { pinName: "Around the World Eeyore", character: "Eeyore" } });
     for (const [listing, source] of [
       [{ title: "Disney trading pin", itemDetails: JSON.stringify({ character: "Eeyore" }) }, "structured"],
@@ -340,10 +340,10 @@ describe("source-specific positive awards", () => {
     ] as const) {
       const result = disneyPinsIndividualVisualScore(listing, target);
       expectAccounting(result);
-      expect(result.score).toBe(40);
-      expect(result.awards.find((award) => award.field === "pinName")).toMatchObject({ source, awardedPoints: 25, evidence: [{ field: "character", source }] });
-      expect(rankingAwardContribution(result.awards, "pinName", "disney_pins")).toMatchObject({ matched: true, structured: false, titleDerived: false });
-      expect(rankingAwardContribution(result.awards, "character", "disney_pins").awards.map((award) => award.field)).toEqual(["pinName", "character"]);
+      expect(result.score).toBe(15);
+      expect(result.awards.some((award) => award.field === "pinName")).toBe(false);
+      expect(rankingAwardContribution(result.awards, "pinName", "disney_pins")).toMatchObject({ matched: false, structured: false, titleDerived: false });
+      expect(rankingAwardContribution(result.awards, "character", "disney_pins").awards.map((award) => award.field)).toEqual(["character"]);
       expect(rankingAwardContribution(result.awards, "character", "disney_pins")).toMatchObject({ structured: source === "structured", titleDerived: source === "title" });
       expect(annotatePreVisualComparableScores([listing], target)[0].metadataScoreAwards).toEqual(result.awards);
     }
