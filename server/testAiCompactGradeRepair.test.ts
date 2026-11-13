@@ -78,6 +78,19 @@ describe('compact grade title repair: shared and router consumers', () => {
       expect(annotateSoldComparableCandidate({ title }, context(9.5, provider)).evidenceReasons).not.toContain(providerMissingReason);
     }
   });
+
+  it('parses AMG 5 from the Guns N Roses title and exposes matching grade evidence', () => {
+    const title = "Guns N' Roses N G R D's? Lies Sealed Vinyl First Press Graded AMG 5 Unsourced Cover";
+    const source = parseSourceGradeFromTitle(title, { category: 'music' });
+    expect(source).toMatchObject({ grader: 'AMG', grade: '5', comparable: { numeric: '5' } });
+    expect(extractGradeFromTitle(title)).toBe(5);
+    const listing = { title, soldPrice: 449 };
+    expect(annotateSoldComparableCandidate(listing, context(5, 'AMG', 'music')).evidenceReasons)
+      .not.toContain(providerMissingReason);
+    const rows = buildMetadataFieldComparisons(targetMetadata('5', 'AMG', 'music'), listing);
+    expect(rows.find(row => row.fieldKey === 'grade')).toMatchObject({ titleDerivedValue: '5' });
+    expect(rows.find(row => row.fieldKey === 'certificationCompany')).toMatchObject({ titleDerivedValue: 'AMG' });
+  });
 });
 
 const malformedTitles = [

@@ -252,7 +252,10 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
       verifiedSourceDisposition: verification.verified ? safeText(trustedInput.evidenceDisposition, 80) : null,
       verification: verification.verified ? 'verified' as const : 'unverified' as const,
       normalizationEligible: valuationEligible, historicMarketContextEligible, blockerCodes,
-      sourceBlockers: blockerCodes.map((code) => structuredSourceAdmissionBlocker(code, uniqueReasons(reasons).find((reason) => reason.includes(code)))),
+      sourceBlockers: blockerCodes.map((code) => structuredSourceAdmissionBlocker(code,
+        code === 'PROVENANCE_UNVERIFIED'
+          ? verification.reasons[0]
+          : uniqueReasons(reasons).find((reason) => reason.includes(code)))),
       ...(input.approvalFailure ? { approvalFailure: input.approvalFailure } : {}),
       warningCodes,
       reasonDetails: uniqueReasons(reasons).slice(0, 40),

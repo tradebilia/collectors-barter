@@ -317,7 +317,7 @@ async function enrichEbayItemDetails(items: any[], token: string) {
 // Extract grade from query/title after a grading company name. eBay titles commonly
 // insert an optional "Grade" or "Graded" word, e.g. "AFA Graded 8.0". Coin
 // graders can prefix the numeric Sheldon grade, e.g. "PCGS MS65".
-const gradeProviderPattern = "CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|Rewind";
+const gradeProviderPattern = "CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|Rewind|AMG";
 type ExtractedGrade = number | string;
 
 function normalizeExtractedGrade(prefix: string | undefined, numeric: string, plus = ''): ExtractedGrade {
@@ -410,7 +410,7 @@ export function buildEbayBrowseQuery(query: string, options?: { preserveGrade?: 
 }
 
 const certificationProviderPattern = new RegExp(
-  `\\b(CGC|CBCS|PSA|BGS|PCGS|NGC|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|REWIND)(?=\\b|(?=\\d)${TITLE_GRADE_OBSERVATION_PATTERN}(?![A-Za-z0-9_.+]))`,
+  `\\b(CGC|CBCS|PSA|BGS|PCGS|NGC|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|REWIND|AMG)(?=\\b|(?=\\d)${TITLE_GRADE_OBSERVATION_PATTERN}(?![A-Za-z0-9_.+]))`,
   'i',
 );
 

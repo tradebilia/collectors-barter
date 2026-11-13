@@ -3144,7 +3144,7 @@ function candidateGrader(candidate: NormalizedVisualSourceCandidate): string {
   const structured = normalizedGrader(candidate.grader);
   if (structured) return structured;
   const title = candidate.title;
-  const match = title.match(/\b(PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA|HGA|CSG|ISA|GMA|PSE|ASG)\b/i);
+  const match = title.match(/\b(PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA|HGA|CSG|ISA|GMA|PSE|ASG|AMG)\b/i);
   if (!match) return "";
   const preceding = title.slice(Math.max(0, (match.index ?? 0) - 48), match.index ?? 0);
   return /\b(?:not|no|without|non)\b[^.!?;]{0,48}$/i.test(preceding) ? "" : match[1].toUpperCase();

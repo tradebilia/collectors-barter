@@ -305,6 +305,8 @@ describe('Stage 5 actual final-use reporting — real synthetic pipeline', () =>
       const failed = normalizeAnalysisMarketSale({ ...raw(802), provenanceToken }, expiredNow, { signingKey, target });
       expect(failed.valuationEligible).toBe(false);
       expect(failed.sale.analysisIntake?.sourceAdmission.blockerCodes).toContain('PROVENANCE_UNVERIFIED');
+      expect(failed.sale.analysisIntake?.sourceAdmission.sourceBlockers?.find((blocker) => blocker.code === 'PROVENANCE_UNVERIFIED')?.detail)
+        .toMatch(/server provenance (signature is invalid|reference has expired)/);
     }
     const wrongTarget = normalized([signed(803, {}, true)], { ...target, grade: '9' });
     expect(wrongTarget[0].analysisIntake?.sourceAdmission.blockerCodes).toContain('REQUIRED_APPROVAL_MISSING');

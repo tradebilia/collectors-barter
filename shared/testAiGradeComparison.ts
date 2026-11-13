@@ -12,7 +12,7 @@ export type ComparableGrade = {
 export type GradeComparison = 'match' | 'different' | 'unknown';
 export type SourceTitleGrade = { grade: string; grader: string | null; comparable: ComparableGrade };
 
-const GRADERS = 'PSA|AFA|CGC|CBCS|BGS|BVG|BCCG|SGC|PCGS|NGC|WATA|VGA|HGA|CSG|ISA|GMA|PSE|ASG|PMG|ICG|ANACS';
+const GRADERS = 'PSA|AFA|CGC|CBCS|BGS|BVG|BCCG|SGC|PCGS|NGC|WATA|VGA|HGA|CSG|ISA|GMA|PSE|ASG|PMG|ICG|ANACS|AMG';
 const DESIGNATIONS = 'EX[- ]?MT|NM[- ]?MT|GEM[- ]?MT|MS|PR|PF|SP|AU|AG|PO|FR|VG|VF|XF|EF|EX|NM|MT|FN|FA|G|F';
 const QUALIFIERS = 'DCAM|DMPL|DPL|CAM|PL|RD|RB|BN|OC|MC|ST|PD|MK|OF|NQ|EPQ|PPQ|FH|FBL|FB|FS|FT|SMS|STAR|CAC';
 const SOFT_SUFFIX = 'A\\+{0,3}';
