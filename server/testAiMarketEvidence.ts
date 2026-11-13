@@ -190,7 +190,9 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   if (transactionLotConflict) reasons.push('signed transaction quantity or explicit lot/bundle sale form is not a single retail product; no guessed unit price is used');
   if (restrictiveInputDisposition) reasons.push(`source disposition retained: ${restrictiveInputDisposition}`);
 
-  const valuationEligible = verification.verified
+  // Age changes the destination, not the authenticity of a completed sale.
+  // Preserve every other existing financial, source and visual safeguard.
+  const financiallyEligible = verification.verified
     && !restrictiveInputDisposition
     && price !== null
     && Number.isFinite(price)
@@ -201,10 +203,13 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     && economics.eligible
     && transactionIdentityPresent
     && !highValuePriceConflict
-    && (sourceId === 'mercari_sold_comps' ? (mercariUndated || mercariAutographUndated) : dateInfo.recency === 'recent' || dateInfo.recency === 'extended')
     && visualReviewStatus !== 'mismatch'
     && !transactionLotConflict
     && (visualRequirement !== 'required' || (visualReviewStatus === 'match' && Boolean(identityApproval)));
+  const valuationEligible = financiallyEligible
+    && (sourceId === 'mercari_sold_comps' ? (mercariUndated || mercariAutographUndated) : dateInfo.recency === 'recent' || dateInfo.recency === 'extended');
+  const historicMarketContextEligible = financiallyEligible
+    && (dateInfo.recency === 'historical' || dateInfo.recency === 'extended');
   // Mirror the actual terms above, not free-form provider/visual rationale.
   // Missing title is deliberately not a term of the existing eligibility gate.
   const blockerCodes: NormalizationBlockerCode[] = [];
@@ -245,7 +250,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
       verifiedSourceId: verification.verified ? sourceId || null : null,
       verifiedSourceDisposition: verification.verified ? safeText(trustedInput.evidenceDisposition, 80) : null,
       verification: verification.verified ? 'verified' as const : 'unverified' as const,
-      normalizationEligible: valuationEligible, blockerCodes, warningCodes,
+      normalizationEligible: valuationEligible, historicMarketContextEligible, blockerCodes, warningCodes,
       reasonDetails: uniqueReasons(reasons).slice(0, 40),
     },
   };
@@ -313,7 +318,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     analysisIntake,
   };
   retainServerNormalizationReport(sale, analysisIntake);
-  if (valuationEligible && identityApproval) transferVerifiedIdentityApproval(trustedInput, sale);
+  if ((valuationEligible || historicMarketContextEligible) && identityApproval) transferVerifiedIdentityApproval(trustedInput, sale);
   return { sale, valuationEligible, reasons: sale.evidenceReasons ?? [] };
 }
 

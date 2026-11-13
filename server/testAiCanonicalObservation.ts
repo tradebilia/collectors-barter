@@ -1,6 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { ENV } from './_core/env';
 import type { MarketSale } from './testAiComparableEngine';
+import { hasVerifiedHistoricSaleEconomics } from './testAiHistoricMarketContext';
 import { canonicalizeIdentityApprovalTarget, canonicalizeIdentityApprovalCandidateFields, identityApprovalCandidateFieldsCompatible, canonicalIdentityApprovalGrade, identityApprovalTargetsEquivalent, IDENTITY_APPROVAL_TARGET_VERSION, type IdentityApprovalTargetInput } from '../shared/testAiIdentityApprovalTarget';
 import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
 import { hasMeaningfulTransactionIdentity } from './testAiEconomicIntegrity';
@@ -666,11 +667,22 @@ function authorityStillBound(sale: MarketSale, authority: VerifiedApproval): boo
   const elapsed = Date.now() - authority.verifiedAtWallMs;
   if (elapsed < 0 || elapsed > authority.remainingAgeMs) return false;
   const adapterId = authority.approval.adapterId;
+  const receipt = readServerNormalizationReport(sale);
+  const historicalDateOnlyDowngrade = hasVerifiedHistoricSaleEconomics(sale)
+    && authority.facts.evidenceDisposition === 'valuation_eligible' && sale.evidenceDisposition === 'context_only'
+    && receipt?.sourceAdmission.verifiedSourceId === adapterId
+    && receipt.auditRef.verifiedObservationId === authority.provenance.payloadHash
+    && receipt.auditRef.verifiedCanonicalTransactionId === authority.provenance.canonicalTransactionId
+    && receipt.sourceAdmission.blockerCodes.every(code => code === 'HISTORICAL_DATE');
   if (sale.sourceId !== adapterId || sale.sourceAdapter !== adapterId
     || adapterId === 'mercari_sold_comps' && sale.recency !== 'undated'
     || sale.observationId !== authority.provenance.payloadHash || sale.canonicalTransactionId !== authority.provenance.canonicalTransactionId
-    || sale.evidenceDisposition !== 'valuation_eligible' || sale.duplicateStatus && !['unique', 'possible_duplicate'].includes(sale.duplicateStatus)) return false;
+    || sale.evidenceDisposition !== 'valuation_eligible' && !historicalDateOnlyDowngrade
+    || sale.duplicateStatus && !['unique', 'possible_duplicate'].includes(sale.duplicateStatus)) return false;
   const current = normalizedFacts(CANONICAL_ADAPTER_REGISTRY[adapterId], sale);
+  // Compare every original signed fact unchanged except this privately verified
+  // age-only destination change. This never admits history to current pricing.
+  if (historicalDateOnlyDowngrade) current.evidenceDisposition = authority.facts.evidenceDisposition;
   // Reconstructed URLs are already scheme-less canonical facts. Preserve their
   // path case only when exactly bound, or parse a scheme-less successor with an
   // authority-local https prefix. Never change legacy sealing normalization.

@@ -3,6 +3,7 @@ import { classifyStampFormat, stampFormatsCompatible } from './stampFormat';
 import { extractIdentityState, identityStateConflicts } from './testAiIdentityState';
 import { isVerifiedGuideAnchor } from './testAiGuideEvidence';
 import { TEST_AI_VALUE_UNAVAILABLE_MESSAGE, nullableTestAiPrice, type GuideValueAnchor } from '../shared/testAiEvidenceNormalization';
+import { hasVerifiedHistoricSaleEconomics } from './testAiHistoricMarketContext';
 import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
 import { autographAuthenticationCompaniesEquivalent } from '../shared/testAiMetadataConflict';
 import { getVerifiedIdentityApproval, hasVerifiedMercariUndatedSale, transferVerifiedIdentityApproval, verifyCanonicalObservation } from './testAiCanonicalObservation';
@@ -567,7 +568,7 @@ export function deduplicateMarketSales(sales: MarketSale[], captureIdentity?: (s
   const authorityPriority = (entry: Entry): number[] => {
     const receipt = readServerNormalizationReport(entry.sale);
     const verified = receipt?.sourceAdmission.verification === 'verified';
-    const financial = receipt ? receipt.sourceAdmission.normalizationEligible === true
+    const financial = receipt ? receipt.sourceAdmission.normalizationEligible === true || hasVerifiedHistoricSaleEconomics(entry.sale)
       : entry.sale.evidenceDisposition === 'valuation_eligible';
     const usable = financial && (usableForTarget ? usableForTarget(entry.sale, entry.identity)
       : !entry.identity || entry.identity.accepted);
@@ -605,9 +606,9 @@ export function deduplicateMarketSales(sales: MarketSale[], captureIdentity?: (s
           && transaction.providerRecordId === entry.transaction.providerRecordId
         || transaction.listingUrl && transaction.listingUrl === entry.transaction.listingUrl)));
     const retained: MarketSale = { ...sale, duplicateStatus: possible ? 'possible_duplicate' : 'unique' };
-    transferVerifiedIdentityApproval(sale, retained);
     const receipt = readServerNormalizationReport(sale);
     if (receipt) retainServerNormalizationReport(retained, receipt);
+    transferVerifiedIdentityApproval(sale, retained);
     if (possible) possibleDuplicates.push(retained);
     unique.push(retained);
     inputOrdinals.set(retained, ordinal);
@@ -818,7 +819,8 @@ export function selectBalancedComparableSales(
 ) {
   const nowMs = now.getTime();
   const deduplicated = deduplicateMarketSales(sales, (sale) => scoreComparable(target, sale).identityAdmission!,
-    (sale, identity) => isCompletedSaleCandidate(sale, nowMs, target) && String(sale.currency ?? 'UNKNOWN').toUpperCase() === 'USD'
+    (sale, identity) => (isCompletedSaleCandidate(sale, nowMs, target) || hasVerifiedHistoricSaleEconomics(sale))
+      && String(sale.currency ?? 'UNKNOWN').toUpperCase() === 'USD'
       && identity?.accepted === true);
   const valuationCandidates = deduplicated.unique.filter((sale) => isCompletedSaleCandidate(sale, nowMs, target));
   const valuationMatches = valuationCandidates
@@ -1865,14 +1867,15 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const autographTarget = categoryKey === 'autographs'
     && String(target.itemType ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_') === 'signed_item';
   const receipt = autographTarget ? readServerNormalizationReport(sale) : undefined;
+  const verifiedHistoricFacts = hasVerifiedHistoricSaleEconomics(sale);
   const verifiedSource = receipt?.sourceAdmission.verification === 'verified'
-    && receipt.sourceAdmission.normalizationEligible === true
+    && (receipt.sourceAdmission.normalizationEligible === true || verifiedHistoricFacts)
     && receipt.sourceAdmission.verifiedSourceDisposition === 'valuation_eligible'
     && Boolean(receipt.auditRef.verifiedObservationId);
   const canonical = autographTarget && !receipt ? verifyCanonicalObservation(sale) : null;
   const canonicalAutographSale = verifiedSource ? sale : canonical?.verified ? canonical.sale : null;
   const autographMarketPolicy = canonicalAutographSale?.visualRequirement === 'not_required'
-    && canonicalAutographSale.evidenceDisposition === 'valuation_eligible'
+    && (canonicalAutographSale.evidenceDisposition === 'valuation_eligible' || verifiedHistoricFacts)
     ? (() => {
       const metadata = buildVisualTargetMetadata(target);
       const candidate = { title: canonicalAutographSale.title };
@@ -2058,7 +2061,10 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const universalNeedsReview = blockingUniversalConflicts.some((reason) => reason.includes('not stated'));
   const categoryNeedsReview = categoryIdentity.status === 'needs_review';
   const categoryDirectConfirmed = categoryIdentity.status === 'direct_confirmed' || categoryIdentity.status === 'not_applicable';
-  const restrictiveSourceDisposition = Boolean(sale.evidenceDisposition && sale.evidenceDisposition !== 'valuation_eligible');
+  // A date-only context downgrade does not invalidate verified matching facts.
+  // The private historical receipt cannot clear any source or identity failure.
+  const restrictiveSourceDisposition = Boolean(sale.evidenceDisposition && sale.evidenceDisposition !== 'valuation_eligible')
+    && !verifiedHistoricFacts;
   const approvalHardStateConflict = universalIdentityConflicts.some((reason) => /grade differs|grading company differs/.test(reason));
   const signedFormConflicts = identityApproval ? signedComparableFormConflicts(target, sale.saleForm) : [];
   const transactionLotConflict = signedTransactionLotConflict(target, sale);
@@ -2631,11 +2637,16 @@ export function buildMarketProfile(
     const reviewRequired = sourceAdmission.blockerCodes.some((code) => ['PROVENANCE_UNVERIFIED', 'REQUIRED_APPROVAL_MISSING', 'VISUAL_MISMATCH'].includes(code))
       || identityAdmission.blockerCodes.some((code) => ['REQUIRED_APPROVAL_MISSING', 'CATEGORY_REVIEW_REQUIRED', 'UNIVERSAL_REVIEW_REQUIRED',
         'VISUAL_MISMATCH', 'VARIANT_REVIEW_REQUIRED', 'TARGET_IDENTITY_INCOMPLETE'].includes(code));
+    const historicAgeDays = daysOld(sale.date, nowMs);
+    const historicMarketContext = !duplicate && !outlierExcluded && !omittedByCap && !hardExcluded && !reviewRequired
+      && hasVerifiedHistoricSaleEconomics(original) && identityAdmission.accepted
+      && historicAgeDays !== null && historicAgeDays > 365;
     const code: FinalValuationUse['use']['code'] = duplicate
       ? sale.duplicateStatus === 'exact_duplicate' ? 'EXACT_DUPLICATE' : 'PROBABLE_DUPLICATE'
       : outlierExcluded ? 'OUTLIER_EXCLUDED'
       : omittedByCap ? 'OMITTED_BY_CAP'
       : primaryMarketSales ? 'CURRENT_SALES_PRIMARY'
+      : historicMarketContext ? 'HISTORIC_MARKET_CONTEXT'
       : currentSaleMedianDiagnostics ? 'CURRENT_SALES_DIAGNOSTIC_ONLY'
       : qualifiedUndatedMercari ? 'SOURCE_ELIGIBLE_NOT_SELECTED'
       : postPolicySaleDiagnostics ? 'HISTORICAL_DIAGNOSTIC_ONLY'
@@ -2652,6 +2663,7 @@ export function buildMarketProfile(
     if (valuationPoolDiagnostics && !primaryMarketSales) reasonCodes.push(materialReviewRequired ? 'MATERIAL_IDENTITY_HOLD'
       : valuationBasis === 'guide_fallback' ? 'GUIDE_FALLBACK_PRIMARY' : 'INSUFFICIENT_CURRENT_SUPPORT');
     if (postPolicySaleDiagnostics && !valuationPoolDiagnostics) reasonCodes.push('HISTORICAL_EXTENSION_NOT_CURRENT_PRIMARY');
+    if (historicMarketContext) reasonCodes.push('VERIFIED_MATCHED_HISTORIC_SALE_CONTEXT_ONLY');
     if (ledgerOnly) reasonCodes.push('LEDGER_ONLY_COVERAGE_FALLBACK');
     const valuationUse: FinalValuationUse = {
       version: FINAL_VALUATION_USE_VERSION,
@@ -2663,6 +2675,9 @@ export function buildMarketProfile(
       sourceAdmission, identityAdmission,
       selection: preselected ? 'selected_pre_outlier' : omittedByCap ? 'omitted_by_cap' : 'not_selected',
       use: { code, reasonCodes: [...new Set(reasonCodes)], postPolicySaleDiagnostics, currentSaleMedianDiagnostics, primaryMarketSales,
+        historicMarketContext, historicSaleDate: historicMarketContext ? sale.date ?? null : null,
+        historicPrice: historicMarketContext ? nullableTestAiPrice(sale.price) : null,
+        historicCurrency: historicMarketContext ? 'USD' : null,
         supportReasonDetails: valuationPoolDiagnostics && !primaryMarketSales && valuationBasis === 'insufficient_evidence'
           ? supportReasonDetails : [],
         historicalPromptIncluded: historicalPromptKnown ? historicalPromptSet.has(original) : null,
@@ -2693,6 +2708,7 @@ export function buildMarketProfile(
         role: 'valuation_pool_median_diagnostic', includes: (row: FinalValuationUse) => row.use.currentSaleMedianDiagnostics || row.use.reasonCodes.includes('MERCARI_UNDATED_QUALIFIED_EXCEPTION') },
     ] : []),
     { id: 'historical_diagnostics', label: 'Included post-policy historical-extension sale diagnostics, not current primary', currency: 'USD', role: 'historical_sale_diagnostic', includes: (row) => row.use.postPolicySaleDiagnostics && !row.use.currentSaleMedianDiagnostics && !row.use.reasonCodes.includes('MERCARI_UNDATED_QUALIFIED_EXCEPTION') },
+    { id: 'historic_market_context', label: 'Verified matching completed sales older than one year; historical context, not current primary', currency: 'USD', role: 'historic_market_context', includes: (row) => row.use.code === 'HISTORIC_MARKET_CONTEXT' },
     { id: 'historical_prompt', label: 'Actual qualitative historical formatter inclusion, not model attention', role: 'qualitative_historical_prompt', includes: (row) => row.use.historicalPromptIncluded === true, unmeasured: !historicalPromptKnown },
   ];
   const populationsFor = (rows: FinalValuationUse[]) => populationDefinitions.map((definition) => finalUsePopulation(definition.id,
@@ -2812,6 +2828,20 @@ export function buildMarketProfile(
     selectionDiagnostics: selection.diagnostics,
     finalUseReport,
   };
+}
+
+/** Narrative and UI share the same final, deduplicated historical population. */
+export function getHistoricMarketContextSales(
+  target: ComparableTarget,
+  sales: MarketSale[],
+  now = new Date(),
+  profile?: MarketProfile,
+): MarketSale[] {
+  const finalProfile = profile ?? buildMarketProfile(target, sales, undefined, now);
+  return finalProfile.comparables
+    .filter((match) => match.valuationUse?.use.code === 'HISTORIC_MARKET_CONTEXT')
+    .map((match) => sales[match.valuationUse!.auditRef.intakeOrdinal])
+    .filter((sale): sale is MarketSale => Boolean(sale && hasVerifiedHistoricSaleEconomics(sale)));
 }
 
 export function deterministicTradeComparison(

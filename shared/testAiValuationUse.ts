@@ -45,6 +45,8 @@ export type FinalSourceAdmission = {
   verifiedSourceDisposition: string | null;
   verification: 'verified' | 'unverified' | 'unmeasured';
   normalizationEligible: boolean | null;
+  /** Separate older-sale qualification; only the private server receipt grants authority. */
+  historicMarketContextEligible?: boolean;
   blockerCodes: NormalizationBlockerCode[];
   /** Bounded server normalization explanations; reporting only, not admission input. */
   reasonDetails?: string[];
@@ -79,6 +81,7 @@ export type FinalIdentityAdmission = {
 };
 export type TerminalValuationUseCode =
   | 'CURRENT_SALES_PRIMARY' | 'CURRENT_SALES_DIAGNOSTIC_ONLY' | 'HISTORICAL_DIAGNOSTIC_ONLY'
+  | 'HISTORIC_MARKET_CONTEXT'
   | 'SOURCE_ELIGIBLE_NOT_SELECTED' | 'OMITTED_BY_CAP' | 'EXACT_DUPLICATE' | 'PROBABLE_DUPLICATE'
   | 'OUTLIER_EXCLUDED' | 'SECONDARY_ONLY' | 'REVIEW_REQUIRED' | 'CONTEXT_ONLY'
   | 'FINAL_HARD_EXCLUDED' | 'UNSUPPORTED_CURRENCY';
@@ -93,6 +96,11 @@ export type FinalValuationUse = FinalIntakeReport & {
     postPolicySaleDiagnostics: boolean;
     currentSaleMedianDiagnostics: boolean;
     primaryMarketSales: boolean;
+    /** Qualified, matched older sales used only as dated market history. */
+    historicMarketContext?: boolean;
+    historicSaleDate?: string | null;
+    historicPrice?: number | null;
+    historicCurrency?: 'USD' | null;
     historicalPromptIncluded: boolean | null;
     possibleDuplicateWarning: boolean;
     smallSampleOutlierWarning: boolean;

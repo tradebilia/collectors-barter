@@ -120,7 +120,7 @@ export function sourceRequestDisplayData<T>(data: T | undefined, requestFailed: 
 }
 
 export function sourceRetainedDisplayGroups(data: any): any[][] {
-  return [data?.audit?.ledger, data?.listings, data?.preVisionExcludedListings,
+  return [data?.audit?.ledger, data?.listings, data?.retainedListings, data?.preVisionExcludedListings,
     data?.visualFilter?.contextListings, data?.context].map((group) => Array.isArray(group) ? group : []);
 }
 

@@ -144,10 +144,11 @@ export function evaluateAdapterEconomicPolicy(sale: Pick<MarketSale, 'sourceAdap
   const origin = key(sale.originMarketplace || sale.marketplace);
   const allow = (): AdapterEconomicPolicy => ({ eligible: true, blocker: null, warning: null, reason: null });
   const hold = (blocker: NonNullable<AdapterEconomicPolicy['blocker']>, reason: string): AdapterEconomicPolicy => ({ eligible: false, blocker, warning: null, reason });
-  if (adapter === 'pcgs_auction_results' && sale.priceBasis === 'realized' && sale.recency === 'recent') {
+  if (adapter === 'pcgs_auction_results' && sale.priceBasis === 'realized'
+    && ['recent', 'extended', 'historical'].includes(sale.recency ?? '')) {
     return { eligible: true, blocker: null,
       warning: sale.buyerPremium === 'included' ? null : 'PCGS_PREMIUM_AS_REPORTED',
-      reason: sale.buyerPremium === 'included' ? null : 'PCGS reports this recent auction amount as realized; buyer-premium treatment is not disclosed and the amount is used as reported' };
+      reason: sale.buyerPremium === 'included' ? null : 'PCGS reports this auction amount as realized; buyer-premium treatment is not disclosed and the amount is used as reported. Older sales are historical context, not current value.' };
   }
   if (adapter === 'cardsight_ai') return hold('AUCTION_AMOUNT_UNRESOLVED', 'Cardsight bid-side or ask-side amount is not an established completed buyer total; retained as context only');
   if (adapter === 'weiss' || adapter === 'collect_auction' || adapter === 'the_card_api' && origin === 'goldin') {

@@ -65,6 +65,8 @@ export type SpecialistMarketplaceLookupResult = {
   query: string;
   sales: SpecialistMarketplaceRecord[];
   context: SpecialistMarketplaceRecord[];
+  /** Already-fetched window/cap omissions; retained diagnostics, not admission authority. */
+  retainedListings?: SpecialistMarketplaceRecord[];
   messages: string[];
   requestUrl: string | null;
   recordCap: number;
@@ -1574,7 +1576,8 @@ async function lookupTcgplayerReef(input: SpecialistMarketplaceLookupInput): Pro
     }
     const capped = applyHistoryWindow(records, empty.historyWindow).slice(0, empty.recordCap);
     const sales = capped.filter(record => record.completed && record.identityMatched);
-    return { ...empty, status: 'success', sales, context: capped.filter(record => !record.completed || !record.identityMatched), messages: [`TCGplayer via ReefAPI searched ${products.length} bounded products and read ${capped.length} sale records in the ${empty.historyWindow.replace(/_/g, ' ')} window; ${sales.length} passed USD, price, and identity checks. Active listings and guide prices were excluded. All results remain context-only.`] };
+    const retainedListings = records.filter(record => !capped.includes(record));
+    return { ...empty, status: 'success', sales, context: capped.filter(record => !record.completed || !record.identityMatched), retainedListings, messages: [`TCGplayer via ReefAPI searched ${products.length} bounded products and read ${capped.length} sale records in the ${empty.historyWindow.replace(/_/g, ' ')} window; ${sales.length} passed USD, price, and identity checks. ${retainedListings.length} already-fetched records outside the selected window or display cap were retained for review. Active listings and guide prices were excluded. All results remain context-only pending source-specific signed admission.`] };
   } catch (error) {
     return { ...empty, status: 'error', messages: [error instanceof Error ? error.message : 'TCGplayer ReefAPI lookup failed; no retry was attempted.'] };
   }

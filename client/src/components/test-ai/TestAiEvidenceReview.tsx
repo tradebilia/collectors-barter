@@ -3,7 +3,7 @@ import type { NormalizedEvidenceSummary } from '../../../../shared/testAiEvidenc
 import { collectEbayCandidateDisplayOccurrences, mergeCandidateDisplayGroups, reconcileCandidateFinalUse } from '../../../../shared/testAiCandidateLedger';
 import { sourceVisualDisplayGroups, sourceRetainedDisplayGroups } from '../../../../shared/testAiSourceDisplay';
 import { isCurrentMarketContextSource } from '../../../../shared/testAiMarketContext';
-import { hasActualVisualResponse } from '../../../../shared/testAiCandidateStatus';
+import { candidateHistoricPrice, candidateHistoricSaleDate, hasActualVisualResponse } from '../../../../shared/testAiCandidateStatus';
 import { TestAiCandidateMasterList } from '../TestAiCandidateMasterList';
 import { TestAiSafeImage } from '../TestAiSafeImage';
 import { useTestAiCandidateDisplay } from '../TestAiCandidateStatus';
@@ -24,6 +24,9 @@ export function evidenceReviewCandidates(source: EvidenceReviewSource): any[] {
 
 export type UsedValuationPriceSummary = { count: number; low: number | null; high: number | null; average: number | null };
 export type CurrentMarketPriceSummary = UsedValuationPriceSummary;
+export type HistoricMarketContextSummary = UsedValuationPriceSummary & {
+  oldestSaleDate: string | null; latestSaleDate: string | null; unknownSaleDateCount: number;
+};
 
 export function isConfirmedCurrentMarketMatch(row: any): boolean {
   return hasActualVisualResponse(row)
@@ -33,6 +36,7 @@ export function isConfirmedCurrentMarketMatch(row: any): boolean {
 }
 
 function isCurrentMarketContextCandidate(row: any): boolean {
+  if (row?.valuationUse?.use?.code === 'HISTORIC_MARKET_CONTEXT') return false;
   return isConfirmedCurrentMarketMatch(row)
     || (row?.evidenceDisposition === 'valuation_eligible' && row?.visualReviewStatus !== 'mismatch');
 }
@@ -76,6 +80,23 @@ export function summarizeCurrentMarketPrices(rows: any[]): CurrentMarketPriceSum
   return { count: prices.length, low: Math.min(...prices), high: Math.max(...prices), average: prices.reduce((total, price) => total + price, 0) / prices.length };
 }
 
+export function summarizeHistoricMarketContext(rows: any[]): HistoricMarketContextSummary {
+  // Reconciliation attaches the current request's final report. Neither an old
+  // source date nor report-only eligibility flags authorizes historic membership.
+  const historicRows = rows.filter((row) => row?.valuationUse?.use?.code === 'HISTORIC_MARKET_CONTEXT');
+  const prices = historicRows.map(candidateHistoricPrice).filter((price): price is number => price !== null);
+  const dates = historicRows.map(candidateHistoricSaleDate).filter((date): date is string => date !== null).sort();
+  return {
+    count: prices.length,
+    low: prices.length ? Math.min(...prices) : null,
+    high: prices.length ? Math.max(...prices) : null,
+    average: prices.length ? prices.reduce((total, price) => total + price, 0) / prices.length : null,
+    oldestSaleDate: dates[0] ?? null,
+    latestSaleDate: dates.at(-1) ?? null,
+    unknownSaleDateCount: historicRows.length - dates.length,
+  };
+}
+
 function formatRunSummaryPrice(value: number | null): string {
   return value === null ? 'Not available' : `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
@@ -93,6 +114,8 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
   const displayed = reconciledGroups.flatMap(source => source.candidates);
   const used = displayed.filter(row => row.valuationUse?.use?.code === 'CURRENT_SALES_PRIMARY').length;
   const usedPriceSummary = summarizeUsedValuationPrices(displayed);
+  const historicRows = displayed.filter(row => row.valuationUse?.use?.code === 'HISTORIC_MARKET_CONTEXT');
+  const historicSummary = summarizeHistoricMarketContext(historicRows);
   const currentMarketRows = displayed.filter(row => isCurrentMarketContextSource({
     sourceId: row?.sourceId,
     role: row?.role ?? row?.sourceRole,
@@ -111,9 +134,10 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
         <p><strong className="text-emerald-200">Accepted for valuation</strong> — the final analysis selected this candidate as usable valuation evidence.</p>
         <p><strong className="text-amber-200">Valuation not run</strong> — the candidate has not been through final valuation analysis yet; this is not a rejection.</p>
         <p><strong className="text-rose-200">Not accepted</strong> — a hard identity, evidence, or safety rule prevented valuation use.</p>
-        <p><strong className="text-slate-200">Not used</strong> — final analysis ran, but this candidate was not selected for the valuation result.</p>
+        <p><strong className="text-slate-200">Not used</strong> — final analysis ran, but this candidate was not selected for the valuation result; historic market context is shown separately.</p>
+        <p><strong className="text-sky-200">Historic market context</strong> — final analysis confirmed a matching completed sale over one year ago (older than 365 days). Its sold amount and date provide context, not today’s value.</p>
         <p><strong className="text-cyan-200">Candidate</strong> — a retained marketplace record shown for review; appearing here does not automatically make it a comparable.</p>
-        <p><strong className="text-slate-200">Unknown</strong> — the source did not provide that field; it is not automatically treated as a mismatch.</p>
+        <p><strong className="text-slate-200">Unknown</strong> — the source did not provide that field; it is not automatically treated as a mismatch. An unknown sale date is not evidence of a historic sale.</p>
       </div>
     </div>
     <div className="grid gap-3 md:grid-cols-[1fr_1fr]">
@@ -121,11 +145,12 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
         {item.primaryPhotoUrl ? <TestAiSafeImage src={item.primaryPhotoUrl} alt="Target item reference" className="h-24 w-20 rounded border border-cyan-800/40 bg-slate-950 object-contain" /> : <div className="flex h-24 w-20 items-center justify-center rounded border border-slate-700 text-center text-xs text-slate-500">Target image unavailable</div>}
         <div className="min-w-0"><p className="break-words text-sm font-semibold text-slate-100">{item.id ? <a className="hover:text-cyan-200 hover:underline" href={`/item/${item.id}`} target="_blank" rel="noreferrer">{item.title}</a> : item.title}</p><p className="mt-1 text-xs text-slate-400">{item.category.replace(/_/g, ' ')}{item.itemType ? ` · ${item.itemType.replace(/_/g, ' ')}` : ''}</p></div>
       </div></div>
-      <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-3"><h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Run summary · displayed candidates only</h3><div className="grid grid-cols-2 gap-2 text-center md:grid-cols-4">
+      <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-3"><h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Run summary · displayed candidates only</h3><div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3 xl:grid-cols-5">
         <div><p className="text-xl font-semibold text-cyan-200">{displayed.length}</p><p className="text-xs text-slate-400">Candidates</p></div>
         <div><p className="text-xl font-semibold text-emerald-200">{used}</p><p className="text-xs text-slate-400">Used in valuation</p></div>
-        <div><p className="text-xl font-semibold text-amber-200">{Math.max(0, displayed.length - used)}</p><p className="text-xs text-slate-400">Not used</p></div>
+        <div><p className="text-xl font-semibold text-amber-200">{Math.max(0, displayed.length - used - historicRows.length)}</p><p className="text-xs text-slate-400">Not used</p></div>
         <div><p className="text-xl font-semibold text-sky-200">{currentMarketRows.length}</p><p className="text-xs text-slate-400">Current market context</p></div>
+        <div><p className="text-xl font-semibold text-sky-200">{historicRows.length}</p><p className="text-xs text-slate-400">Historic market context</p></div>
       </div>
       <div className="mt-3 rounded border border-emerald-800/40 bg-emerald-950/20 p-2" aria-label="Prices from items used in valuation">
         <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">Prices from items used in valuation</p>
@@ -144,6 +169,19 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
           <div><p className="text-sm font-semibold text-sky-100">{formatRunSummaryPrice(currentMarketPriceSummary.average)}</p><p className="text-[10px] text-slate-400">Average Asking Price</p></div>
         </div>
         <p className="mt-1 text-[10px] text-slate-500">Based on {currentMarketPriceSummary.count} active listing{currentMarketPriceSummary.count === 1 ? '' : 's'} with a reported asking price. These prices are context only and do not set the primary sold-comps value.</p>
+      </div>
+      <div className="mt-3 rounded border border-sky-800/40 bg-sky-950/20 p-2" aria-label="Historic market context sold prices and sale dates">
+        <p className="text-xs font-semibold uppercase tracking-wide text-sky-200">Historic market context · USD sold prices</p>
+        <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+          <div><p className="text-sm font-semibold text-sky-100">{formatRunSummaryPrice(historicSummary.low)}</p><p className="text-[10px] text-slate-400">Low Sold Price</p></div>
+          <div><p className="text-sm font-semibold text-sky-100">{formatRunSummaryPrice(historicSummary.high)}</p><p className="text-[10px] text-slate-400">High Sold Price</p></div>
+          <div><p className="text-sm font-semibold text-sky-100">{formatRunSummaryPrice(historicSummary.average)}</p><p className="text-[10px] text-slate-400">Average Sold Price</p></div>
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2 text-center">
+          <div><p className="text-sm font-semibold text-sky-100">{historicSummary.oldestSaleDate ?? 'Unknown'}</p><p className="text-[10px] text-slate-400">Oldest Sale Date</p></div>
+          <div><p className="text-sm font-semibold text-sky-100">{historicSummary.latestSaleDate ?? 'Unknown'}</p><p className="text-[10px] text-slate-400">Latest Sale Date</p></div>
+        </div>
+        <p className="mt-1 text-[10px] text-slate-500">Prices use {historicSummary.count} final historic-context candidate{historicSummary.count === 1 ? '' : 's'} with a positive reported USD sold amount. Dates use the final normalized sale date; Unknown dates are omitted from the range{historicSummary.unknownSaleDateCount ? ` (${historicSummary.unknownSaleDateCount} Unknown)` : ''}. Matching sales over one year ago provide context only, not today’s value, and do not set the current valuation.</p>
       </div>
       {valuationNotRun ? <p className="mt-2 text-xs text-amber-200">Final valuation analysis has not run yet; current valuation counts are 0.</p> : resolved < displayed.length && <p className="mt-2 text-xs text-amber-200">{displayed.length - resolved} candidate decisions have no resolved final valuation record; their cards explain what is known.</p>}</div>
     </div>

@@ -1,5 +1,5 @@
 import type { CandidateDisplayRow } from '../../../../shared/testAiCandidateLedger';
-import { candidateExecutionAttemptFacts, candidateExecutionFact, candidateExecutionReceipt, candidateIdentityFact, candidatePricingFact, formatCandidateDisplayPrice, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException } from '../../../../shared/testAiCandidateStatus';
+import { candidateExecutionAttemptFacts, candidateExecutionFact, candidateExecutionReceipt, candidateHistoricSaleDate, candidateIdentityFact, candidatePricingFact, formatCandidateDisplayPrice, hasActualVisualDispatch, hasActualVisualResponse, isHardCandidateDisplayException } from '../../../../shared/testAiCandidateStatus';
 import { hasMercariUndatedSoldAdmission, mercariPriceContextLabel } from '../../../../shared/testAiMercariTransport';
 import { isCurrentMarketContextSource } from '../../../../shared/testAiMarketContext';
 
@@ -8,8 +8,10 @@ const neutral = 'border-slate-600/60 bg-slate-900/60 text-slate-200';
 const amber = 'border-amber-600/50 bg-amber-950/30 text-amber-200';
 const red = 'border-red-600/50 bg-red-950/30 text-red-200';
 const green = 'border-emerald-600/50 bg-emerald-950/30 text-emerald-200';
+const historic = 'border-sky-600/50 bg-sky-950/30 text-sky-200';
 const finalLabels: Record<string, string> = {
   CURRENT_SALES_DIAGNOSTIC_ONLY: 'NOT USED — SALES DIAGNOSTICS ONLY',
+  HISTORIC_MARKET_CONTEXT: 'HISTORIC MARKET CONTEXT',
   HISTORICAL_DIAGNOSTIC_ONLY: 'NOT USED — HISTORICAL DIAGNOSTICS ONLY',
   SOURCE_ELIGIBLE_NOT_SELECTED: 'MATCH CONFIRMED — NOT USED IN VALUE',
   OMITTED_BY_CAP: 'NOT USED — OMITTED BY CAP', EXACT_DUPLICATE: 'NOT USED — EXACT DUPLICATE',
@@ -189,9 +191,15 @@ function plainFinalReason(row: CandidateDisplayRow, code: string, exactReasons: 
   if (code === 'FINAL_HARD_EXCLUDED') return 'The final analysis recorded a hard exclusion but did not preserve its specific reason. The detailed exclusion reason is missing.';
   return exactReasons.length ? 'The item was not used because a final valuation rule prevented this sale from contributing to the value.' : undefined;
 }
+function isInformationalAgeReason(detail: string): boolean {
+  // An age observation is not itself an exclusion. Keep actual age/date blocker
+  // codes and specific restrictive explanations authoritative for other decisions.
+  return /^sale date is older than one year(?: and is admitted only under the labeled illiquid-market extension policy)?\.?$/i.test(detail.trim());
+}
 function finalAnalysisReasons(row: CandidateDisplayRow): string[] {
   const codes = [...(row.valuationUse?.sourceAdmission?.blockerCodes ?? []), ...(row.valuationUse?.use?.reasonCodes ?? [])];
-  const details = (row.valuationUse?.sourceAdmission?.reasonDetails ?? []).filter((reason: unknown) => typeof reason === 'string' && reason.trim());
+  const details = (row.valuationUse?.sourceAdmission?.reasonDetails ?? []).filter((reason: unknown) =>
+    typeof reason === 'string' && reason.trim() && !isInformationalAgeReason(reason));
   return [...new Set(codes)].map((code) => `${code}: ${finalAnalysisBlockerLabels[code] ?? 'Final analysis recorded this code as a reason the candidate was not used.'}`).concat(details);
 }
 function sourceDispositionBlockerDetails(row: CandidateDisplayRow): string[] {
@@ -207,7 +215,7 @@ function sourceDispositionBlockerDetails(row: CandidateDisplayRow): string[] {
   return (row.valuationUse?.sourceAdmission?.reasonDetails ?? [])
     .filter((detail: unknown): detail is string => typeof detail === 'string' && Boolean(detail.trim()))
     .map((detail: string) => detail.trim())
-    .filter((detail: string) => !informationalDetails.some((pattern) => pattern.test(detail)));
+    .filter((detail: string) => !isInformationalAgeReason(detail) && !informationalDetails.some((pattern) => pattern.test(detail)));
 }
 function sourceDispositionExplanation(row: CandidateDisplayRow): string {
   const details = sourceDispositionBlockerDetails(row);
@@ -275,6 +283,15 @@ function isActiveMarketContext(row: CandidateDisplayRow): boolean {
 /** Presentation only. Call after the existing current-request ledger reconciliation. */
 export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinalDecision {
   const pricing = candidatePricingFact(row);
+  // Only the reconciled final code authorizes this display group. Date, source
+  // eligibility, and stale asking-price fields cannot promote or demote a row.
+  if (row.valuationUse?.use?.code === 'HISTORIC_MARKET_CONTEXT') {
+    const amount = formatCandidateDisplayPrice(row);
+    const saleDate = candidateHistoricSaleDate(row);
+    return { label: finalLabels.HISTORIC_MARKET_CONTEXT,
+      reason: `This matching item sold${amount === 'Price unavailable' ? '; the sold amount is unavailable' : ` for ${amount}`}${saleDate ? ` on ${saleDate}` : '; sale date Unknown'}. Final analysis retained it as a completed sale over one year ago (older than 365 days). It provides historic market context, not today’s value, and does not set the current valuation.`,
+      code: 'HISTORIC_MARKET_CONTEXT', className: historic };
+  }
   const execution = candidateExecutionFact(row); // Never invent an active worker from a missing receipt.
   const identity = candidateIdentityFact(row);
   const receipt = candidateExecutionReceipt(row);

@@ -110,6 +110,9 @@ export function candidateIdentityFact(row: CandidateDisplayRow): CandidateDispla
     else fact = { label: 'Image identity unconfirmed', code: 'manual_unknown', className: amber };
   }
   const finalIdentity = row.valuationUse?.identityAdmission;
+  if (row.valuationUse?.use?.code === 'HISTORIC_MARKET_CONTEXT' && finalIdentity?.accepted === true) return {
+    label: 'Final identity match — historic market context', code: 'final_historic_identity_match', className: green,
+  };
   if (finalIdentity?.serverFinalApprovalVerified === true) return { ...fact,
     label: `${fact.label} · final server identity approved`, code: 'server_final_visual', className: green };
   if (finalIdentity?.accepted === true && finalIdentity.basis === 'title_evidence') return { ...fact,
@@ -119,6 +122,7 @@ export function candidateIdentityFact(row: CandidateDisplayRow): CandidateDispla
 export const finalPricingUseLabels: Record<string, string> = {
   CURRENT_SALES_PRIMARY: 'Used to support primary sales valuation',
   CURRENT_SALES_DIAGNOSTIC_ONLY: 'Current-sales diagnostics only',
+  HISTORIC_MARKET_CONTEXT: 'Historic market context',
   HISTORICAL_DIAGNOSTIC_ONLY: 'Historical diagnostics only', SOURCE_ELIGIBLE_NOT_SELECTED: 'Source eligible — not selected',
   OMITTED_BY_CAP: 'Matched but omitted by cap', EXACT_DUPLICATE: 'Exact duplicate excluded', PROBABLE_DUPLICATE: 'Probable duplicate excluded',
   OUTLIER_EXCLUDED: 'Outlier excluded', SECONDARY_ONLY: 'Secondary evidence only', REVIEW_REQUIRED: 'Submitted — held for verification / review',
@@ -134,6 +138,10 @@ export const economicPricingReasonLabels: Record<string, string> = {
 };
 export function candidatePricingFact(row: CandidateDisplayRow): CandidateDisplayFact {
   const use = row.valuationUse?.use;
+  if (use?.code === 'HISTORIC_MARKET_CONTEXT') return {
+    label: finalPricingUseLabels.HISTORIC_MARKET_CONTEXT, code: use.code, className: 'text-sky-300',
+    reason: 'A matching completed sale over one year ago; context only, not today’s value.',
+  };
   if (use?.code) return { label: finalPricingUseLabels[use.code] ?? `Final use: ${use.code}`, code: use.code,
     className: use.code === 'CURRENT_SALES_PRIMARY' ? green : use.code === 'FINAL_HARD_EXCLUDED' ? red : amber,
     reason: (use.reasonCodes ?? []).map((code: string) => economicPricingReasonLabels[code] ?? code).join(' · ') || undefined };
@@ -143,7 +151,26 @@ export function candidatePricingFact(row: CandidateDisplayRow): CandidateDisplay
   if (row.evidenceDisposition === 'valuation_eligible') return { label: 'Source eligible — final analysis not run', code: 'SOURCE_ELIGIBLE_BEFORE_ANALYSIS', className: neutral };
   return { label: 'Source context / review — final analysis not run', code: 'SOURCE_CONTEXT_BEFORE_ANALYSIS', className: neutral };
 }
+/** Report-only date from the reconciled final decision; never infer historic membership from a source date. */
+export function candidateHistoricSaleDate(row: CandidateDisplayRow): string | null {
+  if (row.valuationUse?.use?.code !== 'HISTORIC_MARKET_CONTEXT') return null;
+  const value = row.valuationUse.use.historicSaleDate;
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString().slice(0, 10) : null;
+}
+/** Final normalized economics only; no asking-price or provider-value fallback. */
+export function candidateHistoricPrice(row: CandidateDisplayRow): number | null {
+  const use = row.valuationUse?.use;
+  if (use?.code !== 'HISTORIC_MARKET_CONTEXT' || use.historicCurrency !== 'USD') return null;
+  return typeof use.historicPrice === 'number' && Number.isFinite(use.historicPrice) && use.historicPrice > 0
+    ? use.historicPrice : null;
+}
 export function formatCandidateDisplayPrice(row: CandidateDisplayRow): string {
+  if (row.valuationUse?.use?.code === 'HISTORIC_MARKET_CONTEXT') {
+    const historicPrice = candidateHistoricPrice(row);
+    return historicPrice === null ? 'Price unavailable' : `USD ${historicPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  }
   const raw = row.price ?? row.soldPrice ?? row.salePrice ?? row.finalPrice ?? row.currentPrice ?? row.current_price;
   const amount = Number(typeof raw === 'object' ? raw?.value : raw);
   if (!Number.isFinite(amount) || amount <= 0) return 'Price unavailable';
