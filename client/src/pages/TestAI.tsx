@@ -3018,7 +3018,10 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     };
     if (enabledSources.has('ebay_active')) {
       const autographMarketContext = item.category === 'autographs' && ebayData?.marketContextOnly === true;
-      const visualMatches = (ebayData?.visualReviewListings ?? []).filter((listing: any) => listing.visualReviewStatus === 'match' && Number(listing.price) > 0);
+      // Current-market context accepts both visual outcomes used by the
+      // display and metrics. This does not relax completed-sale admission:
+      // rough matches remain asking-price context only.
+      const visualMatches = (ebayData?.visualReviewListings ?? []).filter((listing: any) => (listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match') && Number(listing.price) > 0);
       const currentValueListings = autographMarketContext
         ? (ebayData?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0)
         : visualMatches;
