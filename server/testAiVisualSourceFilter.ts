@@ -847,7 +847,7 @@ function disneyPinsComparableValue(value: unknown): string {
 function disneyPinsValuesConflict(targetValue: unknown, candidateValue: unknown): boolean {
   const target = disneyPinsComparableValue(targetValue);
   const candidate = disneyPinsComparableValue(candidateValue);
-  if (!target || !candidate || target === candidate) return false;
+  if (!target || !candidate || /^(?:unknown|n ?a|not specified|not provided|none|null|undefined)$/.test(target) || target === candidate) return false;
   return !target.includes(candidate) && !candidate.includes(target);
 }
 
@@ -858,7 +858,7 @@ function disneyPinsPinNameValuesConflict(targetValue: unknown, candidateValue: u
     .filter((word) => word && !genericWords.has(word));
   const targetWords = meaningfulWords(targetValue);
   const candidateWords = meaningfulWords(candidateValue);
-  if (!targetWords.length || !candidateWords.length) return false;
+  if (!targetWords.length || !candidateWords.length || targetWords.every((word) => /^(?:unknown|n ?a|not specified|not provided|none|null|undefined)$/.test(word))) return false;
   // Marketplace titles often use a catalog, event, pose, or film-franchise
   // description instead of repeating the inventory pin's full display name.
   // For a single-pin target, a clear match on the declared character is
@@ -1957,7 +1957,7 @@ const DECLARED_VARIANT_PATTERNS = [
   /\b(?:foil|holofoil|chrome)\b/i,
   /\b(?:reprint|facsimile)\b/i,
   /\b(?:\d+(?:st|nd|rd|th)|second|third|fourth|fifth|sixth)\s+printing\b/i,
-  /\b(?:variant|incentive|exclusive|virgin|blank cover|sketch cover|edition)\b/i,
+  /\b(?:variant|incentive|exclusive|virgin|blank cover|sketch cover)\b/i,
   /\b(?:signed|autographed|signature)\b/i,
 ];
 

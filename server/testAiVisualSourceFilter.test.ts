@@ -2506,6 +2506,17 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([{ title: "Disney Pin", imageUrl: "https://example.com/unknown.jpg" }], target)).toHaveLength(0);
   });
 
+  it("does not hard-exclude an Open Edition Disney Pin when the target edition is unknown", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Disney Cinderella & Gus Glitter Portrait Pin",
+      category: "disney_pins",
+      itemType: "single_pin",
+      fullItemDetails: { pinName: "Disney Cinderella & Gus Glitter Portrait Pin", character: "Cinderella & Gus", year: "2025" },
+    });
+    const listing = { title: "2025 Open Edition Disney Princess Glitter Portraits Pin - Cinderella with Gus", imageUrl: "https://example.com/open-edition.jpg" };
+    expect(buildDeclaredIdentityReviews([listing], target)).toEqual([]);
+  });
+
   it("does not award Character points and hard-excludes a title that adds a different Disney character", () => {
     const target = buildVisualTargetMetadata({
       title: "Easter Chip Hidden Mickey Pin",
