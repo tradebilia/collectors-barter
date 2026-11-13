@@ -6247,7 +6247,7 @@ export function musicVisualCap(score: number): number {
   if (score >= 90) return 8;
   if (score >= 80) return 6;
   if (score >= 70) return 4;
-  if (score >= MUSIC_VISUAL_REVIEW_MINIMUM) return 2;
+  if (score >= MUSIC_VISUAL_REVIEW_MINIMUM) return 4;
   return 0;
 }
 

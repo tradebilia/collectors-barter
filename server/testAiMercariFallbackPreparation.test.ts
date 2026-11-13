@@ -204,12 +204,12 @@ describe('Step6 exact category minimums and unchanged unsupported workflows', ()
     { label: 'pin', metadata: pinTarget, minimum: 40, below: { title: 'Pin', pinName: 'Mickey Mouse' }, boundary: { title: 'Mickey Mouse Pin', character: 'Mickey Mouse' }, belowScore: 25, boundaryScore: 40 },
     { label: 'saved single_pin', metadata: savedPinTarget, minimum: 40, below: { title: 'Pin', pinName: 'Mickey Mouse' }, boundary: { title: 'Mickey Mouse Pin', character: 'Mickey Mouse' }, belowScore: 25, boundaryScore: 40 },
     { label: 'unopened sports product', metadata: unopenedTarget, minimum: 55, below: { title: 'Factory Box', productFormat: 'Box' }, boundary: { title: 'Factory Box', productFormat: 'Box', productType: 'Box' }, belowScore: 40, boundaryScore: 55 },
-    { label: 'music', metadata: musicTarget, minimum: 50, below: { title: 'Nirvana Cassette Tape' }, boundary: { title: 'Nirvana Nevermind Cassette Tape' }, belowScore: 35, boundaryScore: 50 },
-  ])('uses the actual $label selector, including its inclusive $minimum minimum', ({ metadata, minimum, below, boundary, belowScore, boundaryScore }) => {
+    { label: 'music', metadata: musicTarget, minimum: 50, cap: 4, below: { title: 'Nirvana Cassette Tape' }, boundary: { title: 'Nirvana Nevermind Cassette Tape' }, belowScore: 35, boundaryScore: 50 },
+  ])('uses the actual $label selector, including its inclusive $minimum minimum', ({ metadata, minimum, cap = 2, below, boundary, belowScore, boundaryScore }) => {
     const low = prepare([{ id: 'below', ...below, imageUrl: image('below') }], metadata);
     const exact = prepare([{ id: 'boundary', ...boundary, imageUrl: image('boundary') }], metadata);
     expect(low).toMatchObject({ supported: true, eligibleCount: 0, cap: 0, minimumMetadataScore: minimum });
-    expect(exact).toMatchObject({ supported: true, eligibleCount: 1, cap: 2, minimumMetadataScore: minimum });
+    expect(exact).toMatchObject({ supported: true, eligibleCount: 1, cap, minimumMetadataScore: minimum });
     expect(low.preparedListings[0].metadataMatchScore).toBe(belowScore);
     expect(exact.preparedListings[0].metadataMatchScore).toBe(boundaryScore);
     expect(selectedIds(exact)).toEqual(['boundary']);
