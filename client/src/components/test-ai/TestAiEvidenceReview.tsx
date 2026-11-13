@@ -37,10 +37,15 @@ export function isConfirmedCurrentMarketMatch(row: any): boolean {
 }
 
 function isCurrentMarketContextCandidate(row: any): boolean {
-  // Use the same final presentation decision as the candidate card. The old
-  // summary predicate required a separate source-stage eligibility flag, so a
-  // valid rough active match could be labeled CURRENT MARKET CONTEXT on its
-  // card while being omitted from the run-summary count and price range.
+  // eBay Active is current-market evidence, but it is not usable context until
+  // the candidate has a proper metadata score, completed visual inspection,
+  // and returned a confirmed or rough visual match. Unreviewed rows remain
+  // visible for audit, but do not inflate the current-market count or prices.
+  if (!hasActualVisualResponse(row)) return false;
+  const visualResult = row?.visualReviewStatus
+    ?? row?.visualExecution?.identity?.result
+    ?? row?.visualIdentityResult;
+  if (visualResult !== 'match' && visualResult !== 'rough_match') return false;
   const decisionCode = candidateFinalDecision(row).code;
   return decisionCode === 'ACTIVE_MARKET_CONTEXT_MATCH' || decisionCode === 'ACTIVE_MARKET_CONTEXT';
 }
