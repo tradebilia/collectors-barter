@@ -903,6 +903,16 @@ function disneyPinsBooleanConflict(targetValue: unknown, candidateValue: unknown
   return `Disney Pins ${label} differs: target is explicitly ${target}, but the candidate explicitly declares ${candidate}.`;
 }
 
+function disneyPinsCharacterTitleConflict(targetValue: unknown, listing: VisualSourceCandidate): string | null {
+  const target = disneyPinsMeaningfulTokens(targetValue);
+  const declared = disneyPinsCharactersFromTitle(canonicalCandidateTitle(listing));
+  if (!target.length || !declared) return null;
+  const candidate = disneyPinsMeaningfulTokens(declared);
+  if (!target.some((token) => candidate.includes(token))) return null;
+  if (target.length === candidate.length && target.every((token) => candidate.includes(token))) return null;
+  return `Disney Pins character differs: target explicitly declares ${String(targetValue)}, but the candidate title explicitly declares ${declared}.`;
+}
+
 function disneyPinsIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   const targetType = disneyPinsTargetItemType(targetMetadata);
   if (!targetType || targetType === "collection_lot") return null;
@@ -926,6 +936,10 @@ function disneyPinsIdentityConflict(targetMetadata: string, listing: VisualSourc
         ["series", target.series, ["series", "seriesName"], []],
         ["characters included", target.charactersIncluded, ["charactersIncluded", "characters", "characterList"], []],
   ];
+  if (targetType === "individual_pin") {
+    const characterConflict = disneyPinsCharacterTitleConflict(target.character, listing);
+    if (characterConflict) return characterConflict;
+  }
   for (const [label, targetValue, aliases, titlePatterns] of checks) {
     const candidateValue = disneyPinsExplicitValue(listing, aliases, titlePatterns);
     const conflicts = label === "pin name"
@@ -2307,7 +2321,7 @@ function titleGradeEvidence(title: string, category = ""): { grader: string; gra
   const grade = `${comparable.designation ?? ""}${comparable.numeric}${comparable.plus ? "+" : ""}${comparable.qualifiers.length ? ` ${comparable.qualifiers.join(" ")}` : ""}${comparable.qualifierUncertain ? " (unknown)" : ""}`;
   return { grader: observed.grader ?? "", grade };
 }
-const DISNEY_PINS_CHARACTER_STOP_WORDS = /^(?:disney|parks|easter|christmas|halloween|holiday|limited|exclusive|open|edition|single|trading|pin|pins|set|collection|series|\d{4})$/i;
+const DISNEY_PINS_CHARACTER_STOP_WORDS = /^(?:disney|parks|easter|christmas|halloween|holiday|limited|exclusive|open|edition|single|trading|pin|pins|set|collection|series|black|white|red|blue|green|yellow|pink|purple|orange|\d{4})$/i;
 /** Extract a character pair from the candidate title without borrowing target metadata. */
 export function disneyPinsCharactersFromTitle(title: string): string | null {
   const text = String(title ?? "").replace(/[–—]/g, "-").replace(/\s+/g, " ").trim();
@@ -5903,8 +5917,20 @@ function disneyPinsValueMatches(targetValue: unknown, listing: VisualSourceCandi
   const witness = explicit ? { value: String(explicit), source: 'structured' as const, field: aliases[0] } : title ? { value: title, source: 'title' as const, field: aliases[0] } : null;
   const candidate = disneyPinsScoreText(value);
   if (!candidate) return null;
-  if (candidate.includes(target) || target.includes(candidate)) return scoreMatch(true, witness);
   const characterAliases = aliases.some((alias) => /^(?:character|characters|characterName)$/i.test(alias));
+  if (characterAliases) {
+    const declaredCharacters = disneyPinsCharactersFromTitle(title);
+    if (declaredCharacters) {
+      const targetCharacters = disneyPinsMeaningfulTokens(targetValue);
+      const candidateCharacters = disneyPinsMeaningfulTokens(declaredCharacters);
+      if (targetCharacters.some((token) => candidateCharacters.includes(token))
+        && (targetCharacters.length !== candidateCharacters.length
+        || !targetCharacters.every((token) => candidateCharacters.includes(token)))) {
+        return scoreMatch(false, witness);
+      }
+    }
+  }
+  if (candidate.includes(target) || target.includes(candidate)) return scoreMatch(true, witness);
   if (!explicit && disneyPinsTokenEvidenceMatches(targetValue, candidate, characterAliases ? ['princess', 'prince', 'queen', 'king'] : [])) return scoreMatch(true, witness);
   return patterns.some((pattern) => pattern.test(title)) ? scoreMatch(true, { value: title, source: 'title', field: aliases[0] }) : explicit ? false : null;
 }

@@ -2506,6 +2506,20 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([{ title: "Disney Pin", imageUrl: "https://example.com/unknown.jpg" }], target)).toHaveLength(0);
   });
 
+  it("does not award Character points and hard-excludes a title that adds a different Disney character", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Easter Chip Hidden Mickey Pin",
+      category: "disney_pins",
+      itemType: "individual_pin",
+      fullItemDetails: { pinName: "Easter Chip", character: "Chip" },
+    });
+    const listing = { title: "Chip & Dale Happy Easter 2003 Limited Edition Dangle Pin", imageUrl: "https://example.com/chip-dale.jpg" };
+    const score = disneyPinsIndividualVisualScore(listing, target);
+    expect(score.awards.some((award) => award.field === "character")).toBe(false);
+    expect(score.score).toBe(25);
+    expect(buildDeclaredIdentityReviews([listing], target)[0]?.rationale).toContain("character differs");
+  });
+
   it("accepts descriptive Disney Pins titles when the meaningful individual-pin name is present", () => {
     const target = buildVisualTargetMetadata({
       title: "Donald Duck Black & White Snapshots",
@@ -2524,7 +2538,7 @@ describe("visual source filter", () => {
       fullItemDetails: { pinName: "Around the World Eeyore", character: "Eeyore", series: "Around the World" },
     });
     expect(buildDeclaredIdentityReviews([{ title: "Disney Pin HKDL Eeyore Name Tag Mystery Collection", imageUrl: "https://example.com/mystery-collection-pin.jpg" }], eeyoreTarget)).toHaveLength(0);
-    expect(buildDeclaredIdentityReviews([{ title: "UK Disney Store Winnie the Pooh Eeyore and Piglet Christmas 2002 Pin E7", imageUrl: "https://example.com/character-pin.jpg" }], eeyoreTarget)).toHaveLength(0);
+    expect(buildDeclaredIdentityReviews([{ title: "UK Disney Store Winnie the Pooh Eeyore and Piglet Christmas 2002 Pin E7", imageUrl: "https://example.com/character-pin.jpg" }], eeyoreTarget)[0]?.rationale).toContain("character differs");
     expect(buildDeclaredIdentityReviews([{ title: "Disney Trading Pin * Eeyore * Sitting * From Winnie the Pooh", imageUrl: "https://example.com/sitting-eeyore.jpg" }], eeyoreTarget)).toHaveLength(0);
     expect(buildDeclaredIdentityReviews([{ title: "2003 Official WDW Walt Disney World Pin Eeyore Donkey Pink Bow Winnie the Pooh", imageUrl: "https://example.com/bow-eeyore.jpg" }], eeyoreTarget)).toHaveLength(0);
     expect(buildDeclaredIdentityReviews([{ title: "Disney Trading Pin Minnie Mouse Sitting From Winnie the Pooh", imageUrl: "https://example.com/minnie.jpg" }], eeyoreTarget)[0]?.rationale).toContain("pin name differs");
