@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { annotateSoldComparableCandidate, applyAutographPriceTailGate, applyIsolatedMarketPriceTailGate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromQuery, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata } from './testAIRouter';
+import { annotateSoldComparableCandidate, applyAutographPriceTailGate, applyIsolatedMarketPriceTailGate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromQuery, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata, resolveEbaySoldSourceIdentity } from './testAIRouter';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 import { isExplicitMultiItemListing } from '../shared/testAiMarketplaceCandidate';
 import { applyVisualSourceReviews, conservativeGradedVisualReviews } from './testAiVisualSourceFilter';
@@ -19,6 +19,17 @@ describe('Sold-Comps API key validation', () => {
 
   it('reports no credential only when neither supported variable is configured', () => {
     expect(getSoldCompsApiKey({})).toBeNull();
+  });
+
+  it('preserves eBay Sold-Comps provider IDs and URL aliases without stringifying missing IDs', () => {
+    expect(resolveEbaySoldSourceIdentity({ itemId: 'ebay-item', itemWebUrl: 'https://www.ebay.com/itm/123' }))
+      .toEqual({ saleId: 'ebay-item', url: 'https://www.ebay.com/itm/123' });
+    expect(resolveEbaySoldSourceIdentity({ sourceRecordId: 'sold-record', link: 'https://www.ebay.com/itm/456' }))
+      .toEqual({ saleId: 'sold-record', url: 'https://www.ebay.com/itm/456' });
+    expect(resolveEbaySoldSourceIdentity({ itemUrl: 'https://www.ebay.com/itm/789' }))
+      .toEqual({ saleId: null, url: 'https://www.ebay.com/itm/789' });
+    expect(resolveEbaySoldSourceIdentity({ title: 'Nirvana Nevermind Cassette' }))
+      .toEqual({ saleId: null, url: null });
   });
 
   it('preserves ranking metadata in the eBay Sold-Comps transport payload', () => {

@@ -85,6 +85,16 @@ export const EBAY_ACTIVE_EXACT_PAGE_LIMIT = 3;
 export const EBAY_ACTIVE_DISPLAY_TARGET = 20;
 export const EBAY_ACTIVE_DETAIL_ENRICHMENT_CAP = 120;
 
+/** Resolve provider identity without ever turning an absent ID into text. */
+export function resolveEbaySoldSourceIdentity(item: Record<string, unknown>): { saleId: string | number | null; url: string | null } {
+  const saleId = [item.saleId, item.itemId, item.id, item.sourceRecordId, item.lotId, item.providerRecordId]
+    .find((value): value is string | number => (typeof value === 'string' && value.trim().length > 0)
+      || (typeof value === 'number' && Number.isSafeInteger(value) && value > 0));
+  const url = [item.itemWebUrl, item.itemUrl, item.url, item.link, item.href]
+    .find((value): value is string => typeof value === 'string' && value.trim().length > 0) ?? null;
+  return { saleId: saleId ?? null, url };
+}
+
 function normalizedPcgsAuctionGrade(value: unknown): string {
   return String(value ?? '').replace(/\s+/g, '').toUpperCase();
 }
@@ -3444,17 +3454,24 @@ export const testAIRouter = router({
             try {
               // These are the same scalar aliases validated above, not a new
               // provider format. Keep their original structured row separately.
-              const saleId = String(item.saleId ?? item.id ?? item.itemId);
+              const sourceIdentity = resolveEbaySoldSourceIdentity(item);
+              const saleId = sourceIdentity.saleId;
+              const sourceUrl = sourceIdentity.url;
               const soldPrice = Number(item.soldPrice ?? item.price);
               const imageUrls = collectEbayImageUrls(item);
-              const candidate = normalizeEbayMarketplaceCandidate({ ...item, saleId, soldPrice, imageUrls,
+              const candidate = normalizeEbayMarketplaceCandidate({ ...item, saleId, url: sourceUrl, soldPrice, imageUrls,
                 sourceId: 'ebay_sold_comps', saleStatus: 'completed', priceBasis: 'sold' });
               const metadata = normalizeSoldCompsMetadata(item);
               result.receipt.normalized += 1;
-              const key = saleId.trim().toLowerCase();
+              const key = saleId !== null
+                ? String(saleId).trim().toLowerCase()
+                : sourceUrl
+                  ? `url:${sourceUrl.trim().toLowerCase()}`
+                  : `unidentified:${fetchQuery}:${rawItems.length}`;
               if (!seenSoldKeys.has(key)) {
                 seenSoldKeys.add(key);
-                rawItems.push({ ...item, saleId, soldPrice, imageUrl: imageUrls[0] ?? null, imageUrls,
+                rawItems.push({ ...item, saleId, url: sourceUrl, itemUrl: sourceUrl ?? item.itemUrl ?? null,
+                  soldPrice, imageUrl: imageUrls[0] ?? null, imageUrls,
                   rawMetadata: { ...item }, providerMetadata: { ...item },
                   normalizedListingTitle: candidate.title, normalizedListingTitleSource: candidate.titleSource,
                   normalizedListingTitleCandidates: candidate.titleCandidates,
@@ -3856,9 +3873,10 @@ export const testAIRouter = router({
           date: item.endedAt ?? null,
           // Preserve the original scalar type for the existing financial
           // identity check; display normalization must not launder invalid IDs.
-          saleId: item.rawMetadata?.saleId ?? item.rawMetadata?.id ?? item.rawMetadata?.itemId
-            ?? item.saleId ?? item.id ?? item.itemId ?? item.url ?? null,
-          url: item.url ?? null,
+          ...(() => {
+            const identity = resolveEbaySoldSourceIdentity({ ...item.rawMetadata, ...item });
+            return { saleId: identity.saleId ?? identity.url, url: identity.url };
+          })(),
           sourceId: 'sold_comps',
           saleStatus: 'completed' as const,
           completedStatusBasis: 'Sold-Comps completed-sale endpoint',
