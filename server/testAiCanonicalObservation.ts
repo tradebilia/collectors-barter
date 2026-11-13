@@ -480,6 +480,10 @@ function metadataTarget(metadata: string): IdentityApprovalTargetInput | null {
 function hardDecidingDifference(difference: NonNullable<VisualSourceReview['visualDifferences']>[number], category: string): boolean {
   if (!/hard|material|conflict|mismatch/i.test(difference.impact)
     || /serial|tracking|qr|barcode|(?:certification|certificate|cert)[ _-]*(?:id|number)/i.test(difference.field)) return false;
+  // Disney Pins are identified by the primary pin itself. Generic backing
+  // cards and packaging are secondary evidence; explicit event/set release
+  // requirements are enforced separately by disneyPinsEvidenceIsExact.
+  if (category === 'disney_pins' && /backing[ _-]*(?:card|logo)|packag(?:e|ing)/i.test(difference.field.trim())) return false;
   if (category === 'disney_pins' && /^(?:(?:numeric[ _-]*)?grade|grader|grading[ _-]*company|certification[ _-]*company|slab|grading[ _-]*label|raw[ _-]*(?:or|versus|vs)[ _-]*graded|graded[ _-]*state|is[ _-]*graded)$/i.test(difference.field.trim())) return false;
   const left = difference.targetObservation.trim(), right = difference.candidateObservation.trim();
   if (left.normalize('NFKC').toLowerCase().replace(/[_\s-]+/g, ' ') === right.normalize('NFKC').toLowerCase().replace(/[_\s-]+/g, ' ')) return false;

@@ -421,6 +421,20 @@ describe('identity-approval-v1 server authority', () => {
       targetImageReference: imageReference, expectedImageReference: imageReference, targetMetadata: buildVisualTargetMetadata(pinTarget), acquiredAt })).toBeNull();
   });
 
+  it('treats generic Disney backing-card or packaging differences as soft visual evidence', () => {
+    const pinTarget = { title: 'Cinderella Glitter Portrait Pin', category: 'disney_pins', itemType: 'individual_pin',
+      itemDetails: JSON.stringify({ pinName: 'Cinderella Glitter Portrait', character: 'Cinderella' }) };
+    const pinEvidence = { characterMatches: true, artworkMatches: true, silhouetteMatches: true, identityMatches: true,
+      backingCardMatches: false, setDesignMatches: false };
+    const review = finalReview({ visualEvidence: pinEvidence, visualDifferences: [
+      { field: 'backing card / packaging', targetObservation: 'generic backing card', candidateObservation: 'different generic backing card', impact: 'material visual conflict' },
+    ] });
+    review.visualAudit = { ...review.visualAudit!, initialEvidence: pinEvidence, finalEvidence: pinEvidence };
+    const sale = approvalSale({ title: 'Cinderella Glitter Portrait Pin' });
+    expect(createServerFinalIdentityApproval({ sale, review, target: pinTarget, reviewedTarget: pinTarget,
+      targetImageReference: imageReference, expectedImageReference: imageReference, targetMetadata: buildVisualTargetMetadata(pinTarget), acquiredAt })).not.toBeNull();
+  });
+
   it('holds changed comic distribution and actual restoration augmentation at the getter', () => {
     const comicTarget = { title: 'Amazing Spider-Man #300', category: 'comics', itemType: 'single_comic', grade: '9.8', certificationCompany: 'CGC',
       itemDetails: JSON.stringify({ comicTitle: 'Amazing Spider-Man', issueNumber: '300', publisher: 'Marvel', distributionType: 'Direct' }) };
