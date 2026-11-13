@@ -215,6 +215,24 @@ describe("Music identity and diagnostic boundaries", () => {
     expect(formatRow).toMatchObject({ targetValue: "Cassette Tape", titleDerivedValue: "Cassette Tape (detected in title)", titleDerivedStatus: "match" });
   });
 
+  it.each(["DGC", "DGCC", "Geffen Records"])("treats %s as Geffen Records for Music label scoring and identity", (label) => {
+    const metadata = target("good", { recordLabel: "Geffen Records" });
+    const listing = candidate(`Nirvana Nevermind Cassette ${label}`, { recordLabel: label });
+    const score = musicVisualScore(listing, metadata);
+    const row = buildMetadataFieldComparisons(metadata, listing).find(value => value.fieldKey === "recordLabel");
+    expect(score.matched).toContain("recordLabel");
+    expect(score.awards.find(award => award.field === "recordLabel")?.awardedPoints).toBe(10);
+    expect(row).toMatchObject({ status: "match", titleDerivedStatus: "match" });
+    expect(buildDeclaredIdentityReviews([listing], metadata)).toEqual([]);
+  });
+
+  it("keeps an unrelated Music record label as a real identity conflict", () => {
+    const metadata = target("good", { recordLabel: "Geffen Records" });
+    const listing = candidate("Nirvana Nevermind Cassette Columbia", { recordLabel: "Columbia" });
+    expect(musicVisualScore(listing, metadata).matched).not.toContain("recordLabel");
+    expect(buildDeclaredIdentityReviews([listing], metadata)[0]?.rationale).toContain("Music record label differs");
+  });
+
   it("does not bypass the independent artist identity gate when sealed states match", () => {
     const listing = candidate("Nirvana Nevermind Cassette Factory Sealed", { artist: "Pearl Jam", condition: "Good" });
     expect(buildDeclaredIdentityReviews([listing], target("sealed"))[0]?.rationale).toContain("Music artist differs");

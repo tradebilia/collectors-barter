@@ -2291,6 +2291,20 @@ function comparisonValue(value: unknown): string {
 function comparisonComparable(value: string): string {
   return normalizeComparableNumberWords(value.toLowerCase()).replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
 }
+function musicRecordLabelComparable(value: unknown): string {
+  const normalized = musicComparableValue(String(value ?? "").replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, ""));
+  return /^(?:dgc|dgcc|geffen|geffenrecords|geffenrecord)$/.test(normalized) ? "geffenrecords" : normalized;
+}
+function musicRecordLabelsAgree(left: unknown, right: unknown): boolean {
+  const a = musicRecordLabelComparable(left);
+  const b = musicRecordLabelComparable(right);
+  return Boolean(a && b && (a === b || a.includes(b) || b.includes(a)));
+}
+function musicMaterialConflicts(targetMetadata: string, listing: VisualSourceCandidate, options?: { ignoreSubjectiveConditionDifferences?: boolean }) {
+  const category = normalizedChoice(metadataValue(targetMetadata, "category"));
+  return findMaterialMetadataConflicts(targetMetadata, listing, options)
+    .filter((conflict) => !(category === "music" && conflict.field === "recordLabel" && musicRecordLabelsAgree(conflict.targetValue, conflict.candidateValue)));
+}
 function comparisonMetadataAliases(key: string): string[] {
   const groups = [
     ["grade", "numericGrade", "professionalGrade", "finalGrade"],
@@ -2438,6 +2452,10 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
 		if (category === "music" && /^(?:format|mediaFormat)$/i.test(key)) {
 			const format = musicCandidateFormat(listing);
 			return format ? `${format.replace(/\b\w/g, (letter) => letter.toUpperCase())} (detected in title)` : "Unknown";
+		}
+		if (category === "music" && /^recordLabel$/i.test(key)) {
+			const label = title.match(/\b(?:DGC|DGCC|Geffen(?:\s+Records?)?)\b/i)?.[0];
+			return label ? `${/^dgc{1,2}$/i.test(label) ? label.toUpperCase() : "Geffen Records"} (detected in title)` : "Unknown";
 		}
 		if (category === "movies" && /^(?:sealed|sealedStatus|packaging)$/i.test(key)) {
       const state = title.match(/\b(?:factory\s+sealed|sealed|opened|used)\b/i)?.[0];
@@ -2790,6 +2808,7 @@ function comparisonStatus(targetValue: string, candidateValue: string, category 
 		return normalizedType(targetValue) === normalizedType(candidateValue) ? "match" : "different";
 	}
 	if (category === "movies" && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(key)) return movieValuesAgree(targetValue, candidateValue) ? "match" : "different";
+	if (category === "music" && /^recordLabel$/i.test(key)) return musicRecordLabelsAgree(targetValue, candidateValue) ? "match" : "different";
 	if (category === "movies" && /^(?:condition|mediaCondition)$/i.test(key)) {
 		const targetComparable = comparisonComparable(targetValue);
 		const candidateComparable = comparisonComparable(candidateValue.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, ""));
@@ -3980,7 +3999,16 @@ function musicValuesConflict(targetValue: unknown, candidateValue: unknown): boo
   if (!target || !candidate) return false;
   return target !== candidate && !target.includes(candidate) && !candidate.includes(target);
 }
-
+function musicScoreRecordLabelMatches(targetValue: unknown, listing: VisualSourceCandidate): ScorePredicate {
+  const target = musicRecordLabelComparable(targetValue);
+  if (!target) return null;
+  const details = candidateStructuredDetails(listing);
+  const structured = musicExplicitValue(details, "recordLabel", "label");
+  if (structured) return scoreMatch(musicRecordLabelsAgree(targetValue, structured), { value: structured, source: "structured", field: "recordLabel" });
+  const title = canonicalCandidateTitle(listing);
+  const match = title.match(/\b(?:DGC|DGCC|Geffen(?:\s+Records?)?)\b/i)?.[0];
+  return match ? scoreMatch(musicRecordLabelsAgree(targetValue, match), { value: match, source: "title", field: "recordLabel" }) : null;
+}
 function musicIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "music") return null;
   const targetDetails = extractTargetItemDetails(targetMetadata);
@@ -4004,6 +4032,7 @@ function musicIdentityConflict(targetMetadata: string, listing: VisualSourceCand
   for (const [label, targetKey, candidateKeys] of checks) {
     const targetValue = targetDetails[targetKey] ?? (targetKey === "releaseTitle" ? extractTargetTitle(targetMetadata) : metadataValue(targetMetadata, targetKey));
     const candidateValue = musicExplicitValue(candidateDetails, ...candidateKeys);
+    if (targetKey === "recordLabel" && musicRecordLabelsAgree(targetValue, candidateValue)) continue;
     if (musicValuesConflict(targetValue, candidateValue)) {
       return `Music ${label} differs: the candidate explicitly declares a different ${label}.`;
     }
@@ -4267,7 +4296,7 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
 }
 
 function visualMetadataDifferenceSummary(targetMetadata: string, listing: VisualSourceCandidate): string[] {
-  const differences = findMaterialMetadataConflicts(targetMetadata, listing, { ignoreSubjectiveConditionDifferences: true })
+  const differences = musicMaterialConflicts(targetMetadata, listing, { ignoreSubjectiveConditionDifferences: true })
     .map((conflict) => `${conflict.field}: target “${conflict.targetValue}” vs candidate “${conflict.candidateValue}” (${conflict.reason})`);
   if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "vintage_toys") return differences.slice(0, 12);
   const targetDetails = extractTargetItemDetails(targetMetadata);
@@ -4975,7 +5004,7 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const movieIdentityConflictReason = movieIdentityConflict(targetMetadata, listing);
     const musicIdentityConflictReason = musicIdentityConflict(targetMetadata, listing);
     const pokemonIdentityConflictReason = pokemonIdentityConflict(targetMetadata, listing);
-    const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
+    const materialConflicts = musicMaterialConflicts(targetMetadata, listing, options);
     const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(vintageToyIdentityConflictReason) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || Boolean(disneyPinsIdentityConflictReason) || Boolean(videoGameIdentityConflictReason) || Boolean(movieIdentityConflictReason) || Boolean(musicIdentityConflictReason) || Boolean(pokemonIdentityConflictReason) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
     const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? vintageToyIdentityConflictReason ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? disneyPinsIdentityConflictReason ?? videoGameIdentityConflictReason ?? movieIdentityConflictReason ?? musicIdentityConflictReason ?? pokemonIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
@@ -6201,7 +6230,7 @@ export function musicVisualScore(listing: VisualSourceCandidate, targetMetadata:
   add('artist', 20, musicScoreValueMatches(musicScoreTargetValue(targetDetails, ['artist', 'performer', 'artistName']), listing, ['artist', 'performer', 'artistName']));
   add('releaseTitle', 15, musicScoreValueMatches(musicScoreTargetValue(targetDetails, ['releaseTitle', 'album', 'albumTitle'], extractTargetTitle(targetMetadata)), listing, ['releaseTitle', 'album', 'albumTitle', 'title']));
   add('format', 15, musicScoreFormatMatches(targetType, listing));
-  add('recordLabel', 10, musicScoreValueMatches(targetDetails.recordLabel, listing, ['recordLabel', 'label']));
+  add('recordLabel', 10, musicScoreRecordLabelMatches(targetDetails.recordLabel, listing));
   add('catalogNumber', 10, musicScoreValueMatches(targetDetails.catalogNumber, listing, ['catalogNumber', 'catalogNo', 'catNo']));
   add('releaseYear', 8, musicScoreValueMatches(targetDetails.releaseYear ?? targetDetails.year, listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:17|18|19|20)\d{2})(?:[^0-9]|$)/i]));
   add('country', 5, musicScoreValueMatches(targetDetails.country ?? targetDetails.countryOfRelease, listing, ['country', 'countryOfRelease', 'pressingCountry']));
