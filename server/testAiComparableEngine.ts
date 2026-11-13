@@ -15,7 +15,7 @@ import { autographMarketExclusionReason, autographMarketRelevanceScore, autograp
 import { randomUUID } from 'node:crypto';
 import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAuditRef,
   readServerNormalizationReport, retainServerNormalizationReport, finalUsePopulation,
-  type FinalIntakeReport, type FinalIdentityAdmission, type FinalValuationUse, type FinalUseReport,
+  type FinalIntakeReport, type FinalIdentityAdmission, type FinalValuationUse, type FinalUseReport, type FinalRejectionReason,
   boundedFinalDisplayCorrelation, boundedDiagnosticVisualExecution, type FinalDisplayCorrelation, type FinalUsePriceGroup, type ValuationUseOptions } from '../shared/testAiValuationUse';
 import type { MetadataRankingBinding } from '../shared/testAiRankingPopulation';
 import { comparePokemonCardNumbers, parsePokemonCardNumber, readPokemonCardNumbersFromTitle,
@@ -112,6 +112,8 @@ export interface MarketSale {
   displayCorrelation?: FinalDisplayCorrelation | null;
   /** Inbound JSON never establishes this server-owned reporting receipt. */
   analysisIntake?: FinalIntakeReport;
+  /** Structured server-final rejection; reporting only and never an approval input. */
+  approvalFailure?: FinalRejectionReason;
   valuationUse?: FinalValuationUse;
 }
 
@@ -197,6 +199,7 @@ export interface ComparableMatch {
   metadataMatchLabel?: string | null;
   visualExecution?: unknown;
   reportedVisualExecution?: unknown;
+  approvalFailure?: FinalRejectionReason;
   /** Raw branch result before financial ledger context/cap/duplicate wrapping. */
   identityAdmission?: FinalIdentityAdmission;
   valuationUse?: FinalValuationUse;

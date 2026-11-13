@@ -7,7 +7,8 @@ import { getVerifiedIdentityApproval, hasVerifiedMercariUndatedSale, transferVer
   MERCARI_REPORTED_SOLD_PRICE_BASIS } from './testAiCanonicalObservation';
 import { randomUUID } from 'node:crypto';
 import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAuditRef,
-  boundedFinalDisplayCorrelation, boundedDiagnosticVisualExecution, retainServerNormalizationReport, type NormalizationBlockerCode, type ValuationUseSide } from '../shared/testAiValuationUse';
+  boundedFinalDisplayCorrelation, boundedDiagnosticVisualExecution, retainServerNormalizationReport, structuredSourceAdmissionBlocker,
+  type NormalizationBlockerCode, type ValuationUseSide } from '../shared/testAiValuationUse';
 
 /**
  * The Test AI client may transport marketplace observations, but it never gets
@@ -250,7 +251,10 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
       verifiedSourceId: verification.verified ? sourceId || null : null,
       verifiedSourceDisposition: verification.verified ? safeText(trustedInput.evidenceDisposition, 80) : null,
       verification: verification.verified ? 'verified' as const : 'unverified' as const,
-      normalizationEligible: valuationEligible, historicMarketContextEligible, blockerCodes, warningCodes,
+      normalizationEligible: valuationEligible, historicMarketContextEligible, blockerCodes,
+      sourceBlockers: blockerCodes.map((code) => structuredSourceAdmissionBlocker(code, uniqueReasons(reasons).find((reason) => reason.includes(code)))),
+      ...(input.approvalFailure ? { approvalFailure: input.approvalFailure } : {}),
+      warningCodes,
       reasonDetails: uniqueReasons(reasons).slice(0, 40),
     },
   };

@@ -18,6 +18,60 @@ export type NormalizationBlockerCode =
   | 'REQUIRED_APPROVAL_MISSING' | 'APPROVED_LOT_CONFLICT'
   | 'TRANSACTION_IDENTITY_MISSING' | 'TRANSACTION_LOT_CONFLICT' | 'AUCTION_AMOUNT_UNRESOLVED'
   | 'HIGH_VALUE_PRICE_TOO_LOW' | 'HIGH_VALUE_PRICE_TOO_HIGH';
+export type FinalRejectionBoundary = 'server_final_approval' | 'source_admission';
+export type FinalRejectionReason = {
+  boundary: FinalRejectionBoundary;
+  code: string;
+  plainEnglish: string;
+  detail?: string;
+};
+const approvalReasonLabels: Record<string, string> = {
+  APPROVAL_SOURCE_UNSUPPORTED: 'this source is not authorized to issue a final visual approval',
+  APPROVAL_ADAPTER_CONFLICT: 'the source identifier and source adapter did not agree',
+  APPROVAL_TARGET_BINDING_INVALID: 'the target information changed between image review and final approval',
+  APPROVAL_REVIEW_METADATA_BINDING_INVALID: 'the metadata sent to image review did not exactly match the target used for final approval',
+  APPROVAL_CANDIDATE_FIELDS_CONFLICT: 'the candidate metadata conflicted with the target identity',
+  APPROVAL_CONTEXT_ONLY_ITEM_TYPE: 'this item type is not eligible for direct completed-sale approval',
+  APPROVAL_TARGET_IMAGE_BINDING_INVALID: 'the target image used for review did not match the target image used for final approval',
+  APPROVAL_FACTS_OR_REVIEW_INVALID: 'the sale record or visual review did not contain all required verified facts',
+  APPROVAL_TRANSACTION_FORM_CONFLICT: 'the candidate was identified as a lot, bundle, or incomplete product',
+  APPROVAL_IMAGE_COUNT_MISSING: 'the final review did not record a submitted image',
+  APPROVAL_CONFIDENCE_INSUFFICIENT: 'the visual match did not have enough confidence for final approval',
+  APPROVAL_RETRY_NOT_CONFIRMED: 'the high-resolution review did not finish as a confirmed match',
+  APPROVAL_DECIDING_PASS_INVALID: 'the server could not identify a valid deciding visual-review pass',
+  APPROVAL_DECIDING_VERDICT_NOT_MATCH: 'the deciding visual-review pass was not a confirmed match',
+  APPROVAL_ADJUDICATION_UNAVAILABLE: 'the required independent confirmation did not return usable evidence',
+  APPROVAL_COIN_ADJUDICATION_INCOMPLETE: 'the required independent coin confirmation was incomplete',
+  APPROVAL_DECIDING_EVIDENCE_MISSING: 'the visual review did not preserve the evidence needed to prove the match',
+  APPROVAL_EVIDENCE_CONFLICT: 'the final visual evidence disagreed with the evidence returned by the review',
+  APPROVAL_GRADED_EVIDENCE_INCOMPLETE: 'the visual evidence did not confirm all required grading details',
+  APPROVAL_UNGRADED_STATE_UNCONFIRMED: 'the visual evidence did not confirm that the target and candidate were both ungraded',
+  APPROVAL_IDENTITY_NOT_CONFIRMED: 'the visual evidence did not confirm the candidate was the same product identity',
+  APPROVAL_PIN_IDENTITY_INCOMPLETE: 'the visual evidence did not confirm all required Disney Pin identity details',
+  APPROVAL_VISUAL_IDENTITY_CONFLICT: 'the final identity check found a visual identity conflict',
+  APPROVAL_CONSERVATIVE_REVIEW_NOT_MATCH: 'the final safety check did not retain the visual result as a match',
+  APPROVAL_MATERIAL_VISUAL_DIFFERENCE: 'the visual review found a material difference from the target',
+  APPROVAL_VISUAL_DIFFERENCES_LIMIT: 'the visual differences returned by the review exceeded the allowed limit',
+  APPROVAL_VISUAL_DIFFERENCE_LENGTH: 'the visual differences returned by the review were not valid for final approval',
+  MERCARI_POLICY_BINDING_INVALID: 'the Mercari sold-item exception facts did not match the approved policy',
+};
+export function structuredApprovalRejection(raw: string): FinalRejectionReason {
+  const match = raw.match(/^((?:APPROVAL|MERCARI)_[A-Z0-9_]+)(?::\s*(.*))?$/);
+  const code = match?.[1] ?? 'APPROVAL_FAILURE_UNRECORDED';
+  const detail = match?.[2]?.trim() || undefined;
+  return { boundary: 'server_final_approval', code, plainEnglish: approvalReasonLabels[code] ?? 'the server could not issue final approval for this candidate', ...(detail ? { detail } : {}) };
+}
+const sourceReasonLabels: Record<string, string> = {
+  PROVENANCE_UNVERIFIED: 'the server could not verify the source record', REQUIRED_APPROVAL_MISSING: 'the required final visual approval was not issued',
+  SOURCE_DISPOSITION_RESTRICTIVE: 'the source remained restricted after final checks', INVALID_PRICE: 'the reported sale amount was missing or invalid',
+  NOT_COMPLETED: 'the source did not verify that this was a completed sale', UNKNOWN_PRICE_BASIS: 'the source did not verify the amount as sold, closed, or realized',
+  TRANSACTION_IDENTITY_MISSING: 'the provider record ID or valid listing URL was missing', INVALID_DATE: 'the sale date was missing, invalid, or future-dated',
+  VISUAL_MISMATCH: 'the visual review found an identity mismatch', TRANSACTION_LOT_CONFLICT: 'the transaction price covered a lot or bundle instead of one target item',
+  UNSUPPORTED_CURRENCY: 'the sale was not reported in USD', HISTORICAL_DATE: 'the sale is older than the current valuation window',
+};
+export function structuredSourceAdmissionBlocker(code: string, detail?: string): FinalRejectionReason {
+  return { boundary: 'source_admission', code, plainEnglish: sourceReasonLabels[code] ?? 'the source did not meet a final valuation-admission requirement', ...(detail ? { detail } : {}) };
+}
 export type FinalSourceCorrelation = {
   /** Supplied Stage 4 source/run/occurrence hints, explicitly display-only. */
   metadataRanking: MetadataRankingBinding | null;
@@ -50,6 +104,8 @@ export type FinalSourceAdmission = {
   blockerCodes: NormalizationBlockerCode[];
   /** Bounded server normalization explanations; reporting only, not admission input. */
   reasonDetails?: string[];
+  approvalFailure?: FinalRejectionReason;
+  sourceBlockers?: FinalRejectionReason[];
   warningCodes: string[];
 };
 export type FinalIntakeReport = {

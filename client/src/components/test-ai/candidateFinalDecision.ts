@@ -202,6 +202,17 @@ function finalAnalysisReasons(row: CandidateDisplayRow): string[] {
     typeof reason === 'string' && reason.trim() && !isInformationalAgeReason(reason));
   return [...new Set(codes)].map((code) => `${code}: ${finalAnalysisBlockerLabels[code] ?? 'Final analysis recorded this code as a reason the candidate was not used.'}`).concat(details);
 }
+function structuredFinalBlockerExplanation(row: CandidateDisplayRow): string[] {
+  const admission = row.valuationUse?.sourceAdmission;
+  const reasons: string[] = [];
+  const approval = admission?.approvalFailure;
+  if (approval?.plainEnglish) reasons.push(`Final approval failed because ${approval.plainEnglish}${approval.detail ? ` (${approval.detail})` : ''}`);
+  const sourceBlockers = (admission?.sourceBlockers ?? [])
+    .map((blocker: any) => typeof blocker?.plainEnglish === 'string' ? blocker.plainEnglish : '')
+    .filter(Boolean);
+  if (sourceBlockers.length) reasons.push(`Separate source-admission blocker: ${sourceBlockers[0]}`);
+  return reasons;
+}
 function sourceDispositionBlockerDetails(row: CandidateDisplayRow): string[] {
   // These describe successful or qualified checks, not reasons for a hold.
   // Keep the exclusion list narrow: unknown details may still be real blockers.
@@ -333,8 +344,9 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
     const primary = pricing.code === 'CURRENT_SALES_PRIMARY';
     const hard = pricing.code === 'FINAL_HARD_EXCLUDED';
     const exactFinalReasons = finalAnalysisReasons(row);
+    const structuredReasons = structuredFinalBlockerExplanation(row);
     const plainReason = plainFinalReason(row, pricing.code, exactFinalReasons);
-    const details = [plainReason ?? pricing.reason,
+    const details = [structuredReasons.length ? structuredReasons.join(' · ') : plainReason ?? pricing.reason,
       hard && !plainReason ? evidence || (receipt?.hardExclusion ? execution.reason : undefined) : undefined,
       pricing.code === 'CONTEXT_ONLY' ? contextReason : undefined,
       hasMercariUndatedSoldAdmission(row) && !plainReason ? mercariPriceContextLabel(row) : undefined].filter(Boolean).join(' · ');

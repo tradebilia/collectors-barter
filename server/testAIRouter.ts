@@ -46,6 +46,7 @@ import { autographReplicaReasonFromText } from '../shared/testAiAutographEvidenc
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { mercariObservedCurrency, type MercariObservationReport } from '../shared/testAiMercariObservation';
+import { structuredApprovalRejection } from '../shared/testAiValuationUse';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
 import { lookupCardsightAi } from './cardsightAi';
@@ -1785,7 +1786,8 @@ export const testAiEvidenceSummarySchema = z.object({
 /** Lossless diagnostic transport; browser fields never establish approval or sale authority. */
 const analysisMarketSaleTransportSchema = z.object({
         title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), saleDatePolicy: z.literal('mercari_undated_sold_v1').nullable().optional(), marketplace: z.string().nullable().optional(), originMarketplace: z.string().nullable().optional(), sourceLabel: z.string().nullable().optional(), sourceAdapter: z.string().nullable().optional(), recency: z.enum(['recent', 'extended', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(), completedStatusBasis: z.string().nullable().optional(), priceBasis: z.enum(['realized', 'sold', 'closed', 'unknown']).nullable().optional(), visualRequirement: z.union([z.enum(['not_required', 'required']), z.string().regex(/^not_required_/)]).nullable().optional(), visualReviewStatus: z.enum(['match', 'rough_match', 'mismatch', 'unreadable', 'not_reviewed']).nullable().optional(), visualReviewRationale: z.string().nullable().optional(), visualDifferences: z.array(z.object({ field: z.string(), targetObservation: z.string(), candidateObservation: z.string(), impact: z.string() })).max(30).nullable().optional(), metadataFieldComparisons: z.array(z.object({ targetField: z.string(), targetValue: z.string(), candidateField: z.string(), candidateValue: z.string(), status: z.enum(['match', 'different', 'soft_difference', 'unknown']), titleDerivedField: z.string().optional(), titleDerivedValue: z.string().optional(), titleDerivedStatus: z.enum(['match', 'different', 'soft_difference', 'unknown']).optional(), rankingContribution: z.unknown().optional() })).max(40).nullable().optional(), evidenceDisposition: z.enum(['valuation_eligible', 'warning_review', 'context_only', 'rejected_objective_conflict', 'omitted_by_cap', 'not_visually_reviewed_window']).nullable().optional(), evidenceReasons: z.array(z.string()).max(20).nullable().optional(), buyerPremium: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), shipping: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), tax: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), saleForm: z.string().nullable().optional(), lotQuantity: z.number().int().positive().nullable().optional(), provenanceToken: z.string().max(16_000).nullable().optional(),
-  displayCorrelation: z.object({
+        approvalFailure: z.object({ boundary: z.literal('server_final_approval'), code: z.string().max(120), plainEnglish: z.string().max(600), detail: z.string().max(600).optional() }).optional(),
+        displayCorrelation: z.object({
     version: z.literal('stage5-display-v1'), side: z.enum(['item_a', 'item_b']),
     sourceId: z.string().max(120), runId: z.string().max(240), occurrenceKey: z.string().max(1000),
     requestOccurrenceRef: z.string().max(240), observationId: z.string().max(240).nullish(),
@@ -1907,13 +1909,21 @@ export function sealSoldCompsFinalVisualListings<T extends MarketSale>(sales: T[
       : approvalFailures.length
         ? `Final approval rejected: ${approvalFailures.join('; ')}`
         : 'Final approval was not attempted because the target or image binding was missing; retained for review.';
+    const structuredApprovalFailure = approvalFailures[0]
+      ? structuredApprovalRejection(approvalFailures[0])
+      : knownHardConflict
+        ? { boundary: 'server_final_approval' as const, code: 'APPROVAL_KNOWN_IDENTITY_CONFLICT', plainEnglish: 'the candidate has a known identity conflict with the target', detail: finalApprovalReason }
+        : sale.visualRequirement === 'required' && !approval
+          ? { boundary: 'server_final_approval' as const, code: 'APPROVAL_NOT_ATTEMPTED', plainEnglish: 'final approval could not be attempted because the target or image binding was missing', detail: finalApprovalReason }
+          : undefined;
     // Required-visual legacy/missing-binding rows remain visible, but their
     // source panel must not claim an approval that final analysis cannot verify.
     const sealedSale = sale.visualRequirement === 'required' && !approval
       ? { ...sale,
+          ...(structuredApprovalFailure ? { approvalFailure: structuredApprovalFailure } : {}),
           ...(sale.evidenceDisposition === 'valuation_eligible' ? { evidenceDisposition: 'context_only' as const } : {}),
           evidenceReasons: [...new Set([...(sale.evidenceReasons ?? []), finalApprovalReason])] }
-      : sale;
+      : structuredApprovalFailure ? { ...sale, approvalFailure: structuredApprovalFailure } : sale;
     const sealed = sealCanonicalObservation('sold_comps', sealedSale, {
       acquiredAt, signingKey: context.signingKey, query: context.query, identityApproval: approval ?? undefined,
     });
