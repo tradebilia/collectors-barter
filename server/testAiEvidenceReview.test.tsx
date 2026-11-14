@@ -46,6 +46,14 @@ describe('Evidence Review is the complete candidate decision view', () => {
   it('does not collapse same-title independent rows into one', () => {
     expect(evidenceReviewCandidates({ id: 'mercari_sold_comps', label: 'Mercari', packet: { listings: [{ title: 'Same', price: 11 }, { title: 'Same', price: 11 }] } })).toHaveLength(2);
   });
+  it('uses the authoritative Mercari final ledger instead of stale raw projections', () => {
+    const final = { title: 'U2 - Rattle And Hum 2xLP Vinyl 1988', price: 21.79, saleId: 'server-row:0123456789abcdef0123456789abcdef', valuationEligible: true, evidenceDisposition: 'valuation_eligible', provenanceToken: 'signed-final' };
+    const stale = { title: final.title, price: 21.79, saleId: null, valuationEligible: false, evidenceDisposition: 'context_only', mercariAdmissionBlockers: ['PROVENANCE_UNVERIFIED'] };
+    const rows = evidenceReviewCandidates({ id: 'mercari_sold_comps', label: 'Mercari', packet: { audit: { ledger: [final] }, listings: [stale], visualFilter: { listings: [stale] } } });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ saleId: final.saleId, valuationEligible: true, evidenceDisposition: 'valuation_eligible', provenanceToken: 'signed-final' });
+    expect(rows[0].mercariAdmissionBlockers).toBeUndefined();
+  });
   it('does not display source-stage eligibility as actual valuation use', () => {
     const html = review([{ id: 'sold_comps', label: 'eBay Sold', packet: { listings: [{ title: 'Eligible', evidenceDisposition: 'valuation_eligible' }] } }]);
     expect(html).toContain('VALUATION NOT RUN'); expect(html).not.toContain('USED IN VALUATION'); expect(html).toContain('Final valuation analysis has not run yet; current valuation counts are 0.');

@@ -15,6 +15,15 @@ export type EvidenceReviewSource = { id: string; label: string; packet?: any; ro
 export function evidenceReviewCandidates(source: EvidenceReviewSource): any[] {
   const packet = source.packet;
   const array = (value: unknown): any[] => Array.isArray(value) ? value.filter(row => row && typeof row === 'object') : [];
+  // Mercari's server-final ledger is authoritative: the packet also contains
+  // pre-final visual/raw projections for diagnostics, but submitting those
+  // copies can reintroduce the generic context-only transport shape and erase
+  // the signed undated-sale admission. Keep the ledger's complete population
+  // while avoiding duplicate stale projections in Item A intake.
+  if (source.id === 'mercari_sold_comps') {
+    const finalLedger = array(packet?.audit?.ledger);
+    if (finalLedger.length) return mergeCandidateDisplayGroups([finalLedger], { sourceId: source.id });
+  }
   const groups = source.id === 'ebay_active' ? [collectEbayCandidateDisplayOccurrences(packet)] : [
     ...sourceRetainedDisplayGroups(packet), ...sourceVisualDisplayGroups(packet),
     array(packet?.preVisionFilter?.excludedListings), array(packet?.activeListings),
