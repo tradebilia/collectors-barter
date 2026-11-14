@@ -20,10 +20,11 @@ import { TestAiSourceStatusBadges, TestAiSourceRelevanceSummary, TestAiCandidate
 import { TestAiSafeImage } from '@/components/TestAiSafeImage';
 import { candidateDisplayKey, collectEbayCandidateDisplayOccurrences, mergeCandidateDisplayGroups, mergeVisualReviewDisplayBatches, mergeEbayCandidateDisplayData, stampCandidateDisplayIntake, type CandidateFinalDisplayOutcome } from '@shared/testAiCandidateLedger';
 import { testAiAnalysisLifecycleKey, isCurrentTestAiFinalRequest } from '@shared/testAiAnalysisLifecycle';
-import { sourceRetainedDisplayGroups, sourceRetainedEmptyMessage, sourceEvidenceStatus, sourceEvidenceMessage, sourceVisualDisplayGroups, sourceReviewedGoldinSales, sourceRecordBucketLabel, sourceMetricDisplay } from '@shared/testAiSourceDisplay';
+import { sourceRetainedDisplayGroups, sourceRetainedEmptyMessage, sourceEvidenceStatus, sourceEvidenceMessage, sourceVisualDisplayGroups, sourceReviewedGoldinSales, sourceRecordBucketLabel, sourceMetricDisplay, sourceRetrievalRows } from '@shared/testAiSourceDisplay';
 import { hasActualVisualResponse, formatCandidateDisplayPrice } from '@shared/testAiCandidateStatus';
 import { toast } from 'sonner';
 import { buildComicsOriginalArtQueries, buildStructuredItemQuery, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
+import { buildMarketplaceSearchDefinition } from '@shared/marketplaceSearchDefinition';
 import { getEligibleTestAiSources, TEST_AI_SOURCE_APPLICABILITY, type TestAiSourceId } from '@shared/testAiSourceApplicability';
 import { TEST_AI_VALUE_UNAVAILABLE_MESSAGE, nullableTestAiPrice, guideAnchorFields, normalizeTestAiEvidence, selectPreferredGuideAnchor, type AnalyzerRecordDetail, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { bucketPcgsAuctionRows } from '@shared/testAiPcgsAuctionBuckets';
@@ -3803,6 +3804,35 @@ function MarketNewsSection({ item }: { item: SelectedItem }) {
 function SimpleValuationSummary({ items }: { items: TestAiPricingSummaryItem[] }) {
   return <TestAiPricingSummary items={items} />;
 }
+
+type QueryTraceSource = { id: string; label: string; data?: any; loading?: boolean };
+
+function queryTraceStrings(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.map((entry) => typeof entry === 'string' ? entry.trim() : String((entry as any)?.query ?? '').trim()).filter(Boolean))];
+}
+
+function QueryTrace({ item, sources }: { item: SelectedItem; sources: QueryTraceSource[] }) {
+  const rows = sources.map((source) => {
+    const definition = buildMarketplaceSearchDefinition({ title: item.title, category: item.category, itemType: item.itemType, grade: item.grade, condition: item.condition, certificationCompany: item.certificationCompany ?? item.gradingCompany, itemDetails: item.itemDetails });
+    const data = source.data;
+    const receipts = sourceRetrievalRows(data).filter((receipt: any) => receipt.executed !== false);
+    const executed = [...new Set([...queryTraceStrings(data?.metrics?.executedQueries), ...queryTraceStrings(data?.searchMetrics?.executedQueries), ...receipts.map((receipt: any) => String(receipt.query ?? '').trim()).filter(Boolean), ...(typeof data?.query === 'string' ? [data.query.trim()] : [])].filter(Boolean))];
+    const suppliedFallbacks = queryTraceStrings(data?.plannedFallbackQueries ?? data?.searchDefinition?.fallbackQueries ?? data?.fallbackQueries);
+    const planned = [...new Set([...(suppliedFallbacks.length ? suppliedFallbacks : definition.fallbackQueries), ...definition.fallbackQueries])].filter((query) => query !== definition.query);
+    return { ...source, primary: definition.query || data?.query || 'No primary query defined', planned, executed };
+  }).filter((row) => row.primary || row.planned.length || row.executed.length);
+
+  return <section className="rounded-xl border border-cyan-700/40 bg-cyan-950/15 p-3" aria-label="Marketplace search queries used">
+    <div className="flex items-start justify-between gap-3"><div><p className="text-[11px] font-bold uppercase tracking-wide text-cyan-300">Marketplace search queries</p><p className="mt-0.5 text-[9px] text-cyan-100/70">Primary searches, planned fallbacks, and the query attempts actually reported by each enabled source.</p></div><span className="shrink-0 rounded bg-cyan-900/50 px-1.5 py-0.5 text-[9px] font-semibold text-cyan-200">{rows.length} source{rows.length === 1 ? '' : 's'}</span></div>
+    <div className="mt-3 space-y-2">{rows.map((row) => <div key={row.id} className="rounded border border-gray-700/50 bg-gray-950/35 p-2">
+      <div className="flex items-center justify-between gap-2"><p className="text-[10px] font-semibold text-white">{row.label}</p><span className={`text-[9px] ${row.loading ? 'text-amber-300' : row.executed.length ? 'text-emerald-300' : 'text-gray-500'}`}>{row.loading ? 'Searching…' : row.executed.length ? `${row.executed.length} executed` : 'No execution receipt reported'}</span></div>
+      <p className="mt-1 break-words font-mono text-[9px] text-cyan-100"><span className="font-sans font-semibold text-cyan-300">Primary:</span> {row.primary}</p>
+      <p className="mt-1 break-words text-[9px] text-amber-200/90"><span className="font-semibold">Planned fallbacks:</span> {row.planned.length ? row.planned.map((query, index) => <span key={`${query}-${index}`} className="ml-1 inline-block rounded bg-amber-950/50 px-1 py-0.5 font-mono">{index + 1}. {query}</span>) : 'None reported'}</p>
+      <p className="mt-1 break-words text-[9px] text-emerald-200/90"><span className="font-semibold">Actually executed:</span> {row.executed.length ? row.executed.map((query, index) => <span key={`${query}-${index}`} className="ml-1 inline-block rounded bg-emerald-950/50 px-1 py-0.5 font-mono">{index + 1}. {query}</span>) : 'No executed query receipt or returned query was reported.'}</p>
+    </div>)}{!rows.length && <p className="text-[10px] text-gray-500">No enabled market source has reported a query yet.</p>}</div>
+  </section>;
+}
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
 function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysisItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftMercariSoldCompsData, rightMercariSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftCollectAuctionData, rightCollectAuctionData, leftSiriusSportsAuctionData, rightSiriusSportsAuctionData, leftPcgsAuctionData, rightPcgsAuctionData, leftComicConnectData, rightComicConnectData, leftGoldinSales, rightGoldinSales, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary, onFinalDisplayOutcome }: {
   leftItem: SelectedItem;
@@ -4557,6 +4587,24 @@ function DataColumn({ item, searchItem, side, visualProvider, enabledSources, eb
 
   return (
     <TestAiCandidateDisplayProvider side={side === 'left' ? 'item_a' : 'item_b'} outcome={finalDisplayOutcome}><div className="space-y-3">
+      <QueryTrace item={queryItem} sources={[
+        { id: 'ebay_active', label: DATA_SOURCES.ebay_active.label, data: ebayData, loading: ebayLoading },
+        { id: 'sold_comps', label: DATA_SOURCES.sold_comps.label, data: soldCompsData, loading: soldCompsLoading },
+        { id: 'mercari_sold_comps', label: DATA_SOURCES.mercari_sold_comps.label, data: mercariSoldCompsData, loading: mercariSoldCompsLoading },
+        { id: 'tcgplayer_sold_comps', label: DATA_SOURCES.tcgplayer_sold_comps.label, data: tcgplayerSoldCompsData, loading: tcgplayerSoldCompsLoading },
+        { id: 'pokemon_price_tracker', label: DATA_SOURCES.pokemon_price_tracker?.label ?? 'Pokémon Price Tracker', data: pokemonPriceTrackerData, loading: pokemonPriceTrackerLoading },
+        { id: 'the_card_api', label: DATA_SOURCES.the_card_api.label, data: theCardApiData, loading: theCardApiLoading },
+        { id: 'cardsight_ai', label: DATA_SOURCES.cardsight_ai.label, data: cardsightAiData, loading: cardsightAiLoading },
+        { id: 'comc_parse', label: DATA_SOURCES.comc_parse?.label ?? 'COMC', data: comcData, loading: comcLoading },
+        { id: 'lelands', label: DATA_SOURCES.lelands.label, data: lelandsData, loading: lelandsLoading },
+        { id: 'pristine_auction', label: DATA_SOURCES.pristine_auction.label, data: pristineAuctionData, loading: pristineAuctionLoading },
+        { id: 'collect_auction', label: DATA_SOURCES.collect_auction.label, data: collectAuctionData, loading: collectAuctionLoading },
+        { id: 'sirius_sports_auctions', label: DATA_SOURCES.sirius_sports_auctions.label, data: siriusSportsAuctionData, loading: siriusSportsAuctionLoading },
+        { id: 'comicconnect', label: DATA_SOURCES.comicconnect.label, data: comicConnectData, loading: comicConnectLoading },
+        { id: 'pcgs_auction_results', label: DATA_SOURCES.pcgs_auction_results.label, data: pcgsAuctionData, loading: pcgsAuctionLoading },
+        { id: 'goldin', label: DATA_SOURCES.goldin.label, data: specialistPackets.goldin, loading: false },
+        ...Array.from(enabledSources).filter((sourceId) => !['ebay_active', 'sold_comps', 'mercari_sold_comps', 'tcgplayer_sold_comps', 'pokemon_price_tracker', 'the_card_api', 'cardsight_ai', 'comc_parse', 'lelands', 'pristine_auction', 'collect_auction', 'sirius_sports_auctions', 'comicconnect', 'pcgs_auction_results', 'goldin'].includes(sourceId)).map((sourceId) => ({ id: sourceId, label: DATA_SOURCES[sourceId]?.label ?? SANDBOX_SPECIALIST_SOURCES.find((source) => source.id === sourceId)?.label ?? sourceId, data: specialistPackets[sourceId] })),
+      ].filter((source) => enabledSources.has(source.id as SourceId))} />
       <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayEvidenceData ?? ebayData} soldCompsData={soldCompsData} mercariSoldCompsData={mercariSoldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={specialistObservationList} extraReviewPackets={{ ...specialistPackets, comc_parse: comcData, tcgplayer_sold_comps: tcgplayerSoldCompsData }} sourcePending={{ ebay_active: ebayLoading, sold_comps: soldCompsLoading, mercari_sold_comps: mercariSoldCompsLoading, tcgplayer_sold_comps: tcgplayerSoldCompsLoading, pokemon_price_tracker: pokemonPriceTrackerLoading, the_card_api: theCardApiLoading, cardsight_ai: cardsightAiLoading, comc_parse: comcLoading, lelands: lelandsLoading, pristine_auction: pristineAuctionLoading, collect_auction: collectAuctionLoading, sirius_sports_auctions: siriusSportsAuctionLoading, comicconnect: comicConnectLoading, pcgs_auction_results: pcgsAuctionLoading }} onSummaryChange={onEvidenceSummary}>
       <details className="rounded-xl border border-slate-800 bg-slate-950/40 p-3" aria-label="Source and technical audit">
         <summary className="cursor-pointer text-sm font-semibold text-slate-300">Source and technical audit — queries, retrieval and provider details</summary>
