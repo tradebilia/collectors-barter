@@ -862,6 +862,12 @@ function usableMercariProviderId(value: unknown): string | number | null {
   return text && !/^(?:mercari:)?(?:undefined|null|unknown|none|n\/?a)$/i.test(text) ? text : null;
 }
 
+function mercariVisualMatch(row: any): boolean {
+  return row?.visualReviewStatus === 'match'
+    || row?.visualExecution?.identity?.result === 'match'
+    || row?.visualIdentityResult === 'match';
+}
+
 /** Only fresh private adapter observations plus the actual bound visual row can authorize this exception. */
 function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsListing, context: MercariApprovalContext) {
   const report = getMercariObservedFacts(original)?.report;
@@ -937,7 +943,7 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
       priceContext: 'sold_listing_reported',
       visualPricingNotice: 'Reported sold price; Sale date Unknown — Autographs do not require exact visual review.' };
   }
-  if (row.visualReviewStatus !== 'match') return blocked([`MERCARI_VISUAL_NOT_MATCH: visual status is ${row.visualReviewStatus ?? 'not reviewed'}; no confirmed match was recorded.`]);
+  if (!mercariVisualMatch(row)) return blocked([`MERCARI_VISUAL_NOT_MATCH: visual status is ${row.visualReviewStatus ?? row.visualExecution?.identity?.result ?? 'not reviewed'}; no confirmed match was recorded.`]);
   if (!row.visualAudit) return blocked(['MERCARI_VISUAL_AUDIT_MISSING: a matched verdict has no deciding-pass audit.']);
   // Review and signed approval must use the same inventory target and image.
   // Rebuilding either from search fields recreates the target-drift defect.
@@ -985,7 +991,7 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
       : approvalFailures.length ? approvalFailures : ['APPROVAL_FAILURE_UNRECORDED: no server approval was issued; rejection detail was not recorded.']);
   const sealed = sealCanonicalObservation('mercari_sold_comps', sale, { acquiredAt, query: context.input.title, identityApproval: approval, serverOwnedIdentity: true });
   if (!sealed.provenanceToken || !sealed.identityApproval) return blocked([`MERCARI_CANONICAL_SEAL_FAILED: ${sealed.validationErrors.join('; ') || 'Signed provenance or identity approval was not issued.'}`]);
-  return { ...sale, ...sealed, valuationEligible: true,
+  return { ...sale, ...sealed, visualReviewStatus: 'match' as const, valuationEligible: true,
     mercariAdmissionBlockers: [],
     priceContext: 'sold_listing_reported', visualPricingNotice: 'Reported sold price; sale date Unknown — Mercari date exception. Final valuation selection still applies.' };
 }
@@ -998,14 +1004,18 @@ export function hasUsableRecoveredMercariMatch(payload: any): boolean {
   const groups = [payload?.visualFilter?.listings, payload?.visualFilter?.contextListings,
     payload?.visualReviewListings, payload?.listings, payload?.contextListings]
     .flatMap(group => Array.isArray(group) ? group : []);
-  return groups.some(row => row?.visualReviewStatus === 'match'
+  return groups.some(row => mercariVisualMatch(row)
     && Array.isArray(row?.visualExecution?.attempts)
     && row.visualExecution.attempts.some((attempt: any) => attempt?.outcome === 'usable_review'));
 }
 
 function mercariFinalizationKey(row: any): string {
   if (typeof row?.saleId === 'string' && usableMercariProviderId(row.saleId)) return row.saleId;
-  return `mercari-null-row:${String(row?.title ?? row?.listingTitle ?? '')}|${String(row?.price ?? '')}|${String(row?.currency ?? row?.soldCurrency ?? '')}`;
+  const rawPrice = row?.price ?? row?.soldPrice;
+  const numericPrice = Number(rawPrice);
+  const priceKey = Number.isFinite(numericPrice) ? numericPrice.toFixed(2) : String(rawPrice ?? '');
+  const currencyKey = String(row?.currency ?? row?.soldCurrency ?? '').trim().toUpperCase();
+  return `mercari-null-row:${String(row?.title ?? row?.listingTitle ?? '').trim()}|${priceKey}|${currencyKey}`;
 }
 
 /** Apply one private source observation to every branch; never refill submission slots. */

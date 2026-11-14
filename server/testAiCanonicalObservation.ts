@@ -555,7 +555,9 @@ export function createServerFinalIdentityApproval(options: ServerFinalIdentityAp
   const picture = imageFingerprint(options.targetImageReference);
   if (!picture || picture !== imageFingerprint(options.expectedImageReference)) return reject('APPROVAL_TARGET_IMAGE_BINDING_INVALID: reviewed target image is missing or differs from the valuation target image.');
   const acquiredAt = (options.acquiredAt ?? new Date()).toISOString();
-  const facts = normalizedFacts(CANONICAL_ADAPTER_REGISTRY[adapterId], sale);
+  const facts = normalizedFacts(CANONICAL_ADAPTER_REGISTRY[adapterId], sale, {
+    serverOwnedIdentity: adapterId === 'mercari_sold_comps',
+  });
   if (!approvalFactsAreEligible(facts, acquiredAt, adapterId) || review.verdict !== 'match' || !review.visualAudit) return reject('APPROVAL_FACTS_OR_REVIEW_INVALID: source facts failed the approval policy, or a matched visual audit is missing.');
   if (!identityApprovalCandidateFieldsCompatible(canonical.fields, { saleForm: facts.saleForm ?? '' })
     || candidate && (Number(candidate.fields.lotQuantity) > 1
