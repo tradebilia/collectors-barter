@@ -31,7 +31,7 @@ import { formatTestAiEvidenceForAnalysis, TEST_AI_VALUE_UNAVAILABLE_MESSAGE } fr
 import { deterministicTradeComparison, getHistoricMarketContextSales, marketProfileForPrompt, scoreComparable, signedComparableFormConflicts, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
 import { normalizeAnalysisMarketSale, normalizeAnalysisMarketSales } from './testAiMarketEvidence';
-import { attachCanonicalProvenance as attachCanonicalSourceProvenance, createServerFinalIdentityApproval, sealCanonicalObservation } from './testAiCanonicalObservation';
+import { attachCanonicalProvenance as attachCanonicalSourceProvenance, createServerFinalIdentityApproval, deriveServerOwnedRowReference, sealCanonicalObservation } from './testAiCanonicalObservation';
 import { auditItemValuation, itemAuditTargetSchema } from './testAiItemAudit';
 import { prepareSourceTransactionIdentity } from './testAiEconomicIntegrity';
 import { mapNamedSourceEconomics, mapNamedSourcePartitions } from './testAiSourceEconomics';
@@ -840,6 +840,21 @@ type MercariApprovalContext = {
   approvalImageReference: string | null;
 };
 
+function mercariServerOwnedReference(row: any, price: number, currency: string | null): string | null {
+  return deriveServerOwnedRowReference('mercari_sold_comps', {
+    ...row,
+    title: typeof row?.title === 'string' ? row.title : row?.listingTitle,
+    price,
+    currency,
+    sourceId: 'mercari_sold_comps',
+    sourceAdapter: 'mercari_sold_comps',
+    originMarketplace: 'mercari',
+    saleStatus: 'completed',
+    priceBasis: 'sold',
+    date: null,
+  });
+}
+
 /** Only fresh private adapter observations plus the actual bound visual row can authorize this exception. */
 function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsListing, context: MercariApprovalContext) {
   const report = getMercariObservedFacts(original)?.report;
@@ -888,17 +903,18 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
     const providerId = original.saleId
       ?? (typeof original.providerMetadata?.itemId === 'string' || typeof original.providerMetadata?.itemId === 'number' ? original.providerMetadata.itemId : null)
       ?? (typeof original.rawMetadata?.itemId === 'string' || typeof original.rawMetadata?.itemId === 'number' ? original.rawMetadata.itemId : null);
-    if (!Number.isFinite(price) || price <= 0 || currency !== 'USD' || (!providerId && !providerUrl)) {
+    const serverOwnedReference = !providerId && !providerUrl ? mercariServerOwnedReference(row, price, currency) : null;
+    if (!Number.isFinite(price) || price <= 0 || currency !== 'USD' || (!providerId && !providerUrl && !serverOwnedReference)) {
       return blocked([
         ...(!Number.isFinite(price) || price <= 0 ? ['MERCARI_ORIGINAL_PRICE_INVALID: positive original provider price is required.'] : []),
         ...(currency !== 'USD' ? [`MERCARI_CURRENCY_NOT_USD: original currency is ${currency ?? 'Unknown'}, not USD.`] : []),
-        ...(!providerId && !providerUrl ? ['MERCARI_TRANSACTION_IDENTITY_MISSING: provider ID or listing URL is required.'] : []),
+        ...(!providerId && !providerUrl && !serverOwnedReference ? ['MERCARI_TRANSACTION_IDENTITY_MISSING: the server could not bind a stable reference to the retrieved row.'] : []),
       ]);
     }
     const sale = prepareSourceTransactionIdentity({ ...row, price, currency, date: null, endedAt: null,
       soldAt: null, saleDate: null, soldDate: null, recency: 'undated' as const,
       saleDatePolicy: 'mercari_undated_sold_v1' as const,
-      saleId: providerId, url: providerUrl, sourceId: 'mercari_sold_comps', sourceAdapter: 'mercari_sold_comps',
+      saleId: providerId ?? serverOwnedReference, url: providerUrl, sourceId: 'mercari_sold_comps', sourceAdapter: 'mercari_sold_comps',
       originMarketplace: 'mercari', marketplace: 'Mercari', sourceLabel: 'Sold-Comps (Mercari Sold)',
       requestedMode: 'sold', listingStatus: 'sold', priceBasis: 'sold' as const, saleStatus: 'completed' as const,
       completedStatusBasis: 'Sold-Comps Mercari sold=true reported sold price',
@@ -908,7 +924,7 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
       buyerPremium: 'unknown' as const, shipping: 'unknown' as const, tax: 'unknown' as const,
       normalizedStructuredMetadata: row.soldCompsMetadata ?? normalizeSoldCompsMetadata(row),
       identityApproval: undefined, provenanceToken: undefined, provenance: undefined, mercariObservation: report });
-    const sealed = sealCanonicalObservation('mercari_sold_comps', sale, { acquiredAt: new Date(), query: context.input.title });
+    const sealed = sealCanonicalObservation('mercari_sold_comps', sale, { acquiredAt: new Date(), query: context.input.title, serverOwnedIdentity: true });
     if (!sealed.provenanceToken) return blocked([`MERCARI_CANONICAL_SEAL_FAILED: ${sealed.validationErrors.join('; ') || 'Signed provenance was not issued.'}`]);
     return { ...sale, ...sealed, valuationEligible: true, mercariAdmissionBlockers: [],
       priceContext: 'sold_listing_reported',
@@ -928,10 +944,11 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
   const providerId = original.saleId
     ?? (typeof original.providerMetadata?.itemId === 'string' || typeof original.providerMetadata?.itemId === 'number' ? original.providerMetadata.itemId : null)
     ?? (typeof original.rawMetadata?.itemId === 'string' || typeof original.rawMetadata?.itemId === 'number' ? original.rawMetadata.itemId : null);
+  const serverOwnedReference = !providerId && !providerUrl ? mercariServerOwnedReference(row, price, currency) : null;
   const sale = prepareSourceTransactionIdentity({ ...row, price, currency, date: null, endedAt: null,
     soldAt: null, saleDate: null, soldDate: null, recency: 'undated' as const,
     saleDatePolicy: 'mercari_undated_sold_v1' as const,
-    saleId: providerId, url: providerUrl, sourceId: 'mercari_sold_comps', sourceAdapter: 'mercari_sold_comps',
+    saleId: providerId ?? serverOwnedReference, url: providerUrl, sourceId: 'mercari_sold_comps', sourceAdapter: 'mercari_sold_comps',
     originMarketplace: 'mercari', marketplace: 'Mercari', sourceLabel: 'Sold-Comps (Mercari Sold)',
     requestedMode: 'sold', listingStatus: 'sold', priceBasis: 'sold' as const, saleStatus: 'completed' as const,
     completedStatusBasis: 'Sold-Comps Mercari sold=true reported sold price',
@@ -959,7 +976,7 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
     ? [`MERCARI_KNOWN_IDENTITY_CONFLICT: ${knownIdentity.exclusionReason || knownIdentity.categoryIdentity.conflicts.join('; ') || 'Known identity, grade, variant or transaction-form conflict.'}`]
     : !imageReference ? ['APPROVAL_TARGET_IMAGE_MISSING: no target image reference was supplied.']
       : approvalFailures.length ? approvalFailures : ['APPROVAL_FAILURE_UNRECORDED: no server approval was issued; rejection detail was not recorded.']);
-  const sealed = sealCanonicalObservation('mercari_sold_comps', sale, { acquiredAt, query: context.input.title, identityApproval: approval });
+  const sealed = sealCanonicalObservation('mercari_sold_comps', sale, { acquiredAt, query: context.input.title, identityApproval: approval, serverOwnedIdentity: true });
   if (!sealed.provenanceToken || !sealed.identityApproval) return blocked([`MERCARI_CANONICAL_SEAL_FAILED: ${sealed.validationErrors.join('; ') || 'Signed provenance or identity approval was not issued.'}`]);
   return { ...sale, ...sealed, valuationEligible: true,
     mercariAdmissionBlockers: [],

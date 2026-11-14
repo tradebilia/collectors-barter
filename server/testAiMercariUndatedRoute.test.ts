@@ -120,6 +120,16 @@ describe('Mercari undated sold=true actual route admission', () => {
     expect(row).toMatchObject({ itemUrl: 'https://www.mercari.com/us/item/m54069072197/', valuationEligible: true, evidenceDisposition: 'valuation_eligible' });
     expect(row.provenanceToken).toBeTruthy(); expect(row.identityApproval).toBeTruthy();
   });
+  it('uses a signed server-owned row reference when Mercari supplies neither an item ID nor a listing URL', async () => {
+    rows = [providerRow(MOVIE, { itemId: undefined, url: undefined })];
+    const result: any = await caller().getMercariSoldCompsData(input());
+    const row = result.audit.ledger[0];
+    expect(row.saleId).toMatch(/^server-row:[a-f0-9]{32}$/);
+    expect(row.itemUrl).toBeNull();
+    expect(row.valuationEligible).toBe(true);
+    expect(row.evidenceDisposition).toBe('valuation_eligible');
+    expect(row.provenanceToken).toBeTruthy();
+  });
   it('seals a real route-produced match after an earlier visual failure while retaining the diagnostic', async () => {
     mocks.llm.mockRejectedValueOnce(new Error('synthetic provider timeout'));
     const recovered: any = await caller().getMercariSoldCompsData(input());

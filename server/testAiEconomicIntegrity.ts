@@ -14,6 +14,7 @@ function recordId(value: unknown, facts?: Pick<MarketSale, 'title' | 'price'>): 
   if (typeof value === 'number') return Number.isSafeInteger(value) && value > 0 ? String(value) : null;
   if (typeof value !== 'string') return null;
   const text = meaningfulMetadataText(value);
+  if (/^server-row:[a-f0-9]{32}$/i.test(text)) return text.toLowerCase();
   if (!text || !/[a-z0-9]/i.test(text)
     || /^(?:true|false|0|nan|infinity)$/i.test(text)
     || /^(?:[\[{"']|(?:final|source|request|display|occurrence|occ|probable|possible):|fingerprint[:_-])/i.test(text)

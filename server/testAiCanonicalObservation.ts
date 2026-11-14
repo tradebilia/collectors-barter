@@ -368,13 +368,15 @@ function resolveSigningKey(override?: string): string | null {
 function normalizedFacts(
   adapter: CanonicalAdapterDefinition,
   sale: MarketSale,
-  options?: { visualRequirement?: VisualRequirement; saleForm?: string | null; lotQuantity?: number | null },
+  options?: { visualRequirement?: VisualRequirement; saleForm?: string | null; lotQuantity?: number | null; serverOwnedIdentity?: boolean },
 ): CanonicalObservationFacts {
   const title = clip(sale.title, 600);
   const price = normalizePrice(sale.price);
   const currency = normalizeCurrency(sale.currency);
   const date = normalizeDate(sale.date);
-  const sourceRecordId = clip(sale.saleId, 240);
+  const rawSourceRecordId = clip(sale.saleId, 240);
+  const sourceRecordId = rawSourceRecordId?.startsWith('server-row:') && options?.serverOwnedIdentity !== true
+    ? null : rawSourceRecordId;
   const facts: CanonicalObservationFacts = {
     title,
     price,
@@ -429,7 +431,7 @@ function transactionId(adapterId: AdapterId, facts: CanonicalObservationFacts): 
  * facts without pretending to be a marketplace transaction ID. It is only
  * minted by the server sealing boundary, never accepted from the browser.
  */
-function deriveServerOwnedRowReference(adapterId: AdapterId, sale: MarketSale): string | null {
+export function deriveServerOwnedRowReference(adapterId: AdapterId, sale: MarketSale): string | null {
   const title = typeof sale.title === 'string' ? sale.title.trim() : '';
   const price = normalizePrice(sale.price);
   if (!title || price === null) return null;

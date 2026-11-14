@@ -23,7 +23,7 @@ export type AdditionalSoldCompsListing = {
   title: string;
   titleCandidates?: string[];
   itemUrl: string | null;
-  saleId: string;
+  saleId: string | null;
   price: number;
   currency: string | null;
   endedAt: string | null;
@@ -103,7 +103,7 @@ function ownedMercariFacts(report: MercariObservationReport): MercariObservedFac
     listingStatus: report.listingStatus, requestedMode: report.requestedMode, fields: report.fields, report });
 }
 
-const MERCARI_ROW: RetrievalRowContract = { idFields: ['itemId'], titleFields: ['title'], priceFields: ['price'] };
+const MERCARI_ROW: RetrievalRowContract = { titleFields: ['title'], priceFields: ['price'] };
 const TCG_PRODUCT_ROW: RetrievalRowContract = { idFields: ['productId'], titleFields: ['name'] };
 const TCG_SALE_ROW: RetrievalRowContract = { priceFields: ['price'], dateFields: ['soldDate'] };
 
@@ -178,6 +178,10 @@ function uniqueByKey<T>(items: T[], key: (item: T) => string): T[] {
   });
 }
 
+function mercariListingKey(listing: AdditionalSoldCompsListing): string {
+  return listing.saleId ?? `row:${listing.title}|${listing.price}|${listing.itemUrl ?? ''}|${listing.imageUrl ?? ''}`;
+}
+
 export function normalizeMercariSoldCandidate(item: unknown, requestedMode: MercariRequestedMode = 'sold'): AdditionalSoldCompsListing | null {
   return normalizeMercariObservedCandidate(item, captureMercariObservation(item, requestedMode));
 }
@@ -186,11 +190,13 @@ function normalizeMercariObservedCandidate(row: unknown, report: MercariObservat
   if (row === null || typeof row !== 'object') return null;
   // Keep the existing scalar validator; never invoke a provider getter to feed it.
   const scalars: Record<string, unknown> = {};
-  for (const key of ['itemId', 'title', 'price']) {
+  for (const key of ['title', 'price']) {
     const descriptor = Object.getOwnPropertyDescriptor(row, key);
     if (!descriptor || !('value' in descriptor)) return null;
     scalars[key] = descriptor.value;
   }
+  const itemIdDescriptor = Object.getOwnPropertyDescriptor(row, 'itemId');
+  scalars.itemId = itemIdDescriptor && 'value' in itemIdDescriptor ? itemIdDescriptor.value : null;
   if (validateRetrievalRow(scalars, MERCARI_ROW).length) return null;
   const item = mercariOriginalMetadata(report);
   const price = Number(scalars.price);
@@ -217,7 +223,7 @@ function normalizeMercariObservedCandidate(row: unknown, report: MercariObservat
     listingTitle: item.listingTitle,
     name: item.name,
     itemId: scalars.itemId,
-    saleId: `mercari:${String(scalars.itemId)}`,
+    saleId: scalars.itemId === null || scalars.itemId === undefined || scalars.itemId === '' ? null : `mercari:${String(scalars.itemId)}`,
     url: providerUrl,
     itemUrl: providerUrl,
     price,
@@ -252,7 +258,7 @@ function normalizeMercariObservedCandidate(row: unknown, report: MercariObservat
     title: canonicalCandidate.title,
     titleCandidates: canonicalCandidate.titleCandidates,
     itemUrl: canonicalCandidate.url ?? providerUrl,
-    saleId: `mercari:${String(scalars.itemId)}`,
+    saleId: scalars.itemId === null || scalars.itemId === undefined || scalars.itemId === '' ? null : `mercari:${String(scalars.itemId)}`,
     price: canonicalCandidate.price ?? price,
     currency,
     endedAt: null,
@@ -469,7 +475,7 @@ export async function lookupMercariSoldComps(input: AdditionalSoldCompsInput, fe
       if (result.items.length > 0) break;
       continue;
     }
-    const union = Object.freeze(uniqueByKey(retained, (listing) => listing.saleId));
+    const union = Object.freeze(uniqueByKey(retained, mercariListingKey));
     const preparationTimeRemaining = () => {
       try {
         const current = clock();
@@ -530,7 +536,7 @@ export async function lookupMercariSoldComps(input: AdditionalSoldCompsInput, fe
       break;
     }
   }
-  const listings = uniqueByKey(retained, (listing) => listing.saleId);
+  const listings = uniqueByKey(retained, mercariListingKey);
   const partial = listings.length > 0 && (attemptIssues.length > 0
     || (reviewOpportunity?.processingIssues.length ?? 0) > 0 || reviewOpportunity?.stopReason === 'retrieval_deadline');
   return {
