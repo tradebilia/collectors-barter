@@ -1095,7 +1095,11 @@ function mercariDisplayData(data: any, parentRequestedMode?: unknown): any {
     listings: rows(data.listings), context: rows(data.context),
     preVisionExcludedListings: rows(data.preVisionExcludedListings),
     visualReviewListings: rows(data.visualReviewListings),
-    audit: data.audit ? { ...data.audit, ledger: rows(data.audit.ledger), valuationEligible: qualifiedCount } : data.audit,
+    // audit.ledger is the server-final authoritative population. Do not run it
+    // through buildMercariAnalysisSales: that transport projection deliberately
+    // clears approval/provenance overlays for untrusted browser projections,
+    // which would destroy the signed final row immediately before Item A intake.
+    audit: data.audit ? { ...data.audit, ledger: data.audit.ledger, valuationEligible: qualifiedCount } : data.audit,
     visualFilter: data.visualFilter ? { ...data.visualFilter, listings: rows(data.visualFilter.listings), contextListings: rows(data.visualFilter.contextListings) } : data.visualFilter,
     candidateDisplayBatch: data.candidateDisplayBatch ? mercariDisplayData(data.candidateDisplayBatch, requestedMode) : data.candidateDisplayBatch,
   };
