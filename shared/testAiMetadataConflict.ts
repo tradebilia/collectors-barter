@@ -87,7 +87,13 @@ function musicRecordLabelComparable(value: unknown): string {
   // "Geffen Records, Gef". The trailing provider abbreviation is not a
   // second label; it is duplicate marketplace metadata for Geffen.
   if (/\b(?:dgc|dgcc|geffen(?:\s+records?)?)\b/i.test(normalized)) return 'geffenrecords';
+  if (/\bcapital\s+records?\b/i.test(normalized)) return 'capitolrecords';
   return compact(value);
+}
+function musicEditionComparable(value: unknown): string {
+  const normalized = compact(value);
+  if (/^(?:1stedition|firstedition|1stpressing|firstpressing)$/.test(normalized)) return 'firstpressing';
+  return normalized;
 }
 function musicArtistComparable(value: unknown): string {
   // Marketplace metadata may qualify an artist with a release region, such
@@ -479,6 +485,12 @@ export function findMaterialMetadataConflicts(
     if (category === 'music' && field === 'recordLabel'
       && musicRecordLabelComparable(targetValue) === 'geffenrecords'
       && musicRecordLabelComparable(directCandidateValue) === 'geffenrecords') continue;
+    if (category === 'music' && field === 'recordLabel'
+      && musicRecordLabelComparable(targetValue) === 'capitolrecords'
+      && musicRecordLabelComparable(directCandidateValue) === 'capitolrecords') continue;
+    if (category === 'music' && field === 'edition'
+      && musicEditionComparable(targetValue)
+      && musicEditionComparable(targetValue) === musicEditionComparable(directCandidateValue)) continue;
     if (category === 'music' && field === 'artist'
       && musicArtistComparable(targetValue)
       && musicArtistComparable(targetValue) === musicArtistComparable(directCandidateValue)) continue;

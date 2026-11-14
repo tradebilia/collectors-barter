@@ -343,4 +343,35 @@ describe("Music identity and diagnostic boundaries", () => {
     expect(conditionRow(metadata, listing)).toMatchObject({ candidateValue: "Good", status: "match", titleDerivedValue: "Unknown" });
     expect(buildDeclaredIdentityReviews([listing], metadata).some(review => review.rationale.includes("Music media condition"))).toBe(false);
   });
+
+  it("treats Capital Records as Capitol Records across Music scoring, comparison, and identity", () => {
+    const metadata = target("good", { recordLabel: "Capitol Records" });
+    const listing = candidate("The Beatles Sgt. Pepper First Pressing Capital Records", { recordLabel: "Capital Records" });
+    const score = musicVisualScore(listing, metadata);
+    const row = buildMetadataFieldComparisons(metadata, listing).find(value => value.fieldKey === "recordLabel");
+    expect(score.matched).toContain("recordLabel");
+    expect(score.awards.find(award => award.field === "recordLabel")?.awardedPoints).toBe(10);
+    expect(row).toMatchObject({ status: "match" });
+    expect(findMaterialMetadataConflicts(metadata, listing)).toEqual([]);
+    expect(buildDeclaredIdentityReviews([listing], metadata)).toEqual([]);
+  });
+
+  it("treats 1st Edition as First Pressing for Music edition evidence", () => {
+    const metadata = target("good", { edition: "1st Edition" });
+    const listing = candidate("The Beatles Sgt. Pepper First Pressing", { edition: "First Pressing" });
+    const score = musicVisualScore(listing, metadata);
+    const row = buildMetadataFieldComparisons(metadata, listing).find(value => value.fieldKey === "edition");
+    expect(score.matched).toContain("edition");
+    expect(score.awards.find(award => award.field === "edition")?.awardedPoints).toBe(5);
+    expect(row).toMatchObject({ status: "match" });
+    expect(findMaterialMetadataConflicts(metadata, listing)).toEqual([]);
+    expect(buildDeclaredIdentityReviews([listing], metadata)).toEqual([]);
+  });
+
+  it("keeps a genuinely different Music pressing as a real identity conflict", () => {
+    const metadata = target("good", { edition: "1st Edition" });
+    const listing = candidate("The Beatles Sgt. Pepper Second Pressing", { edition: "Second Pressing" });
+    expect(musicVisualScore(listing, metadata).matched).not.toContain("edition");
+    expect(buildDeclaredIdentityReviews([listing], metadata)[0]?.rationale).toContain("Music edition or variant differs");
+  });
 });
