@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createHash, createHmac } from 'node:crypto';
 vi.mock('./_core/env', () => ({ ENV: { jwtSecret: '' } }));
 vi.mock('./_core/llm', () => ({ invokeLLM: vi.fn(() => { throw new Error('Synthetic core tests must not invoke a provider'); }) }));
-import { createServerFinalIdentityApproval, getVerifiedIdentityApproval, transferVerifiedIdentityApproval, sealCanonicalObservation, verifyCanonicalObservation, type ServerFinalIdentityApproval } from './testAiCanonicalObservation';
+import { attachCanonicalProvenance, createServerFinalIdentityApproval, getVerifiedIdentityApproval, transferVerifiedIdentityApproval, sealCanonicalObservation, verifyCanonicalObservation, type ServerFinalIdentityApproval } from './testAiCanonicalObservation';
 import { buildVisualTargetMetadata, type VisualSourceReview } from './testAiVisualSourceFilter';
 import type { MarketSale } from './testAiComparableEngine';
 
@@ -40,6 +40,17 @@ describe('canonical server observation provenance', () => {
       priceBasis: 'sold',
       canonicalTransactionId: 'url:ebay.com/itm/123',
     });
+  });
+
+  it('binds a server-owned row reference when an adapter provides no provider ID or URL', () => {
+    const row = completedSale({ saleId: null, url: null });
+    const [attached] = attachCanonicalProvenance('sold_comps', [row], { signingKey, acquiredAt, serverOwnedIdentity: true });
+    expect(attached.provenanceToken).toBeTruthy();
+    expect(attached.validationErrors).toEqual([]);
+    expect(attached.provenance?.canonicalTransactionId).toMatch(/^record:sold_comps:server_row_[a-f0-9]{32}$/);
+    const verified = verifyCanonicalObservation({ provenanceToken: attached.provenanceToken }, { signingKey, now: acquiredAt });
+    expect(verified.verified).toBe(true);
+    if (verified.verified) expect(verified.sale.saleId).toMatch(/^server-row:[a-f0-9]{32}$/);
   });
 
   it('rejects browser tampering with a signed observation token', () => {

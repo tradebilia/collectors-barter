@@ -423,6 +423,25 @@ function transactionId(adapterId: AdapterId, facts: CanonicalObservationFacts): 
   return facts.canonicalUrl ? `url:${facts.canonicalUrl}`
     : facts.sourceRecordId ? `record:${adapterId}:${normalizeKey(facts.sourceRecordId)}` : null;
 }
+/**
+ * Some server adapters return a usable completed row without exposing a
+ * provider ID or listing URL. This local reference binds the exact retrieved
+ * facts without pretending to be a marketplace transaction ID. It is only
+ * minted by the server sealing boundary, never accepted from the browser.
+ */
+function deriveServerOwnedRowReference(adapterId: AdapterId, sale: MarketSale): string | null {
+  const title = typeof sale.title === 'string' ? sale.title.trim() : '';
+  const price = normalizePrice(sale.price);
+  if (!title || price === null) return null;
+  const stableFacts = {
+    adapterId, title, price, currency: normalizeCurrency(sale.currency), date: normalizeDate(sale.date),
+    originMarketplace: normalizeMarketplace(sale.originMarketplace ?? sale.marketplace, CANONICAL_ADAPTER_REGISTRY[adapterId].defaultOriginMarketplace),
+    saleStatus: normalizeSaleStatus(sale.saleStatus), priceBasis: normalizePriceBasis(sale.priceBasis, 'unknown'),
+    saleForm: clip(sale.saleForm, 80),
+    lotQuantity: Number.isInteger(Number(sale.lotQuantity)) && Number(sale.lotQuantity) > 0 ? Number(sale.lotQuantity) : null,
+  };
+  return `server-row:${createHash('sha256').update(JSON.stringify(stableFacts)).digest('hex').slice(0, 32)}`;
+}
 function sourceFactsHash(facts: CanonicalObservationFacts): string {
   return sha256(JSON.stringify(facts));
 }
@@ -811,10 +830,12 @@ function asMarketSale(facts: CanonicalObservationFacts, provenance: CanonicalObs
 export function sealCanonicalObservation(
   adapterId: AdapterId,
   sale: MarketSale,
-  options?: { query?: string | null; acquiredAt?: Date; signingKey?: string; visualRequirement?: VisualRequirement; saleForm?: string | null; lotQuantity?: number | null; identityApproval?: ServerFinalIdentityApproval | null },
+  options?: { query?: string | null; acquiredAt?: Date; signingKey?: string; visualRequirement?: VisualRequirement; saleForm?: string | null; lotQuantity?: number | null; identityApproval?: ServerFinalIdentityApproval | null; serverOwnedIdentity?: boolean },
 ): SealedMarketObservation {
   const adapter = CANONICAL_ADAPTER_REGISTRY[adapterId];
-  const facts = normalizedFacts(adapter, sale, options);
+  const serverOwnedReference = options?.serverOwnedIdentity && !hasMeaningfulTransactionIdentity(sale)
+    ? deriveServerOwnedRowReference(adapterId, sale) : null;
+  const facts = normalizedFacts(adapter, serverOwnedReference ? { ...sale, saleId: serverOwnedReference } : sale, options);
   const canonicalTransactionId = facts.canonicalUrl
     ? `url:${facts.canonicalUrl}`
     : facts.sourceRecordId
@@ -938,7 +959,7 @@ export function verifyCanonicalObservation(
 export function attachCanonicalProvenance<T extends MarketSale>(
   adapterId: AdapterId,
   sales: T[],
-  options?: { query?: string | null; acquiredAt?: Date; signingKey?: string; visualRequirement?: VisualRequirement; saleForm?: string | null },
+  options?: { query?: string | null; acquiredAt?: Date; signingKey?: string; visualRequirement?: VisualRequirement; saleForm?: string | null; serverOwnedIdentity?: boolean },
 ): Array<T & { provenanceToken: string | null; provenance: CanonicalObservationProvenance | null; validationErrors: string[] }> {
   return sales.map((sale) => {
     const sealed = sealCanonicalObservation(adapterId, sale, options);

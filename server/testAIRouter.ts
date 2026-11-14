@@ -1880,8 +1880,13 @@ export function sealSandboxEvidence<T extends MarketSale>(
     return { ...sealed, saleId: original.saleId, url: original.url };
   });
 }
-// Keep existing named route call sites unchanged; they now share this boundary.
-const attachCanonicalProvenance = sealSandboxEvidence;
+// Real provider routes may bind a server-owned row reference when a provider
+// omitted both ID and URL. The generic exported helper stays restrictive so
+// browser-carried/adversarial observations cannot opt into this behavior.
+const attachCanonicalProvenance = <T extends MarketSale>(
+  adapterId: Parameters<typeof attachCanonicalSourceProvenance>[0], sales: T[],
+  options?: Parameters<typeof attachCanonicalSourceProvenance>[2],
+) => sealSandboxEvidence(adapterId, sales, { ...options, serverOwnedIdentity: true });
 
 /** Ordinary issuer's nonvisual source boundary; no new identity authority. */
 export function sealSoldCompsEvidence<T extends MarketSale>(sales: T[], options?: Parameters<typeof attachCanonicalSourceProvenance>[2]) {
