@@ -4143,6 +4143,10 @@ export const testAIRouter = router({
       let establishedIngress: ReturnType<typeof prepareMercariSourceIngress> | undefined;
       let establishedVisualRows: any[] | undefined;
       let visualDispatchStarted = false;
+      const approvalContext: MercariApprovalContext = {
+        input, effectiveTarget: approvalTarget, targetMetadata,
+        targetImageReference: safeTargetImage, approvalImageReference,
+      };
       try {
       const ingress = prepareMercariSourceIngress(result.listings, input, targetMetadata);
       establishedIngress = ingress;
@@ -4372,9 +4376,16 @@ export const testAIRouter = router({
             warningReview: annotatedListings.length + visualContextListings.length,
             ledger: [...annotatedListings, ...visualContextListings],
           },
-        }, result.listings, { input, effectiveTarget: approvalTarget, targetMetadata, targetImageReference: safeTargetImage, approvalImageReference });
-      } catch {
+        }, result.listings, approvalContext);
+      } catch (error) {
         // Retrieval succeeded; later metadata/preparation failures must not erase its union.
+        // If visual review already produced a usable match, keep the approval context
+        // alive so the finalizer can still issue the signed Mercari admission. The
+        // previous catch path dropped approvalContext and forcibly projected every
+        // row to context-only, which created the generic post-visual blockers even
+        // when the image review had matched.
+        console.warn('[Mercari] post-visual processing failed; retaining match for signed recovery:',
+          error instanceof Error ? error.message : 'unknown processing error');
         const reason = 'Mercari candidate processing unavailable; all retrieved records retained as context, with no pricing authority.';
         const latestRows = new Map((establishedIngress?.population.listings ?? result.listings)
           .map((listing: any) => [mercariFinalizationKey(listing), listing]));
@@ -4395,7 +4406,8 @@ export const testAIRouter = router({
             executionMeasurement: visualDispatchStarted && !establishedVisualRows ? 'unmeasured_after_processing_failure' : 'retained' },
           sourcePopulation: establishedIngress ? buildSourcePopulationReport(establishedIngress.population, context, retrievalCoverage)
             : buildEmittedSourcePopulationReport('mercari_sold_comps', result.listings.length, context, retrievalCoverage),
-          audit: { rawReceived: result.listings.length, retrievalCoverage, ledger: context } }, result.listings);
+          audit: { rawReceived: result.listings.length, retrievalCoverage, ledger: context } }, result.listings,
+          approvalContext);
       }
     }),
 
