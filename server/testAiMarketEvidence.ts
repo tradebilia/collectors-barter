@@ -201,7 +201,10 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   // Age changes the destination, not the authenticity of a completed sale.
   // Preserve every other existing financial, source and visual safeguard.
   const financiallyEligible = verification.verified
-    && !restrictiveInputDisposition
+    // A signed target/image-bound visual approval supersedes stale pre-visual
+    // source disposition labels. Provenance, price, completion, currency,
+    // identity reference, visual mismatch, and lot checks remain mandatory.
+    && (!restrictiveInputDisposition || Boolean(identityApproval))
     && price !== null
     && Number.isFinite(price)
     && price > 0

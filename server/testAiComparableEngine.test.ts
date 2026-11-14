@@ -716,7 +716,7 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
 
     expect(result.reasons).toContain('Disney Pins edition status matches');
     expect(result.reasons).not.toContain('sale declares a variant or release detail that the target does not state');
-    expect(result.identityBlockerCodes).not.toContain('VARIANT_REVIEW_REQUIRED');
+    expect(result.identityAdmission?.blockerCodes).not.toContain('VARIANT_REVIEW_REQUIRED');
   });
 
   it('keeps explicit Disney Pins edition conflicts and missing edition evidence fail-closed', () => {
@@ -737,9 +737,9 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
       sale('Disney Pin Aurora Limited Edition', 20, '2026-09-15'),
     );
 
-    expect(openSale.identityBlockerCodes).toContain('VARIANT_CONFLICT');
-    expect(limitedSaleAgainstOpen.identityBlockerCodes).toContain('VARIANT_CONFLICT');
-    expect(unknownTarget.identityBlockerCodes).toContain('VARIANT_REVIEW_REQUIRED');
+    expect(openSale.identityAdmission?.blockerCodes).toContain('VARIANT_CONFLICT');
+    expect(limitedSaleAgainstOpen.identityAdmission?.blockerCodes).toContain('VARIANT_CONFLICT');
+    expect(unknownTarget.identityAdmission?.blockerCodes).toContain('VARIANT_REVIEW_REQUIRED');
   });
 
   it('ignores stale grading and raw-versus-graded signals for Disney Pins', () => {

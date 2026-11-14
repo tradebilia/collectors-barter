@@ -2131,10 +2131,12 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const approvalHardStateConflict = universalIdentityConflicts.some((reason) => /grade differs|grading company differs/.test(reason));
   const signedFormConflicts = identityApproval ? signedComparableFormConflicts(target, sale.saleForm) : [];
   const transactionLotConflict = signedTransactionLotConflict(target, sale);
-  const approvedIdentity = Boolean(identityApproval) && !materialNumberConflict && !categoryHardConflict
-    && !universalHardConflict && !materialVariantConflict && !materialGradeConflict && !materialCompanyConflict
-    && !approvalHardStateConflict && !signedFormConflicts.length && !transactionLotConflict && !visualMismatch
-    && !materialVariantReview && !restrictiveSourceDisposition;
+  const unsignedMetadataConflict = !identityApproval && (materialNumberConflict || categoryHardConflict || universalHardConflict);
+  // A signed target/image-bound visual approval is the final identity decision.
+  // Do not reopen it with title metadata after visual review. Keep only the
+  // security/economic guards that still make the record incomparable: missing
+  // approval, unusable price, explicit lot/bundle, or visual mismatch.
+  const approvedIdentity = Boolean(identityApproval) && !transactionLotConflict && !visualMismatch;
   if (approvedIdentity) reasons.push('identity confirmed by server-final target/source/image-bound visual approval; title omissions do not reopen identity');
   if (signedFormConflicts.length) reasons.push(...signedFormConflicts.map((conflict) => `signed structured form conflict: ${conflict}`));
   if (transactionLotConflict) reasons.push('explicit transaction lot/bundle cannot supply a single-product comparable price');
@@ -2148,18 +2150,18 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     unconfirmedFields: pokemonNumber?.comparison === 'partial'
       ? categoryIdentity.unconfirmedFields.filter(field => field === 'Card #') : [],
   } : categoryIdentity;
-  if (materialNumberConflict || categoryHardConflict || universalHardConflict || transactionLotConflict) {
+  if (transactionLotConflict || visualMismatch || unsignedMetadataConflict) {
     identityRelationship = 'conflict';
     valuationRelationship = 'not_usable';
+  } else if (approvedIdentity) {
+    identityRelationship = 'exact_identity';
+    valuationRelationship = 'direct_comparable';
   } else if (materialVariantConflict) {
     identityRelationship = 'related_variant';
     valuationRelationship = 'variant_comparable';
   } else if (materialGradeConflict || materialCompanyConflict) {
     identityRelationship = 'same_object_different_state';
     valuationRelationship = 'grade_adjacent_comparable';
-  } else if (approvedIdentity) {
-    identityRelationship = 'exact_identity';
-    valuationRelationship = 'direct_comparable';
   } else if (autographMarketPolicy?.eligible) {
     identityRelationship = 'related_object';
     valuationRelationship = 'direct_comparable';
@@ -2180,14 +2182,14 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     valuationRelationship = 'reference_only';
   }
   const adjacentState = materialGradeConflict || materialCompanyConflict;
-  const classification: ComparableClassification = !priceIsUsable || materialNumberConflict || categoryHardConflict || universalHardConflict || transactionLotConflict
+  const classification: ComparableClassification = !priceIsUsable || transactionLotConflict || visualMismatch || unsignedMetadataConflict
     ? 'rejected'
+    : approvedIdentity
+      ? 'exact'
     : materialVariantConflict
       ? 'contextual'
       : adjacentState
         ? 'contextual'
-    : approvedIdentity
-      ? 'exact'
     : identityApproval && (approvalHardStateConflict || signedFormConflicts.length || restrictiveSourceDisposition)
       ? 'rejected'
     : requiredApprovalMissing || transportedApprovalUnverified
@@ -2254,21 +2256,21 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
           : 'REVIEW_REQUIRED';
   const identityBlockerCodes: string[] = [];
   if (!priceIsUsable) identityBlockerCodes.push('INVALID_PRICE');
-  if (materialNumberConflict) identityBlockerCodes.push('CATALOG_NUMBER_CONFLICT');
-  if (categoryHardConflict) identityBlockerCodes.push('CATEGORY_IDENTITY_CONFLICT');
-  if (universalHardConflict) identityBlockerCodes.push('UNIVERSAL_IDENTITY_CONFLICT');
-  if (materialVariantConflict) identityBlockerCodes.push('VARIANT_CONFLICT');
-  if (materialGradeConflict) identityBlockerCodes.push('GRADE_ADJACENT');
-  if (materialCompanyConflict) identityBlockerCodes.push('CERTIFICATION_ADJACENT');
+  if (materialNumberConflict && !approvedIdentity) identityBlockerCodes.push('CATALOG_NUMBER_CONFLICT');
+  if (categoryHardConflict && !approvedIdentity) identityBlockerCodes.push('CATEGORY_IDENTITY_CONFLICT');
+  if (universalHardConflict && !approvedIdentity) identityBlockerCodes.push('UNIVERSAL_IDENTITY_CONFLICT');
+  if (materialVariantConflict && !approvedIdentity) identityBlockerCodes.push('VARIANT_CONFLICT');
+  if (materialGradeConflict && !approvedIdentity) identityBlockerCodes.push('GRADE_ADJACENT');
+  if (materialCompanyConflict && !approvedIdentity) identityBlockerCodes.push('CERTIFICATION_ADJACENT');
   if (requiredApprovalMissing || transportedApprovalUnverified) identityBlockerCodes.push('REQUIRED_APPROVAL_MISSING');
   if (categoryNeedsReview && !approvedIdentity) identityBlockerCodes.push('CATEGORY_REVIEW_REQUIRED');
   if (universalNeedsReview && !approvedIdentity) identityBlockerCodes.push('UNIVERSAL_REVIEW_REQUIRED');
   if (visualMismatch) identityBlockerCodes.push('VISUAL_MISMATCH');
   if (materialVariantReview) identityBlockerCodes.push('VARIANT_REVIEW_REQUIRED');
-  if (identityApproval && signedFormConflicts.length) identityBlockerCodes.push('SIGNED_FORM_CONFLICT');
+  if (identityApproval && signedFormConflicts.length && !approvedIdentity) identityBlockerCodes.push('SIGNED_FORM_CONFLICT');
   if (transactionLotConflict) identityBlockerCodes.push('TRANSACTION_LOT_CONFLICT');
   if (identityApproval && transactionLotConflict) identityBlockerCodes.push('APPROVED_LOT_CONFLICT');
-  if (identityApproval && approvalHardStateConflict) identityBlockerCodes.push('APPROVED_STATE_CONFLICT');
+  if (identityApproval && approvalHardStateConflict && !approvedIdentity) identityBlockerCodes.push('APPROVED_STATE_CONFLICT');
   if (autographMarketPolicy && !autographMarketPolicy.eligible) identityBlockerCodes.push('AUTOGRAPH_MARKET_POLICY_BLOCKED');
   if (restrictiveSourceDisposition) identityBlockerCodes.push('SOURCE_DISPOSITION_RESTRICTIVE');
   if (!approvedIdentity && identity.readiness !== 'ready') identityBlockerCodes.push('TARGET_IDENTITY_INCOMPLETE');
