@@ -2975,9 +2975,11 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
     if (excluded.has(key) || /^(?:id|url|saleId|sourceId|providerReference|price|currency|date)$/i.test(key)) continue;
       const movieIdentity = movieContext && /^(?:title|movieTitle)$/i.test(key)
         && movieTargetItemType(targetMetadata) === 'individual_movie';
-	      const targetRaw = category === "music" && /^(?:format|mediaFormat)$/i.test(key)
-	        ? (musicItemTypeLabel(targetDetails.format) || musicItemTypeLabel(targetType) || undefined)?.replace(/\b\w/g, (letter) => letter.toUpperCase())
-	        : category === "autographs" && /^(?:authenticationIncluded|authenticated|authenticationStatus|isAuthenticated)$/i.test(key)
+      const targetRaw = category === "music" && /^(?:format|mediaFormat)$/i.test(key)
+        ? (musicItemTypeLabel(targetDetails.format) || musicItemTypeLabel(targetType) || undefined)?.replace(/\b\w/g, (letter) => letter.toUpperCase())
+        : category === "music" && /^(?:condition|mediaCondition)$/i.test(key)
+        ? firstMeaningfulValue(targetDetails.condition, targetDetails.mediaCondition, metadataValue(targetMetadata, key), resolvedVisualFieldValue(metadataValue(targetMetadata, key), targetDetails, key))
+        : category === "autographs" && /^(?:authenticationIncluded|authenticated|authenticationStatus|isAuthenticated)$/i.test(key)
         ? autographTargetAuthenticationState(targetDetails)
         : movieIdentity
         ? firstMeaningfulValue(targetDetails.title, targetDetails.movieTitle, extractTargetTitle(targetMetadata))
@@ -3011,8 +3013,10 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
               && /\benvelopes?\b/i.test(canonicalCandidateTitle(listing));
             // Keep raw provider metadata visible, but compare the signed surface
             // identified by the envelope title, just as scoring/admission do.
-					const finalStatus = envelopeObject ? titleDerivedStatus
-	              : category === 'disney_pins' && /^(?:condition|mediaCondition)$/i.test(key) && structuredStatus === 'different'
+          const finalStatus = envelopeObject ? titleDerivedStatus
+              : category === 'music' && /^(?:condition|mediaCondition)$/i.test(key) && structuredStatus !== 'unknown'
+                ? structuredStatus
+              : category === 'disney_pins' && /^(?:condition|mediaCondition)$/i.test(key) && structuredStatus === 'different'
 	                ? 'soft_difference'
 	                : structuredStatus === 'different' ? 'different' : titleDerivedStatus !== 'unknown' ? titleDerivedStatus : structuredStatus;
 						rows.push({
