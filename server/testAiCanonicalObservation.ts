@@ -707,7 +707,14 @@ function authorityStillBound(sale: MarketSale, authority: VerifiedApproval): boo
     || sale.observationId !== authority.provenance.payloadHash || sale.canonicalTransactionId !== authority.provenance.canonicalTransactionId
     || sale.evidenceDisposition !== 'valuation_eligible' && !historicalDateOnlyDowngrade
     || sale.duplicateStatus && !['unique', 'possible_duplicate'].includes(sale.duplicateStatus)) return false;
-  const current = normalizedFacts(CANONICAL_ADAPTER_REGISTRY[adapterId], sale);
+  // Mercari rows without provider IDs use a server-owned reference minted at
+  // sealing. Reconstruct the same trusted fact set during approval binding;
+  // otherwise normalizedFacts strips that reference as browser-supplied and
+  // incorrectly invalidates an otherwise valid signed approval.
+  const current = normalizedFacts(CANONICAL_ADAPTER_REGISTRY[adapterId], sale, {
+    serverOwnedIdentity: adapterId === 'mercari_sold_comps'
+      && typeof sale.saleId === 'string' && sale.saleId.startsWith('server-row:'),
+  });
   // Compare every original signed fact unchanged except this privately verified
   // age-only destination change. This never admits history to current pricing.
   if (historicalDateOnlyDowngrade) current.evidenceDisposition = authority.facts.evidenceDisposition;

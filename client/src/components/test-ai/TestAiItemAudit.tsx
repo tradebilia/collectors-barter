@@ -25,7 +25,15 @@ export function buildItemAuditSubmission(sources: ItemAuditSource[], runId?: str
     const contextOnly = isCurrentMarketContextSource({ sourceId: source.id, role: source.role, kind: source.kind });
     const displayRows = marketplace ? evidenceReviewCandidates(source) : [];
     const valuationRows = contextOnly ? [] : displayRows;
-    const transported = source.id === 'mercari_sold_comps'
+    // A server-final Mercari ledger is already signed and approval-bound. Do
+    // not pass it through buildMercariAnalysisSales: that helper is the safe
+    // projection for raw/browser rows and deliberately clears approval,
+    // provenance, and valuation fields. Re-projecting the final ledger here
+    // downgrades an otherwise admissible row immediately before Item A.
+    const hasAuthoritativeMercariLedger = source.id === 'mercari_sold_comps'
+      && Array.isArray(source.packet?.audit?.ledger)
+      && source.packet.audit.ledger.length > 0;
+    const transported = source.id === 'mercari_sold_comps' && !hasAuthoritativeMercariLedger
       ? buildMercariAnalysisSales({ listings: valuationRows, requestedMode: source.packet?.requestedMode }, true) : valuationRows;
     const stamp = (row: any) => ({ ...row, sourceId: row.sourceId ?? source.id });
     const transportedRows = transported.map(stamp);

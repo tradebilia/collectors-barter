@@ -120,6 +120,25 @@ function resign(payload: Record<string, any>, updateHash = true): string {
 }
 
 describe('identity-approval-v1 server authority', () => {
+  it('keeps a signed ID-less Mercari approval bound through final verification', () => {
+    const mercariSale = approvalSale({
+      sourceId: 'mercari_sold_comps', sourceAdapter: 'mercari_sold_comps', originMarketplace: 'mercari',
+      marketplace: 'Mercari', saleId: `server-row:${'a'.repeat(32)}`, url: null, date: null, recency: 'undated',
+      saleDatePolicy: 'mercari_undated_sold_v1',
+      completedStatusBasis: 'Sold-Comps Mercari sold=true reported sold price',
+    });
+    const handle = mint(mercariSale);
+    expect(handle).not.toBeNull();
+    const sealed = sealCanonicalObservation('mercari_sold_comps', mercariSale, {
+      signingKey, acquiredAt, identityApproval: handle, serverOwnedIdentity: true,
+    });
+    expect(sealed.identityApproval).toBeDefined();
+    const verified = verifyCanonicalObservation({ provenanceToken: sealed.provenanceToken }, { signingKey, now: acquiredAt });
+    expect(verified.verified).toBe(true);
+    if (!verified.verified) return;
+    expect(verified.sale.saleId).toMatch(/^server-row:[a-f0-9]{32}$/);
+    expect(getVerifiedIdentityApproval(verified.sale, target, imageReference)).not.toBeNull();
+  });
   it('signs an independently versioned approval and requires target plus independent image binding', () => {
     const { sealed } = approved(approvalSale({ title: 'Kobe Bryant PSA 10' }));
     const verified = verifyCanonicalObservation({ provenanceToken: sealed.provenanceToken }, { signingKey, now: acquiredAt });
