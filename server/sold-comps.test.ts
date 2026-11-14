@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { annotateSoldComparableCandidate, applyAutographPriceTailGate, applyIsolatedMarketPriceTailGate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromQuery, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata, resolveEbaySoldSourceIdentity } from './testAIRouter';
+import { annotateSoldComparableCandidate, applyAutographPriceTailGate, applyIsolatedMarketPriceTailGate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, deriveEbaySoldRowFingerprint, extractGradeFromQuery, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata, resolveEbaySoldSourceIdentity } from './testAIRouter';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 import { isExplicitMultiItemListing } from '../shared/testAiMarketplaceCandidate';
 import { applyVisualSourceReviews, conservativeGradedVisualReviews } from './testAiVisualSourceFilter';
@@ -30,6 +30,15 @@ describe('Sold-Comps API key validation', () => {
       .toEqual({ saleId: null, url: 'https://www.ebay.com/itm/789' });
     expect(resolveEbaySoldSourceIdentity({ title: 'Nirvana Nevermind Cassette' }))
       .toEqual({ saleId: null, url: null });
+  });
+
+  it('creates a stable server-owned reference for an otherwise usable row with no provider ID or URL', () => {
+    const row = { title: 'Prince Purple Rain Vinyl Record', soldPrice: 24, endedAt: '2026-10-01T00:00:00.000Z' };
+    const fingerprint = deriveEbaySoldRowFingerprint(row);
+    expect(fingerprint).toMatch(/^server-row:[a-f0-9]{32}$/);
+    expect(deriveEbaySoldRowFingerprint({ ...row })).toBe(fingerprint);
+    expect(deriveEbaySoldRowFingerprint({ ...row, soldPrice: 25 })).not.toBe(fingerprint);
+    expect(deriveEbaySoldRowFingerprint({ title: 'Prince Purple Rain Vinyl Record', soldPrice: 0 })).toBeNull();
   });
 
   it('preserves ranking metadata in the eBay Sold-Comps transport payload', () => {

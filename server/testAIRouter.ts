@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { protectedProcedure, router } from "./_core/trpc";
 import { requireDb } from "./db";
 import { listings, listingPhotos, userProfiles } from "../drizzle/schema";
@@ -93,6 +93,25 @@ export function resolveEbaySoldSourceIdentity(item: Record<string, unknown>): { 
   const url = [item.itemWebUrl, item.itemUrl, item.url, item.link, item.href]
     .find((value): value is string => typeof value === 'string' && value.trim().length > 0) ?? null;
   return { saleId: saleId ?? null, url };
+}
+
+/**
+ * Some server-retrieved Sold-Comps rows omit both provider ID and URL. Give a
+ * usable row a stable server-owned reference so the signed observation can be
+ * bound to the exact retrieved facts. This is not presented as an eBay ID and
+ * does not bypass date, price, identity, visual, lot, or valuation gates.
+ */
+export function deriveEbaySoldRowFingerprint(item: Record<string, unknown>): string | null {
+  const title = typeof item.title === 'string' ? item.title.trim() : '';
+  const priceValue = Number(item.soldPrice ?? item.price);
+  if (!title || !Number.isFinite(priceValue) || priceValue <= 0) return null;
+  const stableRow = Object.keys(item).sort().reduce<Record<string, unknown>>((result, key) => {
+    const value = item[key];
+    if (value !== undefined && typeof value !== 'function') result[key] = value;
+    return result;
+  }, {});
+  const digest = createHash('sha256').update(JSON.stringify(stableRow)).digest('hex').slice(0, 32);
+  return `server-row:${digest}`;
 }
 
 function normalizedPcgsAuctionGrade(value: unknown): string {
@@ -3455,14 +3474,13 @@ export const testAIRouter = router({
               // These are the same scalar aliases validated above, not a new
               // provider format. Keep their original structured row separately.
               const sourceIdentity = resolveEbaySoldSourceIdentity(item);
-              const saleId = sourceIdentity.saleId;
+              const saleId = sourceIdentity.saleId ?? deriveEbaySoldRowFingerprint(item);
               const sourceUrl = sourceIdentity.url;
               if (saleId === null && sourceUrl === null) {
-                // A Sold-Comps row without either provider identity cannot be
-                // server-verified later. Do not let it enter ranking, visual
-                // review, or the final valuation-candidate ledger as a
-                // misleading "review required" candidate. Keep only the
-                // diagnostic record for retrieval auditing.
+                // A row without enough facts for even a server-owned
+                // fingerprint cannot be verified later. Keep only the
+                // diagnostic record; it cannot enter ranking or valuation as
+                // a misleading "review required" candidate.
                 result.receipt.normalizationRejected += 1;
                 result.receipt.rejectionCounts.normalization_failure =
                   (result.receipt.rejectionCounts.normalization_failure ?? 0) + 1;
