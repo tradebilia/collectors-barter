@@ -872,8 +872,17 @@ function mercariVisualMatch(row: any): boolean {
 function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsListing, context: MercariApprovalContext) {
   const report = getMercariObservedFacts(original)?.report;
   const fallback = mercariContextProjection(row, report ?? null);
-  const blocked = (reasons: string[]) => ({ ...fallback, mercariAdmissionBlockers: reasons,
-    evidenceReasons: [...new Set([...reasons, ...fallback.evidenceReasons])].slice(0, 20) });
+  const blocked = (reasons: string[]) => {
+    const primary = reasons.find((reason) => typeof reason === 'string' && reason.trim())
+      ?? 'MERCARI_APPROVAL_FAILURE_UNRECORDED: final approval was not issued.';
+    // Keep the visual result and the exact server-final approval failure on the
+    // row. Previously this returned only mercariContextProjection(), which
+    // erased the failure boundary and made Item A report unrelated secondary
+    // blockers such as missing provenance, unknown price basis and invalid date.
+    return { ...fallback, visualReviewStatus: mercariVisualMatch(row) ? 'match' as const : fallback.visualReviewStatus,
+      approvalFailure: structuredApprovalRejection(primary), mercariAdmissionBlockers: reasons,
+      evidenceReasons: [...new Set([...reasons, ...fallback.evidenceReasons])].slice(0, 20) };
+  };
   if (!report) return blocked(['MERCARI_OBSERVATION_MISSING: private original provider observation is unavailable.']);
   if (report.requestedMode !== 'sold') return blocked(['MERCARI_REQUEST_NOT_SOLD: the provider request was not sold=true.']);
   if (row.visualExecution?.hardExclusion === true) return blocked([`MERCARI_HARD_EXCLUSION: ${row.visualReviewRationale || 'A deterministic identity/safety exclusion was recorded.'}`]);
