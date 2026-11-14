@@ -13,6 +13,7 @@ import {
   type VisualSourceCandidate,
 } from "./testAiVisualSourceFilter";
 import { findMaterialMetadataConflicts } from "../shared/testAiMetadataConflict";
+import { assessComparableCategoryIdentity } from "./testAiComparableEngine";
 
 const identity = { artist: "Nirvana", releaseTitle: "Nevermind", format: "cassette_tape" };
 const target = (condition: string | undefined = "good", details: Record<string, unknown> = {}) => buildVisualTargetMetadata({
@@ -384,5 +385,16 @@ describe("Music identity and diagnostic boundaries", () => {
     const listing = candidate("The Beatles Sgt. Pepper Second Pressing", { edition: "Second Pressing" });
     expect(musicVisualScore(listing, metadata).matched).not.toContain("edition");
     expect(buildDeclaredIdentityReviews([listing], metadata)[0]?.rationale).toContain("Music edition or variant differs");
+  });
+
+  it("uses the normalized label and edition aliases at the final approval gate", () => {
+    const assessment = assessComparableCategoryIdentity(
+      { title: "Rattle and Hum", category: "music", itemType: "vinyl_record", itemDetails: JSON.stringify({ recordLabel: "Island Records", edition: "First Edition" }) },
+      { recordLabel: "Island Records", edition: "First Edition" },
+      "U2 Rattle and Hum First Pressing Island NV Vinyl",
+      null,
+    );
+    expect(assessment.conflicts).not.toContain(expect.stringContaining("Label differs"));
+    expect(assessment.conflicts).not.toContain(expect.stringContaining("Pressing / edition differs"));
   });
 });

@@ -1131,17 +1131,26 @@ function recordLabelInTitle(title: string): string | null {
   const normalizedTitle = ` ${normalizedIdentityText(title)} `;
   return RECORD_LABELS.find((label) => normalizedTitle.includes(` ${label} `)) ?? null;
 }
-
+function musicLabelComparable(value: string | null | undefined): string | null {
+  const normalized = normalizedIdentityText(value);
+  if (!normalized) return null;
+  if (/\b(?:capital|capitol) records?\b/.test(normalized)) return 'capitol';
+  if (/\b(?:dgc|dgcc|geffen)(?: records?)?\b/.test(normalized)) return 'geffen';
+  return normalized.replace(/\s+records?$/, '').trim();
+}
 function musicPressing(value: string | null | undefined): string | null {
   const normalized = normalizedIdentityText(value);
   if (!normalized) return null;
-  if (/first pressing|original pressing/.test(normalized)) return 'first_pressing';
+  if (/first (?:edition|pressing)|original (?:edition|pressing)/.test(normalized)) return 'first_pressing';
   if (/second pressing/.test(normalized)) return 'second_pressing';
   if (/reissue|re release/.test(normalized)) return 'reissue';
   if (/remaster/.test(normalized)) return 'remaster';
   if (/\bmono\b/.test(normalized)) return 'mono';
   if (/\bstereo\b/.test(normalized)) return 'stereo';
   return normalized;
+}
+function musicEditionComparable(value: string | null | undefined): string | null {
+  return musicPressing(value);
 }
 
 function musicArtistAndReleaseFromTitle(title: string): { artist: string; release: string } | null {
@@ -1619,10 +1628,12 @@ export function assessComparableCategoryIdentity(
     const countryMatch = countryStatus(title, country);
     const targetFormat = musicFormat(format);
     const observedFormat = musicFormat(title);
-    const targetPressing = musicPressing(pressing);
-    const observedPressing = musicPressing(title);
+    const targetPressing = musicEditionComparable(pressing);
+    const observedPressing = musicEditionComparable(title);
     const observedLabel = recordLabelInTitle(title);
-    const labelConflict = observedLabel && normalizedIdentityText(observedLabel) !== normalizedIdentityText(label) ? observedLabel : null;
+    const targetLabel = musicLabelComparable(label);
+    const candidateLabel = musicLabelComparable(observedLabel);
+    const labelConflict = candidateLabel && targetLabel && candidateLabel !== targetLabel ? observedLabel : null;
     const parsedTitle = musicArtistAndReleaseFromTitle(title);
     const artistConflict = parsedTitle && artist && !titleContainsExpectedPhrase(parsedTitle.artist, artist) ? parsedTitle.artist : null;
     const releaseConflict = parsedTitle && releaseTitle && !titleContainsExpectedPhrase(parsedTitle.release, releaseTitle) ? parsedTitle.release : null;
