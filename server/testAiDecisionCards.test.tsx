@@ -94,6 +94,25 @@ describe('Test AI candidate decision cards (real component)', () => {
     expect(decision.reason).toContain('candidate “Geffen Records, Geffen”');
     expect(decision.reason).not.toBe('Outer metadata hold');
   });
+  it('does not show a source-admission blocker for a row stopped before dispatch', () => {
+    const decision = candidateFinalDecision({
+      title: 'U2 Rattle and Hum Vinyl LP',
+      metadataMatchScore: 58,
+      evidenceDisposition: 'rejected_objective_conflict',
+      evidenceReasons: ['Edition differs: target First Edition; candidate First Edition, First Pressing'],
+      visualExecution: { version: 1, state: 'not_dispatched', reasonCode: 'outer_metadata_hold', hardExclusion: true,
+        selectedForReview: false, identity: { origin: 'none', result: 'not_established' }, attempts: [] },
+      valuationUse: {
+        sourceAdmission: {
+          sourceBlockers: [{ plainEnglish: 'The server could not verify the source record.' }],
+        },
+        use: { code: 'FINAL_HARD_EXCLUDED', reasonCodes: ['PROVENANCE_UNVERIFIED'] },
+      },
+    });
+    expect(decision.label).toBe('NOT USED — HARD EXCLUSION');
+    expect(decision.reason).not.toContain('Separate source-admission blocker');
+    expect(decision.reason).not.toContain('server could not verify the source record');
+  });
   it.each([
     ['format', 'Cassette Tape', 'Cassette', 'Format'],
     ['genre', 'Grunge', 'Rock', 'Genre'],

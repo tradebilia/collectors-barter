@@ -212,10 +212,19 @@ function structuredFinalBlockerExplanation(row: CandidateDisplayRow): string[] {
   const reasons: string[] = [];
   const approval = admission?.approvalFailure;
   if (approval?.plainEnglish) reasons.push(`Final approval failed because ${approval.plainEnglish}${approval.detail ? ` (${approval.detail})` : ''}`);
+  // An undispatched row never reached source admission. Its downstream audit
+  // can still report a provenance diagnostic because it inspected the raw
+  // display row, but that diagnostic is not the reason the row was stopped.
+  // Keep the actual score-cap or hard-exclusion explanation primary.
+  const executionState = row.visualExecution?.state;
+  const reachedSourceAdmission = executionState !== 'not_dispatched'
+    && executionState !== 'selected_pending'
+    && row.evidenceDisposition !== 'pre_vision_score_excluded'
+    && row.evidenceDisposition !== 'rejected_objective_conflict';
   const sourceBlockers = (admission?.sourceBlockers ?? [])
     .map((blocker: any) => typeof blocker?.plainEnglish === 'string' ? blocker.plainEnglish : '')
     .filter(Boolean);
-  if (sourceBlockers.length) reasons.push(`Separate source-admission blocker: ${sourceBlockers[0]}`);
+  if (reachedSourceAdmission && sourceBlockers.length) reasons.push(`Separate source-admission blocker: ${sourceBlockers[0]}`);
   return reasons;
 }
 function sourceDispositionBlockerDetails(row: CandidateDisplayRow): string[] {
