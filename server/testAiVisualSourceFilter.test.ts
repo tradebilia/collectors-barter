@@ -101,7 +101,7 @@ const structuredVisualResponse = (value: unknown) => ({
 });
 
 describe("visual source filter", () => {
-  beforeEach(() => mockedInvokeLLM.mockReset());
+  beforeEach(() => { mockedInvokeLLM.mockReset(); });
   it("uses provider title aliases consistently across category ranking models", () => {
     const coinTarget = buildVisualTargetMetadata({ title: "1999 United States Silver Dollar", category: "coins", itemType: "single_coin", fullItemDetails: { country: "United States", year: "1999", denomination: "Dollar" } });
     expect(coinsSingleVisualScore({ itemTitle: "1999 United States Silver Dollar", itemDetails: JSON.stringify({ country: "United States", year: "1999", denomination: "Dollar" }) }, coinTarget).score).toBeGreaterThan(0);
@@ -2176,10 +2176,10 @@ describe("visual source filter", () => {
 
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
     expect(source).toContain("const reconciledPrimaryReviews = primaryReviews.map");
-    expect(source).toContain("const needsCoinAdjudication = isCoinMetadata(targetMetadata);");
+    expect(source).toContain("const needsCoinAdjudication = !primaryAccepted && isCoinMetadata(targetMetadata);");
   });
 
-  it("runs the independent second review for an exact-title Mercari coin holder crop before making an admission decision", async () => {
+  it("keeps an explicit high-confidence coin match final without a second evidence-checkbox gate", async () => {
     const metadata = "title=1896 Morgan PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
     const cropEvidence = { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, rawOrLooseVisible: false, identityMatches: true, denominationMatches: true };
     const finalEvidence = { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, dateMatches: true, varietyMatches: true, mintMarkMatches: false, denominationMatches: true };
@@ -2199,21 +2199,20 @@ describe("visual source filter", () => {
       listings: [{ title: "1896 Morgan Silver Dollar PCGS MS63", imageUrl: "https://example.com/candidate-coin.jpg", imageUrls: ["https://example.com/candidate-coin.jpg"] }],
     });
 
-    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
-    expect(JSON.stringify(mockedInvokeLLM.mock.calls[1]?.[0]?.messages ?? [])).toContain("INDEPENDENT COIN IDENTITY ADJUDICATION");
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(1);
     expect(result.listings[0]).toMatchObject({
       visualReviewStatus: "match",
-      visualAudit: { retryStatus: "performed", adjudicationStatus: "confirmed", finalPass: "high_resolution_retry" },
+      visualAudit: { retryStatus: "not_needed", finalPass: "initial" },
     });
     expect(result.listings[0]).not.toHaveProperty("evidenceDisposition");
   });
 
-  it("retries the second coin-review response format when a nonempty reply omits the required review", async () => {
+  it("does not request another response format after an accepted coin match", async () => {
     const metadata = "title=1896 Morgan PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
     const evidence = { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, dateMatches: true, varietyMatches: true, mintMarkMatches: false, denominationMatches: true };
     mockedInvokeLLM
       .mockResolvedValueOnce(structuredVisualResponse({
-        reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The first review finds the matching graded coin.", visualEvidence: evidence }],
+        reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The first review confirms the matching coin.", visualEvidence: evidence }],
       }) as any)
       .mockResolvedValueOnce(structuredVisualResponse({ reviews: [] }) as any)
       .mockResolvedValueOnce(structuredVisualResponse({
@@ -2228,10 +2227,10 @@ describe("visual source filter", () => {
       listings: [{ title: "1896 Morgan Silver Dollar PCGS MS63", imageUrl: "https://example.com/candidate-coin.jpg", imageUrls: ["https://example.com/candidate-coin.jpg"] }],
     });
 
-    expect(mockedInvokeLLM).toHaveBeenCalledTimes(3);
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(1);
     expect(result.listings[0]).toMatchObject({
       visualReviewStatus: "match",
-      visualAudit: { retryStatus: "performed", adjudicationStatus: "confirmed", finalPass: "high_resolution_retry" },
+      visualAudit: { retryStatus: "not_needed", finalPass: "initial" },
     });
     expect(result.listings[0]).not.toHaveProperty("evidenceDisposition");
   });
@@ -2595,7 +2594,7 @@ describe("visual source filter", () => {
         },
       ],
     });
-    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(1);
     expect(result.reviewedCount).toBe(1);
     expect(result.listings.map((listing) => listing.title)).toEqual(["Disney Pin HKDL Eeyore Name Tag Mystery Collection"]);
     expect(result.contextListings?.map((listing) => listing.title)).toEqual(["Disney Eeyore and Piglet Pin Set of 2"]);
@@ -4589,7 +4588,7 @@ describe("visual source filter", () => {
 
 
 describe("Stage 1 safe visual confirmation", () => {
-  beforeEach(() => mockedInvokeLLM.mockReset());
+  beforeEach(() => { mockedInvokeLLM.mockReset(); });
   const metadata = 'title=The Legend of Zelda NES; category=video_games; grade=7.50; certificationCompany=PSA; fullItemDetails={"gameTitle":"The Legend of Zelda","platform":"NES","sealed":"Yes","isGraded":"Yes"}';
   const title = 'The Legend of Zelda NES 1987 Sealed PSA 7.5 A+';
   const evidence = { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, artworkMatches: true };
@@ -4756,14 +4755,14 @@ describe("Stage 1 safe visual confirmation", () => {
     expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: 'mismatch', retryStatus: 'failed', finalPass: 'initial' });
   });
 
-  it('preserves an earlier confirmed graded match when an optional gallery retry fails', async () => {
-    mockedInvokeLLM.mockResolvedValueOnce(structuredVisualResponse({ reviews: [{ candidateIndex: 0, verdict: 'match', confidence: 'high', rationale: 'The graded item identity, holder, and numeric grade match.', visualEvidence: evidence }] }) as any)
-      .mockRejectedValueOnce(new Error('isolated optional retry unavailable')).mockRejectedValueOnce(new Error('isolated optional retry fallback unavailable'));
+  it('does not run an optional metadata/gallery retry after a confirmed graded match', async () => {
+    mockedInvokeLLM.mockImplementation(() => { throw new Error('An accepted match must not invoke another image review'); })
+      .mockResolvedValueOnce(structuredVisualResponse({ reviews: [{ candidateIndex: 0, verdict: 'match', confidence: 'high', rationale: 'The graded item identity, holder, and numeric grade match.', visualEvidence: evidence }] }) as any);
     const result = await filterVisualSourceCandidates({ sourceRole: 'marketplace', sourceLabel: 'Stage 1 mock', targetImageUrl: 'https://example.com/target.jpg', targetMetadata: metadata,
-      listings: [{ title: 'The Legend of Zelda NES Sealed', fullItemDetails: { gameTitle: 'The Legend of Zelda', platform: 'NES', sealed: 'Yes', isGraded: 'Yes' }, imageUrl: 'https://example.com/candidate.jpg', imageUrls: ['https://example.com/candidate.jpg', 'https://example.com/gallery.jpg'] }] });
-    expect(mockedInvokeLLM).toHaveBeenCalledTimes(3);
+      listings: [{ title, imageUrl: 'https://example.com/candidate.jpg', imageUrls: ['https://example.com/candidate.jpg', 'https://example.com/gallery.jpg'] }] });
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(1);
     expect(result.listings[0].visualReviewStatus).toBe('match');
-    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: 'match', retryStatus: 'failed', finalPass: 'initial', finalEvidence: evidence });
+    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: 'match', retryStatus: 'not_needed', finalPass: 'initial', finalEvidence: evidence });
   });
 
   it('preserves raw retry provenance separately from the permitted normalized decision', async () => {

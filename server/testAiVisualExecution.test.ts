@@ -60,16 +60,12 @@ const expectPinQueueFixture = () => {
   expect(disneyPinsVisualCap(score.score)).toBe(4);
 };
 const expectDisneyRequests = () => {
-  expect(model).toHaveBeenCalledTimes(4);
-  expect(model.mock.calls.map(([params]) => params.response_format?.type)).toEqual(["json_schema", "json_schema", "json_object", "json_object"]);
+  expect(model).toHaveBeenCalledTimes(1);
+  expect(model.mock.calls.map(([params]) => params.response_format?.type)).toEqual(["json_schema"]);
   for (const [params] of model.mock.calls) expect(params.model).toBe("gpt-6-luna");
   expect(JSON.stringify(model.mock.calls[0][0].messages)).toContain("CANDIDATE 0: title=Mickey Mouse Pin");
-  for (const call of model.mock.calls.slice(1, 3)) {
-    expect(JSON.stringify(call[0].messages)).toContain("INDEPENDENT DISNEY PINS IDENTITY ADJUDICATION");
-    expect(JSON.stringify(call[0].messages)).not.toContain("THIRD CONFIRMATION ATTEMPT");
-  }
-  expect(JSON.stringify(model.mock.calls[3][0].messages)).toContain("THIRD CONFIRMATION ATTEMPT");
-  expect(JSON.stringify(model.mock.calls[3][0].messages)).toContain("CANDIDATE 0 INDEPENDENT HIGH-RESOLUTION IMAGE");
+  expect(JSON.stringify(model.mock.calls[0][0].messages)).not.toContain("INDEPENDENT DISNEY PINS IDENTITY ADJUDICATION");
+  expect(JSON.stringify(model.mock.calls[0][0].messages)).not.toContain("THIRD CONFIRMATION ATTEMPT");
 };
 
 it("uses the Forge-compatible object response format when no visual provider is selected", async () => {
@@ -321,35 +317,42 @@ describe("Stage 5 actual visual execution receipts", () => {
     expect(result.listings[0].visualExecution?.attempts.every((attempt) => attempt.outcome === "error")).toBe(true);
   });
 
-  it("preserves a valid graded initial match when optional gallery formats fail", async () => {
+  it("finalizes a valid graded initial match without dispatching optional gallery formats", async () => {
     const initial = review("match", { rationale: "The graded item identity, holder, and numeric grade match.", visualEvidence: gradedEvidence });
     model.mockResolvedValueOnce(reply({ reviews: [initial] })).mockRejectedValueOnce(new Error("optional gallery unavailable"))
       .mockRejectedValueOnce(new Error("optional object unavailable"));
     const result = await run([{ title: "The Legend of Zelda NES Sealed", fullItemDetails: { gameTitle: "The Legend of Zelda", platform: "NES", sealed: "Yes", isGraded: "Yes" },
       imageUrl: "https://example.invalid/candidate.jpg", imageUrls: ["https://example.invalid/candidate.jpg", "https://example.invalid/gallery.jpg"] }], { targetMetadata: gameMetadata });
-    expect(model).toHaveBeenCalledTimes(3);
+    expect(model).toHaveBeenCalledTimes(1);
     expect(result.listings[0]).toMatchObject({ visualReviewStatus: "match", visualEvidence: gradedEvidence,
       visualAudit: { initialVerdict: "match", initialRationale: initial.rationale, initialEvidence: gradedEvidence,
-        decidingRationale: initial.rationale, retryStatus: "failed", finalPass: "initial", finalEvidence: gradedEvidence },
-      visualExecution: { state: "dispatched_inconclusive", identity: { result: "match", origin: "visual" } } });
-    expect(result.listings[0].visualExecution?.attempts.map((attempt) => [attempt.stage, attempt.outcome])).toEqual([
-      ["initial", "usable_review"], ["high_resolution_retry", "error"], ["high_resolution_retry", "error"],
-    ]);
-    expect(result.visualExecutionCounts?.responseReviewedCandidateCount).toBe(1);
+        decidingRationale: initial.rationale, retryStatus: "not_needed", finalPass: "initial", finalEvidence: gradedEvidence },
+      visualExecution: { state: "completed", reasonCode: "review_returned", identity: { result: "match", origin: "visual" } } });
+    expect(attempts(result.listings[0])).toEqual([{ ordinal: 1, stage: "initial", format: "json_schema", outcome: "usable_review" }]);
+    expect(result.visualExecutionCounts).toMatchObject({ inputOccurrenceCount: 1, emittedOccurrenceCount: 1,
+      selectedCandidateCount: 1, dispatchedCandidateCount: 1, responseReviewedCandidateCount: 1,
+      selectedPendingCandidateCount: 0, dispatchedWithoutResponseReviewCount: 0, timedOutCandidateCount: 0, coverage: "complete" });
+    expect(result.timedOutCount).toBe(0);
   });
 
-  it("retains a valid optional initial match alongside terminal retry timeout", async () => {
+  it("finalizes a medium-confidence optional initial match without inventing a skipped retry timeout", async () => {
     vi.useFakeTimers();
-    model.mockResolvedValueOnce(response("match", { rationale: "The graded item identity, holder, and numeric grade match.", visualEvidence: gradedEvidence }))
+    model.mockResolvedValueOnce(response("match", { confidence: "medium", rationale: "The graded item identity, holder, and numeric grade match.", visualEvidence: gradedEvidence }))
       .mockImplementation(abortingProvider);
     const pending = run([{ title: "The Legend of Zelda NES Sealed", fullItemDetails: { gameTitle: "The Legend of Zelda", platform: "NES", sealed: "Yes", isGraded: "Yes" },
       imageUrl: "https://example.invalid/candidate.jpg", imageUrls: ["https://example.invalid/candidate.jpg", "https://example.invalid/gallery.jpg"] }], { targetMetadata: gameMetadata });
     await vi.advanceTimersByTimeAsync(VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS * 2);
     const result = await pending;
-    expect(model).toHaveBeenCalledTimes(3);
-    expect(result.listings[0].visualExecution).toMatchObject({ state: "timed_out", identity: { result: "match", origin: "visual" } });
-    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: "match", retryStatus: "failed", finalPass: "initial", finalEvidence: gradedEvidence });
-    expect(result.visualExecutionCounts).toMatchObject({ responseReviewedCandidateCount: 1, timedOutCandidateCount: 1 });
+    expect(model).toHaveBeenCalledTimes(1);
+    expect(result.listings[0]).toMatchObject({ visualReviewStatus: "match", visualExecution: { state: "completed", reasonCode: "review_returned",
+      identity: { result: "match", origin: "visual" } } });
+    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: "match", initialConfidence: "medium",
+      retryStatus: "not_needed", finalPass: "initial", initialEvidence: gradedEvidence, finalEvidence: gradedEvidence });
+    expect(result.listings[0].visualAudit).not.toHaveProperty("retryVerdict");
+    expect(attempts(result.listings[0])).toEqual([{ ordinal: 1, stage: "initial", format: "json_schema", outcome: "usable_review" }]);
+    expect(result.visualExecutionCounts).toMatchObject({ selectedCandidateCount: 1, dispatchedCandidateCount: 1,
+      responseReviewedCandidateCount: 1, dispatchedWithoutResponseReviewCount: 0, timedOutCandidateCount: 0 });
+    expect(result.timedOutCount).toBe(0);
   });
 
   it("preserves raw initial/final audit exactly through a permitted retry correction", async () => {
@@ -375,27 +378,45 @@ describe("Stage 5 actual visual execution receipts", () => {
     expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: "mismatch", retryStatus: "failed", finalPass: "initial" });
   });
 
-  it("keeps mandatory coin adjudication failure manual without inventing approval", async () => {
+  it("finalizes an actual initial coin match without redundant mandatory adjudication", async () => {
     model.mockResolvedValueOnce(response("match", { visualEvidence: coinEvidence })).mockRejectedValueOnce(new Error("coin retry unavailable"))
       .mockRejectedValueOnce(new Error("coin object unavailable"));
     const result = await run([{ title: "1903 Morgan Silver Dollar PCGS MS63", imageUrl: "https://example.invalid/coin.jpg" }], { targetMetadata: coinMetadata });
-    expect(model).toHaveBeenCalledTimes(3);
-    expect(result.listings[0].visualExecution).toMatchObject({ state: "dispatched_inconclusive", identity: { result: "manual_unknown", origin: "visual" } });
-    expect(result.listings[0].evidenceDisposition).toBe("warning_review");
-    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: "match", retryStatus: "failed", adjudicationStatus: "unavailable", finalPass: "initial" });
-    expect(result.visualExecutionCounts?.responseReviewedCandidateCount).toBe(1);
+    expect(model).toHaveBeenCalledTimes(1);
+    expect(result.listings[0]).toMatchObject({ visualReviewStatus: "match", visualEvidence: coinEvidence,
+      visualExecution: { state: "completed", reasonCode: "review_returned", identity: { result: "match", origin: "visual" } } });
+    expect(result.listings[0].evidenceDisposition).not.toBe("warning_review");
+    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: "match", retryStatus: "not_needed", finalPass: "initial",
+      initialEvidence: coinEvidence, finalEvidence: coinEvidence });
+    expect(result.listings[0].visualAudit).not.toHaveProperty("adjudicationStatus");
+    expect(result.listings[0].visualAudit).not.toHaveProperty("retryVerdict");
+    expect(attempts(result.listings[0])).toEqual([{ ordinal: 1, stage: "initial", format: "json_schema", outcome: "usable_review" }]);
+    expect(result.visualExecutionCounts).toMatchObject({ inputOccurrenceCount: 1, emittedOccurrenceCount: 1,
+      selectedCandidateCount: 1, dispatchedCandidateCount: 1, responseReviewedCandidateCount: 1,
+      selectedPendingCandidateCount: 0, dispatchedWithoutResponseReviewCount: 0, timedOutCandidateCount: 0, coverage: "complete" });
+    expect(result.timedOutCount).toBe(0);
   });
 
-  it("uses the actual existing compact coin retry parser without counting formats as candidates", async () => {
-    model.mockResolvedValueOnce(response("match", { visualEvidence: coinEvidence }))
+  it("uses the actual compact coin retry parser for an unresolved initial review without counting formats as candidates", async () => {
+    model.mockResolvedValueOnce(response("unreadable", { confidence: "low", rationale: "The initial image does not resolve the coin date and identity." }))
       .mockResolvedValueOnce(reply({ candidate: 999, visualEvidence: coinEvidence, notes: "All exact coin facts correspond." }));
     const result = await run([{ title: "1903 Morgan Silver Dollar PCGS MS63", imageUrl: "https://example.invalid/coin.jpg" }], { targetMetadata: coinMetadata });
     expect(model).toHaveBeenCalledTimes(2);
-    expect(result.listings[0].visualExecution?.attempts.map((attempt) => attempt.outcome)).toEqual(["usable_review", "usable_review"]);
-    expect(result.visualExecutionCounts).toMatchObject({ selectedCandidateCount: 1, dispatchedCandidateCount: 1, responseReviewedCandidateCount: 1 });
+    expect(attempts(result.listings[0])).toEqual([
+      { ordinal: 1, stage: "initial", format: "json_schema", outcome: "usable_review" },
+      { ordinal: 2, stage: "high_resolution_retry", format: "json_schema", outcome: "usable_review" },
+    ]);
+    expect(result.reviews).toHaveLength(1);
+    expect(result.reviews[0].candidateIndex).toBe(0);
+    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: "unreadable", initialConfidence: "low",
+      retryStatus: "performed", finalPass: "high_resolution_retry", adjudicationStatus: "confirmed", finalEvidence: coinEvidence });
+    expect(result.listings[0].visualExecution).toMatchObject({ state: "completed", identity: { result: "match", origin: "visual" } });
+    expect(result.visualExecutionCounts).toMatchObject({ inputOccurrenceCount: 1, emittedOccurrenceCount: 1,
+      selectedCandidateCount: 1, dispatchedCandidateCount: 1, responseReviewedCandidateCount: 1,
+      dispatchedWithoutResponseReviewCount: 0, timedOutCandidateCount: 0 });
   });
 
-  it("records the actual third Disney confirmation after typed second-pass timeout", async () => {
+  it("finalizes an initial Disney match without dispatching second or third confirmation", async () => {
     vi.useFakeTimers();
     expectPinQueueFixture();
     model.mockRejectedValue(new Error("unexpected Disney-fixture model call"))
@@ -404,31 +425,28 @@ describe("Stage 5 actual visual execution receipts", () => {
       .mockResolvedValueOnce(response("match", { rationale: "Independent third confirmation completed.", visualEvidence: pinEvidence }));
     const pending = run([pinCandidate()], { targetMetadata: pinMetadata });
     await vi.advanceTimersByTimeAsync(VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS - 1);
-    expect(model).toHaveBeenCalledTimes(2);
-    expect(model.mock.calls[1][0].signal?.aborted).toBe(false);
+    expect(model).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1);
     const result = await pending;
     expectDisneyRequests();
-    expect(model.mock.calls[1][0].signal?.aborted).toBe(true);
     expect(result.listings).toHaveLength(1);
     expect(result.contextListings ?? []).toHaveLength(0);
     expect(attempts(result.listings[0])).toEqual([
       { ordinal: 1, stage: "initial", format: "json_schema", outcome: "usable_review" },
-      { ordinal: 2, stage: "high_resolution_retry", format: "json_schema", outcome: "timed_out" },
-      { ordinal: 3, stage: "high_resolution_retry", format: "json_object", outcome: "error" },
-      { ordinal: 4, stage: "disney_third_confirmation", format: "json_object", outcome: "usable_review" },
     ]);
-    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: "match", retryVerdict: "match", retryRationale: "Independent third confirmation completed.",
-      finalPass: "high_resolution_retry", adjudicationStatus: "confirmed" });
-    expect(result.listings[0].visualExecution).toMatchObject({ state: "completed", reasonCode: "review_returned", hardExclusion: false,
-      identity: { result: "match", origin: "visual" } });
+    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: "match", retryStatus: "not_needed", finalPass: "initial",
+      initialEvidence: pinEvidence, finalEvidence: pinEvidence, decidingRationale: "All inspected item features correspond; no hard conflict." });
+    expect(result.listings[0].visualAudit).not.toHaveProperty("retryVerdict");
+    expect(result.listings[0].visualAudit).not.toHaveProperty("adjudicationStatus");
+    expect(result.listings[0]).toMatchObject({ visualReviewStatus: "match", visualExecution: { state: "completed", reasonCode: "review_returned", hardExclusion: false,
+      identity: { result: "match", origin: "visual" } } });
     expect(result.visualExecutionCounts).toMatchObject({ inputOccurrenceCount: 1, emittedOccurrenceCount: 1, selectedCandidateCount: 1,
       dispatchedCandidateCount: 1, responseReviewedCandidateCount: 1, selectedPendingCandidateCount: 0,
-      dispatchedWithoutResponseReviewCount: 0, timedOutCandidateCount: 1, coverage: "complete" });
-    expect(result.timedOutCount).toBe(0); // Recovered typed timeout remains history, not a terminal candidate error.
+      dispatchedWithoutResponseReviewCount: 0, timedOutCandidateCount: 0, coverage: "complete" });
+    expect(result.timedOutCount).toBe(0);
   });
 
-  it("records failed Disney third confirmation without using timeout as deciding evidence", async () => {
+  it("keeps an initial Disney match final without fictitious failed confirmation or timeout receipts", async () => {
     vi.useFakeTimers();
     expectPinQueueFixture();
     model.mockRejectedValue(new Error("unexpected Disney-fixture model call"))
@@ -437,28 +455,25 @@ describe("Stage 5 actual visual execution receipts", () => {
       .mockResolvedValueOnce(reply({ reviews: [] }));
     const pending = run([pinCandidate()], { targetMetadata: pinMetadata });
     await vi.advanceTimersByTimeAsync(VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS - 1);
-    expect(model).toHaveBeenCalledTimes(2);
-    expect(model.mock.calls[1][0].signal?.aborted).toBe(false);
+    expect(model).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1);
     const result = await pending;
     expectDisneyRequests();
-    expect(model.mock.calls[1][0].signal?.aborted).toBe(true);
     expect(result.listings).toHaveLength(1);
+    expect(result.contextListings ?? []).toHaveLength(0);
     expect(attempts(result.listings[0])).toEqual([
       { ordinal: 1, stage: "initial", format: "json_schema", outcome: "usable_review" },
-      { ordinal: 2, stage: "high_resolution_retry", format: "json_schema", outcome: "timed_out" },
-      { ordinal: 3, stage: "high_resolution_retry", format: "json_object", outcome: "error" },
-      { ordinal: 4, stage: "disney_third_confirmation", format: "json_object", outcome: "no_decision" },
     ]);
-    expect(result.listings[0].visualExecution).toMatchObject({ state: "dispatched_inconclusive", reasonCode: "no_usable_decision", hardExclusion: false });
-    // Existing Disney emitted verdict/attachment is preserved; this reporting
-    // work deliberately does not introduce a redundant retry-admission gate.
-    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: "match", retryStatus: "failed", adjudicationStatus: "unavailable",
+    expect(result.listings[0]).toMatchObject({ visualReviewStatus: "match", visualExecution: { state: "completed", reasonCode: "review_returned", hardExclusion: false,
+      identity: { result: "match", origin: "visual" } } });
+    expect(result.listings[0].visualAudit).toMatchObject({ initialVerdict: "match", retryStatus: "not_needed",
       finalPass: "initial", initialEvidence: pinEvidence, finalEvidence: pinEvidence });
     expect(result.listings[0].visualAudit).not.toHaveProperty("retryVerdict");
+    expect(result.listings[0].visualAudit).not.toHaveProperty("adjudicationStatus");
+    expect(result.listings[0].visualAudit?.retryReason).toBeUndefined();
     expect(result.visualExecutionCounts).toMatchObject({ inputOccurrenceCount: 1, emittedOccurrenceCount: 1, selectedCandidateCount: 1,
       dispatchedCandidateCount: 1, responseReviewedCandidateCount: 1, selectedPendingCandidateCount: 0,
-      dispatchedWithoutResponseReviewCount: 0, timedOutCandidateCount: 1, coverage: "complete" });
+      dispatchedWithoutResponseReviewCount: 0, timedOutCandidateCount: 0, coverage: "complete" });
     expect(result.timedOutCount).toBe(0);
   });
 

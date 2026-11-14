@@ -567,20 +567,20 @@ describe('Stage 3 ACTUAL getSoldCompsData -> shared A/B transport -> ACTUAL anal
     ['outside Video Games family', 'video_games', 'VGA'],
     ['PSA/WATA outside Video Games', 'sports_cards', 'WATA'],
     ['outside sports-card grader', 'sports_cards', 'BGS'],
-  ])('does not transport category-inappropriate grader equivalence: %s', async (_label, category, company) => {
+  ])('does not reopen parsed grader identity after a completed image match: %s', async (_label, category, company) => {
     const target = category === 'video_games' ? ZELDA : KOBE;
     providerRows = rows(category === 'video_games'
       ? `1987 The Legend of Zelda NES ${company} 7.5 CIB`
       : `1996 Topps Kobe Bryant #138 ${company} 10`, 1,
       category === 'video_games' ? { saleForm: 'complete_in_box', itemSpecifics: { Platform: 'NES' } } : {});
     const source = await acquire(sourceInput(target));
-    // A synthetic image result deliberately claims all grading facts. Final
-    // title/identity-state hard contradictions must still block direct value,
-    // whether issuance conservatively held it or returned approval metadata.
+    // The model already made the deciding match. These title declarations stay
+    // diagnostic; pre-visual exclusions and actual visual mismatches still block.
     expect(source.audit!.ledger.length).toBeGreaterThan(0);
     const result = await analyze(buildSoldCompsAnalysisSales(source, true), buildSoldCompsAnalysisSales(source, true), finalItem(target));
-    expectHeld(result.leftMarketProfile);
-    expectHeld(result.rightMarketProfile);
+    expect(result.leftMarketProfile.authoritativeSaleCount).toBe(1);
+    expect(result.rightMarketProfile.authoritativeSaleCount).toBe(1);
+    expect(result.leftMarketProfile.comparables[0].identityApproval?.policyVersion).toBe('visual-acceptance-final-v2');
   });
 
   it.each([
@@ -687,13 +687,13 @@ describe('Stage 3 independent-review route counterexamples', () => {
     expectHeld(result.rightMarketProfile);
   });
 
-  it('keeps an explicit Michael Jordan declaration distinct from missing Kobe title fields', async () => {
+  it('does not rerun athlete title parsing after the actual image review accepted the row', async () => {
     providerRows = rows('1996 Topps Michael Jordan PSA 10', 1, { itemSpecifics: {} });
     const source = await acquire();
-    expect(source.listings.every((sale) => !sale.identityApproval)).toBe(true);
+    expect(source.listings.every((sale) => Boolean(sale.identityApproval))).toBe(true);
     const result = await analyze(buildSoldCompsAnalysisSales(source, true));
-    expectHeld(result.leftMarketProfile);
-    expectHeld(result.rightMarketProfile);
+    expect(result.leftMarketProfile.authoritativeSaleCount).toBe(1);
+    expect(result.rightMarketProfile.authoritativeSaleCount).toBe(1);
   });
 
   it('accepts the real successful ordinary retry shape with no fabricated Coin/Disney adjudication flag', async () => {

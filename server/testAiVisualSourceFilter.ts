@@ -1858,11 +1858,24 @@ export function normalizeExplicitUngradedVisualReviews(
   });
 }
 
+function finalizeVisualIdentityReviews(reviews: VisualSourceReview[], listings: VisualSourceCandidate[], targetMetadata: string): VisualSourceReview[] {
+  const accepted = (review: VisualSourceReview) => review.verdict === 'match' && (review.confidence === 'high' || review.confidence === 'medium');
+  // Only unresolved reviews may enter legacy recovery normalizers. Successful
+  // responses are final and never run through a second metadata/evidence parser.
+  const unresolved = reviews.filter(review => !accepted(review));
+  const recovered = normalizeExplicitUngradedVisualReviews(conservativeCoinVisualReviews(
+    conservativeGradedVisualReviews(conservativeComicVisualReviews(unresolved, listings, targetMetadata), listings, targetMetadata),
+    listings, targetMetadata), targetMetadata);
+  return reviews.map(review => accepted(review) ? review : recovered.find(other => other.candidateIndex === review.candidateIndex) ?? review);
+}
+
 export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
   listings: T[],
   reviews: VisualSourceReview[],
   reviewedCandidateCount: number,
   options?: { requireExactMatch?: boolean; requireCoinExactMatch?: boolean; targetMetadata?: string;
+    /** Only the server executor opts in after receiving the actual model response. */
+    visualAcceptanceIsFinal?: boolean;
     /** Invocation-owned executor receipts, never reconstructed from attached review/audit fields. */
     executionReceipts?: ReadonlyMap<number, VisualExecution> },
 ) {
@@ -1898,7 +1911,7 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
           ? { field: match[1], targetObservation: match[2], candidateObservation: match[3], impact: match[4] || "detected metadata difference" }
           : { field: "metadata", targetObservation: "target metadata", candidateObservation: difference, impact: "detected metadata difference" };
       });
-      const allDifferences = [...structuredDifferences, ...metadataDifferenceRows]
+      const allDifferences = [...structuredDifferences, ...(options?.visualAcceptanceIsFinal ? [] : metadataDifferenceRows)]
         .filter((difference, index) => {
           const key = `${difference.field}|${difference.targetObservation}|${difference.candidateObservation}`;
           return !structuredDifferenceKeys.has(key) || index < structuredDifferences.length;
@@ -1908,7 +1921,7 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
         ? ` Differences found: ${allDifferences.map((difference) => `${difference.field}: target “${difference.targetObservation}” vs candidate “${difference.candidateObservation}” (${difference.impact})`).join("; ")}.`
         : "";
       // Evaluate the existing attachment predicate exactly once, preserving its short circuit.
-      const warningReview = review.verdict === "mismatch" || (options?.requireExactMatch && review.verdict !== "match") || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? "")));
+      const warningReview = review.verdict === "mismatch" || (options?.requireExactMatch && review.verdict !== "match") || (!options?.visualAcceptanceIsFinal && options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? "")));
       const executorReceipt = options?.executionReceipts?.get(index);
       const actualResponse = executorReceipt?.attempts.some((attempt) => attempt.outcome === "usable_review") === true;
       const visualExecution: VisualExecution = {
@@ -8064,24 +8077,26 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       // Reconcile a holder-cropped coin result with an exact completed-sale
       // title before calculating the retry. The reconciliation only unlocks
       // the independent second visual pass; it does not itself admit a sale.
-      const reconciledPrimaryReviews = primaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
+      const primaryAccepted = primaryReviews.some(review => review.candidateIndex === candidate.candidateIndex
+        && review.verdict === 'match' && (review.confidence === 'high' || review.confidence === 'medium'));
+      const reconciledPrimaryReviews = primaryReviews.map((review) => !primaryAccepted && review.candidateIndex === candidate.candidateIndex
         ? reconcileCoinPrimaryReviewForAdjudication(review, targetMetadata, String(candidate.item.title ?? ""))
         : review);
       const primaryReview = reconciledPrimaryReviews.find((review) => review.candidateIndex === candidate.candidateIndex);
-      const needsDisneyAdjudication = isDisneyPinsMetadata(targetMetadata) && primaryReview?.verdict === "match";
+      const needsDisneyAdjudication = !primaryAccepted && isDisneyPinsMetadata(targetMetadata) && primaryReview?.verdict === "match";
       const canAttemptThirdDisneyReview = needsDisneyAdjudication
         && primaryReview?.confidence === "high"
         && disneyPinsEvidenceIsExact(primaryReview.visualEvidence, targetMetadata);
       // Every image-bearing coin candidate must receive the independent
       // high-resolution identity pass. The first pass is preliminary evidence
       // only; its normalized verdict must never be able to skip adjudication.
-      const needsCoinAdjudication = isCoinMetadata(targetMetadata);
-      const needsGalleryReview = shouldReviewAdditionalVisualImages({
+      const needsCoinAdjudication = !primaryAccepted && isCoinMetadata(targetMetadata);
+      const needsGalleryReview = !primaryAccepted && (shouldReviewAdditionalVisualImages({
         imageCount: candidate.imageUrls.length,
         review: primaryReview,
         title: String(candidate.item.title ?? ""),
         targetMetadata: targetMetadata,
-      }) || needsDisneyAdjudication || needsCoinAdjudication || initialProviderFailure;
+      }) || needsDisneyAdjudication || needsCoinAdjudication || initialProviderFailure);
       const needsFocusedGradeEscalation = hasTitleDeclaredGradeVisualRawConflict({
         review: primaryReview,
         title: String(candidate.item.title ?? ""),
@@ -8284,7 +8299,8 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
           error: galleryError ?? null,
         };
       }
-      const finalReviews = galleryReviews.map((review) => enforceCoinExactEvidence(review, targetMetadata, String(candidate.item.title ?? "")));
+      const finalReviews = galleryReviews.map((review) => review.verdict === 'match' && (review.confidence === 'high' || review.confidence === 'medium')
+        ? review : enforceCoinExactEvidence(review, targetMetadata, String(candidate.item.title ?? "")));
       return {
         reviews: finalReviews.map((review) => review.candidateIndex === candidate.candidateIndex
           ? {
@@ -8320,15 +8336,8 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       reviewedCandidateCount += batch.length;
       }
       if (deadlineReached) break;
-      const acceptedMatches = normalizeExplicitUngradedVisualReviews(
-          conservativeCoinVisualReviews(
-          conservativeGradedVisualReviews(
-          conservativeComicVisualReviews(reviews, preparedListings, targetMetadata),
-          preparedListings,
-          targetMetadata,
-          ), preparedListings, targetMetadata),
-          targetMetadata,
-        ).filter((review) => review.verdict === 'match' || review.verdict === 'rough_match').length;
+      const acceptedMatches = finalizeVisualIdentityReviews(reviews, preparedListings, targetMetadata)
+        .filter(review => review.verdict === 'match' || review.verdict === 'rough_match').length;
       if (!reviewBudget && acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) {
         markUnreachedQueue("adaptive_match_target");
         break;
@@ -8337,19 +8346,8 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
     if (!completedBatches && reviewQueue.length && !timedOutCount && !deadlineReached) {
       throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
     }
-    const uniqueReviews = normalizeExplicitUngradedVisualReviews(
-      conservativeCoinVisualReviews(
-      conservativeGradedVisualReviews(
-        conservativeComicVisualReviews(
-          reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index),
-          preparedListings,
-          targetMetadata,
-        ),
-        preparedListings,
-        targetMetadata,
-      ), preparedListings, targetMetadata),
-      targetMetadata,
-    );
+    const deduplicatedReviews = reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index);
+    const uniqueReviews = finalizeVisualIdentityReviews(deduplicatedReviews, preparedListings, targetMetadata);
     const reviewByIndex = new Map(uniqueReviews.map((review) => [review.candidateIndex, review]));
     // Never leave an image appearing implicitly accepted because a provider omitted
     // its row. An absent response is explicitly unreadable/needs manual review.
@@ -8447,7 +8445,7 @@ async function filterPreparedVisualSourceCandidates<T extends VisualSourceCandid
       requirementAnnotatedListings,
       uniqueReviews,
       reviewedCandidateCount,
-      { requireExactMatch: isDisneyPinsMetadata(targetMetadata), requireCoinExactMatch: isCoinMetadata(targetMetadata), targetMetadata: targetMetadata, executionReceipts },
+      { requireExactMatch: isDisneyPinsMetadata(targetMetadata), requireCoinExactMatch: isCoinMetadata(targetMetadata), targetMetadata: targetMetadata, executionReceipts, visualAcceptanceIsFinal: true },
     );
     const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
     // Ranking indexes can be stale after visual-review rows are merged back

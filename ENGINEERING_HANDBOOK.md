@@ -46,13 +46,23 @@ For routine work inside the user's approved scope, proceed without asking for th
 
 ### 1.2 Current testing and restart restrictions
 
-The user owns testing. This direction supersedes the testing and live-verification steps elsewhere in this handbook until the user authorizes them again.
+On November 14, 2026, the user reauthorized automated tests and live browser valuation testing, and required the agent to rerun all tests after repairs. This supersedes the earlier user-owned-testing restriction for this repair phase.
 
-- Do not run tests, builds, type checks, application-code probes, live provider/model requests, or validation RPC calls without new authorization.
-- Source inspection, review of existing logs or cached results, and repository/diff hygiene checks remain permitted. Describe these as source review, not testing.
-- Record skipped validation as **Not run: user owns testing**. A source-reviewed change remains unverified in the live path until the user confirms the outcome.
+- Run failure-shaped boundary tests, the complete automated suite, TypeScript checks, and the build after repairs. Report actual results, including failures; do not describe a failing complete suite as passing.
+- Repeat the exact authorized live valuation path and confirm the final used count, decision card, and price—not merely a helper verdict.
+- Source review is still not testing. Record any skipped validation explicitly and do not claim unobserved outcomes.
 - Do not manually restart the active preview unless the user requests or approves it. The development watcher may restart or reload after code changes; distinguish that behavior from a manual restart.
 - Preserve the existing restrictions on database writes, migrations, seeds, credentials, publishing, and domain changes.
+
+### 1.3 Final visual acceptance policy
+
+The user approved removing post-visual identity reconciliation across sources. Pre-visual metadata ranking, minimum scores, selection caps, and objective exclusions remain unchanged. Once an actual server-executed deciding image review returns a medium/high-confidence match, do not downgrade it through a second artist, format, edition, grading, packaging, numeric-identity, evidence-checkbox, or title/prose parser. Metadata differences remain diagnostics. Do not schedule an extra review solely to reopen an already accepted match.
+
+The production eBay Sold-Comps and Mercari issuers use the signed `visual-acceptance-final-v2` policy. Mint-time, token verification, approval transfer, and final valuation must agree on this policy; omitting candidate metadata at mint time is insufficient if a later verifier reconstructs and compares it again. Legacy v1 tokens retain their legacy verification contract for compatibility, not as the production post-visual policy.
+
+Keep provenance verification, immutable source facts, exact target/image/row binding, actual completed visual execution, explicit transaction lot/partial-product safeguards, valid positive supported-currency prices, cancellation checks, and duplicate handling. A bare browser match flag never establishes approval. Active asking prices and catalog/reference sources do not become completed-sale evidence. Sources without a signed target/image-bound approval must remain explicit source/security holds, not receive fabricated authority.
+
+Regression proof must reach final valuation use through source finalization, browser transport, Item A intake, canonical verification, and the decision card. The U2 Mercari regression covers USD 14.25 and USD 21.79 without provider ID, URL, or sale date; negative cases preserve lot, cancellation, unsupported currency, unsigned provenance, and changed-image rejection.
 
 ## 2. Standard boundary-by-boundary debugging protocol
 

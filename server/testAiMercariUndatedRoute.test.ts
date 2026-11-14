@@ -88,7 +88,8 @@ describe('Mercari undated sold=true actual route admission', () => {
     const fields = row.identityApproval.targetFields;
     expect(canonicalizeIdentityApprovalTarget({ title: fields.title, category: fields.category, itemType: fields.itemType,
       grade: fields.grade, certificationCompany: fields.certificationCompany, condition: fields.hardCondition, itemDetails: fields }).fields).toEqual(fields);
-    expect(canonicalizeIdentityApprovalCandidateFields(fields.category, row.identityApproval.candidateIdentityFields).fields).toEqual(row.identityApproval.candidateIdentityFields);
+    expect(row.identityApproval.policyVersion).toBe('visual-acceptance-final-v2');
+    expect(row.identityApproval.candidateIdentityFields).toBeUndefined();
     const verified = verifyCanonicalObservation(left[0]);
     expect(verified.verified, !verified.verified ? verified.reasons.join('; ') : 'verified').toBe(true);
     expect(verified.sale.date).toBeNull();
@@ -261,15 +262,16 @@ describe('Mercari undated sold=true actual route admission', () => {
     expect(identity.status).toBe('objective_conflict');
     expect(identity.conflicts).toContain('Inscription differs (present)');
   });
-  it('reports the missing ungraded deciding-evidence gate rather than blaming the Unknown Mercari date', async () => {
+  it('does not require a second raw-state checkbox after a completed visual match', async () => {
     imageEvidence = { identityMatches: true, artworkMatches: true, slabVisible: false };
     const source: any = await caller().getMercariSoldCompsData(input());
     const row = source.audit.ledger[0];
-    expect(row.visualReviewStatus).toBe('match'); expect(row.valuationEligible).toBe(false);
-    expect(row.mercariAdmissionBlockers.join('; ')).toContain('APPROVAL_UNGRADED_STATE_UNCONFIRMED');
+    expect(row.visualReviewStatus).toBe('match'); expect(row.valuationEligible).toBe(true);
+    expect(row.mercariAdmissionBlockers).toEqual([]);
     const result = await caller().auditItemValuation({ item: { ...MOVIE, approvalTargetImageReference: TARGET_IMAGE },
       sales: buildMercariAnalysisSales({ listings: [row], requestedMode: 'sold' }, true) });
-    expect(result.snapshot.profile.comparables[0].valuationUse?.sourceAdmission.reasonDetails?.join('; ')).toContain('APPROVAL_UNGRADED_STATE_UNCONFIRMED');
+    expect(result.snapshot.profile.comparables[0].valuationUse?.use.code).toBe('CURRENT_SALES_PRIMARY');
+    expect(result.snapshot.profile.comparables[0].valuationUse?.sourceAdmission.blockerCodes).toEqual([]);
   });
   it('keeps tampered image binding out of the Item A audit pricing pool', async () => {
     const source: any = await caller().getMercariSoldCompsData(input());

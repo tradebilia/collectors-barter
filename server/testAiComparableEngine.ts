@@ -2143,12 +2143,9 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   if (requiredApprovalMissing || transportedApprovalUnverified) reasons.push('required or transported identity approval is not verified for this target/image; title-only admission is withheld');
   const finalCategoryIdentity = approvedIdentity ? {
     ...categoryIdentity,
-    status: pokemonNumber?.comparison === 'partial' ? 'needs_review' as const : 'direct_confirmed' as const,
+    status: 'direct_confirmed' as const,
     confirmedFields: [...categoryIdentity.confirmedFields, 'Server-final visual identity'],
-    // Visual approval may resolve title omissions, but an explicitly partial
-    // card-number witness is still not a full number confirmation.
-    unconfirmedFields: pokemonNumber?.comparison === 'partial'
-      ? categoryIdentity.unconfirmedFields.filter(field => field === 'Card #') : [],
+    unconfirmedFields: [], conflicts: [],
   } : categoryIdentity;
   if (transactionLotConflict || visualMismatch || unsignedMetadataConflict) {
     identityRelationship = 'conflict';
@@ -2266,7 +2263,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   if (categoryNeedsReview && !approvedIdentity) identityBlockerCodes.push('CATEGORY_REVIEW_REQUIRED');
   if (universalNeedsReview && !approvedIdentity) identityBlockerCodes.push('UNIVERSAL_REVIEW_REQUIRED');
   if (visualMismatch) identityBlockerCodes.push('VISUAL_MISMATCH');
-  if (materialVariantReview) identityBlockerCodes.push('VARIANT_REVIEW_REQUIRED');
+  if (materialVariantReview && !approvedIdentity) identityBlockerCodes.push('VARIANT_REVIEW_REQUIRED');
   if (identityApproval && signedFormConflicts.length && !approvedIdentity) identityBlockerCodes.push('SIGNED_FORM_CONFLICT');
   if (transactionLotConflict) identityBlockerCodes.push('TRANSACTION_LOT_CONFLICT');
   if (identityApproval && transactionLotConflict) identityBlockerCodes.push('APPROVED_LOT_CONFLICT');

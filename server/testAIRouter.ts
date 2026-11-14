@@ -901,6 +901,10 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
   const priceConflict = report.economicIssues.some(issue => issue.startsWith('price_conflict:'));
   const sourceConflict = report.economicIssues.includes('marketplace_conflict')
     || report.fields.originMarketplace?.present && report.fields.originMarketplace.value !== 'mercari';
+  const originalMetadata = original.rawMetadata ?? original.providerMetadata ?? {};
+  const originalLotConflict = Number(originalMetadata.lotQuantity ?? row.lotQuantity) > 1
+    || /\b(?:lot|bundle|components?|accessory[- ]only|manual[- ]only|box[- ]only)\b/i.test(String(originalMetadata.saleForm ?? row.saleForm ?? ''));
+  if (originalLotConflict) return blocked(['MERCARI_TRANSACTION_LOT_CONFLICT: this transaction is an explicit lot, bundle or partial product, not one comparable item.']);
   if (!Number.isFinite(price) || price <= 0 || currency !== 'USD' || hasUnvalidatedDate || cancelled || priceConflict || sourceConflict) {
     return blocked([
       ...(!Number.isFinite(price) || price <= 0 ? ['MERCARI_ORIGINAL_PRICE_INVALID: positive original provider price is required.'] : []),
@@ -959,7 +963,6 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
   const reviewedTarget = context.effectiveTarget;
   const target = context.effectiveTarget;
   const imageReference = context.targetImageReference;
-  const candidateIdentityFields = row.soldCompsMetadata ?? normalizeSoldCompsMetadata(row);
   const originalIdentity = original as unknown as Record<string, unknown>;
   const providerUrl = [original.itemUrl, originalIdentity.url, originalIdentity.itemWebUrl, originalIdentity.link, originalIdentity.href]
     .find((value): value is string => typeof value === 'string' && value.trim().length > 0) ?? null;
@@ -976,27 +979,20 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
     completedStatusBasis: 'Sold-Comps Mercari sold=true reported sold price',
     visualRequirement: 'required' as const, evidenceDisposition: 'valuation_eligible' as const, evidenceReasons: [],
     buyerPremium: 'unknown' as const, shipping: 'unknown' as const, tax: 'unknown' as const,
-    normalizedStructuredMetadata: candidateIdentityFields, identityApproval: undefined, provenanceToken: undefined,
+    normalizedStructuredMetadata: row.soldCompsMetadata ?? normalizeSoldCompsMetadata(row), identityApproval: undefined, provenanceToken: undefined,
     provenance: undefined, mercariObservation: report });
-  const knownIdentity = scoreComparable(reviewedTarget, sale);
-  const hardConflict = knownIdentity.categoryIdentity.status === 'objective_conflict'
-    || knownIdentity.identityRelationship === 'conflict'
-    || ['grade_adjacent_comparable', 'variant_comparable'].includes(knownIdentity.valuationRelationship)
-    || signedComparableFormConflicts(reviewedTarget, sale.saleForm).length > 0;
   const confidence = row.visualAudit.finalPass === 'high_resolution_retry'
     ? row.visualAudit.retryConfidence : row.visualAudit.initialConfidence;
   const acquiredAt = new Date();
   const approvalFailures: string[] = [];
-  const approval = !hardConflict && imageReference && context.approvalImageReference ? createServerFinalIdentityApproval({ sale, target, reviewedTarget,
+  const approval = imageReference && context.approvalImageReference ? createServerFinalIdentityApproval({ sale, target, reviewedTarget,
     targetImageReference: imageReference, expectedImageReference: context.approvalImageReference,
-    targetMetadata: context.targetMetadata, acquiredAt, candidateIdentityFields,
+    targetMetadata: context.targetMetadata, acquiredAt, visualAcceptanceIsFinal: true,
     onRejected: reason => approvalFailures.push(reason),
     review: { candidateIndex: 0, verdict: 'match', confidence: confidence === 'high' || confidence === 'medium' ? confidence : 'low',
       rationale: String(row.visualReviewRationale ?? ''), visualEvidence: row.visualEvidence,
       visualAudit: row.visualAudit, visualDifferences: row.visualDifferences } }) : null;
-  if (!approval) return blocked(hardConflict
-    ? [`MERCARI_KNOWN_IDENTITY_CONFLICT: ${knownIdentity.exclusionReason || knownIdentity.categoryIdentity.conflicts.join('; ') || 'Known identity, grade, variant or transaction-form conflict.'}`]
-    : !imageReference ? ['APPROVAL_TARGET_IMAGE_MISSING: no target image reference was supplied.']
+  if (!approval) return blocked(!imageReference ? ['APPROVAL_TARGET_IMAGE_MISSING: no target image reference was supplied.']
       : approvalFailures.length ? approvalFailures : ['APPROVAL_FAILURE_UNRECORDED: no server approval was issued; rejection detail was not recorded.']);
   const sealed = sealCanonicalObservation('mercari_sold_comps', sale, { acquiredAt, query: context.input.title, identityApproval: approval, serverOwnedIdentity: true });
   if (!sealed.provenanceToken || !sealed.identityApproval) return blocked([`MERCARI_CANONICAL_SEAL_FAILED: ${sealed.validationErrors.join('; ') || 'Signed provenance or identity approval was not issued.'}`]);
@@ -1633,6 +1629,25 @@ export function annotateSoldComparableCandidate(
   }
   const priceSafety = evaluateSoldCompPriceSafety(context.statedTradeValue, item?.soldPrice ?? item?.price);
   if (priceSafety.reason) reasons.push(priceSafety.reason);
+  const decidingVerdict = carriedVisualAudit?.finalPass === 'high_resolution_retry'
+    ? carriedVisualAudit.retryVerdict : carriedVisualAudit?.initialVerdict;
+  const decidingConfidence = carriedVisualAudit?.finalPass === 'high_resolution_retry'
+    ? carriedVisualAudit.retryConfidence : carriedVisualAudit?.initialConfidence;
+  const completedBoundVisualMatch = carriedVisualStatus === 'match' && decidingVerdict === 'match'
+    && (decidingConfidence === 'high' || decidingConfidence === 'medium') && item?.visualExecution?.hardExclusion !== true;
+  if (completedBoundVisualMatch) {
+    // Identity was already decided on this server-owned row. Only transaction
+    // lot and price/security reasons survive; economics are verified at sealing.
+    const securityReasons = reasons.filter(reason => reason.startsWith('candidate is a multi-item lot') || reason === priceSafety.reason);
+    if (Number(item?.lotQuantity) > 1 && !securityReasons.some(reason => reason.startsWith('candidate is a multi-item lot'))) {
+      securityReasons.push('candidate is a multi-item lot; total lot price is not comparable to one item');
+    }
+    const { visualAdmissionReason: _superseded, ...acceptedRow } = item ?? {};
+    return { ...acceptedRow, evidenceDisposition: securityReasons.length ? 'warning_review' : 'valuation_eligible',
+      evidenceReasons: securityReasons, lotQuantity: item?.lotQuantity ?? lotQuantity,
+      visualReviewStatus: 'match', visualReviewRationale: carriedVisualRationale, visualAudit: carriedVisualAudit,
+      ...(decidingVisualEvidence(reviewEvidenceItem) ? { visualEvidence: decidingVisualEvidence(reviewEvidenceItem) } : {}) };
+  }
   const carriedDisposition = item?.evidenceDisposition as SoldComparableDisposition | undefined;
   const visualAdmissionReason = String(item?.visualAdmissionReason ?? '').trim();
   const carriedEvidenceReasons = Array.isArray(item?.evidenceReasons)
@@ -1973,33 +1988,19 @@ export function sealSoldCompsFinalVisualListings<T extends MarketSale>(sales: T[
       visualAudit: audit,
       visualDifferences: row.visualDifferences,
     };
-    // Reuse only known hard identity contradictions; no score/readiness or
-    // missing-title-field outcome is allowed to cancel a genuine final match.
-    const knownIdentity = scoreComparable(context.reviewedTarget, sale);
-    const knownHardConflict = knownIdentity.categoryIdentity.status === 'objective_conflict'
-      || knownIdentity.identityRelationship === 'conflict'
-      || knownIdentity.valuationRelationship === 'grade_adjacent_comparable'
-      || knownIdentity.valuationRelationship === 'variant_comparable'
-      || signedComparableFormConflicts(context.reviewedTarget, sale.saleForm).length > 0;
-    const candidateIdentityFields = (sale as MarketSale & { soldCompsMetadata?: Record<string, string> }).soldCompsMetadata
-      ?? normalizeSoldCompsMetadata(sale);
     const approvalFailures: string[] = [];
-    const approval = !knownHardConflict && context.target && audit && context.targetImageReference && context.expectedImageReference
+    const approval = context.target && audit && context.targetImageReference && context.expectedImageReference
       ? createServerFinalIdentityApproval({ sale, target: context.target, reviewedTarget: context.reviewedTarget,
           targetImageReference: context.targetImageReference, expectedImageReference: context.expectedImageReference,
-          targetMetadata: context.targetMetadata, review, candidateIdentityFields, acquiredAt,
+          targetMetadata: context.targetMetadata, review, acquiredAt, visualAcceptanceIsFinal: true,
           onRejected: reason => approvalFailures.push(reason) })
       : null;
-    const finalApprovalReason = knownHardConflict
-      ? `Known identity conflict prevents final approval: ${knownIdentity.categoryIdentity.conflicts.join('; ') || knownIdentity.reasons.filter((reason) => /conflict|differs/.test(reason)).join('; ')}`
-      : approvalFailures.length
+    const finalApprovalReason = approvalFailures.length
         ? `Final approval rejected: ${approvalFailures.join('; ')}`
         : 'Final approval was not attempted because the target or image binding was missing; retained for review.';
     const structuredApprovalFailure = approvalFailures[0]
       ? structuredApprovalRejection(approvalFailures[0])
-      : knownHardConflict
-        ? { boundary: 'server_final_approval' as const, code: 'APPROVAL_KNOWN_IDENTITY_CONFLICT', plainEnglish: 'the candidate has a known identity conflict with the target', detail: finalApprovalReason }
-        : sale.visualRequirement === 'required' && !approval
+      : sale.visualRequirement === 'required' && !approval
           ? { boundary: 'server_final_approval' as const, code: 'APPROVAL_NOT_ATTEMPTED', plainEnglish: 'final approval could not be attempted because the target or image binding was missing', detail: finalApprovalReason }
           : undefined;
     // Required-visual legacy/missing-binding rows remain visible, but their

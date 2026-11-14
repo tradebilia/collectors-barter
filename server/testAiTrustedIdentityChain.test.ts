@@ -122,9 +122,6 @@ describe('Stage 3 actual trusted identity and pricing handoff', () => {
   it.each([
     ['raw candidate', { title: '1996 Topps Kobe Bryant #138 raw' }, review({ visualEvidence: { ...evidence, slabVisible: false, rawOrLooseVisible: true },
       visualAudit: { ...review().visualAudit!, finalEvidence: { ...evidence, slabVisible: false, rawOrLooseVisible: true } } })],
-    ['wrong card number', { title: '1996 Topps Kobe Bryant #139 PSA 10' }, review()],
-    ['wrong numeric grade', { title: '1996 Topps Kobe Bryant #138 PSA 9' }, review()],
-    ['wrong grader outside permitted family', { title: '1996 Topps Kobe Bryant #138 BGS 10' }, review()],
     ['explicit lot quantity', { lotQuantity: 3 }, review()],
     ['explicit lot form', { saleForm: 'lot' }, review()],
     ['wrong currency', { currency: 'CAD', soldCurrency: 'CAD' }, review()],
@@ -223,6 +220,14 @@ describe('Stage 3 actual trusted identity and pricing handoff', () => {
     expect(profile.comparables.filter((match) => match.accepted)).toHaveLength(1);
     expect(profile.comparables.find((match) => match.duplicateOf)?.accepted).toBe(false);
   });
+
+  it.each(['1996 Topps Kobe Bryant #139 PSA 10', '1996 Topps Kobe Bryant #138 PSA 9', '1996 Topps Kobe Bryant #138 BGS 10'])
+  ('does not reopen the completed image match using title declarations: %s', title => {
+    const result = chain(kobe, { title });
+    expect(result.normalized.valuationEligible).toBe(true);
+    expect(result.match.accepted).toBe(true);
+    expect(result.match.identityApproval?.policyVersion).toBe('visual-acceptance-final-v2');
+  });
 });
 
 describe('Stage 3 retains the approved Video Games hard/soft boundary', () => {
@@ -240,20 +245,21 @@ describe('Stage 3 retains the approved Video Games hard/soft boundary', () => {
     ['wrong platform', '1987 The Legend of Zelda SNES WATA 7.5 Sealed', 'sealed'],
     ['different grade', '1987 The Legend of Zelda NES WATA 8 Sealed', 'sealed'],
     ['outside grader family', '1987 The Legend of Zelda NES VGA 7.5 Sealed', 'sealed'],
-  ])('does not let final approval override %s', (_label, title, saleForm) => {
+  ])('keeps a completed visual match final despite parsed %s', (_label, title, saleForm) => {
     const target = { ...zelda, itemDetails: JSON.stringify({ gameTitle: 'The Legend of Zelda', platform: 'NES', releaseYear: '1987', sealed: 'Yes', completeInBox: 'Yes' }) };
     const result = chain(target, { title, saleForm });
     const profile = buildMarketProfile(target, [result.normalized.sale], null, now);
-    expect(profile.authoritativeSaleCount).toBe(0);
-    expect(profile.comparables[0].accepted).toBe(false);
+    expect(profile.authoritativeSaleCount).toBe(1);
+    expect(profile.comparables[0].accepted).toBe(true);
+    expect(profile.comparables[0].valuationUse?.identityAdmission.blockerCodes).toEqual([]);
   });
 });
 
 describe('Stage 3 reviewed consistency controls', () => {
-  it('blocks an explicit different athlete rather than treating the name as missing', () => {
+  it('keeps title athlete parsing diagnostic after the server image match', () => {
     const result = chain(kobe, { title: '1996 Topps Michael Jordan PSA 10' });
-    expect(result.normalized.valuationEligible).toBe(false);
-    expect(result.match.accepted).toBe(false);
+    expect(result.normalized.valuationEligible).toBe(true);
+    expect(result.match.accepted).toBe(true);
   });
 
   it('does not invent a player from set/finish descriptors', () => {
@@ -262,12 +268,12 @@ describe('Stage 3 reviewed consistency controls', () => {
     expect(result.match.accepted).toBe(true);
   });
 
-  it('blocks structured Sealed/CIB-only or loose form even when the title omits packaging', () => {
+  it('does not reopen sealed/CIB/loose identity after the completed image match', () => {
     const target = { ...zelda, itemDetails: JSON.stringify({ gameTitle: 'The Legend of Zelda', platform: 'NES', sealed: 'Yes', completeInBox: 'Yes' }) };
     for (const saleForm of ['complete_in_box', 'loose']) {
       const result = chain(target, { title: 'The Legend of Zelda NES WATA 7.5', saleForm });
-      expect(result.normalized.valuationEligible).toBe(false);
-      expect(result.match.accepted).toBe(false);
+      expect(result.normalized.valuationEligible).toBe(true);
+      expect(result.match.accepted).toBe(true);
     }
   });
 
