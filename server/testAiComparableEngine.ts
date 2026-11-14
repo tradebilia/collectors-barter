@@ -1141,7 +1141,13 @@ function musicLabelComparable(value: string | null | undefined): string | null {
 function musicPressing(value: string | null | undefined): string | null {
   const normalized = normalizedIdentityText(value);
   if (!normalized) return null;
-  if (/first (?:edition|pressing)|original (?:edition|pressing)/.test(normalized)) return 'first_pressing';
+  // Match the Music scorer's bounded aliases. Marketplace titles commonly
+  // use ordinal wording such as "1st Pressing" or repeat the same fact as
+  // "First Edition, First Pressing". Later pressings and reissues remain
+  // distinct identities.
+  const hasFirstPressing = /(?:1st|first|original) (?:edition|pressing)/.test(normalized);
+  const hasCompetingPressing = /(?:2nd|second|3rd|third|4th|fourth|5th|fifth|reissue|later) pressing/.test(normalized);
+  if (hasFirstPressing && !hasCompetingPressing) return 'first_pressing';
   if (/second pressing/.test(normalized)) return 'second_pressing';
   if (/reissue|re release/.test(normalized)) return 'reissue';
   if (/remaster/.test(normalized)) return 'remaster';

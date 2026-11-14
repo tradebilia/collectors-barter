@@ -380,6 +380,33 @@ describe("Music identity and diagnostic boundaries", () => {
     expect(buildDeclaredIdentityReviews([listing], metadata)).toEqual([]);
   });
 
+  it("keeps ordinal 1st Pressing evidence aligned between scoring and final approval", () => {
+    const metadata = buildVisualTargetMetadata({
+      title: "Rattle and Hum",
+      category: "music",
+      itemType: "vinyl_record",
+      condition: "excellent",
+      fullItemDetails: { artist: "U2", releaseTitle: "Rattle and Hum", format: "vinyl_record", edition: "First Edition" },
+    });
+    const listing = candidate("U2 Rattle and Hum Vinyl LP Record Album Set 1st Pressing Island NM Vinyl, Inners", {
+      edition: "First Pressing",
+      recordLabel: "Island Records",
+    });
+    const score = musicVisualScore(listing, metadata);
+    const row = buildMetadataFieldComparisons(metadata, listing).find(value => value.fieldKey === "edition");
+    const assessment = assessComparableCategoryIdentity(
+      { title: "Rattle and Hum", category: "music", itemType: "vinyl_record", itemDetails: JSON.stringify({ artist: "U2", releaseTitle: "Rattle and Hum", format: "vinyl_record", edition: "First Edition" }) },
+      { recordLabel: "Island Records", edition: "First Pressing" },
+      "U2 Rattle and Hum Vinyl LP Record Album Set 1st Pressing Island NM Vinyl, Inners",
+      null,
+    );
+
+    expect(score.matched).toContain("edition");
+    expect(score.awards.find(award => award.field === "edition")?.awardedPoints).toBe(5);
+    expect(row).toMatchObject({ status: "match" });
+    expect(assessment.conflicts).not.toContain(expect.stringContaining("Pressing / edition differs"));
+  });
+
   it("keeps a genuinely different Music pressing as a real identity conflict", () => {
     const metadata = target("good", { edition: "1st Edition" });
     const listing = candidate("The Beatles Sgt. Pepper Second Pressing", { edition: "Second Pressing" });
