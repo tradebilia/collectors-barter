@@ -2298,7 +2298,9 @@ function musicRecordLabelComparable(value: unknown): string {
 }
 function musicEditionComparable(value: unknown): string {
   const normalized = musicComparableValue(String(value ?? "").replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, ""));
-  return /^(?:1stedition|firstedition|1stpressing|firstpressing)$/.test(normalized) ? "firstpressing" : normalized;
+  const hasFirstEditionOrPressing = /(?:1stedition|firstedition|1stpressing|firstpressing)/.test(normalized);
+  const hasCompetingPressing = /(?:2nd|second|3rd|third|4th|fourth|5th|fifth|reissue|later)pressing/.test(normalized);
+  return hasFirstEditionOrPressing && !hasCompetingPressing ? "firstpressing" : normalized;
 }
 function musicArtistComparable(value: unknown): string {
   const bare = String(value ?? "").replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, "");

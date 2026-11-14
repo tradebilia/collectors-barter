@@ -368,6 +368,17 @@ describe("Music identity and diagnostic boundaries", () => {
     expect(buildDeclaredIdentityReviews([listing], metadata)).toEqual([]);
   });
 
+  it("treats a provider-expanded First Edition, First Pressing value as equivalent", () => {
+    const metadata = target("good", { edition: "First Edition" });
+    const listing = candidate("U2 Rattle and Hum First Edition First Pressing", { edition: "First Edition, First Pressing" });
+    const score = musicVisualScore(listing, metadata);
+    const row = buildMetadataFieldComparisons(metadata, listing).find(value => value.fieldKey === "edition");
+    expect(score.matched).toContain("edition");
+    expect(row).toMatchObject({ status: "match" });
+    expect(findMaterialMetadataConflicts(metadata, listing)).toEqual([]);
+    expect(buildDeclaredIdentityReviews([listing], metadata)).toEqual([]);
+  });
+
   it("keeps a genuinely different Music pressing as a real identity conflict", () => {
     const metadata = target("good", { edition: "1st Edition" });
     const listing = candidate("The Beatles Sgt. Pepper Second Pressing", { edition: "Second Pressing" });

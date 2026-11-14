@@ -92,7 +92,9 @@ function musicRecordLabelComparable(value: unknown): string {
 }
 function musicEditionComparable(value: unknown): string {
   const normalized = compact(value);
-  if (/^(?:1stedition|firstedition|1stpressing|firstpressing)$/.test(normalized)) return 'firstpressing';
+  const hasFirstEditionOrPressing = /(?:1stedition|firstedition|1stpressing|firstpressing)/.test(normalized);
+  const hasCompetingPressing = /(?:2nd|second|3rd|third|4th|fourth|5th|fifth|reissue|later)pressing/.test(normalized);
+  if (hasFirstEditionOrPressing && !hasCompetingPressing) return 'firstpressing';
   return normalized;
 }
 function musicArtistComparable(value: unknown): string {
