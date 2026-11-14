@@ -124,6 +124,39 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(identity.conflicts).toContain('Country differs (uk)');
   });
 
+  it('uses the Music artist comparator at the final gate for region-qualified artist names', () => {
+    const identity = assessComparableCategoryIdentity(
+      {
+        title: 'U2 Rattle And Hum',
+        category: 'music',
+        itemDetails: JSON.stringify({ artist: 'U2 (UK)', releaseTitle: 'Rattle And Hum', format: 'Vinyl Record' }),
+      },
+      { artist: 'U2 (UK)', releaseTitle: 'Rattle And Hum', format: 'Vinyl Record' },
+      'U2 - Rattle And Hum 2xLP Vinyl 1988',
+      null,
+    );
+
+    expect(identity.status).toBe('direct_confirmed');
+    expect(identity.confirmedFields).toContain('Artist');
+    expect(identity.conflicts).toHaveLength(0);
+  });
+
+  it('keeps a genuinely different Music artist as a final-gate conflict', () => {
+    const identity = assessComparableCategoryIdentity(
+      {
+        title: 'U2 Rattle And Hum',
+        category: 'music',
+        itemDetails: JSON.stringify({ artist: 'U2', releaseTitle: 'Rattle And Hum', format: 'Vinyl Record' }),
+      },
+      { artist: 'U2', releaseTitle: 'Rattle And Hum', format: 'Vinyl Record' },
+      'The Cure - Rattle And Hum 2xLP Vinyl 1988',
+      null,
+    );
+
+    expect(identity.status).toBe('objective_conflict');
+    expect(identity.conflicts).toContain('Artist differs (The Cure)');
+  });
+
   it('scores exact identity and grade matches above weaker comparables', () => {
     const exact = scoreComparable(target, sale('1996 Topps Kobe Bryant #138 PSA 10', 1200, '2026-09-01'));
     const wrongGrade = scoreComparable(target, sale('1996 Topps Kobe Bryant #138 PSA 9', 450, '2026-09-01'));

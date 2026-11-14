@@ -11,7 +11,7 @@ import { getVerifiedIdentityApproval, hasVerifiedMercariUndatedSale, transferVer
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 import { signedTransactionLotConflict, transactionIdentity, type TransactionIdentity } from './testAiEconomicIntegrity';
 import { autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility,
-  buildVisualTargetMetadata, disneyPinsTitleDerivedPinNameEvidence, type VisualEvidence } from './testAiVisualSourceFilter';
+  buildVisualTargetMetadata, disneyPinsTitleDerivedPinNameEvidence, musicArtistsAgree, type VisualEvidence } from './testAiVisualSourceFilter';
 import { randomUUID } from 'node:crypto';
 import { FINAL_VALUATION_USE_VERSION, boundedFinalSourceCorrelation, makeFinalAuditRef,
   readServerNormalizationReport, retainServerNormalizationReport, finalUsePopulation,
@@ -1641,10 +1641,16 @@ export function assessComparableCategoryIdentity(
     const candidateLabel = musicLabelComparable(observedLabel);
     const labelConflict = candidateLabel && targetLabel && candidateLabel !== targetLabel ? observedLabel : null;
     const parsedTitle = musicArtistAndReleaseFromTitle(title);
-    const artistConflict = parsedTitle && artist && !titleContainsExpectedPhrase(parsedTitle.artist, artist) ? parsedTitle.artist : null;
+    // Keep the final gate on the same bounded artist identity used by scoring.
+    // A qualifier such as "(UK)" is regional metadata, not a second artist
+    // token, so "U2 (UK)" and a title parsed as "U2" must agree.
+    const artistMatches = parsedTitle
+      ? musicArtistsAgree(parsedTitle.artist, artist)
+      : musicArtistsAgree(title, artist);
+    const artistConflict = parsedTitle && artist && !artistMatches ? parsedTitle.artist : null;
     const releaseConflict = parsedTitle && releaseTitle && !titleContainsExpectedPhrase(parsedTitle.release, releaseTitle) ? parsedTitle.release : null;
 
-    record('Artist', artist, titleContainsExpectedPhrase(title, artist), artistConflict);
+    record('Artist', artist, artistMatches, artistConflict);
     record('Release title', releaseTitle, titleContainsExpectedPhrase(title, releaseTitle), releaseConflict);
     record('Catalog #', catalogNumber, catalogMatch.matches, catalogMatch.conflict);
     record('Label', label, titleContainsExpectedPhrase(title, label), labelConflict);

@@ -2317,7 +2317,7 @@ function musicEditionsAgree(left: unknown, right: unknown): boolean {
   const b = musicEditionComparable(right);
   return Boolean(a && b && a === b);
 }
-function musicArtistsAgree(left: unknown, right: unknown): boolean {
+export function musicArtistsAgree(left: unknown, right: unknown): boolean {
   const a = musicArtistComparable(left);
   const b = musicArtistComparable(right);
   return Boolean(a && b && (a === b || a.includes(b) || b.includes(a)));
