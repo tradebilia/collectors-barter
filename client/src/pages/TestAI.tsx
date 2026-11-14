@@ -431,6 +431,13 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
 };
 
 type SourceId = string;
+function getTestAiSourceLabel(sourceId: string, fallback = sourceId): string {
+  return DATA_SOURCES[sourceId]?.label
+    ?? PERMISSION_PENDING_SOURCE_REGISTRY[sourceId]?.label
+    ?? SANDBOX_SPECIALIST_SOURCES.find((source) => source.id === sourceId)?.label
+    ?? fallback;
+}
+
 const SOURCE_GROUPS = ['Grading', 'Marketplace', 'Permission pending', 'Deferred by owner', 'Reference'] as const;
 
 const GRADING_COMPANIES = ['CGC', 'PSA', 'BGS', 'PCGS', 'NGC', 'CBCS', 'SGC', 'HGA', 'CSG', 'Other'] as const;
@@ -4068,8 +4075,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
   };
 
   const activeSourcesNote = [
-    leftSources.size > 0 ? `Item A: ${Array.from(leftSources).map(id => DATA_SOURCES[id].label).join(', ')}` : null,
-    rightSources.size > 0 ? `Item B: ${Array.from(rightSources).map(id => DATA_SOURCES[id].label).join(', ')}` : null,
+    leftSources.size > 0 ? `Item A: ${Array.from(leftSources).map((id) => getTestAiSourceLabel(id)).join(', ')}` : null,
+    rightSources.size > 0 ? `Item B: ${Array.from(rightSources).map((id) => getTestAiSourceLabel(id)).join(', ')}` : null,
   ].filter(Boolean).join(' · ');
 
   if (isCollectionLotItemType(leftItem.itemType) || isCollectionLotItemType(rightItem.itemType)) {
@@ -4588,22 +4595,22 @@ function DataColumn({ item, searchItem, side, visualProvider, enabledSources, eb
   return (
     <TestAiCandidateDisplayProvider side={side === 'left' ? 'item_a' : 'item_b'} outcome={finalDisplayOutcome}><div className="space-y-3">
       <QueryTrace item={queryItem} sources={[
-        { id: 'ebay_active', label: DATA_SOURCES.ebay_active.label, data: ebayData, loading: ebayLoading },
-        { id: 'sold_comps', label: DATA_SOURCES.sold_comps.label, data: soldCompsData, loading: soldCompsLoading },
-        { id: 'mercari_sold_comps', label: DATA_SOURCES.mercari_sold_comps.label, data: mercariSoldCompsData, loading: mercariSoldCompsLoading },
-        { id: 'tcgplayer_sold_comps', label: DATA_SOURCES.tcgplayer_sold_comps.label, data: tcgplayerSoldCompsData, loading: tcgplayerSoldCompsLoading },
+        { id: 'ebay_active', label: getTestAiSourceLabel('ebay_active', 'eBay Active Listings'), data: ebayData, loading: ebayLoading },
+        { id: 'sold_comps', label: getTestAiSourceLabel('sold_comps', 'Sold-Comps (eBay Sold)'), data: soldCompsData, loading: soldCompsLoading },
+        { id: 'mercari_sold_comps', label: getTestAiSourceLabel('mercari_sold_comps', 'Sold-Comps (Mercari Sold)'), data: mercariSoldCompsData, loading: mercariSoldCompsLoading },
+        { id: 'tcgplayer_sold_comps', label: getTestAiSourceLabel('tcgplayer_sold_comps', 'TCGplayer Sold-Comps'), data: tcgplayerSoldCompsData, loading: tcgplayerSoldCompsLoading },
         { id: 'pokemon_price_tracker', label: DATA_SOURCES.pokemon_price_tracker?.label ?? 'Pokémon Price Tracker', data: pokemonPriceTrackerData, loading: pokemonPriceTrackerLoading },
-        { id: 'the_card_api', label: DATA_SOURCES.the_card_api.label, data: theCardApiData, loading: theCardApiLoading },
-        { id: 'cardsight_ai', label: DATA_SOURCES.cardsight_ai.label, data: cardsightAiData, loading: cardsightAiLoading },
+        { id: 'the_card_api', label: getTestAiSourceLabel('the_card_api', 'The Card API Sales'), data: theCardApiData, loading: theCardApiLoading },
+        { id: 'cardsight_ai', label: getTestAiSourceLabel('cardsight_ai', 'Cardsight.ai Market Data'), data: cardsightAiData, loading: cardsightAiLoading },
         { id: 'comc_parse', label: DATA_SOURCES.comc_parse?.label ?? 'COMC', data: comcData, loading: comcLoading },
-        { id: 'lelands', label: DATA_SOURCES.lelands.label, data: lelandsData, loading: lelandsLoading },
-        { id: 'pristine_auction', label: DATA_SOURCES.pristine_auction.label, data: pristineAuctionData, loading: pristineAuctionLoading },
-        { id: 'collect_auction', label: DATA_SOURCES.collect_auction.label, data: collectAuctionData, loading: collectAuctionLoading },
-        { id: 'sirius_sports_auctions', label: DATA_SOURCES.sirius_sports_auctions.label, data: siriusSportsAuctionData, loading: siriusSportsAuctionLoading },
-        { id: 'comicconnect', label: DATA_SOURCES.comicconnect.label, data: comicConnectData, loading: comicConnectLoading },
-        { id: 'pcgs_auction_results', label: DATA_SOURCES.pcgs_auction_results.label, data: pcgsAuctionData, loading: pcgsAuctionLoading },
-        { id: 'goldin', label: DATA_SOURCES.goldin.label, data: specialistPackets.goldin, loading: false },
-        ...Array.from(enabledSources).filter((sourceId) => !['ebay_active', 'sold_comps', 'mercari_sold_comps', 'tcgplayer_sold_comps', 'pokemon_price_tracker', 'the_card_api', 'cardsight_ai', 'comc_parse', 'lelands', 'pristine_auction', 'collect_auction', 'sirius_sports_auctions', 'comicconnect', 'pcgs_auction_results', 'goldin'].includes(sourceId)).map((sourceId) => ({ id: sourceId, label: DATA_SOURCES[sourceId]?.label ?? SANDBOX_SPECIALIST_SOURCES.find((source) => source.id === sourceId)?.label ?? sourceId, data: specialistPackets[sourceId] })),
+        { id: 'lelands', label: getTestAiSourceLabel('lelands', 'Parse.bot Lelands'), data: lelandsData, loading: lelandsLoading },
+        { id: 'pristine_auction', label: getTestAiSourceLabel('pristine_auction', 'Parse.bot Pristine Auction'), data: pristineAuctionData, loading: pristineAuctionLoading },
+        { id: 'collect_auction', label: getTestAiSourceLabel('collect_auction', 'Parse.bot Collect Auctions'), data: collectAuctionData, loading: collectAuctionLoading },
+        { id: 'sirius_sports_auctions', label: getTestAiSourceLabel('sirius_sports_auctions', 'Sirius Sports Auctions'), data: siriusSportsAuctionData, loading: siriusSportsAuctionLoading },
+        { id: 'comicconnect', label: getTestAiSourceLabel('comicconnect', 'ComicConnect Sold Archive'), data: comicConnectData, loading: comicConnectLoading },
+        { id: 'pcgs_auction_results', label: getTestAiSourceLabel('pcgs_auction_results', 'PCGS Auction Results'), data: pcgsAuctionData, loading: pcgsAuctionLoading },
+        { id: 'goldin', label: getTestAiSourceLabel('goldin', 'Goldin'), data: specialistPackets.goldin, loading: false },
+        ...Array.from(enabledSources).filter((sourceId) => !['ebay_active', 'sold_comps', 'mercari_sold_comps', 'tcgplayer_sold_comps', 'pokemon_price_tracker', 'the_card_api', 'cardsight_ai', 'comc_parse', 'lelands', 'pristine_auction', 'collect_auction', 'sirius_sports_auctions', 'comicconnect', 'pcgs_auction_results', 'goldin'].includes(sourceId)).map((sourceId) => ({ id: sourceId, label: getTestAiSourceLabel(sourceId), data: specialistPackets[sourceId] })),
       ].filter((source) => enabledSources.has(source.id as SourceId))} />
       <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayEvidenceData ?? ebayData} soldCompsData={soldCompsData} mercariSoldCompsData={mercariSoldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={specialistObservationList} extraReviewPackets={{ ...specialistPackets, comc_parse: comcData, tcgplayer_sold_comps: tcgplayerSoldCompsData }} sourcePending={{ ebay_active: ebayLoading, sold_comps: soldCompsLoading, mercari_sold_comps: mercariSoldCompsLoading, tcgplayer_sold_comps: tcgplayerSoldCompsLoading, pokemon_price_tracker: pokemonPriceTrackerLoading, the_card_api: theCardApiLoading, cardsight_ai: cardsightAiLoading, comc_parse: comcLoading, lelands: lelandsLoading, pristine_auction: pristineAuctionLoading, collect_auction: collectAuctionLoading, sirius_sports_auctions: siriusSportsAuctionLoading, comicconnect: comicConnectLoading, pcgs_auction_results: pcgsAuctionLoading }} onSummaryChange={onEvidenceSummary}>
       <details className="rounded-xl border border-slate-800 bg-slate-950/40 p-3" aria-label="Source and technical audit">

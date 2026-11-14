@@ -291,6 +291,19 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('rightSourcesEnabled.size > 0 && !!rightItem?.certId && rightItem?.gradingCompany === \'PCGS\'');
   });
 
+  it('keeps the query trace safe for every selectable source label', () => {
+    expect(source).toContain('function getTestAiSourceLabel(sourceId: string, fallback = sourceId): string');
+    expect(source).toContain('getTestAiSourceLabel(id)');
+    expect(source).toContain("getTestAiSourceLabel('comicconnect', 'ComicConnect Sold Archive')");
+    expect(source).toContain("getTestAiSourceLabel('pcgs_auction_results', 'PCGS Auction Results')");
+    expect(source).toContain("getTestAiSourceLabel('goldin', 'Goldin')");
+    expect(source).not.toContain('Array.from(leftSources).map(id => DATA_SOURCES[id].label)');
+    expect(source).not.toContain('Array.from(rightSources).map(id => DATA_SOURCES[id].label)');
+    expect(source).not.toContain("DATA_SOURCES.comicconnect.label");
+    expect(source).not.toContain("DATA_SOURCES.pcgs_auction_results.label");
+    expect(source).not.toContain("DATA_SOURCES.goldin.label");
+  });
+
   it('shows bounded specialist lookup contracts without treating unresolved sources as live valuation inputs', () => {
     expect(source).toContain('getSpecialistMarketplaceData.useQuery');
     expect(source).toContain('Bounded automatic public lookup');
