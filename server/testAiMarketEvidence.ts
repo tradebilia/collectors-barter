@@ -118,6 +118,8 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   const verification = verifyCanonicalObservation(input, { now, signingKey: options?.signingKey });
   const trustedInput = verification.verified ? verification.sale : input;
   const sourceId = sourceKey(trustedInput.sourceId || trustedInput.marketplace);
+  const mercariSourceIdentityMissing = sourceId === 'mercari_sold_comps'
+    && !hasMeaningfulTransactionIdentity(trustedInput);
   const sourceDefault = COMPLETED_SALE_SOURCE_DEFAULTS[sourceId];
   // PCGS Auction Prices Realized has an intentionally narrower policy than the
   // general illiquid-market extension. Exact-grade PCGS rows older than one
@@ -146,7 +148,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   // source filter marks these rows as not required; do not re-enable a
   // Mercari visual approval requirement at the final audit boundary.
   const autographNoVisual = isAutographTarget(options?.target) && sourceId === 'mercari_sold_comps';
-  const visualRequirement = autographNoVisual ? 'not_required'
+  const visualRequirement = autographNoVisual || mercariSourceIdentityMissing ? 'not_required'
     : sourceId === 'mercari_sold_comps' || trustedInput.visualRequirement === 'required' ? 'required' : 'not_required';
   const identityApproval = verification.verified && options?.target
     ? getVerifiedIdentityApproval(trustedInput, options.target, options.target.approvalTargetImageReference)
@@ -169,9 +171,14 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   const restrictiveInputDisposition = RESTRICTIVE_DISPOSITIONS.has(trustedInput.evidenceDisposition as NonNullable<MarketSale['evidenceDisposition']>)
     ? trustedInput.evidenceDisposition
     : null;
-  const reasons = [...inputReasons, ...verification.reasons];
+  const reasons = [...inputReasons, ...verification.reasons].filter((reason) => !mercariSourceIdentityMissing
+    || (!/server provenance is not verified/i.test(reason)
+      && !/source record/i.test(reason)
+      && !/provider record ID|listing\/transaction URL/i.test(reason)));
 
-  if (!verification.verified) reasons.push('server provenance is not verified; browser-carried source facts cannot influence valuation');
+  if (!verification.verified) reasons.push(mercariSourceIdentityMissing
+    ? 'Mercari source identity is unavailable; retained as current-market context only and excluded from valuation.'
+    : 'server provenance is not verified; browser-carried source facts cannot influence valuation');
   if (!safeText(trustedInput.title, 600)) reasons.push('missing marketplace title');
   if (price === null || !Number.isFinite(price) || price <= 0) reasons.push('missing or non-positive realized price');
   if (!currency) reasons.push('sale currency is unknown; retained as context only');
@@ -179,7 +186,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   if (saleStatus !== 'completed') reasons.push(saleStatus === 'active' ? 'active asking listing is not a completed sale' : 'completed-sale status is not verifiable for this source');
   if (resolvedPriceBasis === 'unknown') reasons.push('price basis is not verifiable as sold, closed, or realized');
   if (economics.reason) reasons.push(economics.reason);
-  if (!transactionIdentityPresent) reasons.push('meaningful observed provider record ID or valid listing/transaction URL is missing; retained as context only');
+  if (!transactionIdentityPresent && !mercariSourceIdentityMissing) reasons.push('meaningful observed provider record ID or valid listing/transaction URL is missing; retained as context only');
   if (highValuePriceConflict && priceSafety.reason) reasons.push(priceSafety.reason);
   if (mercariUndated) reasons.push('Qualified undated Mercari exception: sale date remains Unknown; timing is unverified and sold=true reported sold price is used as reported, not proof of a recent sale or a private accepted-offer amount.');
   if (mercariAutographUndated) reasons.push('Qualified Autographs market-context exception: exact visual review is not required; the verified sold=true reported price remains usable market evidence while sale date remains Unknown.');
@@ -214,7 +221,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   // Mirror the actual terms above, not free-form provider/visual rationale.
   // Missing title is deliberately not a term of the existing eligibility gate.
   const blockerCodes: NormalizationBlockerCode[] = [];
-  if (!verification.verified) blockerCodes.push('PROVENANCE_UNVERIFIED');
+  if (!verification.verified && !mercariSourceIdentityMissing) blockerCodes.push('PROVENANCE_UNVERIFIED');
   if (restrictiveInputDisposition) blockerCodes.push('SOURCE_DISPOSITION_RESTRICTIVE');
   if (price === null || !Number.isFinite(price) || price <= 0) blockerCodes.push('INVALID_PRICE');
   if (!currency) blockerCodes.push('UNKNOWN_CURRENCY');
@@ -222,7 +229,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   if (saleStatus !== 'completed') blockerCodes.push('NOT_COMPLETED');
   if (resolvedPriceBasis === 'unknown') blockerCodes.push('UNKNOWN_PRICE_BASIS');
   if (economics.blocker) blockerCodes.push(economics.blocker);
-  if (!transactionIdentityPresent) blockerCodes.push('TRANSACTION_IDENTITY_MISSING');
+  if (!transactionIdentityPresent && !mercariSourceIdentityMissing) blockerCodes.push('TRANSACTION_IDENTITY_MISSING');
   if (priceSafety.applies && priceSafety.status === 'too_low') blockerCodes.push('HIGH_VALUE_PRICE_TOO_LOW');
   if (priceSafety.applies && priceSafety.status === 'too_high') blockerCodes.push('HIGH_VALUE_PRICE_TOO_HIGH');
   if (dateInfo.recency === 'undated' && !mercariUndated && !mercariAutographUndated) blockerCodes.push('INVALID_DATE');
@@ -284,7 +291,11 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     originMarketplace: safeText(trustedInput.originMarketplace, 160),
     sourceId: verification.verified ? sourceId || null : null,
     sourceAdapter: verification.verified ? (trustedInput.sourceAdapter ?? sourceId ?? null) : null,
-    sourceLabel: verification.verified ? safeText(trustedInput.sourceLabel, 160) : 'Unverified client observation',
+    sourceLabel: verification.verified
+      ? safeText(trustedInput.sourceLabel, 160)
+      : mercariSourceIdentityMissing
+        ? 'Mercari — context only; source identity unavailable'
+        : 'Unverified client observation',
     saleId: safeText(trustedInput.saleId, 240),
     url: safeText(trustedInput.url, 1_500),
     saleStatus,
