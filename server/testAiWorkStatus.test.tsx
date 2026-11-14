@@ -36,8 +36,8 @@ afterEach(async () => {
 function renderPending(requestCount: number, analysisCount: number) {
   return act(async () => root.render(<TestAiPendingStatus requestCount={requestCount} analysisCount={analysisCount} />));
 }
-function renderWork() {
-  return act(async () => root.render(<QueryClientProvider client={queryClient}><TestAiWorkStatus /></QueryClientProvider>));
+function renderWork(hasSelectedSource = true) {
+  return act(async () => root.render(<QueryClientProvider client={queryClient}><TestAiWorkStatus hasSelectedSource={hasSelectedSource} /></QueryClientProvider>));
 }
 function text() { return container.textContent ?? ''; }
 
@@ -105,6 +105,18 @@ describe('TestAiPendingStatus', () => {
 });
 
 describe('TestAiWorkStatus query and mutation filters', () => {
+  it('does not show source compilation for background requests when no source is selected', async () => {
+    const background = deferred<unknown>();
+    const pending = queryClient.fetchQuery({
+      queryKey: [['testAI', 'getPSAData'], { input: { certNumber: '123' }, type: 'query' }],
+      queryFn: () => background.promise,
+    });
+    await renderWork(false);
+    expect(container.textContent).toBe('');
+    background.resolve({});
+    await act(async () => { await pending; });
+  });
+
   it('ignores idle, disabled, paused, and non-testAI queries', async () => {
     const key = [['testAI', 'getEbayListings'], { input: { title: 'Fixture' }, type: 'query' }];
     const pending = deferred<unknown>();

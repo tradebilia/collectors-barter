@@ -4722,29 +4722,29 @@ export default function TestAI() {
   // ── Silently fetch PSA cert data for cert-mode items so we can build search queries ──
   const leftPSAQuery = trpc.testAI.getPSAData.useQuery(
     { certNumber: leftItem?.certId || '' },
-    { enabled: !leftIsCollectionLot && !!leftItem?.certId && leftItem?.gradingCompany === 'PSA' }
+    { enabled: !leftIsCollectionLot && leftSourcesEnabled.size > 0 && !!leftItem?.certId && leftItem?.gradingCompany === 'PSA' }
   );
   const rightPSAQuery = trpc.testAI.getPSAData.useQuery(
     { certNumber: rightItem?.certId || '' },
-    { enabled: !rightIsCollectionLot && !!rightItem?.certId && rightItem?.gradingCompany === 'PSA' }
+    { enabled: !rightIsCollectionLot && rightSourcesEnabled.size > 0 && !!rightItem?.certId && rightItem?.gradingCompany === 'PSA' }
   );
 
   // ── Silently fetch Beckett cert data for BGS cert-mode items ──
   const leftBeckettQuery = trpc.testAI.getBeckettData.useQuery(
     { certNumber: leftItem?.certId || '' },
-    { enabled: !leftIsCollectionLot && !!leftItem?.certId && leftItem?.gradingCompany === 'BGS' }
+    { enabled: !leftIsCollectionLot && leftSourcesEnabled.size > 0 && !!leftItem?.certId && leftItem?.gradingCompany === 'BGS' }
   );
   const rightBeckettQuery = trpc.testAI.getBeckettData.useQuery(
     { certNumber: rightItem?.certId || '' },
-    { enabled: !rightIsCollectionLot && !!rightItem?.certId && rightItem?.gradingCompany === 'BGS' }
+    { enabled: !rightIsCollectionLot && rightSourcesEnabled.size > 0 && !!rightItem?.certId && rightItem?.gradingCompany === 'BGS' }
   );
   const leftCgcQuery = trpc.testAI.getCgcComicsData.useQuery(
     { certNumber: leftItem?.certId || '' },
-    { enabled: !leftIsCollectionLot && !!leftItem?.certId && leftItem?.gradingCompany === 'CGC' && leftItem?.category === 'comics' }
+    { enabled: !leftIsCollectionLot && leftSourcesEnabled.size > 0 && !!leftItem?.certId && leftItem?.gradingCompany === 'CGC' && leftItem?.category === 'comics' }
   );
   const rightCgcQuery = trpc.testAI.getCgcComicsData.useQuery(
     { certNumber: rightItem?.certId || '' },
-    { enabled: !rightIsCollectionLot && !!rightItem?.certId && rightItem?.gradingCompany === 'CGC' && rightItem?.category === 'comics' }
+    { enabled: !rightIsCollectionLot && rightSourcesEnabled.size > 0 && !!rightItem?.certId && rightItem?.gradingCompany === 'CGC' && rightItem?.category === 'comics' }
   );
   // PCGS certificate lookup supplies the verified coin identity needed for
   // downstream source queries and comparable scoring. It is intentionally
@@ -4752,11 +4752,11 @@ export default function TestAI() {
   // the user expands any particular panel.
   const leftPcgsCoinFactsQuery = trpc.testAI.getPcgsData.useQuery(
     { certNumber: leftItem?.certId || '' },
-    { enabled: !leftIsCollectionLot && !!leftItem?.certId && leftItem?.gradingCompany === 'PCGS' && leftItem?.category === 'coins' },
+    { enabled: !leftIsCollectionLot && leftSourcesEnabled.size > 0 && !!leftItem?.certId && leftItem?.gradingCompany === 'PCGS' && leftItem?.category === 'coins' },
   );
   const rightPcgsCoinFactsQuery = trpc.testAI.getPcgsData.useQuery(
     { certNumber: rightItem?.certId || '' },
-    { enabled: !rightIsCollectionLot && !!rightItem?.certId && rightItem?.gradingCompany === 'PCGS' && rightItem?.category === 'coins' },
+    { enabled: !rightIsCollectionLot && rightSourcesEnabled.size > 0 && !!rightItem?.certId && rightItem?.gradingCompany === 'PCGS' && rightItem?.category === 'coins' },
   );
 
   // Build an effective item for Sold-Comps/eBay queries:
@@ -5068,7 +5068,7 @@ export default function TestAI() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
-        <TestAiWorkStatus />
+        <TestAiWorkStatus hasSelectedSource={leftSourcesEnabled.size > 0 || rightSourcesEnabled.size > 0} />
         {/* Item selectors */}
         <div className="rounded-lg border border-cyan-800/40 bg-slate-900/50 p-3 text-xs text-slate-300">
           <p className="font-semibold text-cyan-200">Current testing phase: Item A source validation</p>

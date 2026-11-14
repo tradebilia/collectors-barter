@@ -280,6 +280,17 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Applicable to the loaded item.');
   });
 
+  it('does not start hidden certificate enrichment before a source is selected', () => {
+    expect(source).toContain('leftSourcesEnabled.size > 0 && !!leftItem?.certId');
+    expect(source).toContain('rightSourcesEnabled.size > 0 && !!rightItem?.certId');
+    expect(source).toContain('leftSourcesEnabled.size > 0 && !!leftItem?.certId && leftItem?.gradingCompany === \'BGS\'');
+    expect(source).toContain('rightSourcesEnabled.size > 0 && !!rightItem?.certId && rightItem?.gradingCompany === \'BGS\'');
+    expect(source).toContain('leftSourcesEnabled.size > 0 && !!leftItem?.certId && leftItem?.gradingCompany === \'CGC\'');
+    expect(source).toContain('rightSourcesEnabled.size > 0 && !!rightItem?.certId && rightItem?.gradingCompany === \'CGC\'');
+    expect(source).toContain('leftSourcesEnabled.size > 0 && !!leftItem?.certId && leftItem?.gradingCompany === \'PCGS\'');
+    expect(source).toContain('rightSourcesEnabled.size > 0 && !!rightItem?.certId && rightItem?.gradingCompany === \'PCGS\'');
+  });
+
   it('shows bounded specialist lookup contracts without treating unresolved sources as live valuation inputs', () => {
     expect(source).toContain('getSpecialistMarketplaceData.useQuery');
     expect(source).toContain('Bounded automatic public lookup');

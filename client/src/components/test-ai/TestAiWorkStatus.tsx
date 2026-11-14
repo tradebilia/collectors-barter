@@ -11,7 +11,7 @@ const analysisProcedures = new Set(['analyzeTrade', 'analyze', 'auditItemValuati
 const imageProcedures = new Set(['reviewEbayVisualData', 'readCertificationFromImage']);
 
 /** Watches existing requests only: never starts, refetches, retries or cancels work. */
-export function TestAiWorkStatus() {
+export function TestAiWorkStatus({ hasSelectedSource = true }: { hasSelectedSource?: boolean }) {
   const requestCount = useIsFetching({ predicate: query => {
     const name = procedureName(query.queryKey);
     return name !== null && !inventoryQueries.has(name);
@@ -24,7 +24,7 @@ export function TestAiWorkStatus() {
     const name = procedureName(mutation.options.mutationKey);
     return name !== null && analysisProcedures.has(name) && !mutation.state.isPaused;
   } });
-  return <TestAiPendingStatus requestCount={requestCount + imageCount} analysisCount={analysisCount} />;
+  return <TestAiPendingStatus requestCount={hasSelectedSource ? requestCount + imageCount : 0} analysisCount={analysisCount} />;
 }
 
 export function TestAiPendingStatus({ requestCount, analysisCount }: { requestCount: number; analysisCount: number }) {
