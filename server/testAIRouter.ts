@@ -855,6 +855,13 @@ function mercariServerOwnedReference(row: any, price: number, currency: string |
   });
 }
 
+function usableMercariProviderId(value: unknown): string | number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string') return null;
+  const text = value.trim();
+  return text && !/^(?:mercari:)?(?:undefined|null|unknown|none|n\/?a)$/i.test(text) ? text : null;
+}
+
 /** Only fresh private adapter observations plus the actual bound visual row can authorize this exception. */
 function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsListing, context: MercariApprovalContext) {
   const report = getMercariObservedFacts(original)?.report;
@@ -900,9 +907,9 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
     const originalIdentity = original as unknown as Record<string, unknown>;
     const providerUrl = [original.itemUrl, originalIdentity.url, originalIdentity.itemWebUrl, originalIdentity.link, originalIdentity.href]
       .find((value): value is string => typeof value === 'string' && value.trim().length > 0) ?? null;
-    const providerId = original.saleId
-      ?? (typeof original.providerMetadata?.itemId === 'string' || typeof original.providerMetadata?.itemId === 'number' ? original.providerMetadata.itemId : null)
-      ?? (typeof original.rawMetadata?.itemId === 'string' || typeof original.rawMetadata?.itemId === 'number' ? original.rawMetadata.itemId : null);
+    const providerId = usableMercariProviderId(original.saleId)
+      ?? usableMercariProviderId(original.providerMetadata?.itemId)
+      ?? usableMercariProviderId(original.rawMetadata?.itemId);
     const serverOwnedReference = !providerId && !providerUrl ? mercariServerOwnedReference(row, price, currency) : null;
     if (!Number.isFinite(price) || price <= 0 || currency !== 'USD' || (!providerId && !providerUrl && !serverOwnedReference)) {
       return blocked([
@@ -941,9 +948,9 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
   const originalIdentity = original as unknown as Record<string, unknown>;
   const providerUrl = [original.itemUrl, originalIdentity.url, originalIdentity.itemWebUrl, originalIdentity.link, originalIdentity.href]
     .find((value): value is string => typeof value === 'string' && value.trim().length > 0) ?? null;
-  const providerId = original.saleId
-    ?? (typeof original.providerMetadata?.itemId === 'string' || typeof original.providerMetadata?.itemId === 'number' ? original.providerMetadata.itemId : null)
-    ?? (typeof original.rawMetadata?.itemId === 'string' || typeof original.rawMetadata?.itemId === 'number' ? original.rawMetadata.itemId : null);
+  const providerId = usableMercariProviderId(original.saleId)
+    ?? usableMercariProviderId(original.providerMetadata?.itemId)
+    ?? usableMercariProviderId(original.rawMetadata?.itemId);
   const serverOwnedReference = !providerId && !providerUrl ? mercariServerOwnedReference(row, price, currency) : null;
   const sale = prepareSourceTransactionIdentity({ ...row, price, currency, date: null, endedAt: null,
     soldAt: null, saleDate: null, soldDate: null, recency: 'undated' as const,
@@ -996,19 +1003,25 @@ export function hasUsableRecoveredMercariMatch(payload: any): boolean {
     && row.visualExecution.attempts.some((attempt: any) => attempt?.outcome === 'usable_review'));
 }
 
+function mercariFinalizationKey(row: any): string {
+  if (typeof row?.saleId === 'string' && usableMercariProviderId(row.saleId)) return row.saleId;
+  return `mercari-null-row:${String(row?.title ?? row?.listingTitle ?? '')}|${String(row?.price ?? '')}|${String(row?.currency ?? row?.soldCurrency ?? '')}`;
+}
+
 /** Apply one private source observation to every branch; never refill submission slots. */
 export function finalizeMercariContextResult(payload: any, originals: readonly AdditionalSoldCompsListing[], approvalContext?: MercariApprovalContext) {
-  const byId = new Map(originals.map(row => [row.saleId, row]));
+  const byId = new Map(originals.map(row => [mercariFinalizationKey(row), row]));
   const observed = (row: any) => {
-    const original = byId.get(row.saleId);
+    const original = byId.get(mercariFinalizationKey(row));
     return original ? getMercariObservedFacts(original)?.report ?? null : null;
   };
   const projections = new Map<string, any>();
   const project = (row: any) => {
-    const original = byId.get(row.saleId);
+    const key = mercariFinalizationKey(row);
+    const original = byId.get(key);
     if (!original) return mercariContextProjection(row, observed(row));
-    if (!projections.has(row.saleId)) {
-      const current = { ...row, ...advanced.get(row.saleId) };
+    if (!projections.has(key)) {
+      const current = { ...row, ...advanced.get(key) };
       const recoveredUsableMatch = hasUsableRecoveredMercariMatch(payload);
       const finalized = approvalContext && !payload.error
         && (!payload.processingDiagnostic || recoveredUsableMatch)
@@ -1017,11 +1030,11 @@ export function finalizeMercariContextResult(payload: any, originals: readonly A
       // snapshot. Re-project the exact object that will cross the tRPC
       // boundary so a stale award list cannot leave a visible MATCH with
       // Potential Points 25 but earned Score 0.
-      projections.set(row.saleId, approvalContext?.targetMetadata
+      projections.set(key, approvalContext?.targetMetadata
         ? withMetadataFieldComparisons(approvalContext.targetMetadata, finalized)
         : finalized);
     }
-    return projections.get(row.saleId);
+    return projections.get(key);
   };
   const originalLedger = Array.isArray(payload.audit?.ledger) ? payload.audit.ledger : originals;
   const advanced = new Map<string, any>();
@@ -1035,16 +1048,18 @@ export function finalizeMercariContextResult(payload: any, originals: readonly A
     payload.preVisionExcludedListings, payload.visualReviewListings, payload.listings]) {
     if (!Array.isArray(group)) continue;
     for (const row of group) {
-      if (typeof row?.saleId !== 'string' || !byId.has(row.saleId)) continue;
-      const previous = advanced.get(row.saleId);
-      if (!previous || stage(row) >= stage(previous)) advanced.set(row.saleId, row);
+      const key = mercariFinalizationKey(row);
+      if (!byId.has(key)) continue;
+      const previous = advanced.get(key);
+      if (!previous || stage(row) >= stage(previous)) advanced.set(key, row);
     }
   }
   const ledger: any[] = [];
   const seen = new Set<string>();
   for (const row of [...originalLedger, ...originals]) {
-    if (typeof row.saleId !== 'string' || !byId.has(row.saleId) || seen.has(row.saleId)) continue;
-    seen.add(row.saleId); ledger.push(project({ ...row, ...advanced.get(row.saleId) }));
+    const key = mercariFinalizationKey(row);
+    if (!byId.has(key) || seen.has(key)) continue;
+    seen.add(key); ledger.push(project({ ...row, ...advanced.get(key) }));
   }
   const returnedPopulations = {
     soldListings: ledger.filter(row => row.listingStatus === 'sold'),
@@ -4352,8 +4367,11 @@ export const testAIRouter = router({
         // Retrieval succeeded; later metadata/preparation failures must not erase its union.
         const reason = 'Mercari candidate processing unavailable; all retrieved records retained as context, with no pricing authority.';
         const latestRows = new Map((establishedIngress?.population.listings ?? result.listings)
-          .map((listing: any) => [listing.saleId, listing]));
-        for (const listing of establishedVisualRows ?? []) if (latestRows.has(listing.saleId)) latestRows.set(listing.saleId, listing);
+          .map((listing: any) => [mercariFinalizationKey(listing), listing]));
+        for (const listing of establishedVisualRows ?? []) {
+          const key = mercariFinalizationKey(listing);
+          if (latestRows.has(key)) latestRows.set(key, listing);
+        }
         const context = [...latestRows.values()].map((listing: any) => ({ ...listing, evidenceDisposition: 'context_only' as const,
           valuationEligible: false, identityApproval: undefined, provenanceToken: undefined,
           visualRequirement: listing.visualRequirement ?? 'not_required_pre_visual',
