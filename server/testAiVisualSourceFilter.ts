@@ -1,7 +1,7 @@
 import { invokeLLM, type ImageContent, type TextContent, type LlmProvider } from "./_core/llm";
 import { parseAnalyzerResponse } from "./testAiResponse";
 import { diagnoseVisualResponse } from "../shared/testAiVisualFailure";
-import { autographAuthenticationCompaniesEquivalent, findMaterialMetadataConflicts, metadataConflictReviewReason } from "../shared/testAiMetadataConflict";
+import { autographAuthenticationCompaniesEquivalent, findMaterialMetadataConflicts, metadataConflictReviewReason, videoGamePlatformComparable } from "../shared/testAiMetadataConflict";
 import { findAutographAuthenticatorInText, normalizeAutographAuthenticator } from "../shared/testAiAutographAuthentication";
 import { buildSoldReviewBudget } from "../shared/testAiSalesEvidencePolicy";
 import {
@@ -2867,7 +2867,11 @@ function comparisonStatus(targetValue: string, candidateValue: string, category 
 		if (category === "music" && /^(?:recordSize|record_size|size)$/i.test(key)) return musicRecordSizesAgree(targetValue, candidateValue) ? "match" : "different";
 			if (category === "music" && /^recordLabel$/i.test(key)) return musicRecordLabelsAgree(targetValue, candidateValue) ? "match" : "different";
 			if (category === "music" && /^(?:edition|variant|pressing|pressingDetails)$/i.test(key)) return musicEditionsAgree(targetValue, candidateValue) ? "match" : "different";
-			if (category === "music" && /^(?:artist|performer|artistName)$/i.test(key)) return musicArtistsAgree(targetValue, candidateValue) ? "match" : "different";
+		if (category === "music" && /^(?:artist|performer|artistName)$/i.test(key)) return musicArtistsAgree(targetValue, candidateValue) ? "match" : "different";
+	if (category.replace(/[^a-z]/g, '') === 'videogames' && /^platform$/i.test(key)) {
+		const stripEvidence = (value: string) => value.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, '');
+		return videoGamePlatformComparable(stripEvidence(targetValue)) === videoGamePlatformComparable(stripEvidence(candidateValue)) ? "match" : "different";
+	}
 	if (category === "movies" && /^(?:condition|mediaCondition)$/i.test(key)) {
 		const targetComparable = comparisonComparable(targetValue);
 		const candidateComparable = comparisonComparable(candidateValue.replace(/\s*\((?:detected|inferred)\s+(?:in|from)\s+title\)\s*$/i, ""));
@@ -3527,6 +3531,8 @@ function videoGameValuesAgree(targetValue: unknown, candidateValue: unknown, lab
   const candidate = videoGameCanonicalValue(candidateValue);
   if (!target || !candidate) return true;
   if (target === candidate) return true;
+  if (label.toLowerCase().includes('platform')
+    && videoGamePlatformComparable(targetValue) === videoGamePlatformComparable(candidateValue)) return true;
   if (!(label.includes("title") || label.includes("name"))) return false;
   const targetTokens = target.split(/[^a-z0-9]+/).filter((token) => token.length > 1 && !["the", "game", "video"].includes(token));
   const candidateTokens = candidate.split(/[^a-z0-9]+/).filter(Boolean);

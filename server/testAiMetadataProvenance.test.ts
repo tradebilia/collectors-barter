@@ -42,6 +42,13 @@ describe('Stage 4 composed normalized metadata and awarded comparison projection
     expect(buildDeclaredIdentityReviews([opposite], target)[0]?.verdict).toBe('mismatch');
     expect(row(scored(target, opposite), 'Platform')).toMatchObject({ candidateValue: 'SNES', status: 'different', titleDerivedStatus: 'match' });
   });
+  it('treats Microsoft Xbox 360 as the same platform in scoring and shared conflict checks', () => {
+    const target = buildVisualTargetMetadata({ title: 'The Legend of Zelda Xbox 360', category: 'video_games', itemType: 'game', fullItemDetails: { gameTitle: 'The Legend of Zelda', platform: 'Xbox 360' } });
+    const candidate = { title: 'The Legend of Zelda Microsoft Xbox 360', platform: 'Microsoft Xbox 360' };
+    const output = scored(target, candidate);
+    expect(row(output, 'Platform')).toMatchObject({ status: 'match', rankingContribution: { matched: true } });
+    expect(buildDeclaredIdentityReviews([candidate], target)).toEqual([]);
+  });
   it('refreshes final awards even when comparison rows were prepared before scoring and carry stale markers', () => {
     const target = game({ isGraded: 'Yes' }, { grade: '7.5', certificationCompany: 'PSA' });
     const candidate: any = { title: 'The Legend of Zelda NES PSA 7.5' };

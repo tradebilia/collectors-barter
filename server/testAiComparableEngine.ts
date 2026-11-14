@@ -5,7 +5,7 @@ import { isVerifiedGuideAnchor } from './testAiGuideEvidence';
 import { TEST_AI_VALUE_UNAVAILABLE_MESSAGE, nullableTestAiPrice, type GuideValueAnchor } from '../shared/testAiEvidenceNormalization';
 import { hasVerifiedHistoricSaleEconomics } from './testAiHistoricMarketContext';
 import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
-import { autographAuthenticationCompaniesEquivalent } from '../shared/testAiMetadataConflict';
+import { autographAuthenticationCompaniesEquivalent, videoGamePlatformComparable } from '../shared/testAiMetadataConflict';
 import { normalizeAutographAuthenticator, findAutographAuthenticatorInText } from '../shared/testAiAutographAuthentication';
 import { getVerifiedIdentityApproval, hasVerifiedMercariUndatedSale, transferVerifiedIdentityApproval, verifyCanonicalObservation } from './testAiCanonicalObservation';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
@@ -1026,7 +1026,7 @@ function videoGameObjectForm(value: string | null | undefined): VideoGameObjectF
 }
 
 const PLATFORM_LABELS: Record<string, string[]> = {
-  nes: ['nes', 'nintendo entertainment system'],
+  nes: ['nes', 'nintendo', 'nintendo entertainment system'],
   snes: ['snes', 'super nintendo', 'super nintendo entertainment system'],
   n64: ['n64', 'nintendo 64'],
   gamecube: ['gamecube', 'game cube'],
@@ -1037,14 +1037,14 @@ const PLATFORM_LABELS: Record<string, string[]> = {
   gba: ['game boy advance', 'gba'],
   ds: ['nintendo ds', 'ds'],
   '3ds': ['nintendo 3ds', '3ds'],
-  ps1: ['ps1', 'ps one', 'playstation 1'],
-  ps2: ['ps2', 'playstation 2'],
-  ps3: ['ps3', 'playstation 3'],
-  ps4: ['ps4', 'playstation 4'],
-  ps5: ['ps5', 'playstation 5'],
-  xbox_360: ['xbox 360'],
-  xbox_one: ['xbox one'],
-  xbox_series: ['xbox series'],
+  ps1: ['ps', 'ps1', 'ps one', 'playstation', 'playstation 1', 'sony playstation', 'sony playstation 1'],
+  ps2: ['ps2', 'playstation 2', 'sony playstation 2'],
+  ps3: ['ps3', 'playstation 3', 'sony playstation 3'],
+  ps4: ['ps4', 'playstation 4', 'sony playstation 4'],
+  ps5: ['ps5', 'playstation 5', 'sony playstation 5'],
+  xbox_360: ['xbox 360', 'microsoft xbox 360'],
+  xbox_one: ['xbox one', 'microsoft xbox one'],
+  xbox_series: ['xbox series', 'xbox series x/s', 'microsoft xbox series', 'microsoft xbox series x/s'],
   xbox: ['xbox'],
   genesis: ['sega genesis', 'mega drive'],
   saturn: ['sega saturn', 'saturn'],
@@ -1068,6 +1068,10 @@ function platformsInTitle(title: string): string[] {
       return aliases.some((alias) => normalizedTitle.includes(` ${alias} `));
     })
     .map(([key]) => key);
+  if (matches.some((key) => /^ps[2-5]$/.test(key))) {
+    const index = matches.indexOf('ps1');
+    if (index >= 0) matches.splice(index, 1);
+  }
   if (!matches.some((key) => key.startsWith('ps')) && normalizedTitle.includes(' playstation ') && !/ playstation [2-5] /.test(normalizedTitle)) matches.push('ps1');
   return [...new Set(matches)];
 }

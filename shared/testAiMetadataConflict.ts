@@ -67,6 +67,42 @@ function compact(value: unknown): string {
   return key(value).replace(/[^a-z0-9]+/g, '');
 }
 
+const VIDEO_GAME_PLATFORM_ALIASES: Record<string, string[]> = {
+  nes: ['nes', 'nintendo', 'nintendoentertainmentsystem'],
+  snes: ['snes', 'supernintendo', 'supernintendoentertainmentsystem'],
+  n64: ['n64', 'nintendo64'],
+  gamecube: ['gamecube', 'gamecube'],
+  wii_u: ['wiiu', 'nintendowiiu'],
+  wii: ['wii', 'nintendowii'],
+  switch: ['switch', 'nintendoswitch'],
+  gb: ['gb', 'gameboy', 'nintendogameboy'],
+  gba: ['gba', 'gameboyadvance', 'nintendogameboyadvance'],
+  ds: ['ds', 'nintendods'],
+  '3ds': ['3ds', 'nintendo3ds'],
+  ps1: ['ps', 'ps1', 'psone', 'playstation', 'playstation1', 'sonyplaystation', 'sonyplaystation1'],
+  ps2: ['ps2', 'playstation2', 'sonyplaystation2'],
+  ps3: ['ps3', 'playstation3', 'sonyplaystation3'],
+  ps4: ['ps4', 'playstation4', 'sonyplaystation4'],
+  ps5: ['ps5', 'playstation5', 'sonyplaystation5'],
+  xbox: ['xbox', 'microsoftxbox'],
+  xbox_360: ['xbox360', 'microsoftxbox360'],
+  xbox_one: ['xboxone', 'microsoftxboxone'],
+  xbox_series: ['xboxseries', 'xboxseriesxs', 'xboxseriesx', 'xboxseries s', 'microsoftxboxseries', 'microsoftxboxseriesxs', 'microsoftxboxseriesx'],
+  genesis: ['genesis', 'segagenesis', 'megadrive', 'segamegadrive'],
+  saturn: ['saturn', 'segasaturn'],
+  dreamcast: ['dreamcast', 'segadreamcast'],
+  game_gear: ['gamegear', 'segagamegear'],
+  atari_2600: ['atari2600'],
+};
+
+export function videoGamePlatformComparable(value: unknown): string {
+  const normalized = compact(value);
+  for (const [canonical, aliases] of Object.entries(VIDEO_GAME_PLATFORM_ALIASES)) {
+    if (aliases.includes(normalized)) return canonical;
+  }
+  return normalized;
+}
+
 function musicFormatComparable(value: unknown): string {
   const normalized = compact(value);
   if (['cassette', 'cassettetape', 'audiocassette'].includes(normalized)) return 'cassettetape';
@@ -496,6 +532,9 @@ export function findMaterialMetadataConflicts(
     if (category === 'music' && field === 'artist'
       && musicArtistComparable(targetValue)
       && musicArtistComparable(targetValue) === musicArtistComparable(directCandidateValue)) continue;
+    if (category === 'video_games' && field === 'platform'
+      && videoGamePlatformComparable(targetValue)
+      && videoGamePlatformComparable(targetValue) === videoGamePlatformComparable(directCandidateValue)) continue;
     if (directCandidateValue && fieldComparable(field, directCandidateValue) !== fieldComparable(field, targetValue)) {
       const videoGameSpecializedStateField = category === 'video_games'
         && ['workingCondition', 'originalPackaging', 'originalBoxIncluded'].includes(field);

@@ -141,6 +141,38 @@ describe('category-specific comparable identity gates', () => {
     expect(wrongForm.categoryIdentity.conflicts).toContain('Object form differs (console)');
   });
 
+  it('treats Microsoft Xbox 360 as Xbox 360, but still rejects a different Xbox generation', () => {
+    const target: ComparableTarget = {
+      title: 'Call of Duty World at War Xbox 360',
+      category: 'video_games',
+      itemType: 'game',
+      itemDetails: JSON.stringify({ gameTitle: 'Call of Duty World at War', platform: 'Xbox 360', objectType: 'Game' }),
+    };
+    const manufacturerPrefixed = scoreComparable(target, completed('Call of Duty World at War Microsoft Xbox 360 Game'));
+    const wrongGeneration = scoreComparable(target, completed('Call of Duty World at War Microsoft Xbox One Game'));
+
+    expect(manufacturerPrefixed.accepted).toBe(true);
+    expect(manufacturerPrefixed.categoryIdentity.status).toBe('direct_confirmed');
+    expect(manufacturerPrefixed.categoryIdentity.conflicts).not.toContain('Platform differs (microsoft xbox 360)');
+    expect(wrongGeneration.accepted).toBe(false);
+    expect(wrongGeneration.categoryIdentity.conflicts).toContain('Platform differs (xbox_one)');
+  });
+
+  it('treats PS and Sony PlayStation as the same first-generation PlayStation platform', () => {
+    const target: ComparableTarget = {
+      title: 'Gran Turismo Sony PlayStation',
+      category: 'video_games',
+      itemType: 'game',
+      itemDetails: JSON.stringify({ gameTitle: 'Gran Turismo', platform: 'PS' }),
+    };
+    const equivalent = scoreComparable(target, completed('Gran Turismo Sony PlayStation Game'));
+    const different = scoreComparable(target, completed('Gran Turismo Sony PlayStation 2 Game'));
+
+    expect(equivalent.accepted).toBe(true);
+    expect(different.accepted).toBe(false);
+    expect(different.categoryIdentity.conflicts).toContain('Platform differs (ps2)');
+  });
+
   it('requires Music artist and release alignment, and blocks an explicit artist or catalog conflict', () => {
     const target: ComparableTarget = {
       title: 'Miles Davis - Kind of Blue First Pressing Vinyl',
