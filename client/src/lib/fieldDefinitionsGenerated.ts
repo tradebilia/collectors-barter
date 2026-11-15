@@ -2795,6 +2795,12 @@ export const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     requirement: 'recommended',
   },
   {
+    name: 'edition',
+    label: 'Edition / Version',
+    inputType: 'text',
+    requirement: 'recommended',
+  },
+  {
     name: 'upc',
     label: 'UPC / EAN (if printed on packaging)',
     inputType: 'text',
