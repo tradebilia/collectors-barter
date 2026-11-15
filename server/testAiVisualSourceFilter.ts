@@ -5313,7 +5313,7 @@ const SPORTS_CARD_SCORE_FIELDS = [
   ['serialNumberedStatus', 2],
 ] as const;
 const VIDEO_GAME_GAME_SCORE_FIELDS = [
-  ['gameTitle', 20], ['platform', 20], ['releaseYear', 15], ['region', 10], ['edition', 10], ['productForm', 5], ['isGraded', 5], ['gradingCompany', 5], ['grade', 5], ['upcEan', 5],
+  ['gameTitle', 20], ['platform', 20], ['releaseYear', 15], ['region', 10], ['edition', 5], ['completeInBox', 5], ['isGraded', 5], ['gradingCompany', 5], ['grade', 5], ['upcEan', 5],
 ] as const;
 const VIDEO_GAME_CONSOLE_SCORE_FIELDS = [
   ['consoleName', 25], ['modelNumber', 20], ['region', 15], ['workingCondition', 15], ['originalBoxIncluded', 10], ['cablesIncluded', 5], ['controllersIncluded', 5], ['isGraded', 5],
@@ -5488,6 +5488,26 @@ function videoGameScoreProductForm(targetMetadata: string, listing: VisualSource
   if (!targetForm || !candidateForm) return null;
   return targetForm === candidateForm;
 }
+function videoGameScoreCompleteInBox(targetValue: unknown, listing: VisualSourceCandidate): ScorePredicate {
+  const targetState = metadataBooleanState(targetValue);
+  if (!targetState) return null;
+  const details = candidateStructuredDetails(listing);
+  const structured = candidateMetadataValue(listing, details, ['completeInBox', 'complete', 'isComplete', 'completeness']);
+  const title = canonicalCandidateTitle(listing);
+  const candidateState = structured
+    ? metadataBooleanState(structured)
+    : /\b(?:complete\s+in\s+box|CIB)\b/i.test(title)
+      ? 'yes'
+      : /\b(?:loose|cartridge\s+only|no\s+box|incomplete)\b/i.test(title)
+        ? 'no'
+        : null;
+  if (!candidateState) return null;
+  return scoreMatch(candidateState === targetState, {
+    value: structured ? String(structured) : title,
+    source: structured ? 'structured' : 'title',
+    field: 'completeInBox',
+  });
+}
 function videoGameScoreGradingCompany(targetValue: unknown, listing: VisualSourceCandidate): ScorePredicate {
   const target = videoGameScoreText(targetValue);
   if (!target || /^(?:unknown|n a|na|none|raw|ungraded|not applicable)$/.test(target)) return null;
@@ -5535,8 +5555,8 @@ function videoGameScore<T extends readonly (readonly [string, number])[]>(
     add('platform', 20, videoGameScoreValueMatches(target.platform, listing, ['platform', 'consoleName'], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|PlayStation|PS[1-5]|Xbox(?:\s+(?:360|One|Series\s+X\/S))?|Sega(?:\s+Master\s+System)?|Genesis|Saturn|Dreamcast|PC)/i], 'platform'));
     add('releaseYear', 15, videoGameScoreValueMatches(firstMeaningfulValue(target.releaseYear, target.year), listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/], 'year'));
     add('region', 10, videoGameScoreValueMatches(target.region, listing, ['region'], [/(?:NTSC-U|NTSC-J|PAL|Region\s+Free)/i], 'region'));
-    add('edition', 10, videoGameScoreValueMatches(target.edition, listing, ['edition', 'releaseType'], [], 'edition'));
-    add('productForm', 5, videoGameScoreProductForm(targetMetadata, listing));
+    add('edition', 5, videoGameScoreValueMatches(target.edition, listing, ['edition', 'releaseType'], [], 'edition'));
+    add('completeInBox', 5, videoGameScoreCompleteInBox(target.completeInBox, listing));
     add('isGraded', 5, videoGameScoreIsGraded(firstMeaningfulValue(metadataValue(targetMetadata, 'isGraded'), target.isGraded, target.graded), listing));
     add('gradingCompany', 5, videoGameScoreGradingCompany(firstMeaningfulValue(metadataValue(targetMetadata, 'certificationCompany'), target.gradingCompany, target.certificationCompany, target.grader), listing));
     add('grade', 5, videoGameScoreGrade(firstMeaningfulValue(metadataValue(targetMetadata, 'grade'), target.grade, target.numericGrade), listing));
