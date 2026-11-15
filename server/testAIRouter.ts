@@ -3290,7 +3290,12 @@ export const testAIRouter = router({
       // Goldin non-autograph records bypass image review, not metadata scoring.
       // Missing Model/UPC evidence is a review/valuation concern, not a hard
       // exclusion, so it must never turn the score into “unavailable”.
-      const scoredGoldinRecords = annotatePreVisualComparableScores(candidateRecords, targetMetadata);
+      // The specialist records received a comparison table before this path
+      // ran the authoritative item-type scorer. Reproject each record after
+      // scoring so the visible breakdown and the rank/score use one source of
+      // truth instead of retaining zero-point pre-scoring rows.
+      const scoredGoldinRecords = annotatePreVisualComparableScores(candidateRecords, targetMetadata)
+        .map((record) => withMetadataFieldComparisons(targetMetadata, record));
       const metadataOnlyGoldin = scoredGoldinRecords.map((record: any) => ({
           ...record,
           visualRequirement: autographTarget ? 'not_required_autograph_market_context' : 'not_required_goldin_metadata',

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('./_core/env', () => ({ ENV: { jwtSecret: '' } }));
 vi.mock('./_core/llm', () => ({ invokeLLM: vi.fn(() => { throw new Error('Stage 5 fixtures must not invoke a provider'); }) }));
 import { createServerFinalIdentityApproval, getVerifiedIdentityApproval, sealCanonicalObservation } from './testAiCanonicalObservation';
-import { buildVisualTargetMetadata, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { annotatePreVisualComparableScores, buildVisualTargetMetadata, withMetadataFieldComparisons, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { normalizeAnalysisMarketSale, normalizeAnalysisMarketSales } from './testAiMarketEvidence';
 import { buildMarketProfile, scoreComparable, selectBalancedComparableSales, type MarketSale, type MarketProfile, type ComparableTarget } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
@@ -272,6 +272,19 @@ describe('Stage 5 actual final-use reporting — real synthetic pipeline', () =>
       sourceId: 'goldin',
       evidenceDisposition: 'context_only',
     });
+
+    const scoredDisplayRecord = withMetadataFieldComparisons(buildVisualTargetMetadata(videoGameTarget),
+      annotatePreVisualComparableScores([{
+        title: '1988 NES Nintendo Super Mario Bros. 2 (USA) CIB Video Game - WATA 8.0',
+        price: 750,
+        currency: 'USD',
+        sourceId: 'goldin',
+      }], buildVisualTargetMetadata(videoGameTarget))[0]);
+    const displayedAwardPoints = (scoredDisplayRecord.metadataFieldComparisons ?? [])
+      .reduce((sum, row) => sum + Number(row.rankingContribution?.awardedPoints ?? 0), 0);
+    expect(scoredDisplayRecord.metadataMatchScore).toBeGreaterThan(0);
+    expect(displayedAwardPoints).toBe(scoredDisplayRecord.metadataMatchScore);
+    expect(scoredDisplayRecord.metadataFieldComparisons?.find((row) => row.targetField === 'Game Title')?.rankingContribution?.awardedPoints).toBe(25);
 
     expect(comparable.score).toBeGreaterThan(0);
     expect(comparable.accepted).toBe(true);

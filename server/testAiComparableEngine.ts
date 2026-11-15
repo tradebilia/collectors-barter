@@ -1987,13 +1987,25 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   ]) : null;
   const observedNumber = pokemonNumber ? pokemonNumber.observedNumber : extractComparableNumber(title, categoryKey);
   const titleCategoryIdentity = assessComparableCategoryIdentity(target, details, title, observedNumber);
-  const categoryIdentity = pokemonNumber?.conflicts.length ? {
-    ...titleCategoryIdentity,
-    status: 'objective_conflict' as const,
-    confirmedFields: titleCategoryIdentity.confirmedFields.filter(field => field !== 'Card #'),
-    unconfirmedFields: titleCategoryIdentity.unconfirmedFields.filter(field => field !== 'Card #'),
-    conflicts: [...new Set([...titleCategoryIdentity.conflicts, `Card # differs (${pokemonNumber.conflicts.join(', ')})`])],
-  } : titleCategoryIdentity;
+  const categoryIdentity = (() => {
+    const assessed = pokemonNumber?.conflicts.length ? {
+      ...titleCategoryIdentity,
+      status: 'objective_conflict' as const,
+      confirmedFields: titleCategoryIdentity.confirmedFields.filter(field => field !== 'Card #'),
+      unconfirmedFields: titleCategoryIdentity.unconfirmedFields.filter(field => field !== 'Card #'),
+      conflicts: [...new Set([...titleCategoryIdentity.conflicts, `Card # differs (${pokemonNumber.conflicts.join(', ')})`])],
+    } : titleCategoryIdentity;
+    // A missing Video Games Model/UPC is not an identity conflict. The
+    // ranking scorer may still award title/platform/year points, and the
+    // final receipt must not turn that absence into CATEGORY_REVIEW_REQUIRED.
+    // Explicit catalog-code conflicts remain untouched and fail closed.
+    if (categoryKey === 'video_games' && assessed.status === 'needs_review'
+      && !assessed.conflicts.some((conflict) => /model\s*\/\s*upc|catalog code|model number|upc/i.test(conflict))) {
+      return { ...assessed, unconfirmedFields: assessed.unconfirmedFields.filter(field => !/model\s*\/\s*upc/i.test(field)),
+        status: assessed.unconfirmedFields.some(field => !/model\s*\/\s*upc/i.test(field)) ? assessed.status : 'direct_confirmed' as const };
+    }
+    return assessed;
+  })();
   const requiredApprovalMissing = sale.visualRequirement === 'required' && !identityApproval;
   const transportedApprovalUnverified = Boolean(sale.identityApproval) && !identityApproval;
   const numberMatches = pokemonNumber ? pokemonNumber.comparison === 'match'
