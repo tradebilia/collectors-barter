@@ -42,6 +42,26 @@ describe("Video Games title-derived platform parsing", () => {
     ).toBe("Game Boy");
   });
 
+  it("uses the fuller raw title when a provider normalized title drops Color", () => {
+    const title =
+      "Pokemon Silver Version USA 2000 CIB WATA 7.5 Game Boy Color Lugia Cart 8.0";
+    const target = buildVisualTargetMetadata({
+      title: "Pokemon Silver Version",
+      category: "video_games",
+      itemType: "game",
+      fullItemDetails: { gameTitle: "Pokemon Silver Version", platform: "Game Boy Color" },
+    });
+    const row = buildMetadataFieldComparisons(target, {
+      category: "video_games",
+      normalizedListingTitle: "Pokemon Silver Version Game Boy",
+      title,
+    }).find(row => row.fieldKey === "platform");
+    expect(row).toMatchObject({
+      titleDerivedValue: "Game Boy Color (detected in title)",
+      titleDerivedStatus: "match",
+    });
+  });
+
   it("uses the same platform evidence for scoring and the metadata breakdown", () => {
     const title =
       "Nintendo Metroid Classic NES Series (Game Boy Advance) COMPLETE IN BOX";

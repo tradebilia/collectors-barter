@@ -2145,7 +2145,15 @@ function normalizeComparableNumberWords(value: string): string {
     .replace(/\b(?:xviii|xvii|xvi|xiv|xiii|xii|xi|xix|xx|viii|vii|vi|ix|iv|iii|ii|x|v|i)\b/gi, (roman) => COMPARABLE_ROMAN_NUMERALS[roman.toLowerCase()] ?? roman);
 }
 function canonicalCandidateTitle(listing: VisualSourceCandidate): string {
-  return normalizeVisualSourceCandidate(listing).title;
+  const normalized = normalizeVisualSourceCandidate(listing);
+  const category = String(listing.category ?? listing.categoryId ?? normalized.details.category ?? '').toLowerCase();
+  if (/video[_ -]?games?/.test(category)) {
+    return [...normalized.titleCandidates, normalized.title]
+      .map((title) => String(title ?? '').trim())
+      .filter(Boolean)
+      .sort((left, right) => right.length - left.length)[0] ?? normalized.title;
+  }
+  return normalized.title;
 }
 function normalizedFieldKey(value: unknown): string {
   return String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -2475,7 +2483,7 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
     return condition ? `${condition.replace(/_/g, " ")} (inferred from title)` : "Unknown";
   }
   const details = candidateStructuredDetails(listing);
-  const title = firstCandidateText(
+  const firstTitle = firstCandidateText(
     listing.normalizedListingTitle,
   listing.title,
   listing.itemTitle,
@@ -2484,9 +2492,25 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
   listing.productName,
   details.title,
   details.itemTitle,
-  details.listingTitle,
-	 ) || "";
-		if (!title) return "Unknown";
+	  details.listingTitle,
+		 ) || "";
+	  const title = category === "video_games"
+    ? [
+        listing.normalizedListingTitle,
+        listing.title,
+        listing.itemTitle,
+        listing.listingTitle,
+        listing.name,
+        listing.productName,
+        details.title,
+        details.itemTitle,
+        details.listingTitle,
+      ]
+        .map(candidateText)
+        .filter(Boolean)
+        .sort((left, right) => right.length - left.length)[0] ?? firstTitle
+    : firstTitle;
+			if (!title) return "Unknown";
 		if (category === "movies" && /^(?:title|listingTitle|itemTitle|movieTitle|boxSetName|seriesName)$/i.test(key)) {
       const selectedTitle = (listing.metadataScoreAwards ?? [])
         .filter((award) => rankingAwardFieldKey(award.field, category, targetItemTypeValue('')) === rankingAwardFieldKey(key, category, targetItemTypeValue('')))
