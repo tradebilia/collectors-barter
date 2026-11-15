@@ -132,7 +132,11 @@ export function videoGamePlatformComparable(value: unknown): string {
   const registryEntry = resolveVideoGameConsole(value);
   if (registryEntry) {
     if (compact(registryEntry.shortName) === 'nes') return 'nes';
-    return compact(registryEntry.fullName.replace(/^(?:Nintendo|Sony|Microsoft|Sega|Atari|NEC|SNK|Panasonic|Philips|Commodore)\s+/i, ''));
+    const registryLabel = registryEntry.fullName.replace(/^(?:Nintendo|Sony|Microsoft|Sega|Atari|NEC|SNK|Panasonic|Philips|Commodore)\s+/i, '');
+    const canonicalKey = Object.entries(VIDEO_GAME_PLATFORM_ALIASES).find(([, aliases]) =>
+      aliases.includes(compact(registryEntry.shortName)) || aliases.includes(compact(registryLabel)),
+    )?.[0];
+    return canonicalKey ?? compact(registryLabel);
   }
   const normalized = compact(value);
   for (const [canonical, aliases] of Object.entries(VIDEO_GAME_PLATFORM_ALIASES)) {

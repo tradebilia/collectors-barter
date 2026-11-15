@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { videoGamePlatformFromTitle } from "../shared/testAiMetadataConflict";
+import {
+  videoGamePlatformComparable,
+  videoGamePlatformFromTitle,
+} from "../shared/testAiMetadataConflict";
 import { VIDEO_GAME_CONSOLE_MASTER_LIST } from "../shared/testAiVideoGameConsoleRegistry";
 import {
   buildMetadataFieldComparisons,
@@ -8,6 +11,16 @@ import {
 } from "./testAiVisualSourceFilter";
 
 describe("Video Games title-derived platform parsing", () => {
+  it("uses one canonical key for PS1 aliases in structured and title-derived evidence", () => {
+    expect(videoGamePlatformComparable("PS1")).toBe("ps1");
+    expect(videoGamePlatformComparable("Sony PlayStation 1")).toBe("ps1");
+    expect(
+      videoGamePlatformComparable(
+        videoGamePlatformFromTitle("Resident Evil 2 (PlayStation, 1998)")
+      )
+    ).toBe("ps1");
+  });
+
   it("loads the supplied console master list and preserves GBC aliases", () => {
     const gbc = VIDEO_GAME_CONSOLE_MASTER_LIST.find(entry => entry.shortName === "GBC");
     expect(VIDEO_GAME_CONSOLE_MASTER_LIST).toHaveLength(318);
