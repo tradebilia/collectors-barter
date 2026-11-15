@@ -3420,6 +3420,30 @@ describe("visual source filter", () => {
     expect(scored[1]?.metadataMatchRank).toBe(2);
   });
 
+  it("still scores a metadata-only Video Game when UPC evidence is missing", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1988 Super Mario Bros. 2 NES CIB WATA 8.0",
+      category: "video_games",
+      itemType: "game",
+      grade: "8.0",
+      certificationCompany: "WATA",
+      fullItemDetails: {
+        gameTitle: "Super Mario Bros. 2",
+        platform: "NES",
+        releaseYear: "1988",
+        completeInBox: "Yes",
+        upc: "0045496630386",
+      },
+    });
+    const [scored] = annotatePreVisualComparableScores([{
+      title: "1988 NES Nintendo Super Mario Bros. 2 (USA) CIB Video Game - WATA 8.0",
+    }], target);
+
+    expect(scored?.metadataMatchScore).toEqual(expect.any(Number));
+    expect(scored?.metadataMatchRank).toBe(1);
+    expect(scored?.metadataUnknownFields).toEqual(expect.arrayContaining(["UPC / EAN"]));
+  });
+
   it("uses recognized title-derived grade and grader evidence in universal ranking when structured values are unknown", () => {
     const target = buildVisualTargetMetadata({
       title: "Call of Duty: World at War Xbox 360",

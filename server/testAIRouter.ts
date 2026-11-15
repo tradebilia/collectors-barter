@@ -3287,7 +3287,11 @@ export const testAIRouter = router({
         imageUrl: visualSourceCandidateImage(record),
       }));
       const autographTarget = isAutographSignedItemTarget(targetMetadata);
-      const metadataOnlyGoldin = candidateRecords.map((record: any) => ({
+      // Goldin non-autograph records bypass image review, not metadata scoring.
+      // Missing Model/UPC evidence is a review/valuation concern, not a hard
+      // exclusion, so it must never turn the score into “unavailable”.
+      const scoredGoldinRecords = annotatePreVisualComparableScores(candidateRecords, targetMetadata);
+      const metadataOnlyGoldin = scoredGoldinRecords.map((record: any) => ({
           ...record,
           visualRequirement: autographTarget ? 'not_required_autograph_market_context' : 'not_required_goldin_metadata',
           visualReviewStatus: 'not_reviewed',
