@@ -195,6 +195,24 @@ describe('Sold-Comps API key validation', () => {
     expect(result.excluded).toHaveLength(0);
   });
 
+  it('ignores eBay New/Pre-Owned condition labels for Video Games when the route opts into the exemption', () => {
+    const result = assessSoldCompsPreVisionCandidates({
+      category: 'video_games',
+      targetMetadata: 'title=Metroid; category=video_games; itemType=game; condition=excellent; fullItemDetails={"gameTitle":"Metroid","platform":"NES","condition":"excellent"}',
+      targetPlatform: 'NES',
+      targetGameTitle: 'Metroid',
+      ignoreSubjectiveConditionDifferences: true,
+      listings: [{
+        title: 'Metroid Nintendo NES Complete In Box',
+        condition: 'New (Other)',
+        soldPrice: '299',
+        saleId: 'ebay-metroid-condition-regression',
+      }],
+    });
+    expect(result.eligible).toHaveLength(1);
+    expect(result.excluded).toHaveLength(0);
+  });
+
   it('sends candidates with omitted grade metadata to visual review while keeping explicit raw evidence out', () => {
     const result = assessSoldCompsPreVisionCandidates({
       category: 'video_games',

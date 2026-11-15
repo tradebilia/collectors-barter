@@ -3846,6 +3846,10 @@ export const testAIRouter = router({
           targetPlatform: input.category === 'video_games' ? resolveTestAiDetailValue(details, 'platform') : null,
           targetIsGraded: targetGrade !== null || Boolean(cert && grade),
           statedTradeValue: input.statedTradeValue,
+          // eBay's generic condition labels (for example New/Pre-Owned) are
+          // marketplace condition, not Video Games identity. This must be
+          // applied at the pre-visual gate as well as the later visual gate.
+          ignoreSubjectiveConditionDifferences: true,
         });
         const preVisionAuditLedger = preVisionAssessment.excluded.map(({ item, metadata, reasons }) => ({
           ...item,
