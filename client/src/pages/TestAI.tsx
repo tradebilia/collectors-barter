@@ -3419,9 +3419,12 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       {children}
     </PriceChartingVideoGameDataContext.Provider>
   </>;
-  return side === 'left' ? <TestAiItemAudit item={marketItem} displayItem={item} summary={summary} sources={auditSources}>
+  const runSummaryPriceChartingGuideData = item.category === 'video_games'
+    ? (priceChartingVideoGameUpc ? priceChartingVideoGameEvidenceData : priceChartingVideoGameCandidateEvidenceData)
+    : undefined;
+  return side === 'left' ? <TestAiItemAudit item={marketItem} displayItem={item} summary={summary} sources={auditSources} priceChartingGuideData={runSummaryPriceChartingGuideData}>
     {sourceDetails}
-  </TestAiItemAudit> : <><TestAiEvidenceReview item={item} side={side} summary={summary} sources={auditSources} />{sourceDetails}</>;
+  </TestAiItemAudit> : <><TestAiEvidenceReview item={item} side={side} summary={summary} sources={auditSources} priceChartingGuideData={runSummaryPriceChartingGuideData} />{sourceDetails}</>;
 }
 
 function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'left' | 'right' }) {

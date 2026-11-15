@@ -95,8 +95,8 @@ function itemAuditRequestError(error: unknown): string {
   return `Item A final audit request failed. ${detail} No final decision is available for this run.`;
 }
 
-export function TestAiItemAudit({ item, displayItem = item, summary, sources, children }: {
-  item: ItemAuditTarget; displayItem?: ItemAuditTarget; summary: NormalizedEvidenceSummary; sources: ItemAuditSource[]; children?: ReactNode;
+export function TestAiItemAudit({ item, displayItem = item, summary, sources, priceChartingGuideData, children }: {
+  item: ItemAuditTarget; displayItem?: ItemAuditTarget; summary: NormalizedEvidenceSummary; sources: ItemAuditSource[]; priceChartingGuideData?: any; children?: ReactNode;
 }) {
   const sourcePending = isItemAuditSourcePending(sources);
   const collectionLot = isCollectionLotItemType(item.itemType);
@@ -188,7 +188,7 @@ export function TestAiItemAudit({ item, displayItem = item, summary, sources, ch
       </div>}
     </section>
     <TestAiCandidateDisplayProvider side="item_a" outcome={current?.outcome} auditFailure={error}>
-      <TestAiEvidenceReview item={displayItem} side="left" summary={summary} sources={current?.sources ?? sources} />
+      <TestAiEvidenceReview item={displayItem} side="left" summary={summary} sources={current?.sources ?? sources} priceChartingGuideData={priceChartingGuideData} />
       {children}
     </TestAiCandidateDisplayProvider>
   </div>;

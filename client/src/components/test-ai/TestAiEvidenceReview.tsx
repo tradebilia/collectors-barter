@@ -119,9 +119,9 @@ function formatRunSummaryPrice(value: number | null): string {
   return value === null ? 'Not available' : `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
-export function TestAiEvidenceReview({ item, side, summary, sources }: {
+export function TestAiEvidenceReview({ item, side, summary, sources, priceChartingGuideData }: {
   item: { id?: number; title: string; category: string; itemType?: string | null; primaryPhotoUrl?: string | null };
-  side: 'left' | 'right'; summary: NormalizedEvidenceSummary; sources: EvidenceReviewSource[];
+  side: 'left' | 'right'; summary: NormalizedEvidenceSummary; sources: EvidenceReviewSource[]; priceChartingGuideData?: any;
 }) {
   const context = useTestAiCandidateDisplay();
   const scopeSide = side === 'left' ? 'item_a' : 'item_b';
@@ -144,6 +144,23 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
   const currentMarketPriceSummary = summarizeCurrentMarketPrices(currentMarketRows);
   const resolved = displayed.filter(row => row.valuationUse?.use?.code).length;
   const valuationNotRun = !context.outcome;
+  const guidePrices = priceChartingGuideData?.data?.detail?.prices
+    ?? priceChartingGuideData?.data?.compatibleCandidates?.[0]?.prices
+    ?? priceChartingGuideData?.data?.prices
+    ?? {};
+  const readGuidePrice = (aliases: string[]) => {
+    const entry = Object.entries(guidePrices as Record<string, unknown>).find(([key]) => aliases.includes(key.toLowerCase().replace(/[- ]/g, '_')));
+    const value = Number(entry?.[1]);
+    return Number.isFinite(value) && value > 0 ? value : null;
+  };
+  const videoGameGuideRows = item.category === 'video_games' ? [
+    ['Loose', readGuidePrice(['loose', 'loose_price', 'loose_value'])],
+    ['CIB', readGuidePrice(['cib', 'cib_price', 'complete_in_box', 'complete'])],
+    ['New', readGuidePrice(['new', 'new_price', 'new_value'])],
+    ['Graded', readGuidePrice(['graded', 'graded_new', 'graded_price', 'graded_value'])],
+    ['Box Only', readGuidePrice(['box_only', 'box_only_price'])],
+    ['Manual Only', readGuidePrice(['manual_only', 'manual_only_price'])],
+  ].filter(([, value]) => value !== null) as Array<[string, number]> : [];
   return <section className="space-y-4 rounded-xl border border-cyan-800/40 bg-slate-950/40 p-4" aria-label={`${scopeSide === 'item_a' ? 'Item A' : 'Item B'} evidence review`}>
     <header><h2 className="text-base font-semibold text-cyan-200">Evidence Review — candidate decisions</h2><p className="mt-1 text-xs text-slate-400">Each candidate has one outcome and its reason. Metadata and visual differences are available beneath each image pair.</p></header>
     <div className="rounded-lg border border-cyan-800/40 bg-slate-900/70 p-3" aria-label="Evidence review terminology key">
@@ -201,6 +218,11 @@ export function TestAiEvidenceReview({ item, side, summary, sources }: {
         </div>
         <p className="mt-1 text-[10px] text-slate-500">Prices use {historicSummary.count} final historic-context candidate{historicSummary.count === 1 ? '' : 's'} with a positive reported USD sold amount. Dates use the final normalized sale date; Unknown dates are omitted from the range{historicSummary.unknownSaleDateCount ? ` (${historicSummary.unknownSaleDateCount} Unknown)` : ''}. Matching sales over one year ago provide context only, not today’s value, and do not set the current valuation.</p>
       </div>
+      {videoGameGuideRows.length > 0 && <div className="mt-3 rounded border border-violet-800/50 bg-violet-950/20 p-2" aria-label="PriceCharting guide values">
+        <p className="text-xs font-semibold uppercase tracking-wide text-violet-200">PriceCharting Guide Values</p>
+        <p className="mt-1 text-[10px] text-violet-100/80">Current provider guide values for this video game. Guide context only — these are not sold comps, do not increase candidate counts, and do not replace completed-sale evidence.</p>
+        <div className="mt-2 grid grid-cols-2 gap-2 text-center sm:grid-cols-3 xl:grid-cols-6">{videoGameGuideRows.map(([label, value]) => <div key={label}><p className="text-sm font-semibold text-violet-100">{formatRunSummaryPrice(value)}</p><p className="text-[10px] text-slate-400">{label}</p></div>)}</div>
+      </div>}
       {valuationNotRun ? <p className="mt-2 text-xs text-amber-200">Final valuation analysis has not run yet; current valuation counts are 0.</p> : resolved < displayed.length && <p className="mt-2 text-xs text-amber-200">{displayed.length - resolved} candidate decisions have no resolved final valuation record; their cards explain what is known.</p>}</div>
     </div>
     <div aria-label="Evidence review candidate results" className="space-y-4">

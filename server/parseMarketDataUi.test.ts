@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const testAiSource = readFileSync(resolve(process.cwd(), 'client/src/pages/TestAI.tsx'), 'utf8');
+const evidenceReviewSource = readFileSync(resolve(process.cwd(), 'client/src/components/test-ai/TestAiEvidenceReview.tsx'), 'utf8');
 
 describe('Test AI Parse provider controls', () => {
   it('lists SGC, PriceCharting, and 130point as live Parse data sources', () => {
@@ -56,7 +57,7 @@ describe('Test AI Parse provider controls', () => {
   it('makes the PriceCharting product page explicit and discloses an identity-only video-game response', () => {
     expect(testAiSource).toContain('Open full PriceCharting product page ↗');
     expect(testAiSource).toContain('Verified game identity; provider price details unavailable');
-    expect(testAiSource).toContain('condition prices, sales volume, or separate Loose, CIB, New, Graded New, Box Only, and Manual Only sold-listing groups');
+    expect(evidenceReviewSource).toContain('Current provider guide values for this video game.');
     expect(testAiSource).toContain('Tradebilia does not bypass PriceCharting access controls.');
     expect(testAiSource).toContain('PriceCharting identity context only — no condition-price, sales-volume, or historical-sale data was returned, and nothing can enter Tradebilia valuation.');
     expect(testAiSource).toContain('const hasPriceFields = priceEntries.length > 0;');
@@ -64,7 +65,7 @@ describe('Test AI Parse provider controls', () => {
 
   it('uses only exact certified-grade PriceCharting coin values as a capped analyzer guide', () => {
     expect(testAiSource).toContain("import { selectExactPriceChartingCoinGuide } from '@shared/priceChartingCoinGuide'");
-    expect(testAiSource).toContain("role: priceChartingCoinGuide ? 'valuation_guide' : 'asking_price_context'");
+    expect(testAiSource).toContain("role: priceChartingCoinGuide || priceChartingVideoGameGuide ? 'valuation_guide' : 'asking_price_context'");
     expect(testAiSource).toContain('guideValue: priceChartingCoinGuide?.value');
     expect(testAiSource).toContain('Video Game Guide Values');
     expect(testAiSource).toContain('server-verified selected guide value may be used as a provisional fallback');
