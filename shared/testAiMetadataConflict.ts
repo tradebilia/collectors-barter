@@ -95,6 +95,33 @@ const VIDEO_GAME_PLATFORM_ALIASES: Record<string, string[]> = {
   atari_2600: ['atari2600'],
 };
 
+const VIDEO_GAME_PLATFORM_LABELS: Record<string, string> = {
+  nes: 'NES', snes: 'SNES', n64: 'Nintendo 64', gamecube: 'GameCube', wii_u: 'Wii U', wii: 'Wii',
+  switch: 'Nintendo Switch', gb: 'Game Boy', gba: 'Game Boy Advance', ds: 'Nintendo DS', '3ds': 'Nintendo 3DS',
+  ps1: 'PlayStation', ps2: 'PlayStation 2', ps3: 'PlayStation 3', ps4: 'PlayStation 4', ps5: 'PlayStation 5',
+  xbox: 'Xbox', xbox_360: 'Xbox 360', xbox_one: 'Xbox One', xbox_series: 'Xbox Series', genesis: 'Sega Genesis',
+  saturn: 'Sega Saturn', dreamcast: 'Dreamcast', game_gear: 'Game Gear', atari_2600: 'Atari 2600',
+};
+
+function titlePlatformMatches(value: unknown): string[] {
+  const normalized = compact(value);
+  if (!normalized) return [];
+  return Object.entries(VIDEO_GAME_PLATFORM_ALIASES)
+    .flatMap(([canonical, aliases]) => aliases
+      .filter(alias => alias !== 'nintendo' && normalized.includes(alias))
+      .map(alias => ({ canonical, alias })))
+    .sort((left, right) => right.alias.length - left.alias.length)
+    .map(({ canonical }) => canonical);
+}
+
+/** Resolves the platform actually stated by a Video Games title. Parenthetical platform text wins over series/branding text. */
+export function videoGamePlatformFromTitle(title: unknown): string | null {
+  const raw = String(title ?? '');
+  const parenthetical = [...raw.matchAll(/\(([^)]*)\)/g)].flatMap(match => titlePlatformMatches(match[1]));
+  const canonical = parenthetical[0] ?? titlePlatformMatches(raw)[0];
+  return canonical ? VIDEO_GAME_PLATFORM_LABELS[canonical] ?? canonical : null;
+}
+
 export function videoGamePlatformComparable(value: unknown): string {
   const normalized = compact(value);
   for (const [canonical, aliases] of Object.entries(VIDEO_GAME_PLATFORM_ALIASES)) {

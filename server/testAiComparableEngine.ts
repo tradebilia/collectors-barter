@@ -5,7 +5,7 @@ import { isVerifiedGuideAnchor } from './testAiGuideEvidence';
 import { TEST_AI_VALUE_UNAVAILABLE_MESSAGE, nullableTestAiPrice, type GuideValueAnchor } from '../shared/testAiEvidenceNormalization';
 import { hasVerifiedHistoricSaleEconomics } from './testAiHistoricMarketContext';
 import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
-import { autographAuthenticationCompaniesEquivalent, videoGamePlatformComparable } from '../shared/testAiMetadataConflict';
+import { autographAuthenticationCompaniesEquivalent, videoGamePlatformComparable, videoGamePlatformFromTitle } from '../shared/testAiMetadataConflict';
 import { normalizeAutographAuthenticator, findAutographAuthenticatorInText } from '../shared/testAiAutographAuthentication';
 import { getVerifiedIdentityApproval, hasVerifiedMercariUndatedSale, transferVerifiedIdentityApproval, verifyCanonicalObservation } from './testAiCanonicalObservation';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
@@ -1061,6 +1061,8 @@ function platformKey(value: string | null | undefined): string | null {
 
 function platformsInTitle(title: string): string[] {
   const normalizedTitle = ` ${normalizedIdentityText(title)} `;
+  const explicitPlatform = videoGamePlatformFromTitle(title);
+  if (explicitPlatform) return [platformKey(explicitPlatform)!];
   const matches = Object.entries(PLATFORM_LABELS)
     .filter(([key, aliases]) => {
       if (key === 'wii' && normalizedTitle.includes(' wii u ')) return false;

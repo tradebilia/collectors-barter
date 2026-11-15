@@ -1,7 +1,7 @@
 import { invokeLLM, type ImageContent, type TextContent, type LlmProvider } from "./_core/llm";
 import { parseAnalyzerResponse } from "./testAiResponse";
 import { diagnoseVisualResponse } from "../shared/testAiVisualFailure";
-import { autographAuthenticationCompaniesEquivalent, findMaterialMetadataConflicts, metadataConflictReviewReason, videoGamePlatformComparable } from "../shared/testAiMetadataConflict";
+import { autographAuthenticationCompaniesEquivalent, findMaterialMetadataConflicts, metadataConflictReviewReason, videoGamePlatformComparable, videoGamePlatformFromTitle } from "../shared/testAiMetadataConflict";
 import { findAutographAuthenticatorInText, normalizeAutographAuthenticator } from "../shared/testAiAutographAuthentication";
 import { buildSoldReviewBudget } from "../shared/testAiSalesEvidencePolicy";
 import {
@@ -2679,10 +2679,14 @@ function comparisonTitleDerivedValue(listing: VisualSourceCandidate, key: string
         return state ? `${state} (detected in title)` : "Unknown";
       }
     }
-    if (category === "video_games" && /^(?:workingCondition|functionality)$/i.test(key)) {
-      const state = title.match(/\b(?:working|tested|untested|non[- ]?working|for\s+parts)\b/i)?.[0];
-      return state ? `${state} (detected in title)` : "Unknown";
-    }
+		if (category === "video_games" && /^(?:workingCondition|functionality)$/i.test(key)) {
+			const state = title.match(/\b(?:working|tested|untested|non[- ]?working|for\s+parts)\b/i)?.[0];
+			return state ? `${state} (detected in title)` : "Unknown";
+		}
+		if (category === "video_games" && /^(?:platform|console|system|compatiblePlatform|compatibleSystem)$/i.test(key)) {
+			const platform = videoGamePlatformFromTitle(title);
+			return platform ? `${platform} (detected in title)` : "Unknown";
+		}
     if (category === "disney_pins") {
       if (/^(?:pinTradingEvent|tradingEvent|event)$/i.test(key)) {
         const event = title.match(/\b(?:D23|Disneyland|Disney\s+World|EPCOT)\b/i)?.[0];
@@ -3562,6 +3566,10 @@ function videoGameCandidateValue(listing: VisualSourceCandidate, aliases: string
   const structured = candidateMetadataValue(listing, details, aliases);
   if (structured) return structured;
   const title = canonicalCandidateTitle(listing);
+  if (aliases.some(alias => /^(?:platform|console|system|compatiblePlatform|compatibleSystem)$/i.test(alias))) {
+    const titlePlatform = videoGamePlatformFromTitle(title);
+    if (titlePlatform) return titlePlatform;
+  }
   for (const pattern of patterns) {
     const match = title.match(pattern);
     if (match?.[1]) return match[1];
@@ -5370,6 +5378,10 @@ function scoreCandidateEvidence(listing: VisualSourceCandidate, aliases: string[
     if (value) return { value, source: 'structured', field: alias };
   }
   const title = canonicalCandidateTitle(listing);
+  if (aliases.some(alias => /^(?:platform|console|system|compatiblePlatform|compatibleSystem)$/i.test(alias))) {
+    const titlePlatform = videoGamePlatformFromTitle(title);
+    if (titlePlatform) return { value: titlePlatform, source: 'title', field: aliases[0] ?? 'platform' };
+  }
   for (const pattern of patterns) {
     const match = title.match(pattern);
     const value = match?.[1] || (!options.captureOnly ? match?.[0] : '');
