@@ -111,7 +111,7 @@ const fixtures: Fixture[] = [
   fixture({ name: "Video game", category: "video_games", itemType: "game", scorer: videoGameGameVisualScore,
     title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard CIB Sealed PSA 9.8", grade: "9.8", grader: "PSA", isGraded: "Yes",
     details: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: "1990", region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "Yes", upc: "123456789012" },
-    weights: { gameTitle: 20, platform: 20, releaseYear: 15, region: 10, edition: 5, completeInBox: 5, isGraded: 5, gradingCompany: 5, grade: 5, upcEan: 5 }, expected: 95 }),
+    weights: { gameTitle: 25, platform: 20, releaseYear: 15, region: 10, edition: 5, completeInBox: 5, isGraded: 5, gradingCompany: 5, grade: 5, upcEan: 5 }, expected: 100 }),
   fixture({ name: "Video console", category: "video_games", itemType: "console", scorer: videoGameConsoleVisualScore,
     title: "Nintendo NES NES-001 Working NTSC-U", isGraded: "No",
     details: { consoleName: "NES", modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" },

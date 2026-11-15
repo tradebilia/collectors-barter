@@ -859,7 +859,7 @@ describe("visual source filter", () => {
   it("scores Video Games / Game, Console, and Accessory independently", () => {
     const gameTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", isGraded: "No", fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "No", upc: "123456789012" } });
     const gameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard CIB", isGraded: "No", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "No", upc: "123456789012" }) }, gameTarget);
-    expect(gameScore.score).toBe(95);
+    expect(gameScore.score).toBe(100);
     expect(gameScore.awards.find(award => award.field === 'isGraded')?.awardedPoints).toBe(15);
     expect(gameScore.awards.some(award => ['grade', 'gradingCompany'].includes(award.field))).toBe(false);
     expect(gameScore.matched).toEqual(expect.arrayContaining(["gameTitle", "platform", "releaseYear", "region", "edition", "isGraded", "upcEan"]));
@@ -868,11 +868,11 @@ describe("visual source filter", () => {
 
     const gradedGameTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", isGraded: "Yes", grade: "9.8", certificationCompany: "PSA", fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "No", upc: "123456789012" } });
     const gradedGameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard CIB PSA 9.8", isGraded: "Yes", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "No", upc: "123456789012" }) }, gradedGameTarget);
-    expect(gradedGameScore.score).toBe(95);
+    expect(gradedGameScore.score).toBe(100);
     expect(gradedGameScore.matched).toEqual(expect.arrayContaining(["gradingCompany", "grade"]));
 
     const structuredGradedGameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES CIB", gradingCompany: "PSA", grade: "9.8", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "No", upc: "123456789012" }) }, gradedGameTarget);
-    expect(structuredGradedGameScore.score).toBe(95);
+    expect(structuredGradedGameScore.score).toBe(100);
 
     const ungradedCandidateAgainstUngradedTarget = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard", isGraded: "No", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gameTarget);
     const gradedCandidateAgainstUngradedTarget = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard PSA 9.8", isGraded: "Yes", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gameTarget);

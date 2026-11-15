@@ -24,7 +24,7 @@ describe('Stage 4 actual metadata comparison table renders honest awarded source
       const target = buildVisualTargetMetadata({ title: 'Representative item', category, itemType, fullItemDetails: {} });
       const rows = buildMetadataFieldComparisons(target, { title: 'Unrelated listing' });
       const potential = rows.reduce((sum, row) => sum + Number(row.rankingContribution?.potentialPoints ?? 0), 0);
-      expect(potential, `${category}/${itemType}`).toBe(category === 'video_games' && itemType === 'game' ? 95 : 100);
+      expect(potential, `${category}/${itemType}`).toBe(100);
     }
   });
 

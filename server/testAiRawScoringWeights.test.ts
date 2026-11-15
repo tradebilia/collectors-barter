@@ -93,11 +93,11 @@ describe('actual raw-score diagnostics and source separation', () => {
     expect(gradingAwards(videoGameGameVisualScore(candidate, metadata))).toEqual([]);
     expect(withMetadataFieldComparisons(metadata, candidate).metadataFieldComparisons.find(field => field.fieldKey === 'isGraded')).toMatchObject({ titleDerivedValue: 'Unknown' });
   });
-  it('keeps a complete explicitly raw Video Game within the approved 95-point accounting', () => {
+  it('keeps a complete explicitly raw Video Game within the restored 100-point accounting', () => {
     const details = { gameTitle: 'Metroid', platform: 'NES', releaseYear: '1986', region: 'NTSC-U', edition: 'Standard', sealed: 'Yes', completeInBox: 'Yes', upc: '123456789012', isGraded: 'No' };
     const metadata = buildVisualTargetMetadata({ title: 'Metroid', category: 'video_games', itemType: 'game', fullItemDetails: details });
     const result = videoGameGameVisualScore({ title: 'Metroid', ...details }, metadata);
-    expect(result.score).toBe(95); expect(gradingAwards(result)).toMatchObject([{ field: 'isGraded', awardedPoints: 15 }]); accounting(result);
+    expect(result.score).toBe(100); expect(gradingAwards(result)).toMatchObject([{ field: 'isGraded', awardedPoints: 15 }]); accounting(result);
   });
   it('a raw score has identical relevance for Active and sold rows but creates no financial facts', () => {
     const active = Object.freeze({ title: 'Tangible Collectible', isGraded: 'No', source: 'eBay Active', saleStatus: 'active', price: 100 });
