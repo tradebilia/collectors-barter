@@ -94,6 +94,10 @@ function uniqueReasons(values: Array<string | null | undefined>): string[] {
   return [...new Set(values.map((value) => String(value ?? '').trim()).filter(Boolean))].slice(0, 20);
 }
 
+function isHistoricalAgeReason(reason: string): boolean {
+  return /(?:sale date is older than one year|sale is outside the current-date policy window|outside the current date policy window)/i.test(reason.trim());
+}
+
 export type MarketEvidenceDecision = {
   sale: MarketSale;
   valuationEligible: boolean;
@@ -168,7 +172,12 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     && statedTradeValue >= 0 ? statedTradeValue : undefined, price ?? NaN);
   const highValuePriceConflict = priceSafety.applies && priceSafety.status !== 'accepted';
   const inputReasons = Array.isArray(trustedInput.evidenceReasons) ? trustedInput.evidenceReasons.map((reason) => safeText(reason, 300)).filter((reason): reason is string => Boolean(reason)) : [];
+  const ageOnlyHistoricalContext = trustedInput.evidenceDisposition === 'context_only'
+    && dateInfo.recency === 'historical'
+    && inputReasons.length > 0
+    && inputReasons.every(isHistoricalAgeReason);
   const restrictiveInputDisposition = RESTRICTIVE_DISPOSITIONS.has(trustedInput.evidenceDisposition as NonNullable<MarketSale['evidenceDisposition']>)
+    && !ageOnlyHistoricalContext
     ? trustedInput.evidenceDisposition
     : null;
   const reasons = [...inputReasons, ...verification.reasons].filter((reason) => !mercariSourceIdentityMissing

@@ -236,16 +236,17 @@ describe('Stage 5 actual final-use reporting — real synthetic pipeline', () =>
   it('routes a valid old sale with a source context label to Historic Market Context, not hard exclusion', () => {
     const oldSale = signed(680, {
       date: '2024-01-15T00:00:00.000Z',
-      evidenceDisposition: 'valuation_eligible',
-      evidenceReasons: [],
-    }, true);
+      evidenceDisposition: 'context_only',
+      evidenceReasons: ['The item looks like a match, but the sale is outside the current-date policy window.'],
+    }, false);
     const sales = normalized([oldSale]);
     const profile = buildMarketProfile(target, sales, null, now);
     const comparable = profile.comparables[0];
     expect(comparable.valuationUse?.sourceAdmission).toMatchObject({
       historicMarketContextEligible: true,
-      verifiedSourceDisposition: 'valuation_eligible',
+      verifiedSourceDisposition: 'context_only',
     });
+    expect(comparable.score).toBeGreaterThan(0);
     expect(comparable.valuationUse?.use.code).toBe('HISTORIC_MARKET_CONTEXT');
     expect(comparable.valuationUse?.use.code).not.toBe('FINAL_HARD_EXCLUDED');
     expect(population(profile.finalUseReport, 'historic_market_context').count).toBe(1);
