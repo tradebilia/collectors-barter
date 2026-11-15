@@ -3065,7 +3065,8 @@ export function buildMetadataFieldComparisons(targetMetadata: string, listing: V
                 ? structuredStatus
               : category === 'disney_pins' && /^(?:condition|mediaCondition)$/i.test(key) && structuredStatus === 'different'
 	                ? 'soft_difference'
-	                : structuredStatus === 'different' ? 'different' : titleDerivedStatus !== 'unknown' ? titleDerivedStatus : structuredStatus;
+                : structuredStatus === 'different' ? 'different' : titleDerivedStatus !== 'unknown' ? titleDerivedStatus : structuredStatus;
+
 						rows.push({
 						fieldKey: key,
           targetField: fieldLabel,
@@ -3131,7 +3132,9 @@ export function withMetadataFieldComparisons<T extends Record<string, any>>(targ
     metadataScoreAwards: mergedAwards,
   } as T : listing;
   const fresh = buildMetadataFieldComparisons(targetMetadata, projectionListing as VisualSourceCandidate);
-  const existing = existingComparisonRows.length ? existingComparisonRows as MetadataFieldComparison[] : fresh;
+  const existing = category === 'video_games'
+    ? fresh
+    : existingComparisonRows.length ? existingComparisonRows as MetadataFieldComparison[] : fresh;
   const canonicalComparisonKey = (field: string): string => movieContext
     && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(field) ? 'movieTitle' : normalizedFieldKey(field);
   const comparisonQuality = (row: MetadataFieldComparison): number => [row.targetValue, row.candidateValue, row.titleDerivedStatus === 'match' ? row.titleDerivedValue : ''].filter(value => meaningfulMetadataText(value)).length;

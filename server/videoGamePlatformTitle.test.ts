@@ -8,6 +8,7 @@ import {
   buildMetadataFieldComparisons,
   buildVisualTargetMetadata,
   videoGameGameVisualScore,
+  withMetadataFieldComparisons,
 } from "./testAiVisualSourceFilter";
 
 describe("Video Games title-derived platform parsing", () => {
@@ -99,5 +100,31 @@ describe("Video Games title-derived platform parsing", () => {
       titleDerivedValue: "Game Boy Advance (detected in title)",
       titleDerivedStatus: "match",
     });
+  });
+
+  it("shows PS1 as MATCH when the scorer awards the platform points", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Resident Evil 2 PS1",
+      category: "video_games",
+      itemType: "game",
+      fullItemDetails: { gameTitle: "Resident Evil 2", platform: "PS1" },
+    });
+    const row = withMetadataFieldComparisons(target, {
+      title: "Resident Evil 2 (Sony PlayStation 1, 1998) Complete PS1",
+      platform: "Sony PlayStation 1",
+      metadataFieldComparisons: [{
+        fieldKey: "platform",
+        targetField: "Platform",
+        targetValue: "PS1",
+        candidateField: "Platform",
+        candidateValue: "Sony PlayStation 1",
+        status: "different",
+        titleDerivedField: "Platform (from title)",
+        titleDerivedValue: "PlayStation (detected in title)",
+        titleDerivedStatus: "different",
+      }],
+    }).metadataFieldComparisons.find(candidate => candidate.fieldKey === "platform");
+
+    expect(row).toMatchObject({ status: "match", titleDerivedStatus: "match" });
   });
 });
