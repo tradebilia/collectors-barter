@@ -860,7 +860,7 @@ describe("visual source filter", () => {
     const gameTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", isGraded: "No", fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "No", upc: "123456789012" } });
     const gameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard CIB", isGraded: "No", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "No", upc: "123456789012" }) }, gameTarget);
     expect(gameScore.score).toBe(100);
-    expect(gameScore.awards.find(award => award.field === 'isGraded')?.awardedPoints).toBe(15);
+    expect(gameScore.awards.find(award => award.field === 'isGraded')?.awardedPoints).toBe(20);
     expect(gameScore.awards.some(award => ['grade', 'gradingCompany'].includes(award.field))).toBe(false);
     expect(gameScore.matched).toEqual(expect.arrayContaining(["gameTitle", "platform", "releaseYear", "region", "edition", "isGraded", "upcEan"]));
     expect(gameScore.awards.find(award => award.field === 'edition')?.awardedPoints).toBe(5);
@@ -3441,7 +3441,32 @@ describe("visual source filter", () => {
 
     expect(scored?.metadataMatchScore).toEqual(expect.any(Number));
     expect(scored?.metadataMatchRank).toBe(1);
-    expect(scored?.metadataUnknownFields).toEqual(expect.arrayContaining(["UPC / EAN"]));
+    expect(scored?.metadataUnknownFields).toEqual(expect.arrayContaining(["upcEan"]));
+  });
+
+  it("weights graded state at 10 points and UPC/EAN at zero for Single Games", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1988 Super Mario Bros. 2 NES CIB WATA 8.0",
+      category: "video_games",
+      itemType: "game",
+      grade: "8.0",
+      certificationCompany: "WATA",
+      fullItemDetails: {
+        gameTitle: "Super Mario Bros. 2",
+        platform: "NES",
+        releaseYear: "1988",
+        completeInBox: "Yes",
+        upc: "0045496630386",
+      },
+    });
+    const [scored] = annotatePreVisualComparableScores([{
+      title: "1988 NES Nintendo Super Mario Bros. 2 (USA) CIB Video Game - WATA 8.0 UPC 0045496630386",
+    }], target);
+
+    expect(scored?.metadataScoreAwards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: "isGraded", awardedPoints: 10 }),
+      expect.objectContaining({ field: "upcEan", awardedPoints: 0 }),
+    ]));
   });
 
   it("uses recognized title-derived grade and grader evidence in universal ranking when structured values are unknown", () => {
