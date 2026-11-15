@@ -57,6 +57,8 @@ describe('Stage 2 actual client guide-target input binding', () => {
     expect(page).toContain('canSearchPriceChartingVideoGames ? { ...priceChartingVideoGameSearchInput, guideTarget: videoGameGuideTarget } : skipToken');
     expect(page).toContain('PriceChartingVideoGameDataContext.Provider value={item.category === \'video_games\' ? (priceChartingVideoGameUpc ? priceChartingVideoGameEvidenceData : priceChartingVideoGameCandidateEvidenceData) : undefined}');
     expect(page).toContain('const candidateSearchData = effectiveVideoGamePacket ?? videoGameCandidateQuery.data;');
+    expect(page).toContain('data: { ...selectedVideoGameCandidate, ...(candidateSearchData?.data?.detail ?? {}) }');
+    expect(page).toContain('returnedRecordCount: videoGameCandidateCount');
   });
 
   it('uses the PriceCharting-specific edition primary and title/platform fallback in Query Trace', () => {

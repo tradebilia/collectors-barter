@@ -4788,10 +4788,29 @@ export const testAIRouter = router({
       const result = await searchPriceChartingVideoGames(input);
       const selected = result.status === 'success' && result.data && !result.data.selectionRequired
         ? result.data.compatibleCandidates?.[0] ?? null : null;
-      const guide = input.guideTarget && selected
-        ? priceChartingVideoGameGuideQuote({ ...selected, status: 'success', query: result.query }, input.guideTarget)
-        : { guideAnchor: null, guideWarnings: selected ? ['A bound Video Game target is required for fallback guide provenance.'] : [] };
-      return { ...result, ...guide };
+      const associatedUpc = selected?.associatedUpcs
+        ?.map((value: unknown) => String(value).replace(/\D/g, ''))
+        .find((value: string) => /^\d{8,14}$/.test(value)) ?? null;
+      const detail = associatedUpc ? await lookupPriceChartingVideoGame(associatedUpc) : null;
+      const guide = input.guideTarget && detail?.status === 'success'
+        ? priceChartingVideoGameGuideQuote(detail, input.guideTarget)
+        : input.guideTarget && selected
+          ? { guideAnchor: null, guideWarnings: ['The selected PriceCharting candidate had no usable associated UPC for its detail lookup.'] }
+          : { guideAnchor: null, guideWarnings: [] };
+      const detailMessage = selected && !detail
+        ? 'The selected PriceCharting candidate was identified, but no associated UPC was available for its condition-price detail lookup.'
+        : detail?.status === 'error' ? detail.message : null;
+      return {
+        ...result,
+        data: result.data ? {
+          ...result.data,
+          selectedCandidate: selected,
+          detail: detail?.data ?? null,
+          detailStatus: detail?.status ?? 'not_requested',
+          detailMessage,
+        } : result.data,
+        ...guide,
+      };
     }),
   getPriceChartingCardDetail: protectedProcedure
     .input(z.object({ setSlug: z.string().trim().min(1).max(180), cardSlug: z.string().trim().min(1).max(240) }))

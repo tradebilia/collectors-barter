@@ -2107,7 +2107,7 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
   const effectiveMoversData = moversData ?? moversQuery.data;
   const selectedVideoGameData = selectedVideoGameCandidate ? {
     status: 'success' as const,
-    data: selectedVideoGameCandidate,
+    data: { ...selectedVideoGameCandidate, ...(candidateSearchData?.data?.detail ?? {}) },
     guideAnchor: candidateSearchData?.guideAnchor ?? null,
     guideWarnings: candidateSearchData?.guideWarnings ?? [],
   } : null;
@@ -3279,16 +3279,20 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         : null;
       const priceData = priceChartingEvidence;
       const marketMoverCount = priceChartingMoversEvidenceData?.data?.movers?.length ?? 0;
-      const priceFields = (automaticPriceChartingGameCandidate ?? priceData?.data ?? {}) as Record<string, any>;
+      const candidateDetail = priceChartingVideoGameCandidateEvidenceData?.data?.detail ?? {};
+      const priceFields = (item.category === 'video_games'
+        ? { ...(automaticPriceChartingGameCandidate ?? {}), ...candidateDetail }
+        : (priceData?.data ?? {})) as Record<string, any>;
       const priceChartingCoinGuide = item.category === 'coins'
         ? selectExactPriceChartingCoinGuide({ category: item.category, grade: item.grade, prices: priceFields.prices })
-        : (item.category === 'video_games' ? (priceData as any)?.guideAnchor ?? null : null);
-      const priceChartingVideoGameGuide = item.category === 'video_games' ? (priceData as any)?.guideAnchor ?? null : null;
+        : (item.category === 'video_games' ? (priceChartingVideoGameCandidateEvidenceData as any)?.guideAnchor ?? null : null);
+      const priceChartingVideoGameGuide = item.category === 'video_games' ? (priceChartingVideoGameCandidateEvidenceData as any)?.guideAnchor ?? null : null;
+      const videoGameCandidateCount = item.category === 'video_games' ? priceChartingVideoGameCandidateEvidenceData?.data?.compatibleCandidates?.length ?? 0 : 0;
       add({
         id: 'pricecharting',
         label: 'PriceCharting',
         kind: 'market_current',
-        role: priceChartingCoinGuide ? 'valuation_guide' : 'asking_price_context',
+        role: priceChartingCoinGuide || priceChartingVideoGameGuide ? 'valuation_guide' : 'asking_price_context',
         status: evidenceStatus(item.category === 'video_games' && !priceChartingVideoGameUpc ? priceChartingVideoGameCandidateEvidenceData : priceData),
         fields: {
           cardName: priceFields.name,
@@ -3303,8 +3307,9 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
           guideMatchType: priceChartingCoinGuide?.matchType,
           ...guideAnchorFields(item.category === 'coins' ? priceChartingCoinEvidenceData?.guideAnchor : priceChartingVideoGameGuide),
         },
+        market: item.category === 'video_games' ? { returnedRecordCount: videoGameCandidateCount, completedSaleCount: 0, analyzerSubmittedSaleCount: 0 } : undefined,
         message: item.category === 'video_games' && !priceChartingVideoGameUpc
-          ? priceChartingVideoGameCandidateEvidenceData?.data?.selectionMessage ?? priceChartingVideoGameCandidateEvidenceData?.message ?? null
+          ? [priceChartingVideoGameCandidateEvidenceData?.data?.selectionMessage, priceChartingVideoGameCandidateEvidenceData?.data?.detailMessage, priceChartingVideoGameCandidateEvidenceData?.message].filter(Boolean).join(' ') || null
           : priceData?.message ?? priceChartingMoversEvidenceData?.message ?? null,
       });
     }

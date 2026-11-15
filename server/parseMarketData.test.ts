@@ -112,6 +112,17 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect(fetchMock.mock.calls[0][0]).toContain('/lookup_video_game_by_upc?upc=045496630025');
   });
 
+  it('uses the selected candidate associated UPC to retrieve Loose, CIB, New, and Graded guide tiers', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: {
+      title: 'Call of Duty: World at War', platform: 'Xbox 360', pricecharting_id: '1234',
+      upcs: ['008888888888'], prices: { loose: 12, cib: 24, new: 48, graded: 96 },
+    } }) });
+    global.fetch = fetchMock as typeof fetch;
+    const result = await lookupPriceChartingVideoGame('008888888888', { PARSE_BOT_API_KEY: 'configured-key' });
+    expect(result.data?.prices).toEqual({ loose: 12, cib: 24, new: 48, graded: 96 });
+    expect(fetchMock.mock.calls[0][0]).toContain('/lookup_video_game_by_upc?upc=008888888888');
+  });
+
   it('uses the authorized bounded title-and-platform endpoint and keeps edition candidates out of automatic selection', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { results: [
       { title: 'Super Mario Bros 3', platform: 'NES', platform_slug: 'nes', game_slug: 'super-mario-bros-3', pricecharting_id: '9891', associated_upcs: ['045496630094'], prices: { cib: 80 } },
