@@ -49,4 +49,13 @@ describe('Stage 2 actual client guide-target input binding', () => {
     expect(page).toContain('...guideTargetInput(marketItem)');
     expect(page).toContain('return buildCoinGuideLookupInput(item, valuationTarget)');
   });
+
+  it('binds the Video Game evidence query and reuses its packet in the visible PriceCharting section', () => {
+    const page = readFileSync(new URL('../client/src/pages/TestAI.tsx', import.meta.url), 'utf8');
+    expect(page).toContain('const videoGameGuideTarget = useMemo(() => guideTargetInput(marketItem), [marketItem]);');
+    expect(page).toContain('getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc, guideTarget: videoGameGuideTarget } : skipToken');
+    expect(page).toContain('canSearchPriceChartingVideoGames ? { ...priceChartingVideoGameSearchInput, guideTarget: videoGameGuideTarget } : skipToken');
+    expect(page).toContain('PriceChartingVideoGameDataContext.Provider value={item.category === \'video_games\' ? (priceChartingVideoGameUpc ? priceChartingVideoGameEvidenceData : priceChartingVideoGameCandidateEvidenceData) : undefined}');
+    expect(page).toContain('const candidateSearchData = effectiveVideoGamePacket ?? videoGameCandidateQuery.data;');
+  });
 });

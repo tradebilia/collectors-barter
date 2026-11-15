@@ -1,5 +1,5 @@
 import { TestAiRetrievalLadder } from '../components/TestAiRetrievalLadder';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { skipToken } from '@tanstack/react-query';
 import { trpc } from "@/lib/trpc";
 import { useTestAiContentState, useTestAiSourceDisplayData } from '@/hooks/useTestAiUiStability';
@@ -2054,6 +2054,8 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
   );
 }
 
+const PriceChartingVideoGameDataContext = createContext<any | undefined>(undefined);
+
 function PriceChartingSection({ item, side, cardData, coinData, videoGameData, slugData, moversData }: { item: SelectedItem; side: 'left' | 'right'; cardData?: any; coinData?: any; videoGameData?: any; slugData?: any; moversData?: any }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const details = useMemo(() => parseTestAiDetails(item.itemDetails), [item.itemDetails]);
@@ -2061,6 +2063,8 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
   const isVideoGame = normalizedCategory === 'video games';
   const isCoin = normalizedCategory === 'coins';
   const isPokemonOrTcg = normalizedCategory === 'pokemon';
+  const sharedVideoGameData = useContext(PriceChartingVideoGameDataContext);
+  const effectiveVideoGamePacket = videoGameData ?? sharedVideoGameData;
   const coinQueryInput = useMemo(() => buildPriceChartingCoinInput(item), [item]);
   const hasCoinQueryInput = isPriceChartingCoinSearchReady(coinQueryInput);
   const coinQuery = trpc.testAI.getPriceChartingCoinData.useQuery(coinQueryInput, { enabled: isCoin && hasCoinQueryInput, retry: false, staleTime: 0, refetchOnMount: 'always' });
@@ -2071,12 +2075,12 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
   }), [details, item.title]);
   const videoGameGuideTarget = useMemo(() => guideTargetInput(item), [item]);
   const canSearchVideoGamesByTitle = videoGameSearchInput.query.length >= 2 && Boolean(videoGameSearchInput.platform);
-  const videoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc, guideTarget: videoGameGuideTarget } : skipToken, { enabled: isVideoGame && Boolean(priceChartingVideoGameUpc) });
+  const videoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(effectiveVideoGamePacket === undefined && priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc, guideTarget: videoGameGuideTarget } : skipToken, { enabled: isVideoGame && effectiveVideoGamePacket === undefined && Boolean(priceChartingVideoGameUpc) });
   const videoGameCandidateQuery = trpc.testAI.searchPriceChartingVideoGames.useQuery(
-    !priceChartingVideoGameUpc && canSearchVideoGamesByTitle ? { ...videoGameSearchInput, guideTarget: videoGameGuideTarget } : skipToken,
-    { enabled: isVideoGame && !priceChartingVideoGameUpc && canSearchVideoGamesByTitle, retry: false, staleTime: 0, refetchOnMount: 'always' },
+    effectiveVideoGamePacket === undefined && !priceChartingVideoGameUpc && canSearchVideoGamesByTitle ? { ...videoGameSearchInput, guideTarget: videoGameGuideTarget } : skipToken,
+    { enabled: isVideoGame && effectiveVideoGamePacket === undefined && !priceChartingVideoGameUpc && canSearchVideoGamesByTitle, retry: false, staleTime: 0, refetchOnMount: 'always' },
   );
-  const candidateSearchData = videoGameCandidateQuery.data;
+  const candidateSearchData = effectiveVideoGamePacket ?? videoGameCandidateQuery.data;
   const compatibleGameCandidates = useMemo(
     () => candidateSearchData?.data?.compatibleCandidates ?? [],
     [candidateSearchData?.data?.compatibleCandidates],
@@ -2101,7 +2105,7 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
   const moversQuery = trpc.testAI.getPriceChartingBigMovers.useQuery(undefined, { enabled: !!item.title });
   const effectiveCardData = cardData;
   const effectiveCoinData = coinData ?? coinQuery.data;
-  const effectiveVideoGameData = videoGameData ?? videoGameQuery.data;
+  const effectiveVideoGameData = effectiveVideoGamePacket ?? videoGameQuery.data;
   const effectiveSlugData = slugData ?? slugQuery.data;
   const effectiveMoversData = moversData ?? moversQuery.data;
   const selectedVideoGameData = selectedVideoGameCandidate ? {
@@ -2912,6 +2916,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const priceChartingCoinQueryInput = useMemo(() => buildPriceChartingCoinInput(item, marketItem), [item, marketItem]);
   const hasPriceChartingCoinQueryInput = isPriceChartingCoinSearchReady(priceChartingCoinQueryInput);
   const priceChartingVideoGameUpc = useMemo(() => getPriceChartingVideoGameUpc(item), [item]);
+  const videoGameGuideTarget = useMemo(() => guideTargetInput(marketItem), [marketItem]);
   const priceChartingVideoGameSearchInput = useMemo(() => ({
     query: String(details.gameTitle || details.videoGameTitle || details.title || item.title).trim(),
     platform: String(details.platform || details.console || details.system || '').trim() || undefined,
@@ -2957,9 +2962,9 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const igdbQuery = trpc.testAI.getIgdbGameMetadata.useQuery(catalogGameInput, { enabled: enabledSources.has('igdb') && item.category === 'video_games' && catalogGameInput.title.length >= 2 });
   const priceChartingQuery = trpc.testAI.getPriceChartingData.useQuery({ query: item.title }, { enabled: enabledSources.has('pricecharting') && item.category === 'pokemon' && !!item.title });
   const priceChartingCoinQuery = trpc.testAI.getPriceChartingCoinData.useQuery(priceChartingCoinQueryInput, { enabled: enabledSources.has('pricecharting') && item.category === 'coins' && hasPriceChartingCoinQueryInput, retry: false, staleTime: 0, refetchOnMount: 'always' });
-  const priceChartingVideoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc } : skipToken, { enabled: enabledSources.has('pricecharting') && item.category === 'video_games' && Boolean(priceChartingVideoGameUpc) });
+  const priceChartingVideoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc, guideTarget: videoGameGuideTarget } : skipToken, { enabled: enabledSources.has('pricecharting') && item.category === 'video_games' && Boolean(priceChartingVideoGameUpc) });
   const priceChartingVideoGameCandidateQuery = trpc.testAI.searchPriceChartingVideoGames.useQuery(
-    canSearchPriceChartingVideoGames ? priceChartingVideoGameSearchInput : skipToken,
+    canSearchPriceChartingVideoGames ? { ...priceChartingVideoGameSearchInput, guideTarget: videoGameGuideTarget } : skipToken,
     { enabled: enabledSources.has('pricecharting') && canSearchPriceChartingVideoGames, retry: false, staleTime: 0, refetchOnMount: 'always' },
   );
   const priceChartingSlugQuery = trpc.testAI.getPriceChartingCardDetail.useQuery(priceChartingSlugInput, { enabled: enabledSources.has('pricecharting') && item.category === 'pokemon' && priceChartingSlugInput.setSlug !== 'unavailable' && priceChartingSlugInput.cardSlug !== 'unavailable' });
@@ -3409,7 +3414,9 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       </select>
       <p className="mt-2 text-xs text-slate-400">Selection applies to this sandbox run only; Discogs is reference metadata, not valuation evidence.</p>
     </details>}
-    {children}
+    <PriceChartingVideoGameDataContext.Provider value={item.category === 'video_games' ? (priceChartingVideoGameUpc ? priceChartingVideoGameEvidenceData : priceChartingVideoGameCandidateEvidenceData) : undefined}>
+      {children}
+    </PriceChartingVideoGameDataContext.Provider>
   </>;
   return side === 'left' ? <TestAiItemAudit item={marketItem} displayItem={item} summary={summary} sources={auditSources}>
     {sourceDetails}
