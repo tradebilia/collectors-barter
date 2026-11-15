@@ -1619,7 +1619,12 @@ export function assessComparableCategoryIdentity(
       const platformConflict = observedPlatforms.length && !observedPlatforms.includes(targetPlatform) ? observedPlatforms.join(', ') : null;
       record('Platform', platform, observedPlatforms.includes(targetPlatform), platformConflict);
     }
-    record('Model / UPC', modelOrUpc, modelMatch.matches, modelMatch.conflict);
+    // Marketplace titles frequently omit UPC/model numbers. Missing evidence is
+    // unknown, not a category identity review blocker; an explicitly different
+    // code remains visible as a real conflict and stays fail-closed.
+    if (modelMatch.matches || modelMatch.conflict) {
+      record('Model / UPC', modelOrUpc, modelMatch.matches, modelMatch.conflict);
+    }
     if (targetForm !== 'unknown') {
       const objectConflict = candidateForm !== 'unknown' && candidateForm !== targetForm ? candidateForm : null;
       record('Object form', targetForm, candidateForm === targetForm, objectConflict);

@@ -253,6 +253,59 @@ describe('Stage 5 actual final-use reporting — real synthetic pipeline', () =>
     expect(population(profile.finalUseReport, 'primary_market_sales').count).toBe(0);
   });
 
+  it('scores a matched old Video Game without UPC and does not create a category review blocker', () => {
+    const videoGameTarget: ComparableTarget = {
+      title: '1988 Super Mario Bros. 2 NES CIB WATA 8.0',
+      category: 'video_games',
+      itemType: 'game',
+      grade: '8.0',
+      certificationCompany: 'WATA',
+      itemDetails: JSON.stringify({ gameTitle: 'Super Mario Bros. 2', platform: 'NES', releaseYear: '1988', completeInBox: 'Yes', upc: '0045496630386' }),
+    };
+    const comparable = scoreComparable(videoGameTarget, {
+      title: '1988 NES Nintendo Super Mario Bros. 2 (USA) CIB Video Game - WATA 8.0',
+      price: 750,
+      currency: 'USD',
+      date: '2024-01-15T00:00:00.000Z',
+      saleStatus: 'completed',
+      priceBasis: 'closed',
+      sourceId: 'goldin',
+      evidenceDisposition: 'context_only',
+    });
+
+    expect(comparable.score).toBeGreaterThan(0);
+    expect(comparable.accepted).toBe(true);
+    expect(comparable.identityAdmission?.blockerCodes).not.toContain('CATEGORY_REVIEW_REQUIRED');
+
+    const goldinSale: MarketSale = {
+      title: '1988 NES Nintendo Super Mario Bros. 2 (USA) CIB Video Game - WATA 8.0',
+      price: 750,
+      currency: 'USD',
+      date: '2024-01-15T00:00:00.000Z',
+      marketplace: 'Goldin',
+      originMarketplace: 'Goldin',
+      sourceId: 'goldin',
+      sourceAdapter: 'goldin',
+      saleId: 'goldin-mario-2',
+      url: 'https://goldin.co/item/goldin-mario-2',
+      saleStatus: 'completed',
+      completedStatusBasis: 'Goldin completed sold lot',
+      priceBasis: 'closed',
+      buyerPremium: 'included',
+      visualRequirement: 'not_required',
+      evidenceDisposition: 'context_only',
+      evidenceReasons: ['The item looks like a match, but the sale is outside the current-date policy window.'],
+    };
+    const sealed = sealCanonicalObservation('goldin', goldinSale, { acquiredAt: now, signingKey });
+    const normalizedGoldin = normalizeAnalysisMarketSale({ ...goldinSale, provenanceToken: sealed.provenanceToken, provenance: sealed.provenance }, now, {
+      signingKey,
+      target: videoGameTarget,
+      category: videoGameTarget.category,
+    }).sale;
+    const historicProfile = buildMarketProfile(videoGameTarget, [normalizedGoldin], null, now);
+    expect(historicProfile.comparables[0]?.valuationUse?.use.code).toBe('HISTORIC_MARKET_CONTEXT');
+  });
+
   it('emits normalizer blocker codes from actual Boolean terms, not rationale, preserving every submitted failure', () => {
     const cases: Array<[Partial<MarketSale>, string]> = [
       [{ currency: 'CAD' }, 'UNSUPPORTED_CURRENCY'], [{ currency: null }, 'UNKNOWN_CURRENCY'], [{ price: 0 }, 'INVALID_PRICE'],
