@@ -59,6 +59,18 @@ function isCurrentMarketContextCandidate(row: any): boolean {
   return decisionCode === 'ACTIVE_MARKET_CONTEXT_MATCH' || decisionCode === 'ACTIVE_MARKET_CONTEXT';
 }
 
+function currentMarketSourceInput(row: any) {
+  // Match candidateFinalDecision: sourceRole is the server-owned source role.
+  // A generic role can be a stale transport projection and must not override it.
+  return {
+    sourceId: row?.sourceId,
+    role: row?.sourceRole ?? row?.sourceRelevance?.role ?? row?.role,
+    kind: row?.kind,
+    saleStatus: row?.saleStatus,
+    priceBasis: row?.priceBasis,
+  };
+}
+
 function candidatePrice(row: any): number | null {
   for (const value of [row?.price, row?.soldPrice, row?.salePrice, row?.finalPrice, row?.transactionPrice, row?.currentPrice, row?.current_price, row?.amount]) {
     const raw = value && typeof value === 'object' ? value.value ?? value.amount ?? value.price : value;
@@ -87,13 +99,8 @@ export function summarizeUsedValuationPrices(rows: any[]): UsedValuationPriceSum
 }
 
 export function summarizeCurrentMarketPrices(rows: any[]): CurrentMarketPriceSummary {
-  const prices = rows.filter((row) => isCurrentMarketContextSource({
-    sourceId: row?.sourceId,
-    role: row?.role ?? row?.sourceRole,
-    kind: row?.kind,
-    saleStatus: row?.saleStatus,
-    priceBasis: row?.priceBasis,
-  }) && isCurrentMarketContextCandidate(row) && isUsdPrice(row)).map(candidatePrice).filter((price): price is number => price !== null);
+  const prices = rows.filter((row) => isCurrentMarketContextSource(currentMarketSourceInput(row))
+    && isCurrentMarketContextCandidate(row) && isUsdPrice(row)).map(candidatePrice).filter((price): price is number => price !== null);
   if (!prices.length) return { count: 0, low: null, high: null, average: null };
   return { count: prices.length, low: Math.min(...prices), high: Math.max(...prices), average: prices.reduce((total, price) => total + price, 0) / prices.length };
 }
@@ -134,13 +141,8 @@ export function TestAiEvidenceReview({ item, side, summary, sources, priceCharti
   const usedPriceSummary = summarizeUsedValuationPrices(displayed);
   const historicRows = displayed.filter(row => row.valuationUse?.use?.code === 'HISTORIC_MARKET_CONTEXT');
   const historicSummary = summarizeHistoricMarketContext(historicRows);
-  const currentMarketRows = displayed.filter(row => isCurrentMarketContextSource({
-    sourceId: row?.sourceId,
-    role: row?.role ?? row?.sourceRole,
-    kind: row?.kind,
-    saleStatus: row?.saleStatus,
-    priceBasis: row?.priceBasis,
-  }) && isCurrentMarketContextCandidate(row));
+  const currentMarketRows = displayed.filter(row => isCurrentMarketContextSource(currentMarketSourceInput(row))
+    && isCurrentMarketContextCandidate(row));
   const currentMarketPriceSummary = summarizeCurrentMarketPrices(currentMarketRows);
   const resolved = displayed.filter(row => row.valuationUse?.use?.code).length;
   const valuationNotRun = !context.outcome;

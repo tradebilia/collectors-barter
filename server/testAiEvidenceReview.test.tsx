@@ -99,6 +99,15 @@ describe('Evidence Review is the complete candidate decision view', () => {
       { sourceId: 'ebay_active', price: 24.99, currency: 'USD', saleStatus: 'active', visualReviewStatus: 'rough_match', visualExecution: { ...receipt, identity: { origin: 'visual', result: 'rough_match', reviewVerdict: 'rough_match' } } },
     ])).toEqual({ count: 2, low: 19.99, high: 24.99, average: 22.49 });
   });
+  it('uses the signed sourceRole when a stale generic role says the row is sold evidence', () => {
+    const active = {
+      sourceId: 'ebay_active', sourceRole: 'asking_price_context', role: 'completed_sale',
+      price: 29.99, currency: 'USD', saleStatus: 'active',
+      visualReviewStatus: 'match',
+      visualExecution: { ...receipt, identity: { origin: 'visual', result: 'match', reviewVerdict: 'match' } },
+    };
+    expect(summarizeCurrentMarketPrices([active])).toEqual({ count: 1, low: 29.99, high: 29.99, average: 29.99 });
+  });
   it('renders the current-market count and asking-price summary for active listings', () => {
     const html = review([{ id: 'ebay_active', label: 'eBay Active', packet: { listings: [{ title: 'Active listing', price: 19.99, currency: 'USD', saleStatus: 'active', visualReviewStatus: 'match', visualExecution: { ...receipt, identity: { origin: 'visual', result: 'match', reviewVerdict: 'match' } } }, { title: 'Unmatched active listing', price: 24.99, currency: 'USD', saleStatus: 'active', visualReviewStatus: 'mismatch' }] } }]);
     expect(html).toContain('Current market context');
