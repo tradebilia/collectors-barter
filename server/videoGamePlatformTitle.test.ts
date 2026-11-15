@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { videoGamePlatformFromTitle } from "../shared/testAiMetadataConflict";
+import { VIDEO_GAME_CONSOLE_MASTER_LIST } from "../shared/testAiVideoGameConsoleRegistry";
 import {
   buildMetadataFieldComparisons,
   buildVisualTargetMetadata,
@@ -7,6 +8,15 @@ import {
 } from "./testAiVisualSourceFilter";
 
 describe("Video Games title-derived platform parsing", () => {
+  it("loads the supplied console master list and preserves GBC aliases", () => {
+    const gbc = VIDEO_GAME_CONSOLE_MASTER_LIST.find(entry => entry.shortName === "GBC");
+    expect(VIDEO_GAME_CONSOLE_MASTER_LIST).toHaveLength(318);
+    expect(gbc).toMatchObject({
+      fullName: "Nintendo Game Boy Color",
+      aliases: expect.arrayContaining(["GameBoy Color", "Game Boy Colour", "CGB-001"]),
+    });
+  });
+
   it("prefers the explicit parenthetical Game Boy Advance platform over NES series branding", () => {
     expect(
       videoGamePlatformFromTitle(
@@ -19,6 +29,17 @@ describe("Video Games title-derived platform parsing", () => {
     expect(
       videoGamePlatformFromTitle("Nintendo NES Metroid Complete in Box")
     ).toBe("NES");
+  });
+
+  it("captures Game Boy Color as its own platform instead of the broader Game Boy family", () => {
+    expect(
+      videoGamePlatformFromTitle(
+        "Pokemon Silver Version GBC PSA 9.2 CIB 2000 Nintendo Game Boy Color"
+      )
+    ).toBe("Game Boy Color");
+    expect(
+      videoGamePlatformFromTitle("Pokemon Silver Version Nintendo Game Boy")
+    ).toBe("Game Boy");
   });
 
   it("uses the same platform evidence for scoring and the metadata breakdown", () => {

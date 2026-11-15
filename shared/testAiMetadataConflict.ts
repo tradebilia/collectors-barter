@@ -4,6 +4,7 @@ import { compareComparableGrades, findStructuredGradeConflict, parseSourceGradeF
 import { comparePokemonCardNumbers, parsePokemonCardNumber, readPokemonCardNumbersFromTitle } from './testAiPokemonCardNumber';
 import { parseToyNumericValue, extractToyNumericTitleEvidence, type ToyNumericField } from './testAiToyNumericEvidence';
 import { autographAuthenticatorsEquivalent } from './testAiAutographAuthentication';
+import { resolveVideoGameConsole, videoGameConsoleFromTitle } from './testAiVideoGameConsoleRegistry';
 
 export type MetadataConflict = {
   field: string;
@@ -117,12 +118,22 @@ function titlePlatformMatches(value: unknown): string[] {
 /** Resolves the platform actually stated by a Video Games title. Parenthetical platform text wins over series/branding text. */
 export function videoGamePlatformFromTitle(title: unknown): string | null {
   const raw = String(title ?? '');
+  const registryEntry = videoGameConsoleFromTitle(raw);
+  if (registryEntry) {
+    if (compact(registryEntry.shortName) === 'nes') return 'NES';
+    return registryEntry.fullName.replace(/^(?:Nintendo|Sony|Microsoft|Sega|Atari|NEC|SNK|Panasonic|Philips|Commodore)\s+/i, '');
+  }
   const parenthetical = [...raw.matchAll(/\(([^)]*)\)/g)].flatMap(match => titlePlatformMatches(match[1]));
   const canonical = parenthetical[0] ?? titlePlatformMatches(raw)[0];
   return canonical ? VIDEO_GAME_PLATFORM_LABELS[canonical] ?? canonical : null;
 }
 
 export function videoGamePlatformComparable(value: unknown): string {
+  const registryEntry = resolveVideoGameConsole(value);
+  if (registryEntry) {
+    if (compact(registryEntry.shortName) === 'nes') return 'nes';
+    return compact(registryEntry.fullName.replace(/^(?:Nintendo|Sony|Microsoft|Sega|Atari|NEC|SNK|Panasonic|Philips|Commodore)\s+/i, ''));
+  }
   const normalized = compact(value);
   for (const [canonical, aliases] of Object.entries(VIDEO_GAME_PLATFORM_ALIASES)) {
     if (aliases.includes(normalized)) return canonical;
