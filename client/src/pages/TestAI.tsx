@@ -23,7 +23,7 @@ import { testAiAnalysisLifecycleKey, isCurrentTestAiFinalRequest } from '@shared
 import { sourceRetainedDisplayGroups, sourceRetainedEmptyMessage, sourceEvidenceStatus, sourceEvidenceMessage, sourceVisualDisplayGroups, sourceReviewedGoldinSales, sourceRecordBucketLabel, sourceMetricDisplay, sourceRetrievalRows } from '@shared/testAiSourceDisplay';
 import { hasActualVisualResponse, formatCandidateDisplayPrice } from '@shared/testAiCandidateStatus';
 import { toast } from 'sonner';
-import { buildComicsOriginalArtQueries, buildStructuredItemQuery, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
+import { buildComicsOriginalArtQueries, buildPriceChartingVideoGameSearchInput, buildStructuredItemQuery, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { buildMarketplaceSearchDefinition } from '@shared/marketplaceSearchDefinition';
 import { getEligibleTestAiSources, TEST_AI_SOURCE_APPLICABILITY, type TestAiSourceId } from '@shared/testAiSourceApplicability';
 import { TEST_AI_VALUE_UNAVAILABLE_MESSAGE, nullableTestAiPrice, guideAnchorFields, normalizeTestAiEvidence, selectPreferredGuideAnchor, type AnalyzerRecordDetail, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
@@ -2069,10 +2069,7 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
   const hasCoinQueryInput = isPriceChartingCoinSearchReady(coinQueryInput);
   const coinQuery = trpc.testAI.getPriceChartingCoinData.useQuery(coinQueryInput, { enabled: isCoin && hasCoinQueryInput, retry: false, staleTime: 0, refetchOnMount: 'always' });
   const priceChartingVideoGameUpc = getPriceChartingVideoGameUpc(item);
-  const videoGameSearchInput = useMemo(() => ({
-    query: String(details.gameTitle || details.videoGameTitle || details.title || item.title).trim(),
-    platform: String(details.platform || details.console || details.system || '').trim() || undefined,
-  }), [details, item.title]);
+  const videoGameSearchInput = useMemo(() => buildPriceChartingVideoGameSearchInput(item.itemDetails, item.title), [item.itemDetails, item.title]);
   const videoGameGuideTarget = useMemo(() => guideTargetInput(item), [item]);
   const canSearchVideoGamesByTitle = videoGameSearchInput.query.length >= 2 && Boolean(videoGameSearchInput.platform);
   const videoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(effectiveVideoGamePacket === undefined && priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc, guideTarget: videoGameGuideTarget } : skipToken, { enabled: isVideoGame && effectiveVideoGamePacket === undefined && Boolean(priceChartingVideoGameUpc) });
@@ -2917,10 +2914,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const hasPriceChartingCoinQueryInput = isPriceChartingCoinSearchReady(priceChartingCoinQueryInput);
   const priceChartingVideoGameUpc = useMemo(() => getPriceChartingVideoGameUpc(item), [item]);
   const videoGameGuideTarget = useMemo(() => guideTargetInput(marketItem), [marketItem]);
-  const priceChartingVideoGameSearchInput = useMemo(() => ({
-    query: String(details.gameTitle || details.videoGameTitle || details.title || item.title).trim(),
-    platform: String(details.platform || details.console || details.system || '').trim() || undefined,
-  }), [details, item.title]);
+  const priceChartingVideoGameSearchInput = useMemo(() => buildPriceChartingVideoGameSearchInput(item.itemDetails, item.title), [item.itemDetails, item.title]);
   const canSearchPriceChartingVideoGames = item.category === 'video_games'
     && !priceChartingVideoGameUpc
     && priceChartingVideoGameSearchInput.query.length >= 2

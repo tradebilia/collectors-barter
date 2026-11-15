@@ -280,6 +280,42 @@ export function buildVideoGameTestAiCriteria(itemDetails: unknown, fallbackTitle
     .join(' ');
 }
 
+const PRICECHARTING_VIDEO_GAME_PLATFORMS = [
+  'Xbox Series X', 'Xbox Series S', 'Xbox One', 'Xbox 360', 'PlayStation 5', 'PlayStation 4',
+  'PlayStation 3', 'PlayStation 2', 'PlayStation', 'Nintendo Switch', 'Nintendo 3DS', 'Nintendo DS',
+  'Game Boy Advance', 'Game Boy Color', 'Game Boy', 'Nintendo 64', 'Super Nintendo', 'NES',
+  'Sega Genesis', 'Sega Saturn', 'Dreamcast', 'Atari 2600',
+];
+
+function priceChartingVideoGamePlatformPattern(platform: string): RegExp {
+  return new RegExp(`(?:^|[\\s–—-])${platform.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=$|[\\s–—-])`, 'i');
+}
+
+function cleanPriceChartingVideoGameTitle(title: string, platform: string): string {
+  return title
+    .replace(platform ? priceChartingVideoGamePlatformPattern(platform) : /$^/, ' ')
+    .replace(/\b(?:PSA|WATA|VGA|CGC|BGS|MGC|ACG)\s*\d+(?:\.\d+)?\b/gi, ' ')
+    .replace(/\b(?:first|1st|second|2nd|third|3rd)\s+(?:print|edition|release)\b/gi, ' ')
+    .replace(/\b(?:sealed|graded|complete\s+in\s+box|cib|new|loose)\b/gi, ' ')
+    .replace(/[|]+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s*[-–—]\s*$/g, '')
+    .trim();
+}
+
+/** PriceCharting title search intentionally uses only game title and platform. */
+export function buildPriceChartingVideoGameSearchInput(itemDetails: unknown, fallbackTitle: string): { query: string; platform?: string } {
+  const details = parseTestAiDetails(itemDetails);
+  const value = (...keys: string[]) => keys.map((key) => resolveTestAiDetailValue(details, key)).find(Boolean) ?? '';
+  const rawTitle = value('gameTitle', 'videoGameTitle', 'title') || fallbackTitle.trim();
+  const statedPlatform = value('platform', 'console', 'system');
+  const detectedPlatform = statedPlatform || PRICECHARTING_VIDEO_GAME_PLATFORMS.find((candidate) => priceChartingVideoGamePlatformPattern(candidate).test(rawTitle)) || '';
+  return {
+    query: cleanPriceChartingVideoGameTitle(rawTitle, detectedPlatform),
+    platform: detectedPlatform || undefined,
+  };
+}
+
 export function filterTestAiListingsByYear<T extends { title?: string }>(listings: T[], targetYear: string): T[] {
   if (!targetYear) return listings;
   // Release, manufacture, regional, and reissue dates are too variable to
