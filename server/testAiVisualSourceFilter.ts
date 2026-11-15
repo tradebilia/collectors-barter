@@ -5372,7 +5372,7 @@ const SPORTS_CARD_SCORE_FIELDS = [
   ['serialNumberedStatus', 2],
 ] as const;
 const VIDEO_GAME_GAME_SCORE_FIELDS = [
-  ['gameTitle', 25], ['platform', 20], ['releaseYear', 15], ['region', 10], ['edition', 5], ['completeInBox', 5], ['isGraded', 10], ['gradingCompany', 5], ['grade', 5], ['upcEan', 0],
+  ['gameTitle', 25], ['platform', 20], ['releaseYear', 10], ['region', 10], ['edition', 5], ['completeInBox', 5], ['isGraded', 10], ['gradingCompany', 5], ['grade', 10], ['upcEan', 0],
 ] as const;
 const VIDEO_GAME_CONSOLE_SCORE_FIELDS = [
   ['consoleName', 25], ['modelNumber', 20], ['region', 15], ['workingCondition', 15], ['originalBoxIncluded', 10], ['cablesIncluded', 5], ['controllersIncluded', 5], ['isGraded', 5],
@@ -5619,13 +5619,13 @@ function videoGameScore<T extends readonly (readonly [string, number])[]>(
   if (targetType === 'game') {
     add('gameTitle', 25, videoGameScoreValueMatches(firstMeaningfulValue(target.gameTitle, extractTargetTitle(targetMetadata)), listing, ['gameTitle', 'title'], [], 'title'));
     add('platform', 20, videoGameScoreValueMatches(target.platform, listing, ['platform', 'consoleName'], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|PlayStation|PS[1-5]|Xbox(?:\s+(?:360|One|Series\s+X\/S))?|Sega(?:\s+Master\s+System)?|Genesis|Saturn|Dreamcast|PC)/i], 'platform'));
-    add('releaseYear', 15, videoGameScoreValueMatches(firstMeaningfulValue(target.releaseYear, target.year), listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/], 'year'));
+    add('releaseYear', 10, videoGameScoreValueMatches(firstMeaningfulValue(target.releaseYear, target.year), listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/], 'year'));
     add('region', 10, videoGameScoreValueMatches(target.region, listing, ['region'], [/(?:NTSC-U|NTSC-J|PAL|Region\s+Free)/i], 'region'));
     add('edition', 5, videoGameScoreValueMatches(target.edition, listing, ['edition', 'releaseType'], [], 'edition'));
     add('completeInBox', 5, videoGameScoreCompleteInBox(target.completeInBox, listing));
     add('isGraded', 10, videoGameScoreIsGraded(firstMeaningfulValue(metadataValue(targetMetadata, 'isGraded'), target.isGraded, target.graded), listing));
     add('gradingCompany', 5, videoGameScoreGradingCompany(firstMeaningfulValue(metadataValue(targetMetadata, 'certificationCompany'), target.gradingCompany, target.certificationCompany, target.grader), listing));
-    add('grade', 5, videoGameScoreGrade(firstMeaningfulValue(metadataValue(targetMetadata, 'grade'), target.grade, target.numericGrade), listing));
+    add('grade', 10, videoGameScoreGrade(firstMeaningfulValue(metadataValue(targetMetadata, 'grade'), target.grade, target.numericGrade), listing));
     add('upcEan', 0, videoGameScoreValueMatches(firstMeaningfulValue(target.upc, target.ean), listing, ['upc', 'ean', 'barcode'], [/(?:UPC|EAN|barcode)\s*[:#]?\s*([0-9]{8,14})/i], 'upc'));
   } else if (targetType === 'console') {
     add('consoleName', 25, videoGameScoreValueMatches(firstMeaningfulValue(target.consoleName, extractTargetTitle(targetMetadata)), listing, ['consoleName', 'platform', 'title'], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|Sega\s+Genesis|Sega\s+Saturn|Dreamcast|PS[1-5]|Xbox(?:\s+(?:360|One|Series\s+X\/S))?)/i], 'name'));

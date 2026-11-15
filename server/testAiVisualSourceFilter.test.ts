@@ -860,7 +860,9 @@ describe("visual source filter", () => {
     const gameTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", isGraded: "No", fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "No", upc: "123456789012" } });
     const gameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard CIB", isGraded: "No", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "No", upc: "123456789012" }) }, gameTarget);
     expect(gameScore.score).toBe(100);
-    expect(gameScore.awards.find(award => award.field === 'isGraded')?.awardedPoints).toBe(20);
+    expect(gameScore.awards.find(award => award.field === 'isGraded')?.awardedPoints).toBe(25);
+    expect(gameScore.awards.find(award => award.field === 'releaseYear')?.awardedPoints).toBe(10);
+    expect(gameScore.awards.find(award => award.field === 'grade')?.awardedPoints).toBeUndefined();
     expect(gameScore.awards.some(award => ['grade', 'gradingCompany'].includes(award.field))).toBe(false);
     expect(gameScore.matched).toEqual(expect.arrayContaining(["gameTitle", "platform", "releaseYear", "region", "edition", "isGraded", "upcEan"]));
     expect(gameScore.awards.find(award => award.field === 'edition')?.awardedPoints).toBe(5);
@@ -870,6 +872,7 @@ describe("visual source filter", () => {
     const gradedGameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard CIB PSA 9.8", isGraded: "Yes", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "No", upc: "123456789012" }) }, gradedGameTarget);
     expect(gradedGameScore.score).toBe(100);
     expect(gradedGameScore.matched).toEqual(expect.arrayContaining(["gradingCompany", "grade"]));
+    expect(gradedGameScore.awards.find(award => award.field === 'grade')?.awardedPoints).toBe(10);
 
     const structuredGradedGameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES CIB", gradingCompany: "PSA", grade: "9.8", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "No", upc: "123456789012" }) }, gradedGameTarget);
     expect(structuredGradedGameScore.score).toBe(100);
