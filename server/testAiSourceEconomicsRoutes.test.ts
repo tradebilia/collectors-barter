@@ -458,15 +458,21 @@ describe('Stage 6 ACTUAL named source routes and restrictive source-fact sealing
     expect(verify(sale).visualRequirement).toBe('required');
     expectHeld([sale], SIGNED); expect(boundaries.llm).not.toHaveBeenCalled(); expect(boundaries.fetch).not.toHaveBeenCalled();
   });
-  it('Goldin actual reviewed partitions preserve returned all-in amount and required visual but new proof remains context', async () => {
+  it('Goldin non-autograph records bypass visual review even when an image is present', async () => {
+    boundaries.llm.mockReset();
     boundaries.specialist.mockResolvedValue(result([row('goldin-sale', { sourceId: 'goldin', priceBasis: 'closed', buyerPremiumIncluded: true,
       winningBid: 100, buyerPremiumPercentage: 20 })], [row('goldin-held', { sourceId: 'goldin', title: '1996 Topps Kobe Bryant #139 PSA 10',
       priceBasis: 'closed', buyerPremiumIncluded: true, exclusionReason: 'actual wrong card' })]));
     const source = await caller().getSpecialistMarketplaceData({ ...CARD, sourceId: 'goldin' }) as Row;
     expect(sourceRows(source)).toHaveLength(2);
-    for (const sale of sourceRows(source)) expect(verify(sale)).toMatchObject({ sourceAdapter: 'goldin', price: 120, buyerPremium: 'included', evidenceDisposition: 'context_only' });
-    expect(sourceRows(source).some((sale) => sale.visualRequirement === 'required')).toBe(true);
-    expectHeld(sourceRows(source)); expect(boundaries.llm).toHaveBeenCalled();
+    const rows = sourceRows(source);
+    expect(rows[0].valuationEligible).toBe(true);
+    expect(verify(rows[0])).toMatchObject({ sourceAdapter: 'goldin', price: 120, buyerPremium: 'included', evidenceDisposition: 'valuation_eligible' });
+    expect(verify(rows[1])).toMatchObject({ sourceAdapter: 'goldin', price: 120, buyerPremium: 'included', evidenceDisposition: 'context_only' });
+    expect(rows.every((sale) => sale.visualRequirement === 'not_required_goldin_metadata')).toBe(true);
+    expect(rows.every((sale) => sale.visualExecution?.state === 'not_dispatched')).toBe(true);
+    expect(source.sales).toHaveLength(1);
+    expect(boundaries.llm).not.toHaveBeenCalled();
   });
   it('Goldin image-less non-autograph rows use metadata and completed-sale checks without visual approval', async () => {
     boundaries.llm.mockReset();
@@ -483,7 +489,7 @@ describe('Stage 6 ACTUAL named source routes and restrictive source-fact sealing
       evidenceDisposition: 'valuation_eligible',
       valuationEligible: true,
     });
-    expect(source.sales[0].visualExecution).toMatchObject({ state: 'not_dispatched', reasonCode: 'candidate_image_unavailable' });
+    expect(source.sales[0].visualExecution).toMatchObject({ state: 'not_dispatched', reasonCode: 'workflow_context_only' });
     expect(boundaries.llm).not.toHaveBeenCalled();
   });
   it('Goldin signed-item actual relevance context is sealed after shared special partitions with no visual dispatch', async () => {

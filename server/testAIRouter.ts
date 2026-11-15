@@ -3287,14 +3287,14 @@ export const testAIRouter = router({
         imageUrl: visualSourceCandidateImage(record),
       }));
       const autographTarget = isAutographSignedItemTarget(targetMetadata);
-      const metadataOnlyGoldin = candidateRecords.filter((record: any) => autographTarget || !visualSourceCandidateImage(record)).map((record: any) => ({
+      const metadataOnlyGoldin = candidateRecords.map((record: any) => ({
           ...record,
           visualRequirement: autographTarget ? 'not_required_autograph_market_context' : 'not_required_goldin_metadata',
           visualReviewStatus: 'not_reviewed',
           visualReviewRationale: autographTarget
             ? 'Goldin signed-item records are market context only and are not sent to visual review.'
-            : 'Goldin supplied no usable listing image; completed-sale and metadata identity checks are used instead.',
-          visualExecution: createNotDispatchedVisualExecution(autographTarget ? 'workflow_context_only' : 'candidate_image_unavailable'),
+            : 'Goldin non-autograph records bypass visual review; completed-sale and metadata identity checks are used instead.',
+          visualExecution: createNotDispatchedVisualExecution('workflow_context_only'),
           evidenceDisposition: !autographTarget && record.completed && record.identityMatched && record.valuationEligible
             ? 'valuation_eligible' : 'context_only',
           valuationEligible: Boolean(!autographTarget && record.completed && record.identityMatched && record.valuationEligible),
@@ -3304,7 +3304,10 @@ export const testAIRouter = router({
               ? 'Goldin signed-item records are context-only.'
               : 'Goldin record did not pass the completed-sale or metadata identity checks.')],
         }));
-      const visualCandidateRecords = autographTarget ? [] : candidateRecords.filter((record: any) => Boolean(visualSourceCandidateImage(record)));
+      // Goldin is a metadata/economic source for non-autographs. Do not let an
+      // image field, a target image, or a visual-provider failure re-enable the
+      // required-approval path. Autographs remain context-only by policy.
+      const visualCandidateRecords: any[] = [];
       const visualFilter = await filterVisualSourceCandidates({
               sourceRole: 'marketplace',
         sourceLabel: 'Goldin specialist auction records',
