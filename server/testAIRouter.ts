@@ -35,7 +35,7 @@ import { attachCanonicalProvenance as attachCanonicalSourceProvenance, createSer
 import { auditItemValuation, itemAuditTargetSchema } from './testAiItemAudit';
 import { prepareSourceTransactionIdentity } from './testAiEconomicIntegrity';
 import { mapNamedSourceEconomics, mapNamedSourcePartitions } from './testAiSourceEconomics';
-import { numistaCoinGuideQuote, priceChartingCoinGuideQuote } from './testAiGuideEvidence';
+import { numistaCoinGuideQuote, priceChartingCoinGuideQuote, priceChartingVideoGameGuideQuote } from './testAiGuideEvidence';
 import { ANALYZER_NARRATIVE_RESPONSE_FORMAT, buildDeterministicNarrativeFallback, parseAnalyzerResponse, parseEvidenceBoundNarrative } from './testAiResponse';
 import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNewsFeeds';
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
@@ -4761,10 +4761,17 @@ export const testAIRouter = router({
       return { ...result, ...guide };
     }),
   getPriceChartingVideoGameData: protectedProcedure
-    .input(z.object({ upc: z.string().trim().regex(/^\d{8,14}$/, 'Enter an 8- to 14-digit video-game UPC/barcode.') }))
+    .input(z.object({
+      upc: z.string().trim().regex(/^\d{8,14}$/, 'Enter an 8- to 14-digit video-game UPC/barcode.'),
+      guideTarget: z.object({ title: z.string().trim().max(240), category: z.string().trim().max(80), grade: z.string().trim().max(50).optional(), condition: z.string().trim().max(50).optional(), itemType: z.string().trim().max(120).optional(), certificationCompany: z.string().trim().max(120).optional(), itemDetails: z.string().max(8_000).optional() }).optional(),
+    }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return lookupPriceChartingVideoGame(input.upc);
+      const result = await lookupPriceChartingVideoGame(input.upc);
+      const guide = input.guideTarget
+        ? priceChartingVideoGameGuideQuote(result, input.guideTarget)
+        : { guideAnchor: null, guideWarnings: ['A bound Video Game target is required for fallback guide provenance.'] };
+      return { ...result, ...guide };
     }),
   // UPC remains the exact path. Games without a barcode receive bounded title
   // candidates that must pass exact identity checks and, when ambiguous, an
@@ -4773,10 +4780,17 @@ export const testAIRouter = router({
     .input(z.object({
       query: z.string().trim().min(2).max(240),
       platform: z.string().trim().min(1).max(120).optional(),
+      guideTarget: z.object({ title: z.string().trim().max(240), category: z.string().trim().max(80), grade: z.string().trim().max(50).optional(), condition: z.string().trim().max(50).optional(), itemType: z.string().trim().max(120).optional(), certificationCompany: z.string().trim().max(120).optional(), itemDetails: z.string().max(8_000).optional() }).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return searchPriceChartingVideoGames(input);
+      const result = await searchPriceChartingVideoGames(input);
+      const selected = result.status === 'success' && result.data && !result.data.selectionRequired
+        ? result.data.compatibleCandidates?.[0] ?? null : null;
+      const guide = input.guideTarget && selected
+        ? priceChartingVideoGameGuideQuote({ ...selected, status: 'success', query: result.query }, input.guideTarget)
+        : { guideAnchor: null, guideWarnings: selected ? ['A bound Video Game target is required for fallback guide provenance.'] : [] };
+      return { ...result, ...guide };
     }),
   getPriceChartingCardDetail: protectedProcedure
     .input(z.object({ setSlug: z.string().trim().min(1).max(180), cardSlug: z.string().trim().min(1).max(240) }))

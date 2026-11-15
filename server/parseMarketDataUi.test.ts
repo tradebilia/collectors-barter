@@ -19,8 +19,8 @@ describe('Test AI Parse provider controls', () => {
   });
 
   it('builds PriceCharting coin requests from structured year, mint mark, and variety fields instead of the listing title', () => {
-    expect(testAiSource).toContain('function buildPriceChartingCoinInput(item: SelectedItem)');
-    expect(testAiSource).toContain('const priceChartingCoinQueryInput = useMemo(() => buildPriceChartingCoinInput(item), [item]);');
+    expect(testAiSource).toContain('function buildPriceChartingCoinInput(item: SelectedItem, valuationTarget: SelectedItem = item)');
+    expect(testAiSource).toContain('const coinQueryInput = useMemo(() => buildPriceChartingCoinInput(item), [item]);');
     expect(testAiSource).not.toContain('getPriceChartingCoinData.useQuery({ query: item.title }');
     expect(testAiSource).toContain('Coin search used:');
   });
@@ -33,9 +33,9 @@ describe('Test AI Parse provider controls', () => {
 
   it('retains exact UPC lookup and enables bounded title-and-platform candidates when a video game has no UPC', () => {
     expect(testAiSource).toContain('function getPriceChartingVideoGameUpc(item: SelectedItem | null)');
-    expect(testAiSource).toContain('getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc } : skipToken');
+    expect(testAiSource).toContain('getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc, guideTarget: videoGameGuideTarget } : skipToken');
     expect(testAiSource).toContain('searchPriceChartingVideoGames.useQuery(');
-    expect(testAiSource).toContain('!priceChartingVideoGameUpc && canSearchVideoGamesByTitle ? videoGameSearchInput : skipToken');
+    expect(testAiSource).toContain('!priceChartingVideoGameUpc && canSearchVideoGamesByTitle ? { ...videoGameSearchInput, guideTarget: videoGameGuideTarget } : skipToken');
     expect(testAiSource).toContain('function getPriceChartingVideoGameSearchIdentity(item: SelectedItem | null)');
     expect(testAiSource).toContain('missingPriceChartingVideoGameIdentity');
     expect(testAiSource).toContain('!priceChartingVideoGameUpc\n                  && !priceChartingVideoGameSearchIdentity');
@@ -66,8 +66,8 @@ describe('Test AI Parse provider controls', () => {
     expect(testAiSource).toContain("import { selectExactPriceChartingCoinGuide } from '@shared/priceChartingCoinGuide'");
     expect(testAiSource).toContain("role: priceChartingCoinGuide ? 'valuation_guide' : 'asking_price_context'");
     expect(testAiSource).toContain('guideValue: priceChartingCoinGuide?.value');
-    expect(testAiSource).toContain('preferred 25% sale-derived analyzer guide anchor');
-    expect(testAiSource).toContain('Selected as the single 25% analyzer guide anchor.');
+    expect(testAiSource).toContain('Video Game Guide Values');
+    expect(testAiSource).toContain('server-verified selected guide value may be used as a provisional fallback');
   });
 
   it('keeps all three provider panels explicitly read-only', () => {

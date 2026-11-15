@@ -2069,10 +2069,11 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
     query: String(details.gameTitle || details.videoGameTitle || details.title || item.title).trim(),
     platform: String(details.platform || details.console || details.system || '').trim() || undefined,
   }), [details, item.title]);
+  const videoGameGuideTarget = useMemo(() => guideTargetInput(item), [item]);
   const canSearchVideoGamesByTitle = videoGameSearchInput.query.length >= 2 && Boolean(videoGameSearchInput.platform);
-  const videoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc } : skipToken, { enabled: isVideoGame && Boolean(priceChartingVideoGameUpc) });
+  const videoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc, guideTarget: videoGameGuideTarget } : skipToken, { enabled: isVideoGame && Boolean(priceChartingVideoGameUpc) });
   const videoGameCandidateQuery = trpc.testAI.searchPriceChartingVideoGames.useQuery(
-    !priceChartingVideoGameUpc && canSearchVideoGamesByTitle ? videoGameSearchInput : skipToken,
+    !priceChartingVideoGameUpc && canSearchVideoGamesByTitle ? { ...videoGameSearchInput, guideTarget: videoGameGuideTarget } : skipToken,
     { enabled: isVideoGame && !priceChartingVideoGameUpc && canSearchVideoGamesByTitle, retry: false, staleTime: 0, refetchOnMount: 'always' },
   );
   const candidateSearchData = videoGameCandidateQuery.data;
@@ -2103,7 +2104,12 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
   const effectiveVideoGameData = videoGameData ?? videoGameQuery.data;
   const effectiveSlugData = slugData ?? slugQuery.data;
   const effectiveMoversData = moversData ?? moversQuery.data;
-  const selectedVideoGameData = selectedVideoGameCandidate ? { status: 'success' as const, data: selectedVideoGameCandidate } : null;
+  const selectedVideoGameData = selectedVideoGameCandidate ? {
+    status: 'success' as const,
+    data: selectedVideoGameCandidate,
+    guideAnchor: candidateSearchData?.guideAnchor ?? null,
+    guideWarnings: candidateSearchData?.guideWarnings ?? [],
+  } : null;
   const data = isCoin ? effectiveCoinData : isVideoGame ? (effectiveVideoGameData ?? selectedVideoGameData ?? candidateSearchData) : (setSlug !== 'unavailable' && cardSlug !== 'unavailable') ? effectiveSlugData : effectiveCardData;
   const isLoading = data === undefined || (isCoin && coinQuery.isFetching) || (isVideoGame && videoGameCandidateQuery.isFetching);
   const prices = selectedVideoGameData?.data?.prices ?? data?.data?.prices ?? {};
@@ -2113,6 +2119,12 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
   const movers = effectiveMoversData?.data?.movers ?? [];
   const lookupMode = isCoin ? 'US coin price-guide context' : isVideoGame ? (priceChartingVideoGameUpc ? 'exact video-game UPC lookup' : 'bounded video-game title-and-platform candidate context') : isPokemonOrTcg ? 'Pokémon / compatible TCG price-guide context' : 'available only for compatible PriceCharting records';
   const hasVideoGamePriceContext = Boolean(priceChartingVideoGameUpc || selectedVideoGameCandidate);
+  const videoGameGuideRows = isVideoGame ? [
+    ['Loose', (prices as any).loose ?? (prices as any).loose_price ?? (prices as any).loosePrice],
+    ['CIB', (prices as any).cib ?? (prices as any).cib_price ?? (prices as any).complete_in_box],
+    ['New', (prices as any).new ?? (prices as any).new_price ?? (prices as any).new_value],
+    ['Graded', (prices as any).graded ?? (prices as any).graded_new ?? (prices as any).gradedNew ?? (prices as any).graded_price],
+  ].map(([label, value]) => [label, Number(value)] as const).filter(([, value]) => Number.isFinite(value) && value > 0) : [];
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
       <div className="flex items-center justify-between">
@@ -2136,7 +2148,8 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
           {data.data.associatedUpcs?.length > 0 && <p className="text-[9px] text-gray-500">Associated UPCs: {data.data.associatedUpcs.join(', ')}</p>}
           {data.data.url && <a href={data.data.url} target="_blank" rel="noopener noreferrer" className="inline-flex w-fit items-center rounded border border-blue-700/40 bg-blue-950/20 px-2 py-1 text-[9px] font-semibold text-blue-200 hover:bg-blue-900/30">Open full PriceCharting product page ↗</a>}
           {isVideoGame && !hasPriceFields && <div className="rounded border border-amber-700/30 bg-amber-950/20 p-2 text-[9px] text-amber-100"><p className="font-semibold text-amber-200">Verified game identity; provider price details unavailable</p><p className="mt-1 text-amber-100/80">The configured Parse.bot response confirmed this game’s title, platform, identifier, and UPCs, but it did not return PriceCharting’s condition prices, sales volume, or separate Loose, CIB, New, Graded New, Box Only, and Manual Only sold-listing groups. Use the linked product page for those provider details; Tradebilia does not bypass PriceCharting access controls.</p></div>}
-          {hasPriceFields && <div className="grid grid-cols-3 gap-2 text-[10px]">
+          {isVideoGame && videoGameGuideRows.length > 0 && data?.guideAnchor && <div className="rounded border border-emerald-700/30 bg-emerald-950/15 p-2"><p className="text-[10px] font-bold uppercase text-emerald-200">Video Game Guide Values</p><p className="mt-1 text-[9px] text-emerald-100/80">Loose, CIB, New, and Graded are current PriceCharting guide values, not sold comps. If current market and sold comps are unavailable, the server-verified selected guide value may be used as a provisional fallback.</p><div className="mt-2 grid grid-cols-2 gap-2 text-[10px] sm:grid-cols-4">{videoGameGuideRows.map(([label, value]) => <div key={label} className="rounded bg-gray-800/60 p-1.5 text-center"><p className="text-[8px] uppercase text-gray-500">{label}</p><p className="font-semibold text-green-400">{formatWholeDollar(value)}</p></div>)}</div><p className="mt-1 text-[9px] text-emerald-100/70">Selected fallback anchor: {data.guideAnchor.sourceLabel} · {formatWholeDollar(data.guideAnchor.value)} · server verified</p></div>}
+          {hasPriceFields && !isVideoGame && <div className="grid grid-cols-3 gap-2 text-[10px]">
             {priceEntries.slice(0, 6).map(([grade, value]) => (
               <div key={grade} className="rounded bg-gray-800/60 p-1.5 text-center">
                 <p className="text-[8px] uppercase text-gray-500">{grade.replace(/_/g, ' ')}</p>
@@ -2144,7 +2157,7 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
               </div>
             ))}
           </div>}
-          {isVideoGame && <p className="text-[9px] text-amber-200/90">{hasPriceFields ? 'PriceCharting game-price context only — it is not a completed sale and cannot enter Tradebilia valuation.' : 'PriceCharting identity context only — no condition-price, sales-volume, or historical-sale data was returned, and nothing can enter Tradebilia valuation.'}</p>}
+          {isVideoGame && !data?.guideAnchor && <p className="text-[9px] text-amber-200/90">{hasPriceFields ? 'PriceCharting game-price context only — it is not a completed sale and cannot enter Tradebilia valuation.' : 'PriceCharting identity context only — no condition-price, sales-volume, or historical-sale data was returned, and nothing can enter Tradebilia valuation.'}</p>}
         </div>
       )}
       {isPokemonOrTcg && !cardData && !slugData && <p className="text-[10px] text-gray-500">For a compatible non-Pokémon TCG, add PriceCharting setSlug and cardSlug fields to item details.</p>}
@@ -3270,7 +3283,8 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const priceFields = (automaticPriceChartingGameCandidate ?? priceData?.data ?? {}) as Record<string, any>;
       const priceChartingCoinGuide = item.category === 'coins'
         ? selectExactPriceChartingCoinGuide({ category: item.category, grade: item.grade, prices: priceFields.prices })
-        : null;
+        : (item.category === 'video_games' ? (priceData as any)?.guideAnchor ?? null : null);
+      const priceChartingVideoGameGuide = item.category === 'video_games' ? (priceData as any)?.guideAnchor ?? null : null;
       add({
         id: 'pricecharting',
         label: 'PriceCharting',
@@ -3288,7 +3302,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
           guideGrade: priceChartingCoinGuide?.grade,
           guideSelectedGrade: priceChartingCoinGuide?.selectedGrade,
           guideMatchType: priceChartingCoinGuide?.matchType,
-          ...guideAnchorFields(item.category === 'coins' ? priceChartingCoinEvidenceData?.guideAnchor : null),
+          ...guideAnchorFields(item.category === 'coins' ? priceChartingCoinEvidenceData?.guideAnchor : priceChartingVideoGameGuide),
         },
         message: item.category === 'video_games' && !priceChartingVideoGameUpc
           ? priceChartingVideoGameCandidateEvidenceData?.data?.selectionMessage ?? priceChartingVideoGameCandidateEvidenceData?.message ?? null

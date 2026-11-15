@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ComparableTarget } from './testAiComparableEngine';
 import { guideAnchorFields, normalizeGuideGrade, normalizeTestAiEvidence, selectPreferredGuideAnchor, type GuideValueAnchor } from '../shared/testAiEvidenceNormalization';
 import { sealCanonicalObservation, verifyCanonicalObservation } from './testAiCanonicalObservation';
-import { GUIDE_TOKEN_MAX_AGE_MS, isVerifiedGuideAnchor, issueGuideAnchor, numistaCoinGuideQuote, priceChartingCoinGuideQuote, verifyGuideAnchors, type GuideAcquisition } from './testAiGuideEvidence';
+import { GUIDE_TOKEN_MAX_AGE_MS, isVerifiedGuideAnchor, issueGuideAnchor, numistaCoinGuideQuote, priceChartingCoinGuideQuote, priceChartingVideoGameGuideQuote, verifyGuideAnchors, type GuideAcquisition } from './testAiGuideEvidence';
 import type { NumistaLookup } from './numistaMetadata';
 
 const NOW = new Date('2026-11-08T20:00:00.000Z');
@@ -192,5 +192,23 @@ describe('pure existing Coin route return wrappers and proof transport', () => {
     const flattened = normalizeTestAiEvidence(TARGET, [{ id: 'pricecharting', label: 'PriceCharting', kind: 'reference', status: 'success', fields: guideAnchorFields(quote) }]);
     expect(flattened.guideAnchors).toEqual([quote]);
     expect(verifyGuideAnchors(flattened.guideAnchors, TARGET, OPTIONS).trustedAnchors[0]?.value).toBe(1250);
+  });
+});
+
+
+describe('server-only Video Game guide provenance', () => {
+  const target = { title: 'Call of Duty World at War Xbox 360 First Print PSA 9.8', category: 'video_games', grade: '9.8', certificationCompany: 'PSA', itemType: 'single_game', itemDetails: JSON.stringify({ gameTitle: 'Call of Duty World at War', platform: 'Xbox 360', edition: 'First Print' }) } as ComparableTarget;
+  const result = { status: 'success', query: 'Call of Duty World at War', data: { title: 'Call of Duty World at War', platform: 'Xbox 360', priceChartingId: 123, prices: { loose: 12.34, cib: 25, new: 40, graded: 125 } } };
+
+  it('extracts all four Parse.bot condition tiers and signs only the selected fallback tier', () => {
+    const quote = priceChartingVideoGameGuideQuote(result, target, OPTIONS);
+    expect(quote.guideWarnings).toEqual([]);
+    expect(quote.guideAnchor).toMatchObject({ sourceLabel: 'PriceCharting Video Game Guide', value: 12.34, recordedSales: null, lastSaleDate: null });
+    expect(verifyGuideAnchors([quote.guideAnchor!], target, OPTIONS).trustedAnchors).toHaveLength(1);
+  });
+
+  it('rejects a different platform or game instead of issuing guide proof', () => {
+    expect(priceChartingVideoGameGuideQuote({ ...result, data: { ...result.data, platform: 'PS3' } }, target, OPTIONS).guideAnchor).toBeNull();
+    expect(priceChartingVideoGameGuideQuote({ ...result, data: { ...result.data, title: 'Different Game' } }, target, OPTIONS).guideAnchor).toBeNull();
   });
 });

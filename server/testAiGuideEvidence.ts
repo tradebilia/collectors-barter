@@ -6,7 +6,7 @@ import { selectExactPriceChartingCoinGuide } from '../shared/priceChartingCoinGu
 import type { NumistaLookup } from './numistaMetadata';
 import { OBSERVATION_TOKEN_MAX_AGE_MS, sealCanonicalObservation } from './testAiCanonicalObservation';
 
-export const GUIDE_PROVENANCE_VERSION = 'coin-guide-v1';
+export const GUIDE_PROVENANCE_VERSION = 'guide-v2';
 export const GUIDE_TOKEN_MAX_AGE_MS = OBSERVATION_TOKEN_MAX_AGE_MS;
 
 type GuideOptions = { signingKey?: string; now?: Date };
@@ -20,6 +20,8 @@ export type GuideProviderIdentity = {
   form: string;
   strike?: string;
   designation?: string;
+  platform?: string;
+  edition?: string;
 };
 /** Server-acquired facts only. No route accepts this object or a price from the browser. */
 export type GuideAcquisition = {
@@ -87,10 +89,12 @@ function usableGrade(value: unknown): string {
 }
 function targetIdentity(target: ComparableTarget): BoundIdentity {
   const details = parseTestAiDetails(target.itemDetails);
+  const category = key(target.category);
+  const boundTitle = category === 'video_games' ? first(details, ['gameTitle', 'videoGameTitle', 'title']) || target.title : target.title;
   const issuer = country(first(details, ['country', 'issuingCountry', 'issuer']));
   const declaredGrade = usableGrade(target.grade) || usableGrade(first(details, ['grade', 'certifiedGrade']));
   return {
-    title: words(target.title), category: key(target.category),
+    title: words(boundTitle), category,
     country: issuer, denomination: denomination(first(details, ['denomination', 'faceValue', 'value']), issuer),
     year: first(details, ['year', 'issueYear', 'mintYear']),
     mintMark: mint(first(details, ['mintMark', 'mint', 'mintmark'])),
@@ -101,6 +105,8 @@ function targetIdentity(target: ComparableTarget): BoundIdentity {
     certificationCompany: words(resolveTestAiGradingCompany(details, target.certificationCompany || first(details, ['certificationCompany', 'gradingCompany', 'grader']))),
     condition: declaredGrade ? '' : normalizeGuideGrade(target.condition || first(details, ['condition'])),
     metal: words(first(details, ['metal', 'composition'])),
+    platform: words(first(details, ['platform', 'console', 'system'])),
+    edition: words(first(details, ['edition', 'variant', 'version', 'print'])),
   };
 }
 function normalizeProvider(identity: GuideProviderIdentity): GuideProviderIdentity {
@@ -109,12 +115,18 @@ function normalizeProvider(identity: GuideProviderIdentity): GuideProviderIdenti
     title: words(identity.title), country: issuer, denomination: denomination(identity.denomination, issuer),
     year: text(identity.year), mintMark: mint(identity.mintMark), variety: words(identity.variety),
     form: key(identity.form), strike: words(identity.strike), designation: words(identity.designation),
+    platform: words(identity.platform), edition: words(identity.edition),
   };
 }
 function fingerprint(identity: BoundIdentity): string { return JSON.stringify(identity); }
 function identityWarnings(target: ComparableTarget, bound: BoundIdentity): string[] {
   const warnings: string[] = [];
-  if (bound.category !== 'coins') warnings.push('Guide fallback is allowed for Coins only.');
+  if (bound.category === 'video_games') {
+    if (!bound.title || !bound.platform) warnings.push('Video Game guide fallback requires a bound game title and platform.');
+    if (bound.form && /(?:set|collection|lot|bundle|box_only|manual_only)/i.test(bound.form)) warnings.push('Video Game guide fallback does not support lots, bundles, boxes, or manuals alone.');
+    return warnings;
+  }
+  if (bound.category !== 'coins') warnings.push('Guide fallback is allowed for Coins and Video Games only.');
   if (!bound.title || !bound.country || !bound.denomination || !/^(?:17|18|19|20)\d{2}$/.test(bound.year) || !bound.variety || !bound.grade) {
     warnings.push('Guide fallback requires bound coin title, country, denomination, year, variety and grade.');
   }
@@ -153,6 +165,12 @@ function identityWarnings(target: ComparableTarget, bound: BoundIdentity): strin
 }
 function compatibilityWarnings(bound: BoundIdentity, provider: GuideProviderIdentity): string[] {
   const warnings: string[] = [];
+  if (bound.category === 'video_games') {
+    if (!provider.title || !includesPhrase(provider.title, bound.title)) warnings.push('Provider game title is incompatible with the target.');
+    if (bound.platform && words(provider.platform) !== bound.platform) warnings.push('Provider game platform is incompatible with the target.');
+    if (bound.edition && provider.edition && !includesPhrase(provider.edition, bound.edition) && !includesPhrase(provider.title, bound.edition)) warnings.push('Provider game edition is incompatible with the target.');
+    return warnings;
+  }
   for (const field of ['country', 'denomination', 'year', 'mintMark', 'variety', 'form'] as const) {
     if (bound[field] !== provider[field]) warnings.push(`Provider coin ${field} is incompatible with the target.`);
   }
@@ -165,6 +183,10 @@ function compatibilityWarnings(bound: BoundIdentity, provider: GuideProviderIden
 function gradeWarnings(anchor: GuideValueAnchor, bound: BoundIdentity): string[] {
   if (normalizeGuideGrade(anchor.selectedGrade) !== bound.grade) return ['Guide selected grade does not match the target.'];
   const grade = normalizeGuideGrade(anchor.grade);
+  if (bound.category === 'video_games') {
+    if (anchor.sourceId !== 'pricecharting' || anchor.matchType !== 'exact' || !Number.isFinite(anchor.value) || anchor.value <= 0) return ['PriceCharting video-game guide requires an exact provider value.'];
+    return [];
+  }
   if (anchor.sourceId === 'pricecharting') {
     if (anchor.matchType !== 'exact' || grade !== bound.grade || !/^(?:MS|PR|PF|SP|AU|XF|VF|F|VG|G|FR|PO)\d{1,3}(?:\+)?(?:[A-Z]+)?$/.test(grade)) {
       return ['PriceCharting coin guide requires the exact meaningful certified grade.'];
@@ -227,7 +249,9 @@ export function issueGuideAnchor(
   if (!keyValue) return { guideAnchor: null, warnings: ['Server guide signing is unavailable.'] };
   const facts: Omit<GuideValueAnchor, 'provenanceToken'> = {
     sourceId: acquisition.sourceId,
-    sourceLabel: acquisition.sourceId === 'pricecharting' ? 'PriceCharting Coin Guide' : 'Numista Coin Catalog',
+    sourceLabel: acquisition.sourceId === 'pricecharting'
+      ? bound.category === 'video_games' ? 'PriceCharting Video Game Guide' : 'PriceCharting Coin Guide'
+      : 'Numista Coin Catalog',
     grade: normalizeGuideGrade(anchor.grade), selectedGrade: bound.grade, matchType: anchor.matchType,
     value: anchor.value, recordedSales: null, lastSaleDate: null, totalRecordedSales: null,
     currency: 'USD', retrievedAt: acquiredAt.toISOString(),
@@ -277,7 +301,7 @@ export function verifyGuideAnchors(
       if (fields.some((field) => field === 'grade' || field === 'selectedGrade'
         ? normalizeGuideGrade(candidate[field]) !== normalizeGuideGrade(facts[field])
         : candidate[field] !== facts[field])) { warn('Guide observation was altered from its server-issued facts.'); continue; }
-      if (facts.currency !== 'USD' || !Number.isFinite(facts.value) || facts.value <= 0 || facts.value > 10_000_000 || !facts.sourceQuery || !facts.sourceRecordId || facts.form !== 'single_coin') { warn('Guide signed financial or form facts are invalid.'); continue; }
+      if (facts.currency !== 'USD' || !Number.isFinite(facts.value) || facts.value <= 0 || facts.value > 10_000_000 || !facts.sourceQuery || !facts.sourceRecordId || (bound.category === 'coins' ? facts.form !== 'single_coin' : /(?:set|collection|lot|bundle|box_only|manual_only)/i.test(facts.form ?? ''))) { warn('Guide signed financial or form facts are invalid.'); continue; }
       const applicabilityWarnings = [...gradeWarnings(facts, bound), ...compatibilityWarnings(bound, payload.providerIdentity)];
       if (applicabilityWarnings.length) { warnings.push(...applicabilityWarnings); continue; }
       trustedAnchors.push(brand({ ...facts, provenanceToken: token }, bound));
@@ -326,6 +350,61 @@ function exactPriceChartingGuide(target: ComparableTarget, prices: unknown) {
     return { grade, selectedGrade: grade, matchType: 'exact' as const, value: Math.round(value * 100) / 100 };
   }
   return null;
+}
+
+function exactPriceChartingVideoGameGuide(target: ComparableTarget, prices: unknown) {
+  if (key(target.category) !== 'video_games' || !prices || typeof prices !== 'object' || Array.isArray(prices)) return null;
+  const entries = Object.entries(prices as Record<string, unknown>);
+  const read = (aliases: readonly string[]) => {
+    const entry = entries.find(([name]) => aliases.includes(key(name)));
+    if (!entry) return null;
+    const value = Number(entry[1]);
+    return Number.isFinite(value) && value > 0 && value <= 10_000_000 ? Math.round(value * 100) / 100 : null;
+  };
+  const tiers = [
+    ['loose', ['loose', 'loose_price', 'loose_value']],
+    ['cib', ['cib', 'cib_price', 'complete_in_box', 'complete']],
+    ['new', ['new', 'new_price', 'new_value']],
+    ['graded', ['graded', 'graded_new', 'gradednew', 'graded_price', 'graded_value']],
+  ] as const;
+  const selected = tiers.map(([label, aliases]) => [label, read(aliases)] as const).filter(([, value]) => value !== null);
+  return selected.length ? selected : null;
+}
+
+/** Pure return wrapper for the Parse.bot Video Game price-guide response. */
+export function priceChartingVideoGameGuideQuote(
+  result: { status: string; query?: string; upc?: string; data?: { title?: unknown; platform?: unknown; url?: unknown; priceChartingId?: unknown; gameSlug?: unknown; prices?: unknown } | null },
+  target: ComparableTarget,
+  options?: GuideOptions,
+): { guideAnchor: GuideValueAnchor | null; guideWarnings: string[] } {
+  if (result.status !== 'success' || !result.data) return emptyQuote('No provider-valid PriceCharting video-game guide was returned.');
+  const data = result.data;
+  const providerTitle = text(data.title);
+  const providerPlatform = words(data.platform);
+  const bound = targetIdentity(target);
+  const details = parseTestAiDetails(target.itemDetails);
+  const requestedTitle = words(first(details, ['gameTitle', 'videoGameTitle', 'title']) || target.title);
+  if (bound.category !== 'video_games' || !providerTitle || !providerPlatform || !includesPhrase(providerTitle, requestedTitle) || providerPlatform !== bound.platform) {
+    return emptyQuote('PriceCharting returned an incompatible video-game identity.');
+  }
+  const selected = exactPriceChartingVideoGameGuide(target, data.prices);
+  if (!selected) return emptyQuote('No Loose, CIB, New, or Graded PriceCharting value was returned.');
+  const [tier, selectedValue] = selected[0];
+  if (selectedValue === null) return emptyQuote('No usable PriceCharting video-game guide value was returned.');
+  const value = selectedValue;
+  const providerRecordId = text(data.priceChartingId) || text(data.url) || text(data.gameSlug) || text(result.upc) || providerTitle;
+  const issued = issueGuideAnchor({
+    sourceId: 'pricecharting', sourceLabel: 'PriceCharting Video Game Guide',
+    grade: '', selectedGrade: bound.grade, matchType: 'exact', value,
+    recordedSales: null, lastSaleDate: null, totalRecordedSales: null,
+  }, target, {
+    sourceId: 'pricecharting', sourceQuery: text(result.query) || text(result.upc), sourceRecordId: providerRecordId,
+    currency: 'USD', providerIdentity: {
+      title: providerTitle, country: '', denomination: '', year: '', mintMark: '', variety: '', form: bound.form || 'single_game',
+      platform: providerPlatform,
+    },
+  }, options);
+  return { guideAnchor: issued.guideAnchor, guideWarnings: issued.warnings };
 }
 
 /** Pure return wrapper: no acquisition, query construction, or provider calls. */
