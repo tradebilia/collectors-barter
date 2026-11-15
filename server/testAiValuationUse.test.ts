@@ -233,6 +233,25 @@ describe('Stage 5 actual final-use reporting — real synthetic pipeline', () =>
     expect(population(extensionProfile.finalUseReport, 'primary_market_sales').count).toBe(0);
   });
 
+  it('routes a valid old sale with a source context label to Historic Market Context, not hard exclusion', () => {
+    const oldSale = signed(680, {
+      date: '2024-01-15T00:00:00.000Z',
+      evidenceDisposition: 'valuation_eligible',
+      evidenceReasons: [],
+    }, true);
+    const sales = normalized([oldSale]);
+    const profile = buildMarketProfile(target, sales, null, now);
+    const comparable = profile.comparables[0];
+    expect(comparable.valuationUse?.sourceAdmission).toMatchObject({
+      historicMarketContextEligible: true,
+      verifiedSourceDisposition: 'valuation_eligible',
+    });
+    expect(comparable.valuationUse?.use.code).toBe('HISTORIC_MARKET_CONTEXT');
+    expect(comparable.valuationUse?.use.code).not.toBe('FINAL_HARD_EXCLUDED');
+    expect(population(profile.finalUseReport, 'historic_market_context').count).toBe(1);
+    expect(population(profile.finalUseReport, 'primary_market_sales').count).toBe(0);
+  });
+
   it('emits normalizer blocker codes from actual Boolean terms, not rationale, preserving every submitted failure', () => {
     const cases: Array<[Partial<MarketSale>, string]> = [
       [{ currency: 'CAD' }, 'UNSUPPORTED_CURRENCY'], [{ currency: null }, 'UNKNOWN_CURRENCY'], [{ price: 0 }, 'INVALID_PRICE'],

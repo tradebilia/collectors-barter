@@ -9,8 +9,13 @@ import { readServerNormalizationReport } from '../shared/testAiValuationUse';
  */
 export function hasVerifiedHistoricSaleEconomics(sale: MarketSale): boolean {
   const receipt = readServerNormalizationReport(sale);
+  const disposition = receipt?.sourceAdmission.verifiedSourceDisposition;
   return Boolean(receipt?.sourceAdmission.verification === 'verified'
     && receipt.sourceAdmission.historicMarketContextEligible === true
-    && receipt.sourceAdmission.verifiedSourceDisposition === 'valuation_eligible'
+    // A valid old sale may arrive with a source-stage context label because it
+    // is outside the current valuation window. That label changes destination,
+    // not authenticity. The private receipt and historic eligibility flag are
+    // still mandatory; objective conflicts and cap omissions remain excluded.
+    && ['valuation_eligible', 'context_only', 'warning_review', 'not_visually_reviewed_window'].includes(String(disposition))
     && receipt.auditRef.verifiedObservationId);
 }

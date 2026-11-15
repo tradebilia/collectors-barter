@@ -141,6 +141,16 @@ describe('category-specific comparable identity gates', () => {
     expect(wrongForm.categoryIdentity.conflicts).toContain('Object form differs (console)');
   });
 
+  it('canonicalizes boolean Complete in Box metadata to the same CIB package state used by titles', () => {
+    const target: ComparableTarget = {
+      title: 'Super Mario Bros. 2 NES', category: 'video_games', itemType: 'game',
+      itemDetails: JSON.stringify({ gameTitle: 'Super Mario Bros. 2', platform: 'NES', completeInBox: true, sealed: true }),
+    };
+    const result = scoreComparable(target, completed('Super Mario Bros. 2 NES CIB Video Game'));
+    expect(result.accepted).toBe(true);
+    expect(result.categoryIdentity.conflicts).not.toContain('Package state differs (cib)');
+  });
+
   it('treats Nintendo NES as NES when the platform comes from structured candidate metadata', () => {
     const target: ComparableTarget = {
       title: 'Metroid NES Game',

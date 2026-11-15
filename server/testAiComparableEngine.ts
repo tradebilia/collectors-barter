@@ -387,6 +387,10 @@ function firstString(details: Record<string, unknown>, keys: string[]): string |
   return null;
 }
 
+function affirmativeIdentityValue(value: unknown): boolean {
+  return value === true || value === 1 || /^(?:yes|true|1)$/i.test(String(value ?? '').trim());
+}
+
 function numericGrade(value: string | null | undefined): number | null {
   const match = String(value ?? '').match(/\d+(?:\.\d+)?/);
   return match ? Number(match[0]) : null;
@@ -1598,10 +1602,14 @@ export function assessComparableCategoryIdentity(
     const observedRegion = regionInTitle(title);
     const targetEdition = videoGameEdition(edition);
     const observedEdition = videoGameEdition(title);
-    const targetPackage = (firstString(details, ['sealed', 'factorySealed']) ?? '').toLowerCase() === 'yes'
-      ? 'sealed'
-      : (firstString(details, ['completeInBox']) ?? '').toLowerCase() === 'yes'
-        ? 'cib'
+    // Complete in Box is the product-form identity shown in the metadata
+    // table. A sealed game is also complete in box, so an explicit CIB value
+    // must win when both fields are present; otherwise `sealed: Yes` creates a
+    // false sealed-versus-CIB hard conflict against a CIB title.
+    const targetPackage = affirmativeIdentityValue(details.completeInBox ?? details.complete ?? details.isComplete)
+      ? 'cib'
+      : affirmativeIdentityValue(details.sealed ?? details.factorySealed)
+        ? 'sealed'
         : videoGamePackageState(firstString(details, ['condition', 'packageCondition']) || target.condition);
     const candidatePackage = videoGamePackageState(title);
     const modelMatch = catalogStatus(title, modelOrUpc);
@@ -2696,6 +2704,7 @@ export function buildMarketProfile(
     const outlierExcluded = Boolean(rawMatch && outlierMatches.has(rawMatch));
     const unsupportedCurrency = sourceAdmission.blockerCodes.includes('UNSUPPORTED_CURRENCY')
       || (ledgerOnly && String(sale.currency ?? 'UNKNOWN').toUpperCase() !== 'USD');
+    const historicAgeDays = daysOld(sale.date, nowMs);
     // `unmeasured` means the server did not obtain an authoritative receipt.
     // It must never be promoted to a verified terminal exclusion merely because
     // the inbound row carried a conflict-looking field.
@@ -2705,7 +2714,6 @@ export function buildMarketProfile(
     const reviewRequired = sourceAdmission.blockerCodes.some((code) => ['PROVENANCE_UNVERIFIED', 'REQUIRED_APPROVAL_MISSING', 'VISUAL_MISMATCH'].includes(code))
       || identityAdmission.blockerCodes.some((code) => ['REQUIRED_APPROVAL_MISSING', 'CATEGORY_REVIEW_REQUIRED', 'UNIVERSAL_REVIEW_REQUIRED',
         'VISUAL_MISMATCH', 'VARIANT_REVIEW_REQUIRED', 'TARGET_IDENTITY_INCOMPLETE'].includes(code));
-    const historicAgeDays = daysOld(sale.date, nowMs);
     const historicMarketContext = !duplicate && !outlierExcluded && !omittedByCap && !hardExcluded && !reviewRequired
       && hasVerifiedHistoricSaleEconomics(original) && identityAdmission.accepted
       && historicAgeDays !== null && historicAgeDays > 365;
