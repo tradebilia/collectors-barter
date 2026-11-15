@@ -4792,8 +4792,15 @@ export const testAIRouter = router({
         ?.map((value: unknown) => String(value).replace(/\D/g, ''))
         .find((value: string) => /^\d{8,14}$/.test(value)) ?? null;
       const detail = associatedUpc ? await lookupPriceChartingVideoGame(associatedUpc) : null;
-      const guide = input.guideTarget && detail?.status === 'success'
-        ? priceChartingVideoGameGuideQuote(detail, input.guideTarget)
+      const detailPrices = detail?.data?.prices && Object.keys(detail.data.prices).length > 0 ? detail.data.prices : null;
+      const mergedDetail = detail?.status === 'success' && detail.data
+        ? { ...selected, ...detail.data, prices: detailPrices ?? selected?.prices ?? {} }
+        : null;
+      const detailResult = detail?.status === 'success' && mergedDetail
+        ? { status: 'success' as const, upc: detail.upc, data: mergedDetail }
+        : null;
+      const guide = input.guideTarget && detailResult?.status === 'success'
+        ? priceChartingVideoGameGuideQuote(detailResult, input.guideTarget)
         : input.guideTarget && selected
           ? { guideAnchor: null, guideWarnings: ['The selected PriceCharting candidate had no usable associated UPC for its detail lookup.'] }
           : { guideAnchor: null, guideWarnings: [] };
@@ -4805,7 +4812,7 @@ export const testAIRouter = router({
         data: result.data ? {
           ...result.data,
           selectedCandidate: selected,
-          detail: detail?.data ?? null,
+          detail: mergedDetail,
           detailStatus: detail?.status ?? 'not_requested',
           detailMessage,
         } : result.data,

@@ -125,7 +125,7 @@ describe('Parse SGC and PriceCharting adapters', () => {
 
   it('uses the authorized bounded title-and-platform endpoint and keeps edition candidates out of automatic selection', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { results: [
-      { title: 'Super Mario Bros 3', platform: 'NES', platform_slug: 'nes', game_slug: 'super-mario-bros-3', pricecharting_id: '9891', associated_upcs: ['045496630094'], prices: { cib: 80 } },
+      { title: 'Super Mario Bros 3', platform: 'NES', platform_slug: 'nes', game_slug: 'super-mario-bros-3', pricecharting_id: '9891', associated_upcs: ['045496630094'], prices: { loose: 50, cib: 80, new: 120, graded: 250, box_only: 8, manual_only: 5 } },
       { title: 'Super Mario Bros. 3 [Red Label]', platform: 'NES', platform_slug: 'nes', game_slug: 'super-mario-bros-3-red-label', pricecharting_id: '8879325', prices: { cib: 120 } },
       { title: 'Super Mario Bros 3', platform: 'SNES', platform_slug: 'snes', game_slug: 'super-mario-bros-3-snes', pricecharting_id: '9999', prices: { cib: 60 } },
     ] } }) });
@@ -137,6 +137,7 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect(result.data?.candidates).toHaveLength(3);
     expect(result.data?.compatibleCandidates).toHaveLength(1);
     expect(result.data?.compatibleCandidates[0]).toMatchObject({ title: 'Super Mario Bros 3', platform: 'NES', priceChartingId: '9891' });
+    expect(result.data?.compatibleCandidates[0]?.prices).toEqual({ loose: 50, cib: 80, new: 120, graded: 250, box_only: 8, manual_only: 5 });
     expect(result.data?.selectionRequired).toBe(false);
     expect(fetchMock.mock.calls[0][0]).toContain('/47b2f542-930c-40f0-a2f0-42673e998204/search_video_games?query=Super+Mario+Bros.+3&limit=10&platform=NES');
   });
