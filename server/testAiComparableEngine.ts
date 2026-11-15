@@ -1026,7 +1026,7 @@ function videoGameObjectForm(value: string | null | undefined): VideoGameObjectF
 }
 
 const PLATFORM_LABELS: Record<string, string[]> = {
-  nes: ['nes', 'nintendo', 'nintendo entertainment system'],
+  nes: ['nes', 'nintendo', 'nintendo nes', 'nintendo entertainment system'],
   snes: ['snes', 'super nintendo', 'super nintendo entertainment system'],
   n64: ['n64', 'nintendo 64'],
   gamecube: ['gamecube', 'game cube'],

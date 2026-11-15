@@ -141,6 +141,29 @@ describe('category-specific comparable identity gates', () => {
     expect(wrongForm.categoryIdentity.conflicts).toContain('Object form differs (console)');
   });
 
+  it('treats Nintendo NES as NES when the platform comes from structured candidate metadata', () => {
+    const target: ComparableTarget = {
+      title: 'Metroid NES Game',
+      category: 'video_games',
+      itemType: 'game',
+      itemDetails: JSON.stringify({ gameTitle: 'Metroid', platform: 'NES', objectType: 'Game' }),
+    };
+    const equivalent = {
+      ...completed('Metroid Nintendo NES Game'),
+      itemDetails: JSON.stringify({ gameTitle: 'Metroid', platform: 'Nintendo NES', objectType: 'Game' }),
+    };
+    const different = {
+      ...completed('Metroid SNES Game'),
+      itemDetails: JSON.stringify({ gameTitle: 'Metroid', platform: 'SNES', objectType: 'Game' }),
+    };
+    const equivalentResult = scoreComparable(target, equivalent);
+    const differentResult = scoreComparable(target, different);
+    expect(equivalentResult.accepted).toBe(true);
+    expect(equivalentResult.categoryIdentity.conflicts).not.toContain('Platform differs (nintendo nes)');
+    expect(differentResult.accepted).toBe(false);
+    expect(differentResult.categoryIdentity.conflicts).toContain('Platform differs (snes)');
+  });
+
   it('treats Microsoft Xbox 360 as Xbox 360, but still rejects a different Xbox generation', () => {
     const target: ComparableTarget = {
       title: 'Call of Duty World at War Xbox 360',

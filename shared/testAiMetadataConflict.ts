@@ -68,7 +68,7 @@ function compact(value: unknown): string {
 }
 
 const VIDEO_GAME_PLATFORM_ALIASES: Record<string, string[]> = {
-  nes: ['nes', 'nintendo', 'nintendoentertainmentsystem'],
+  nes: ['nes', 'nintendo', 'nintendones', 'nintendoentertainmentsystem'],
   snes: ['snes', 'supernintendo', 'supernintendoentertainmentsystem'],
   n64: ['n64', 'nintendo64'],
   gamecube: ['gamecube', 'gamecube'],
