@@ -15,7 +15,7 @@ describe('Video Games Game recommended Edition / Version field', () => {
 
   it('places Edition / Version in the recommended section', () => {
     const recommended = video_gamesGameLayout.sections.recommended?.fieldLayout ?? {};
-    expect(recommended.edition).toEqual({ colSpan: 'full', position: 3 });
+    expect(recommended.edition).toEqual({ colSpan: 'half', position: 3 });
     expect(recommended.edition?.position).toBeLessThan(recommended.upc?.position ?? Infinity);
   });
 });
