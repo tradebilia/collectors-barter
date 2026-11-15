@@ -5064,6 +5064,7 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
   const targetTitle = extractTargetTitle(targetMetadata).toLowerCase();
   const targetDetails = extractTargetItemDetails(targetMetadata);
   const isMovieTarget = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'movies';
+  const isVideoGameTarget = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'video_games';
   const targetFacsimile = normalizedChoice(targetDetails.facsimile);
   const targetDistribution = normalizedChoice(targetDetails.distributionType);
   return listings.flatMap((listing, candidateIndex) => {
@@ -5074,6 +5075,10 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     // Edition wording remains a hard conflict for categories where it is an
     // identity-defining variant (comics, cards, games, etc.).
     const conflict = DECLARED_VARIANT_PATTERNS.find((pattern) => {
+      // Video Games have no generic marketplace “variant” identity field.
+      // Real game identity checks run below; seller wording alone must not
+      // create a hard exclusion before visual review.
+      if (isVideoGameTarget) return false;
       if (isMovieTarget && pattern.source.includes('edition')) return false;
       return pattern.test(title) && !pattern.test(targetTitle);
     });
@@ -5611,7 +5616,7 @@ export function videoGameVisualCap(score: number): number {
   if (score >= 90) return 8;
   if (score >= 80) return 6;
   if (score >= 70) return 4;
-  if (score >= 50) return 2;
+  if (score >= 50) return 4;
   return 0;
 }
 const MOVIES_INDIVIDUAL_SCORE_FIELDS = [

@@ -983,8 +983,8 @@ describe("visual source filter", () => {
     expect(videoGameVisualCap(95)).toBe(8);
     expect(videoGameVisualCap(85)).toBe(6);
     expect(videoGameVisualCap(75)).toBe(4);
-    expect(videoGameVisualCap(65)).toBe(2);
-    expect(videoGameVisualCap(50)).toBe(2);
+    expect(videoGameVisualCap(65)).toBe(4);
+    expect(videoGameVisualCap(50)).toBe(4);
     expect(videoGameVisualCap(49)).toBe(0);
   });
 
@@ -3473,6 +3473,13 @@ describe("visual source filter", () => {
     ], metadata);
     expect(result[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
     expect(result[0].rationale).toContain("platform differs");
+  });
+
+  it("does not treat a Video Games marketplace Variant label as an identity conflict", () => {
+    const metadata = `title=Metroid NES; category=video_games; itemType=game; fullItemDetails=${JSON.stringify({ gameTitle: "Metroid", platform: "NES" })}`;
+    expect(buildDeclaredIdentityReviews([
+      { title: "Metroid NES Rare Family Variant Complete In Box" },
+    ], metadata)).toEqual([]);
   });
 
   it("applies Video Games / Game identity filters and preserves unknown fields", () => {

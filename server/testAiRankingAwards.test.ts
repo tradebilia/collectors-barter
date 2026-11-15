@@ -280,7 +280,7 @@ describe("actual category awards and current model arithmetic", () => {
   });
 
   it.each([49, 50, 69, 70, 79, 80, 89, 90])("preserves Video Games cap boundary %i", (score) => {
-    const expected: Record<number, number> = { 49: 0, 50: 2, 69: 2, 70: 4, 79: 4, 80: 6, 89: 6, 90: 8 };
+    const expected: Record<number, number> = { 49: 0, 50: 4, 69: 4, 70: 4, 79: 4, 80: 6, 89: 6, 90: 8 };
     expect(videoGameVisualCap(score)).toBe(expected[score]);
   });
 });

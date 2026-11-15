@@ -86,8 +86,8 @@ const consoleFixture = (id: string, fields: Array<keyof typeof CONSOLE_DETAILS>,
 const fullConsole = (id: string, image = true) => consoleFixture(id, Object.keys(CONSOLE_DETAILS) as Array<keyof typeof CONSOLE_DETAILS>, image);
 const consoleCapCases: Array<{ score: number; cap: number; fields: Array<keyof typeof CONSOLE_DETAILS> }> = [
   { score: 45, cap: 0, fields: ['region'] },
-  { score: 50, cap: 2, fields: ['modelNumber'] },
-  { score: 65, cap: 2, fields: ['modelNumber', 'region'] },
+  { score: 50, cap: 4, fields: ['modelNumber'] },
+  { score: 65, cap: 4, fields: ['modelNumber', 'region'] },
   { score: 70, cap: 4, fields: ['modelNumber', 'region', 'cablesIncluded'] },
   { score: 75, cap: 4, fields: ['modelNumber', 'region', 'originalBoxIncluded'] },
   { score: 80, cap: 6, fields: ['modelNumber', 'region', 'workingCondition'] },
@@ -284,7 +284,7 @@ describe('Stage 4 pure retained-occurrence display ranking', () => {
     expect(projected.some((row) => row.id === 'hard')).toBe(true);
   });
 
-  it.each([[49, 0], [50, 2], [69, 2], [70, 4], [79, 4], [80, 6], [89, 6], [90, 8]] as const)
+  it.each([[49, 0], [50, 4], [69, 4], [70, 4], [79, 4], [80, 6], [89, 6], [90, 8]] as const)
   ('checks exact existing Video Games helper boundary %s -> %s without pretending it is real model evidence', (score, cap) => {
     // The approved console/game/accessory terms are multiples of five. Exact
     // 49/69/79/89 are helper-only; actual public controls below use 45/65/75/85.

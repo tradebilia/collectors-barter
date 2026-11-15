@@ -218,7 +218,7 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(mercariVideoGameVisualCap(85)).toBe(5);
     expect(mercariVideoGameVisualCap(70)).toBe(3);
     expect(mercariVideoGameVisualCap(60)).toBe(3);
-    expect(mercariVideoGameVisualCap(50)).toBe(2);
+    expect(mercariVideoGameVisualCap(50)).toBe(4);
     expect(mercariVideoGameVisualCap(49)).toBe(0);
 
     const admission = selectMercariVideoGameVisualCandidates([

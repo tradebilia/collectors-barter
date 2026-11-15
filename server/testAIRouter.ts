@@ -1264,7 +1264,7 @@ export function videoGameVisualCap(highestScore: number): number {
   if (highestScore >= 90) return 6;
   if (highestScore >= 80) return 5;
   if (highestScore >= 60) return 3;
-  if (highestScore >= 50) return 2;
+  if (highestScore >= 50) return 4;
   return 0;
 }
 

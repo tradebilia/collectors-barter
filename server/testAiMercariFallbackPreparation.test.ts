@@ -59,8 +59,8 @@ describe('Step6 synchronous canonical review-opportunity preparation', () => {
 
   it.each([
     { score: 45, cap: 0, fields: ['region'] },
-    { score: 50, cap: 2, fields: ['modelNumber'] },
-    { score: 65, cap: 2, fields: ['modelNumber', 'region'] },
+    { score: 50, cap: 4, fields: ['modelNumber'] },
+    { score: 65, cap: 4, fields: ['modelNumber', 'region'] },
     { score: 70, cap: 4, fields: ['modelNumber', 'region', 'cablesIncluded'] },
     { score: 75, cap: 4, fields: ['modelNumber', 'region', 'originalBoxIncluded'] },
     { score: 80, cap: 6, fields: ['modelNumber', 'region', 'workingCondition'] },
