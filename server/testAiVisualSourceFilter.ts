@@ -3063,40 +3063,59 @@ export function withMetadataFieldComparisons<T extends Record<string, any>>(targ
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   const itemType = targetItemTypeValue(targetMetadata);
   const movieContext = category === 'movies' || category === 'movie' || normalizedFieldKey(itemType).includes('movie');
-  // The live source payload can contain an older award snapshot even after the
-  // title comparison rules have changed. Recompute Movie awards here, without
-  // another provider/model call, so the final visible score and the candidate's
-  // ranking payload come from the same deterministic scorer.
+  const videoGameType = category === 'video_games' ? videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata)) : '';
+  // The live source payload can contain an older award snapshot after scoring
+  // rules change. Recompute deterministic category awards here, without
+  // another provider/model call, so the final visible score and comparison
+  // table use the same current scorer.
   const movieScoring = movieContext
     ? movieTargetItemType(targetMetadata) === 'box_set'
       ? moviesBoxSetVisualScore(listing as VisualSourceCandidate, targetMetadata)
       : moviesIndividualVisualScore(listing as VisualSourceCandidate, targetMetadata)
     : null;
   const existingAwards = Array.isArray(listing.metadataScoreAwards) ? listing.metadataScoreAwards : [];
+  const existingComparisonRows = Array.isArray(listing.metadataFieldComparisons) ? listing.metadataFieldComparisons : [];
+  const hasLegacyVideoGameProductForm = category === 'video_games' && (
+    existingAwards.some((award: RankingAward) => normalizedFieldKey(award.field) === 'productform')
+      || existingComparisonRows.some((row: MetadataFieldComparison) => normalizedFieldKey(row.fieldKey ?? row.targetField) === 'productform')
+  );
+  const videoGameScoring = hasLegacyVideoGameProductForm && videoGameType === 'game'
+    ? videoGameGameVisualScore(listing as VisualSourceCandidate, targetMetadata)
+    : hasLegacyVideoGameProductForm && videoGameType === 'console'
+      ? videoGameConsoleVisualScore(listing as VisualSourceCandidate, targetMetadata)
+      : hasLegacyVideoGameProductForm && videoGameType === 'accessory'
+        ? videoGameAccessoryVisualScore(listing as VisualSourceCandidate, targetMetadata)
+        : null;
   const existingAwardKeys = new Set(existingAwards.map((award: RankingAward) => rankingAwardFieldKey(award.field, category, itemType)));
   const missingMovieAwards = (movieScoring?.awards ?? []).filter((award) => !existingAwardKeys.has(rankingAwardFieldKey(award.field, category, itemType)));
-  const mergedAwards = [...existingAwards, ...missingMovieAwards];
+  const authoritativeAwards = videoGameScoring?.awards ?? null;
+  const mergedAwards = authoritativeAwards ?? [...existingAwards, ...missingMovieAwards];
   const refreshedMovieScore = movieScoring
     ? existingAwards.length
       ? Number(listing.metadataMatchScore ?? 0) + missingMovieAwards.reduce((sum, award) => sum + award.awardedPoints, 0)
       : movieScoring.score
     : undefined;
-  const projectionListing = movieScoring ? {
+  const projectionListing = movieScoring || videoGameScoring ? {
     ...listing,
-    metadataMatchScore: refreshedMovieScore,
-    metadataMatchReasons: [...new Set([...(listing.metadataMatchReasons ?? []), ...missingMovieAwards.map((award) => award.field)])],
-    metadataUnknownFields: movieScoring.unknown ?? [],
+    metadataMatchScore: videoGameScoring?.score ?? refreshedMovieScore,
+    metadataMatchReasons: videoGameScoring?.matched ?? [...new Set([...(listing.metadataMatchReasons ?? []), ...missingMovieAwards.map((award) => award.field)])],
+    metadataUnknownFields: videoGameScoring?.unknown ?? movieScoring?.unknown ?? [],
     metadataScoreAwards: mergedAwards,
   } as T : listing;
   const fresh = buildMetadataFieldComparisons(targetMetadata, projectionListing as VisualSourceCandidate);
-  const existing = Array.isArray(listing.metadataFieldComparisons) && listing.metadataFieldComparisons.length
-    ? listing.metadataFieldComparisons as MetadataFieldComparison[] : fresh;
+  const existing = existingComparisonRows.length ? existingComparisonRows as MetadataFieldComparison[] : fresh;
   const canonicalComparisonKey = (field: string): string => movieContext
     && /^(?:title|movieTitle|boxSetName|seriesName)$/i.test(field) ? 'movieTitle' : normalizedFieldKey(field);
   const comparisonQuality = (row: MetadataFieldComparison): number => [row.targetValue, row.candidateValue, row.titleDerivedStatus === 'match' ? row.titleDerivedValue : ''].filter(value => meaningfulMetadataText(value)).length;
   const freshByKey = new Map(fresh.map((row) => [normalizedFieldKey(row.fieldKey ?? row.targetField), row]));
   const freshByLabel = new Map(fresh.map((row) => [normalizedFieldKey(row.targetField), row]));
-  const rows: MetadataFieldComparison[] = existing.map((previous) => {
+  const rows: MetadataFieldComparison[] = existing
+    // Video Games changed from the legacy Product Form award to the explicit
+    // Complete in Box field. Keep only rows present in the fresh authoritative
+    // model so an older transport projection cannot resurrect Product Form.
+    .filter((previous) => !videoGameScoring || freshByKey.has(normalizedFieldKey(previous.fieldKey ?? previous.targetField))
+      || freshByLabel.has(normalizedFieldKey(previous.targetField)))
+    .map((previous) => {
     const key = previous.fieldKey ?? previous.targetField;
     const replacement = freshByKey.get(normalizedFieldKey(key)) ?? freshByLabel.get(normalizedFieldKey(previous.targetField));
     const row = replacement ? { ...previous, ...replacement } : { ...previous };
@@ -5493,18 +5512,21 @@ function videoGameScoreCompleteInBox(targetValue: unknown, listing: VisualSource
   if (!targetState) return null;
   const details = candidateStructuredDetails(listing);
   const structured = candidateMetadataValue(listing, details, ['completeInBox', 'complete', 'isComplete', 'completeness']);
+  const sealed = candidateMetadataValue(listing, details, ['sealed', 'factorySealed', 'sealedStatus']);
   const title = canonicalCandidateTitle(listing);
   const candidateState = structured
     ? metadataBooleanState(structured)
-    : /\b(?:complete\s+in\s+box|CIB)\b/i.test(title)
+    : metadataBooleanState(sealed) === 'yes' || titleCompletenessState(title) === 'yes'
       ? 'yes'
-      : /\b(?:loose|cartridge\s+only|no\s+box|incomplete)\b/i.test(title)
+      : metadataBooleanState(sealed) === 'no' && titleCompletenessState(title) === 'no'
         ? 'no'
-        : null;
+        : titleCompletenessState(title) === 'no'
+          ? 'no'
+          : null;
   if (!candidateState) return null;
   return scoreMatch(candidateState === targetState, {
-    value: structured ? String(structured) : title,
-    source: structured ? 'structured' : 'title',
+    value: structured ? String(structured) : sealed ? String(sealed) : title,
+    source: structured || sealed ? 'structured' : 'title',
     field: 'completeInBox',
   });
 }

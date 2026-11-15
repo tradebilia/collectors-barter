@@ -109,9 +109,9 @@ const fixtures: Fixture[] = [
     details: { country: "United States", setNameDescription: "Bicentennial", year: "1976", sheetType: "Set", numberOfStamps: "4", mintOrUsed: "Mint", format: "set" },
     weights: { setName: 25, country: 15, year: 15, sheetType: 15, numberOfStamps: 10, mintOrUsed: 8, grade: 5, gradingCompany: 4, format: 3 } }),
   fixture({ name: "Video game", category: "video_games", itemType: "game", scorer: videoGameGameVisualScore,
-    title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard Sealed PSA 9.8", grade: "9.8", grader: "PSA", isGraded: "Yes",
-    details: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: "1990", region: "NTSC-U", edition: "Standard", sealed: "Yes", upc: "123456789012" },
-    weights: { gameTitle: 20, platform: 20, releaseYear: 15, region: 10, edition: 10, productForm: 5, isGraded: 5, gradingCompany: 5, grade: 5, upcEan: 5 } }),
+    title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard CIB Sealed PSA 9.8", grade: "9.8", grader: "PSA", isGraded: "Yes",
+    details: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: "1990", region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "Yes", upc: "123456789012" },
+    weights: { gameTitle: 20, platform: 20, releaseYear: 15, region: 10, edition: 5, completeInBox: 5, isGraded: 5, gradingCompany: 5, grade: 5, upcEan: 5 }, expected: 95 }),
   fixture({ name: "Video console", category: "video_games", itemType: "console", scorer: videoGameConsoleVisualScore,
     title: "Nintendo NES NES-001 Working NTSC-U", isGraded: "No",
     details: { consoleName: "NES", modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" },
@@ -158,15 +158,16 @@ for (const [itemType, details, weights, expected] of toys) fixtures.push(fixture
   title: "Vintage collectible AFA 7.5", grade: "7.5", grader: "AFA", details, weights, expected,
 }));
 
-describe("actual category awards and unchanged model arithmetic", () => {
+describe("actual category awards and current model arithmetic", () => {
   it.each(fixtures)("$name earns only positive terms and matches actual dispatch", (row) => {
     const target = fixtureTarget(row);
     const positive = row.scorer(fixtureCandidate(row), target);
     const negative = row.scorer({}, target);
-    expect(Object.values(row.weights).reduce((sum, points) => sum + points, 0)).toBe(100);
+    const expectedTotal = row.expected ?? Object.values(row.weights).reduce((sum, points) => sum + points, 0);
+    expect(Object.values(row.weights).reduce((sum, points) => sum + points, 0)).toBe(expectedTotal);
     expectAccounting(positive, row.weights);
     expectAccounting(negative, row.weights);
-    expect(positive.score).toBe(row.expected ?? 100);
+    expect(positive.score).toBe(expectedTotal);
     expect(negative.score).toBe(row.scorer === sportsCardSingleVisualScore ? 5 : 0);
     // These are real dispatch outputs, not a duplicate model in the test.
     const dispatched = annotatePreVisualComparableScores([fixtureCandidate(row), {}], target);

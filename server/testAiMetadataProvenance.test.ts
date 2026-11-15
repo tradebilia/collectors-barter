@@ -74,6 +74,36 @@ describe('Stage 4 composed normalized metadata and awarded comparison projection
     expect(buildDeclaredIdentityReviews([candidate], sealed)[0]?.verdict).toBe('mismatch');
     expect(buildDeclaredIdentityReviews([{ ...candidate, sealed: 'Yes' }], target)[0]?.verdict).toBe('mismatch');
   });
+  it('keeps Video Games comparison rows aligned with current awards after a stale Product Form projection', () => {
+    const target = game({ sealed: 'No', completeInBox: 'Yes' });
+    const candidate: any = {
+      title: 'The Legend of Zelda NES Complete CIB',
+      metadataScoreAwards: [{ field: 'productForm', source: 'title', awardedPoints: 5 }],
+      metadataFieldComparisons: [{
+        fieldKey: 'productForm', targetField: 'Product Form', targetValue: 'Unknown', candidateField: 'Product Form',
+        candidateValue: 'Unknown', status: 'unknown', titleDerivedField: 'Product Form (from title)',
+        titleDerivedValue: 'Unknown', titleDerivedStatus: 'unknown',
+        rankingContribution: { matched: true, structured: false, titleDerived: false, potentialPoints: 5, awardedPoints: 5, reasons: [] },
+      }],
+    };
+    const projected = withMetadataFieldComparisons(target, candidate);
+    const completeInBox = row(projected, 'Complete In Box');
+
+    expect(projected.metadataScoreAwards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'completeInBox', awardedPoints: 5 }),
+    ]));
+    expect(projected.metadataScoreAwards).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'productForm' }),
+    ]));
+    expect(projected.metadataFieldComparisons.some((entry: any) => entry.targetField === 'Product Form')).toBe(false);
+    expect(completeInBox).toMatchObject({
+      targetValue: 'Yes', titleDerivedStatus: 'match',
+      rankingContribution: { matched: true, awardedPoints: 5, potentialPoints: 5 },
+    });
+    for (const entry of projected.metadataFieldComparisons) {
+      if (entry.status === 'unknown') expect(entry.rankingContribution?.awardedPoints ?? 0).toBe(0);
+    }
+  });
   it('meaningful numeric plus remains different while decimal and Video Game descriptive suffix formatting agree', () => {
     const target = game({ isGraded: 'Yes' }, { grade: '7.50', certificationCompany: 'PSA' });
     expect(row(scored(target, { title: 'The Legend of Zelda NES PSA 7.5', grade: '7.5' }), 'Grade').status).toBe('match');
