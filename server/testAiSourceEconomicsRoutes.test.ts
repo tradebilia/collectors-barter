@@ -468,6 +468,24 @@ describe('Stage 6 ACTUAL named source routes and restrictive source-fact sealing
     expect(sourceRows(source).some((sale) => sale.visualRequirement === 'required')).toBe(true);
     expectHeld(sourceRows(source)); expect(boundaries.llm).toHaveBeenCalled();
   });
+  it('Goldin image-less non-autograph rows use metadata and completed-sale checks without visual approval', async () => {
+    boundaries.llm.mockReset();
+    boundaries.specialist.mockResolvedValue(result([row('goldin-no-image', {
+      sourceId: 'goldin', imageUrl: null, priceBasis: 'closed', buyerPremiumIncluded: true,
+      winningBid: 100, buyerPremiumPercentage: 20,
+    })]));
+    const source = await caller().getSpecialistMarketplaceData({ ...CARD, sourceId: 'goldin' }) as Row;
+    expect(source.sales).toHaveLength(1);
+    expect(source.context).toHaveLength(0);
+    expect(source.sales[0]).toMatchObject({
+      visualRequirement: 'not_required_goldin_metadata',
+      visualReviewStatus: 'not_reviewed',
+      evidenceDisposition: 'valuation_eligible',
+      valuationEligible: true,
+    });
+    expect(source.sales[0].visualExecution).toMatchObject({ state: 'not_dispatched', reasonCode: 'candidate_image_unavailable' });
+    expect(boundaries.llm).not.toHaveBeenCalled();
+  });
   it('Goldin signed-item actual relevance context is sealed after shared special partitions with no visual dispatch', async () => {
     boundaries.specialist.mockResolvedValue(result([row('goldin-signed', { title: 'Muhammad Ali Signed EVERLAST Boxing Glove PSA/DNA',
       sourceId: 'goldin', priceBasis: 'closed', buyerPremiumIncluded: true, winningBid: 100, buyerPremiumPercentage: 20 })]));

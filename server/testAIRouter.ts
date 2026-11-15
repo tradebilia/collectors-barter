@@ -3286,17 +3286,36 @@ export const testAIRouter = router({
         ...record,
         imageUrl: visualSourceCandidateImage(record),
       }));
+      const autographTarget = isAutographSignedItemTarget(targetMetadata);
+      const metadataOnlyGoldin = candidateRecords.filter((record: any) => autographTarget || !visualSourceCandidateImage(record)).map((record: any) => ({
+          ...record,
+          visualRequirement: autographTarget ? 'not_required_autograph_market_context' : 'not_required_goldin_metadata',
+          visualReviewStatus: 'not_reviewed',
+          visualReviewRationale: autographTarget
+            ? 'Goldin signed-item records are market context only and are not sent to visual review.'
+            : 'Goldin supplied no usable listing image; completed-sale and metadata identity checks are used instead.',
+          visualExecution: createNotDispatchedVisualExecution(autographTarget ? 'workflow_context_only' : 'candidate_image_unavailable'),
+          evidenceDisposition: !autographTarget && record.completed && record.identityMatched && record.valuationEligible
+            ? 'valuation_eligible' : 'context_only',
+          valuationEligible: Boolean(!autographTarget && record.completed && record.identityMatched && record.valuationEligible),
+          evidenceReasons: !autographTarget && record.completed && record.identityMatched && record.valuationEligible
+            ? ['Goldin record passed completed-sale, USD price, date, and metadata identity checks; no listing image was available for review.']
+            : [record.exclusionReason ?? (autographTarget
+              ? 'Goldin signed-item records are context-only.'
+              : 'Goldin record did not pass the completed-sale or metadata identity checks.')],
+        }));
+      const visualCandidateRecords = autographTarget ? [] : candidateRecords.filter((record: any) => Boolean(visualSourceCandidateImage(record)));
       const visualFilter = await filterVisualSourceCandidates({
               sourceRole: 'marketplace',
         sourceLabel: 'Goldin specialist auction records',
         targetImageUrl: input.imageUrl,
         visualProvider: input.visualProvider,
         targetMetadata,
-        listings: candidateRecords,
+        listings: visualCandidateRecords,
       });
       const visible = visualFilter.listings;
       const context = visualFilter.contextListings ?? [];
-      const allReviewed = [...visible, ...context];
+      const allReviewed = [...metadataOnlyGoldin, ...visible, ...context];
       // The specialist adapter's identityMatched flag is only a broad
       // retrieval signal. The shared visual filter applies the authoritative
       // autograph checks (signer, signed-object type, signature count,
