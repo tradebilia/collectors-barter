@@ -3845,11 +3845,16 @@ function queryTraceStrings(value: unknown): string[] {
 
 function QueryTrace({ item, sources }: { item: SelectedItem; sources: QueryTraceSource[] }) {
   const rows = sources.map((source) => {
-    const definition = buildMarketplaceSearchDefinition({ title: item.title, category: item.category, itemType: item.itemType, grade: item.grade, condition: item.condition, certificationCompany: item.certificationCompany ?? item.gradingCompany, itemDetails: item.itemDetails });
+    const standardDefinition = buildMarketplaceSearchDefinition({ title: item.title, category: item.category, itemType: item.itemType, grade: item.grade, condition: item.condition, certificationCompany: item.certificationCompany ?? item.gradingCompany, itemDetails: item.itemDetails });
+    const isPriceChartingVideoGame = source.id === 'pricecharting' && item.category.trim().toLowerCase().replace(/[ -]+/g, '_') === 'video_games';
+    const priceChartingInput = isPriceChartingVideoGame ? buildPriceChartingVideoGameSearchInput(item.itemDetails, item.title) : null;
+    const definition = isPriceChartingVideoGame && priceChartingInput
+      ? { ...standardDefinition, query: [priceChartingInput.query, priceChartingInput.platform].filter(Boolean).join(' '), baseQuery: priceChartingInput.query, fallbackQueries: [[priceChartingInput.fallbackQuery, priceChartingInput.platform].filter(Boolean).join(' ')], fieldsUsed: ['game title', 'platform', 'edition / version'] }
+      : standardDefinition;
     const data = source.data;
     const receipts = sourceRetrievalRows(data).filter((receipt: any) => receipt.executed !== false);
     const executed = [...new Set([...queryTraceStrings(data?.metrics?.executedQueries), ...queryTraceStrings(data?.searchMetrics?.executedQueries), ...receipts.map((receipt: any) => String(receipt.query ?? '').trim()).filter(Boolean), ...(typeof data?.query === 'string' ? [data.query.trim()] : [])].filter(Boolean))];
-    const suppliedFallbacks = queryTraceStrings(data?.plannedFallbackQueries ?? data?.searchDefinition?.fallbackQueries ?? data?.fallbackQueries);
+    const suppliedFallbacks = isPriceChartingVideoGame ? [] : queryTraceStrings(data?.plannedFallbackQueries ?? data?.searchDefinition?.fallbackQueries ?? data?.fallbackQueries);
     const planned = [...new Set([...(suppliedFallbacks.length ? suppliedFallbacks : definition.fallbackQueries), ...definition.fallbackQueries])].filter((query) => query !== definition.query);
     return { ...source, primary: definition.query || data?.query || 'No primary query defined', planned, executed };
   }).filter((row) => row.primary || row.planned.length || row.executed.length);

@@ -58,4 +58,11 @@ describe('Stage 2 actual client guide-target input binding', () => {
     expect(page).toContain('PriceChartingVideoGameDataContext.Provider value={item.category === \'video_games\' ? (priceChartingVideoGameUpc ? priceChartingVideoGameEvidenceData : priceChartingVideoGameCandidateEvidenceData) : undefined}');
     expect(page).toContain('const candidateSearchData = effectiveVideoGamePacket ?? videoGameCandidateQuery.data;');
   });
+
+  it('uses the PriceCharting-specific edition primary and title/platform fallback in Query Trace', () => {
+    const page = readFileSync(new URL('../client/src/pages/TestAI.tsx', import.meta.url), 'utf8');
+    expect(page).toContain("source.id === 'pricecharting'");
+    expect(page).toContain("fieldsUsed: ['game title', 'platform', 'edition / version']");
+    expect(page).toContain('priceChartingInput.fallbackQuery');
+  });
 });

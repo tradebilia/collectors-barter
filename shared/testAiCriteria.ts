@@ -303,15 +303,18 @@ function cleanPriceChartingVideoGameTitle(title: string, platform: string): stri
     .trim();
 }
 
-/** PriceCharting title search intentionally uses only game title and platform. */
-export function buildPriceChartingVideoGameSearchInput(itemDetails: unknown, fallbackTitle: string): { query: string; platform?: string } {
+/** PriceCharting uses title/platform/edition first, then title/platform as its bounded fallback. */
+export function buildPriceChartingVideoGameSearchInput(itemDetails: unknown, fallbackTitle: string): { query: string; fallbackQuery: string; platform?: string } {
   const details = parseTestAiDetails(itemDetails);
   const value = (...keys: string[]) => keys.map((key) => resolveTestAiDetailValue(details, key)).find(Boolean) ?? '';
   const rawTitle = value('gameTitle', 'videoGameTitle', 'title') || fallbackTitle.trim();
   const statedPlatform = value('platform', 'console', 'system');
   const detectedPlatform = statedPlatform || PRICECHARTING_VIDEO_GAME_PLATFORMS.find((candidate) => priceChartingVideoGamePlatformPattern(candidate).test(rawTitle)) || '';
+  const gameTitle = cleanPriceChartingVideoGameTitle(rawTitle, detectedPlatform);
+  const edition = value('edition', 'releaseType', 'version');
   return {
-    query: cleanPriceChartingVideoGameTitle(rawTitle, detectedPlatform),
+    query: [gameTitle, edition].filter(Boolean).join(' ').trim(),
+    fallbackQuery: gameTitle,
     platform: detectedPlatform || undefined,
   };
 }

@@ -4779,6 +4779,7 @@ export const testAIRouter = router({
   searchPriceChartingVideoGames: protectedProcedure
     .input(z.object({
       query: z.string().trim().min(2).max(240),
+      fallbackQuery: z.string().trim().min(2).max(240).optional(),
       platform: z.string().trim().min(1).max(120).optional(),
       guideTarget: z.object({ title: z.string().trim().max(240), category: z.string().trim().max(80), grade: z.string().trim().max(50).optional(), condition: z.string().trim().max(50).optional(), itemType: z.string().trim().max(120).optional(), certificationCompany: z.string().trim().max(120).optional(), itemDetails: z.string().max(8_000).optional() }).optional(),
     }))

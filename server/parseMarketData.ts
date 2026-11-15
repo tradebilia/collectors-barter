@@ -266,6 +266,7 @@ export async function lookupPriceChartingVideoGame(upc: string, env: ParseEnv = 
 
 export type PriceChartingVideoGameSearchInput = {
   query: string;
+  fallbackQuery?: string | undefined;
   platform?: string | undefined;
 };
 
@@ -309,6 +310,7 @@ function priceChartingPlatformsMatch(target: string, candidate: string): boolean
  */
 export async function searchPriceChartingVideoGames(input: PriceChartingVideoGameSearchInput, env: ParseEnv = process.env) {
   const query = input.query.trim().replace(/\s+/g, ' ');
+  const fallbackQuery = input.fallbackQuery?.trim().replace(/\s+/g, ' ') || query;
   const platform = input.platform?.trim().replace(/\s+/g, ' ') || undefined;
   const apiKey = env.PARSE_BOT_API_KEY;
   if (!apiKey) return { query, platform: platform ?? null, status: 'error' as const, message: 'Parse.bot API key not configured', data: null };
@@ -339,7 +341,7 @@ export async function searchPriceChartingVideoGames(input: PriceChartingVideoGam
       const game = asObject(entry);
       const title = String(game.title ?? game.name ?? '').trim();
       const candidatePlatform = String(game.platform ?? game.console ?? '').trim();
-      const titleMatches = normalizePriceChartingGameIdentity(title) === normalizePriceChartingGameIdentity(query);
+      const titleMatches = normalizePriceChartingGameIdentity(title) === normalizePriceChartingGameIdentity(fallbackQuery);
       const platformMatches = platform ? priceChartingPlatformsMatch(platform, candidatePlatform) : false;
       return {
         title: title || null,

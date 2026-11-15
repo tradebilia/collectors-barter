@@ -130,6 +130,17 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect(fetchMock.mock.calls[0][0]).toContain('/47b2f542-930c-40f0-a2f0-42673e998204/search_video_games?query=Super+Mario+Bros.+3&limit=10&platform=NES');
   });
 
+  it('uses the edition-free fallback identity when the primary query includes an edition', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { results: [
+      { title: 'Call of Duty: World at War', platform: 'Xbox 360', pricecharting_id: '1234', prices: { cib: 40 } },
+    ] } }) });
+    global.fetch = fetchMock as typeof fetch;
+    const result = await searchPriceChartingVideoGames({ query: 'Call of Duty: World at War First Print', fallbackQuery: 'Call of Duty: World at War', platform: 'Xbox 360' }, { PARSE_BOT_API_KEY: 'configured-key' });
+    expect(result.data?.compatibleCandidates).toHaveLength(1);
+    expect(result.data?.compatibleCandidates[0]?.titleMatches).toBe(true);
+    expect(fetchMock.mock.calls[0][0]).toContain('query=Call+of+Duty%3A+World+at+War+First+Print');
+  });
+
   it('requires explicit selection when a video-game title search has no supplied platform', async () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { results: [
       { title: 'Metroid', platform: 'NES', pricecharting_id: '1', prices: {} },
