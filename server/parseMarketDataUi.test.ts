@@ -46,6 +46,12 @@ describe('Test AI Parse provider controls', () => {
     expect(testAiSource).toContain('PriceCharting game-price context only — it is not a completed sale and cannot enter Tradebilia valuation.');
   });
 
+  it('normalizes provider candidate IDs before automatic selection and display lookup', () => {
+    expect(testAiSource).toContain('const automaticVideoGameCandidate = !candidateSearchData?.data?.selectionRequired');
+    expect(testAiSource).toContain('String(compatibleGameCandidates[0].priceChartingId)');
+    expect(testAiSource).toContain('String(candidate.priceChartingId) === selectedVideoGameCandidateId');
+    expect(testAiSource).toContain(': automaticVideoGameCandidate;');
+  });
 
   it('makes the PriceCharting product page explicit and discloses an identity-only video-game response', () => {
     expect(testAiSource).toContain('Open full PriceCharting product page ↗');

@@ -2081,10 +2081,19 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
     [candidateSearchData?.data?.compatibleCandidates],
   );
   const [selectedVideoGameCandidateId, setSelectedVideoGameCandidateId] = useState<string | null>(null);
+  const automaticVideoGameCandidate = !candidateSearchData?.data?.selectionRequired
+    ? compatibleGameCandidates[0] ?? null
+    : null;
   useEffect(() => {
-    setSelectedVideoGameCandidateId(candidateSearchData?.data?.selectionRequired ? null : compatibleGameCandidates[0]?.priceChartingId ?? null);
+    setSelectedVideoGameCandidateId(candidateSearchData?.data?.selectionRequired
+      ? null
+      : compatibleGameCandidates[0]?.priceChartingId == null
+        ? null
+        : String(compatibleGameCandidates[0].priceChartingId));
   }, [item.id, videoGameSearchInput.query, videoGameSearchInput.platform, candidateSearchData?.data?.selectionRequired, compatibleGameCandidates]);
-  const selectedVideoGameCandidate = compatibleGameCandidates.find((candidate: any) => String(candidate.priceChartingId) === selectedVideoGameCandidateId) ?? null;
+  const selectedVideoGameCandidate = selectedVideoGameCandidateId
+    ? compatibleGameCandidates.find((candidate: any) => String(candidate.priceChartingId) === selectedVideoGameCandidateId) ?? null
+    : automaticVideoGameCandidate;
   const setSlug = String(details.setSlug ?? details.cardSetSlug ?? details.priceChartingSetSlug ?? 'unavailable').trim();
   const cardSlug = String(details.cardSlug ?? details.priceChartingCardSlug ?? 'unavailable').trim();
   const slugQuery = trpc.testAI.getPriceChartingCardDetail.useQuery({ setSlug, cardSlug }, { enabled: isPokemonOrTcg && setSlug !== 'unavailable' && cardSlug !== 'unavailable' });
