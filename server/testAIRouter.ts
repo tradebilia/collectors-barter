@@ -4233,7 +4233,11 @@ export const testAIRouter = router({
           visualReviewRationale: reasons.join('; '),
           visualExecution: createNotDispatchedVisualExecution('outer_metadata_hold', { hardExclusion: true }),
           soldCompsMetadata: metadata,
-          metadataFieldComparisons: buildMetadataFieldComparisons(targetMetadata, item),
+          // Keep the server-owned ranking snapshot on outer holds. Rebuilding
+          // rows from the raw item alone preserves potential points but drops
+          // the earned awards, which made a scored hard exclusion display
+          // "Score unavailable" / zero points in the UI.
+          ...withMetadataFieldComparisons(targetMetadata, item),
         })).concat(ingress.statusHeld);
         if (!safeTargetImage || !universalPreFilter.listings.length) {
           const reason = !safeTargetImage

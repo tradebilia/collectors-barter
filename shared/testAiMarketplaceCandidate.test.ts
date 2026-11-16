@@ -55,6 +55,13 @@ describe('shared marketplace candidate contract', () => {
     expect(candidate.imageAvailability).toBe('available');
   });
 
+  it('classifies a trailing manual title as manual-only evidence', () => {
+    expect(classifyMarketplaceProductRole('Nintendo NES Power Glove Manual!')).toMatchObject({
+      role: 'manual_only',
+      confidence: 'high',
+    });
+  });
+
   it('uses the first real provider title alias without discarding the other title observations', () => {
     const candidate = normalizeMarketplaceCandidate({
       sourceId: 'ebay_active',

@@ -3686,7 +3686,9 @@ function videoGameItemTypeConflict(targetMetadata: string, listing: VisualSource
   if (!targetType || targetType === "collection/lot") return null;
   const candidateType = videoGameCandidateItemType(listing);
   if (candidateType && candidateType !== targetType) {
-    return `Video Game item type differs: target is ${targetType}, but the candidate is explicitly ${candidateType}.`;
+    const role = classifyMarketplaceProductRole(normalizeVisualSourceCandidate(listing).title);
+    const roleDetail = role.role === 'manual_only' ? ` (manual/accessory-only: ${role.matchedTerms.join(', ')})` : '';
+    return `Video Game item type differs: target is ${targetType}, but the candidate is explicitly ${candidateType}${roleDetail}.`;
   }
   return null;
 }

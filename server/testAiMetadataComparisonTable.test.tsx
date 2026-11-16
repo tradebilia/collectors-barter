@@ -227,8 +227,8 @@ describe('actual scorer → refreshed comparison → rendered component', () => 
     expect(cellsByRow[gradeIndex][3]).toContain('7.50');
     expect(cellsByRow[siblingIndex][2]).not.toMatch(/bg-cyan|bg-violet/);
     expect(cellsByRow[siblingIndex][3]).toContain('8.5');
-    expect(cellsByRow[gradeIndex][5]).toContain('5');
-    expect(cellsByRow[gradeIndex][6]).toContain('5');
+    expect(cellsByRow[gradeIndex][5]).toContain('10');
+    expect(cellsByRow[gradeIndex][6]).toContain('10');
     expect(cellsByRow[siblingIndex][5]).toContain('0');
     expect(cellsByRow[siblingIndex][6]).toContain('0');
     expect(cellsByRow[gradeIndex][7]).toContain('match');

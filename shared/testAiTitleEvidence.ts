@@ -103,6 +103,7 @@ export function classifyMarketplaceProductRole(title: unknown): MarketplaceProdu
   const manualTerms = titleHasAny(normalized, [
     /\b(?:manual|instruction(?:s)?|booklet|guide)\s+only\b/i,
     /^\s*(?:manual|instruction(?:s)?|booklet|guide)\b/i,
+    /\b(?:manual|instruction(?:s)?|booklet|guide)\s*[!,.]?\s*$/i,
   ]);
   if (manualTerms.length > 0) {
     return { role: "manual_only", confidence: "high", matchedTerms: manualTerms, rationale: "The title explicitly says the listing is a manual or instruction material only." };

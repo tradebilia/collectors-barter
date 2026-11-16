@@ -403,7 +403,13 @@ export function candidateFinalDecision(row: CandidateDisplayRow): CandidateFinal
     const fieldLevelHardReason = hard ? hardExclusionReason(row) : undefined;
     const specificHardReason = fieldLevelHardReason && /^Hard exclusion: .+ differs — target “.+”; candidate “.+”\.$/.test(fieldLevelHardReason)
       ? fieldLevelHardReason : undefined;
-    const details = [specificHardReason ?? (structuredReasons.length ? structuredReasons.join(' · ') : plainReason ?? pricing.reason),
+    const outerHoldReason = row.visualExecution?.reasonCode === 'outer_metadata_hold'
+      ? (Array.isArray(row.evidenceReasons) ? row.evidenceReasons : []).find((reason: unknown) => typeof reason === 'string' && reason.trim() && !/^Mercari listings remain context\/review only/i.test(reason.trim()))
+        ?? row.visualReviewRationale
+        ?? 'A server-side metadata or item-type rule prevented visual review.'
+      : undefined;
+    const details = [outerHoldReason ? `Outer metadata hold: ${outerHoldReason}` : undefined,
+      specificHardReason ?? (structuredReasons.length ? structuredReasons.join(' · ') : plainReason ?? pricing.reason),
       hard && !plainReason ? evidence || (receipt?.hardExclusion ? execution.reason : undefined) : undefined,
       pricing.code === 'CONTEXT_ONLY' ? contextReason : undefined,
       hasMercariUndatedSoldAdmission(row) && !plainReason ? mercariPriceContextLabel(row) : undefined].filter(Boolean).join(' · ');
