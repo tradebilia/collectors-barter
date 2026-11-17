@@ -86,6 +86,7 @@ export function isExplicitMultiItemListing(listing: unknown, targetMetadata = ""
   const context = parseTargetMetadata(targetMetadata);
   const disneyIndividualPin = context.category === "disney_pins"
     && /(?:individual_pin|single_pin)/.test(context.itemType);
+  const videoGameAccessory = context.category === "video_games" && context.itemType === "accessory";
   const structuredTypes = [
     record.itemType,
     record.productType,
@@ -133,7 +134,7 @@ export function isExplicitMultiItemListing(listing: unknown, targetMetadata = ""
     && context.itemType === "console"
     && /\b(?:action|deluxe|starter|control\s+deck)\s+set\b/i.test(title);
   const legoProductTarget = context.category === "vintage_toys" && context.itemType === "lego";
-  if (/\b(?:set|pair|duo|trio)\b/i.test(title) && !legoProductTarget && !legitimateConsoleSet) return true;
+  if (/\b(?:set|pair|duo|trio)\b/i.test(title) && !videoGameAccessory && !legoProductTarget && !legitimateConsoleSet) return true;
   if (disneyIndividualPin) return false;
   return /\b(?:collection|lot)\b/i.test(title) || /\b(?:collection|lot)\b/i.test(structuredType);
 }

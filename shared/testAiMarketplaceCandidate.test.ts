@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeMarketplaceCandidate, withMarketplaceCandidateDecision } from './testAiMarketplaceCandidate';
+import { isExplicitMultiItemListing, normalizeMarketplaceCandidate, withMarketplaceCandidateDecision } from './testAiMarketplaceCandidate';
 import { classifyMarketplaceProductRole } from './testAiTitleEvidence';
 
 describe('shared marketplace candidate contract', () => {
@@ -60,6 +60,13 @@ describe('shared marketplace candidate contract', () => {
       role: 'manual_only',
       confidence: 'high',
     });
+  });
+
+  it('does not treat a standalone set label as a Video Games accessory lot', () => {
+    const accessoryTarget = 'category=video_games;itemType=accessory;';
+    expect(isExplicitMultiItemListing({ title: 'Nintendo NES Power Glove Accessory Set' }, accessoryTarget)).toBe(false);
+    expect(isExplicitMultiItemListing({ title: 'Nintendo NES Power Glove Set of 2' }, accessoryTarget)).toBe(true);
+    expect(isExplicitMultiItemListing({ title: 'Nintendo NES Power Glove Bundle' }, accessoryTarget)).toBe(true);
   });
 
   it('uses the first real provider title alias without discarding the other title observations', () => {
