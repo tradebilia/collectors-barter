@@ -126,10 +126,14 @@ export function isExplicitMultiItemListing(listing: unknown, targetMetadata = ""
     || /#?\d+\s*(?:\+|,|\/)\s*#?\d+(?:\s*(?:\+|,|\/)\s*#?\d+)+/i.test(title);
   if (explicitTitleMultiItem) return true;
 
-  // A bare “Collection” is ambiguous only for a single Disney Pin. A bare
-  // “Set” still denotes a multi-item presentation and remains excluded.
+  // Named console packages such as “NES Action Set” and “Deluxe Set” are
+  // legitimate single products. Explicit quantities and “set of N” above
+  // still remain hard multi-item evidence.
+  const legitimateConsoleSet = context.category === "video_games"
+    && context.itemType === "console"
+    && /\b(?:action|deluxe|starter|control\s+deck)\s+set\b/i.test(title);
   const legoProductTarget = context.category === "vintage_toys" && context.itemType === "lego";
-  if (/\b(?:set|pair|duo|trio)\b/i.test(title) && !legoProductTarget) return true;
+  if (/\b(?:set|pair|duo|trio)\b/i.test(title) && !legoProductTarget && !legitimateConsoleSet) return true;
   if (disneyIndividualPin) return false;
   return /\b(?:collection|lot)\b/i.test(title) || /\b(?:collection|lot)\b/i.test(structuredType);
 }

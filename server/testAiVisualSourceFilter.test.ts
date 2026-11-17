@@ -135,6 +135,9 @@ describe("visual source filter", () => {
     expect(isMultiItemLot({ title: "1999 Pokémon Charizard Base Set #4/102" }, pokemonSingle)).toBe(false);
     const legoTarget = buildVisualTargetMetadata({ title: "LEGO 6285 Pirates", category: "vintage_toys", itemType: "lego" });
     expect(isMultiItemLot({ title: "LEGO 6285 Pirates Set Complete" }, legoTarget)).toBe(false);
+    const consoleTarget = buildVisualTargetMetadata({ title: "Nintendo NES Action Set", category: "video_games", itemType: "console" });
+    expect(isMultiItemLot({ title: "NES Nintendo Action Set Red Zapper System Console" }, consoleTarget)).toBe(false);
+    expect(isMultiItemLot({ title: "NES Console Set of 2" }, consoleTarget)).toBe(true);
 
     const pokemonProduct = buildVisualTargetMetadata({ title: "Pokémon Base Set Booster Bundle", category: "pokemon", itemType: "unopened_product", fullItemDetails: { productName: "Booster Bundle", setName: "Base Set", factorySealed: "Yes" } });
     expect(buildDeclaredIdentityReviews([{ title: "Pokémon Base Set Booster Bundle Factory Sealed" }], pokemonProduct)).toEqual([]);
@@ -881,10 +884,10 @@ describe("visual source filter", () => {
     const gradedCandidateAgainstUngradedTarget = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard PSA 9.8", isGraded: "Yes", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gameTarget);
     expect(ungradedCandidateAgainstUngradedTarget.score).toBeGreaterThan(gradedCandidateAgainstUngradedTarget.score);
 
-    const consoleTarget = buildVisualTargetMetadata({ title: "Nintendo NES", category: "video_games", itemType: "console", isGraded: "No", fullItemDetails: { consoleName: "NES", modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" } });
-    const consoleScore = videoGameConsoleVisualScore({ title: "Nintendo NES NES-001 Working NTSC-U", isGraded: "No", itemDetails: JSON.stringify({ modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" }) }, consoleTarget);
+    const consoleTarget = buildVisualTargetMetadata({ title: "Nintendo NES", category: "video_games", itemType: "console", isGraded: "Yes", grade: "8.0", certificationCompany: "VGA", fullItemDetails: { consoleName: "NES", modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" } });
+    const consoleScore = videoGameConsoleVisualScore({ title: "Nintendo NES NES-001 Working NTSC-U VGA 8.0", isGraded: "Yes", itemDetails: JSON.stringify({ modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes", certificationCompany: "VGA", grade: "8.0" }) }, consoleTarget);
     expect(consoleScore.score).toBe(100);
-    expect(consoleScore.matched).toEqual(expect.arrayContaining(["consoleName", "modelNumber", "region", "workingCondition", "originalBoxIncluded", "cablesIncluded", "controllersIncluded"]));
+    expect(consoleScore.matched).toEqual(expect.arrayContaining(["consoleName", "modelNumber", "region", "workingCondition", "originalBoxIncluded", "cablesIncluded", "controllersIncluded", "isGraded", "gradingCompany", "grade"]));
 
     const accessoryTarget = buildVisualTargetMetadata({ title: "NES Controller", category: "video_games", itemType: "accessory", isGraded: "No", fullItemDetails: { accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" } });
     const accessoryScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller Working", isGraded: "No", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" }) }, accessoryTarget);
@@ -988,7 +991,9 @@ describe("visual source filter", () => {
     expect(videoGameVisualCap(75)).toBe(4);
     expect(videoGameVisualCap(65)).toBe(4);
     expect(videoGameVisualCap(50)).toBe(4);
-    expect(videoGameVisualCap(49)).toBe(0);
+    expect(videoGameVisualCap(49)).toBe(2);
+    expect(videoGameVisualCap(40)).toBe(2);
+    expect(videoGameVisualCap(39)).toBe(0);
   });
 
   it("promotes eBay thumbnails without rewriting non-eBay image URLs", () => {

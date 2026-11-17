@@ -113,9 +113,9 @@ const fixtures: Fixture[] = [
     details: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: "1990", region: "NTSC-U", edition: "Standard", completeInBox: "Yes", sealed: "Yes", upc: "123456789012" },
     weights: { gameTitle: 25, platform: 20, releaseYear: 15, region: 10, edition: 5, completeInBox: 5, isGraded: 5, gradingCompany: 5, grade: 5, upcEan: 5 }, expected: 100 }),
   fixture({ name: "Video console", category: "video_games", itemType: "console", scorer: videoGameConsoleVisualScore,
-    title: "Nintendo NES NES-001 Working NTSC-U", isGraded: "No",
-    details: { consoleName: "NES", modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" },
-    weights: { consoleName: 25, modelNumber: 20, region: 15, workingCondition: 15, originalBoxIncluded: 10, cablesIncluded: 5, controllersIncluded: 5, isGraded: 5 } }),
+    title: "Nintendo NES NES-001 Working NTSC-U VGA 8.0", grade: "8.0", grader: "VGA", isGraded: "Yes",
+    details: { consoleName: "NES", modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes", certificationCompany: "VGA", grade: "8.0" },
+    weights: { consoleName: 30, modelNumber: 10, region: 15, workingCondition: 10, originalBoxIncluded: 10, cablesIncluded: 5, controllersIncluded: 5, isGraded: 5, gradingCompany: 5, grade: 5 } }),
   fixture({ name: "Video accessory", category: "video_games", itemType: "accessory", scorer: videoGameAccessoryVisualScore,
     title: "Nintendo NES Controller Working", isGraded: "No",
     details: { accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" },
@@ -279,8 +279,8 @@ describe("actual category awards and current model arithmetic", () => {
     expect(annotated.metadataMatchScore).toBe(result.score);
   });
 
-  it.each([49, 50, 69, 70, 79, 80, 89, 90])("preserves Video Games cap boundary %i", (score) => {
-    const expected: Record<number, number> = { 49: 0, 50: 4, 69: 4, 70: 4, 79: 4, 80: 6, 89: 6, 90: 8 };
+  it.each([39, 40, 49, 50, 69, 70, 79, 80, 89, 90])("preserves Video Games cap boundary %i", (score) => {
+    const expected: Record<number, number> = { 39: 0, 40: 2, 49: 2, 50: 4, 69: 4, 70: 4, 79: 4, 80: 6, 89: 6, 90: 8 };
     expect(videoGameVisualCap(score)).toBe(expected[score]);
   });
 });

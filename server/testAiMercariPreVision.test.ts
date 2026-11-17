@@ -213,22 +213,24 @@ describe('Mercari Video Game pre-visual filtering', () => {
       .toEqual(rankMercariVideoGameCandidates(args).map((item) => item.title));
   });
 
-  it('uses the confirmed score bands and never fills the cap with sub-50 candidates', () => {
+  it('uses the confirmed score bands and never fills the cap with sub-40 candidates', () => {
     expect(mercariVideoGameVisualCap(95)).toBe(6);
     expect(mercariVideoGameVisualCap(85)).toBe(5);
     expect(mercariVideoGameVisualCap(70)).toBe(3);
     expect(mercariVideoGameVisualCap(60)).toBe(3);
     expect(mercariVideoGameVisualCap(50)).toBe(4);
-    expect(mercariVideoGameVisualCap(49)).toBe(0);
+    expect(mercariVideoGameVisualCap(49)).toBe(2);
+    expect(mercariVideoGameVisualCap(40)).toBe(2);
+    expect(mercariVideoGameVisualCap(39)).toBe(0);
 
     const admission = selectMercariVideoGameVisualCandidates([
       { title: 'A', itemUrl: 'a', metadataMatchScore: 62 },
       { title: 'B', itemUrl: 'b', metadataMatchScore: 60 },
       { title: 'C', itemUrl: 'c', metadataMatchScore: 55 },
-      { title: 'D', itemUrl: 'd', metadataMatchScore: 49 },
+      { title: 'D', itemUrl: 'd', metadataMatchScore: 39 },
     ]);
     expect(admission.cap).toBe(3);
     expect(admission.selected.map((item) => item.title)).toEqual(['A', 'B', 'C']);
-    expect(admission.excluded[0].visualReviewRationale).toContain('below the Video Game visual-review minimum of 50');
+    expect(admission.excluded[0].visualReviewRationale).toContain('below the Video Game visual-review minimum of 40');
   });
 });

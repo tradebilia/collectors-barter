@@ -5200,7 +5200,10 @@ function targetDescribesMultipleItems(targetMetadata: string): boolean {
   const combined = disneyIndividualPin
     ? `${title} ${detailText}`.replace(/\bcollection\b/gi, "series")
     : `${title} ${detailText}`;
-  if (MULTI_ITEM_TITLE_PATTERNS.some(pattern => pattern.test(combined))) return true;
+  const legitimateConsoleSet = targetCategory === "video_games"
+    && targetType === "console"
+    && /\b(?:action|deluxe|starter|control\s+deck)\s+set\b/i.test(title);
+  if (MULTI_ITEM_TITLE_PATTERNS.some(pattern => pattern.test(combined)) && !legitimateConsoleSet) return true;
   const normalizedDetailType = String(
     metadataValue(targetMetadata, "itemType")
       || metadataValue(targetMetadata, "productType")
@@ -5377,7 +5380,7 @@ const VIDEO_GAME_GAME_SCORE_FIELDS = [
   ['gameTitle', 25], ['platform', 20], ['releaseYear', 10], ['region', 10], ['edition', 5], ['completeInBox', 5], ['isGraded', 10], ['gradingCompany', 5], ['grade', 10], ['upcEan', 0],
 ] as const;
 const VIDEO_GAME_CONSOLE_SCORE_FIELDS = [
-  ['consoleName', 25], ['modelNumber', 20], ['region', 15], ['workingCondition', 15], ['originalBoxIncluded', 10], ['cablesIncluded', 5], ['controllersIncluded', 5], ['isGraded', 5],
+  ['consoleName', 30], ['modelNumber', 10], ['region', 15], ['workingCondition', 10], ['originalBoxIncluded', 10], ['cablesIncluded', 5], ['controllersIncluded', 5], ['isGraded', 5], ['gradingCompany', 5], ['grade', 5],
 ] as const;
 const VIDEO_GAME_ACCESSORY_SCORE_FIELDS = [
   ['accessoryType', 20], ['accessoryName', 25], ['compatiblePlatform', 20], ['manufacturer', 10], ['workingCondition', 10], ['originalPackaging', 10], ['isGraded', 5],
@@ -5630,14 +5633,16 @@ function videoGameScore<T extends readonly (readonly [string, number])[]>(
     add('grade', 10, videoGameScoreGrade(firstMeaningfulValue(metadataValue(targetMetadata, 'grade'), target.grade, target.numericGrade), listing));
     add('upcEan', 0, videoGameScoreValueMatches(firstMeaningfulValue(target.upc, target.ean), listing, ['upc', 'ean', 'barcode'], [/(?:UPC|EAN|barcode)\s*[:#]?\s*([0-9]{8,14})/i], 'upc'));
   } else if (targetType === 'console') {
-    add('consoleName', 25, videoGameScoreValueMatches(firstMeaningfulValue(target.consoleName, extractTargetTitle(targetMetadata)), listing, ['consoleName', 'platform', 'title'], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|Sega\s+Genesis|Sega\s+Saturn|Dreamcast|PS[1-5]|Xbox(?:\s+(?:360|One|Series\s+X\/S))?)/i], 'name'));
-    add('modelNumber', 20, videoGameScoreValueMatches(target.modelNumber, listing, ['modelNumber', 'model', 'sku'], [], 'model'));
+    add('consoleName', 30, videoGameScoreValueMatches(firstMeaningfulValue(target.consoleName, extractTargetTitle(targetMetadata)), listing, ['consoleName', 'platform', 'title'], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|Sega\s+Genesis|Sega\s+Saturn|Dreamcast|PS[1-5]|Xbox(?:\s+(?:360|One|Series\s+X\/S))?)/i], 'name'));
+    add('modelNumber', 10, videoGameScoreValueMatches(target.modelNumber, listing, ['modelNumber', 'model', 'sku'], [], 'model'));
     add('region', 15, videoGameScoreValueMatches(target.region, listing, ['region'], [/(?:NTSC-U|NTSC-J|PAL|Region\s+Free)/i], 'region'));
-    add('workingCondition', 15, videoGameScoreValueMatches(target.workingCondition, listing, ['workingCondition', 'functionality', 'tested'], [/(?:Working|Not\s+Working|Untested)/i], 'working'));
+    add('workingCondition', 10, videoGameScoreValueMatches(target.workingCondition, listing, ['workingCondition', 'functionality', 'tested'], [/(?:Working|Not\s+Working|Untested)/i], 'working'));
     add('originalBoxIncluded', 10, videoGameScoreBoolean(target.originalBoxIncluded, listing, ['originalBoxIncluded', 'originalBox', 'boxIncluded'], [/(?:original\s+box|box\s+included|no\s+box)/i]));
     add('cablesIncluded', 5, videoGameScoreBoolean(target.cablesIncluded, listing, ['cablesIncluded', 'cables'], [/(?:cables?\s+included|no\s+cables?)/i]));
     add('controllersIncluded', 5, videoGameScoreBoolean(target.controllersIncluded, listing, ['controllersIncluded', 'controllers'], [/(?:controllers?\s+included|no\s+controllers?)/i]));
     add('isGraded', 5, videoGameScoreIsGraded(firstMeaningfulValue(metadataValue(targetMetadata, 'isGraded'), target.isGraded, target.graded), listing));
+    add('gradingCompany', 5, videoGameScoreGradingCompany(firstMeaningfulValue(metadataValue(targetMetadata, 'certificationCompany'), target.gradingCompany, target.certificationCompany, target.grader), listing));
+    add('grade', 5, videoGameScoreGrade(firstMeaningfulValue(metadataValue(targetMetadata, 'grade'), target.grade, target.numericGrade), listing));
   } else {
     add('accessoryType', 20, videoGameAccessoryScoreValueMatches(target.accessoryType, listing, ['accessoryType', 'type', 'accessory_type', 'itemType'], [], 'type'));
     add('accessoryName', 25, videoGameAccessoryScoreValueMatches(target.accessoryName, listing, ['accessoryName', 'name', 'accessory_name', 'modelName', 'title'], [], 'name'));
@@ -5648,6 +5653,11 @@ function videoGameScore<T extends readonly (readonly [string, number])[]>(
     add('isGraded', 5, videoGameScoreIsGraded(firstMeaningfulValue(metadataValue(targetMetadata, 'isGraded'), target.isGraded, target.graded), listing));
   }
   void fields;
+  // Console scoring treats Is Graded, Certification Company, and Grade as
+  // separate five-point fields. Do not apply the broader category grading
+  // contingency, which intentionally collapses a raw/graded state into the
+  // full grading bundle for other product types.
+  if (targetType === 'console') return { score, matched, unknown, awards };
   return contingentGradingScore(listing, targetMetadata, fields, { score, matched, unknown, awards });
 }
 export function videoGameGameVisualScore(listing: VisualSourceCandidate, targetMetadata: string) { return videoGameScore(listing, targetMetadata, VIDEO_GAME_GAME_SCORE_FIELDS, 'game'); }
@@ -5658,6 +5668,7 @@ export function videoGameVisualCap(score: number): number {
   if (score >= 80) return 6;
   if (score >= 70) return 4;
   if (score >= 50) return 4;
+  if (score >= 40) return 2;
   return 0;
 }
 const MOVIES_INDIVIDUAL_SCORE_FIELDS = [
@@ -7337,16 +7348,16 @@ function selectVideoGameVisualCandidates<T extends VisualSourceCandidate>(candid
     .map((candidate, index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
   const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
   const cap = videoGameVisualCap(highestScore);
-  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 50).slice(0, cap);
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 40).slice(0, cap);
   const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
   const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((entry) => ({
     ...entry.item,
     evidenceDisposition: 'pre_vision_score_excluded',
     visualReviewStatus: 'not_reviewed',
-    visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < 50
-      ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 50.`
+    visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < 40
+      ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 40.`
       : `${label} visual cap reached (${cap}); higher-scoring candidates were selected first.`,
-    evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < 50 ? 'metadata score below minimum (50)' : `visual-review cap reached (${cap})`],
+    evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < 40 ? 'metadata score below minimum (40)' : `visual-review cap reached (${cap})`],
   } as T));
   return { selected, excluded, cap, ranked };
 }

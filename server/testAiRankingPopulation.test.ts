@@ -85,14 +85,14 @@ const consoleFixture = (id: string, fields: Array<keyof typeof CONSOLE_DETAILS>,
 });
 const fullConsole = (id: string, image = true) => consoleFixture(id, Object.keys(CONSOLE_DETAILS) as Array<keyof typeof CONSOLE_DETAILS>, image);
 const consoleCapCases: Array<{ score: number; cap: number; fields: Array<keyof typeof CONSOLE_DETAILS> }> = [
-  { score: 45, cap: 0, fields: ['region'] },
-  { score: 50, cap: 4, fields: ['modelNumber'] },
-  { score: 65, cap: 4, fields: ['modelNumber', 'region'] },
-  { score: 70, cap: 4, fields: ['modelNumber', 'region', 'cablesIncluded'] },
-  { score: 75, cap: 4, fields: ['modelNumber', 'region', 'originalBoxIncluded'] },
-  { score: 80, cap: 6, fields: ['modelNumber', 'region', 'workingCondition'] },
-  { score: 85, cap: 6, fields: ['modelNumber', 'region', 'workingCondition', 'cablesIncluded'] },
-  { score: 90, cap: 8, fields: ['modelNumber', 'region', 'workingCondition', 'originalBoxIncluded'] },
+  { score: 50, cap: 4, fields: ['region'] },
+  { score: 45, cap: 2, fields: ['modelNumber'] },
+  { score: 60, cap: 4, fields: ['modelNumber', 'region'] },
+  { score: 65, cap: 4, fields: ['modelNumber', 'region', 'cablesIncluded'] },
+  { score: 70, cap: 4, fields: ['modelNumber', 'region', 'originalBoxIncluded'] },
+  { score: 70, cap: 4, fields: ['modelNumber', 'region', 'workingCondition'] },
+  { score: 75, cap: 4, fields: ['modelNumber', 'region', 'workingCondition', 'cablesIncluded'] },
+  { score: 80, cap: 6, fields: ['modelNumber', 'region', 'workingCondition', 'originalBoxIncluded'] },
 ];
 const selectedNoTargetIds = (rows: Row[]) => rows.filter((row) => row.visualRequirement === 'not_required_no_target_image').map((row) => row.id);
 const publicNoTarget = (rows: Row[]) => filterVisualSourceCandidates({ sourceRole: 'ebay',
@@ -284,7 +284,7 @@ describe('Stage 4 pure retained-occurrence display ranking', () => {
     expect(projected.some((row) => row.id === 'hard')).toBe(true);
   });
 
-  it.each([[49, 0], [50, 4], [69, 4], [70, 4], [79, 4], [80, 6], [89, 6], [90, 8]] as const)
+  it.each([[39, 0], [40, 2], [49, 2], [50, 4], [69, 4], [70, 4], [79, 4], [80, 6], [89, 6], [90, 8]] as const)
   ('checks exact existing Video Games helper boundary %s -> %s without pretending it is real model evidence', (score, cap) => {
     // The approved console/game/accessory terms are multiples of five. Exact
     // 49/69/79/89 are helper-only; actual public controls below use 45/65/75/85.
@@ -328,7 +328,7 @@ describe('Stage 4 actual public-filter cap controls; selection stays private', (
   it.each(consoleCapCases)('real console score $score selects $cap occurrences; hard-held real 100 does not enlarge that cap', async ({ score, cap, fields }) => {
     const eligible = Array.from({ length: 10 }, (_, index) => consoleFixture(`eligible-${index}`, fields));
     const hard = { ...fullConsole('hard-held'), lotQuantity: 2 };
-    expect(videoGameConsoleVisualScore(hard, CONSOLE_TARGET).score).toBe(100);
+    expect(videoGameConsoleVisualScore(hard, CONSOLE_TARGET).score).toBe(90);
     eligible.forEach((row) => expect(videoGameConsoleVisualScore(row, CONSOLE_TARGET).score).toBe(score));
     const input = [hard, ...eligible];
     const before = structuredClone(input);
@@ -356,26 +356,26 @@ describe('Stage 4 actual public-filter cap controls; selection stays private', (
       expectActualConsoleSnapshot(output, index + 1, input.length, index + 2);
       expect(output.evidenceDisposition).toBe('context_only');
       expect(output.visualRequirement).toBe(index < cap ? 'not_required_no_target_image' : 'not_required_pre_visual');
-      if (index >= cap) expect(output.evidenceReasons).toContain(score < 50
-        ? 'metadata score below minimum (50)' : `visual-review cap reached (${cap})`);
+      if (index >= cap) expect(output.evidenceReasons).toContain(score < 40
+        ? 'metadata score below minimum (40)' : `visual-review cap reached (${cap})`);
     });
     expect(vi.mocked(invokeLLM).mock.calls.length).toBe(modelCallsBefore);
     expect(input).toEqual(before);
   });
 
-  it('retains the existing eligible missing-image cap driver: real 100 drives eight image rows without consuming a slot', async () => {
+  it('retains the existing eligible missing-image cap driver: real 90 drives eight image rows without consuming a slot', async () => {
     const eligible = Array.from({ length: 10 }, (_, index) => consoleFixture(`eligible-${index}`, ['modelNumber', 'region']));
     const hard = { ...fullConsole('hard-held'), lotQuantity: 2 };
     const missing = fullConsole('missing-image-driver', false);
-    expect(videoGameConsoleVisualScore(hard, CONSOLE_TARGET).score).toBe(100);
-    expect(videoGameConsoleVisualScore(missing, CONSOLE_TARGET).score).toBe(100);
-    eligible.forEach((row) => expect(videoGameConsoleVisualScore(row, CONSOLE_TARGET).score).toBe(65));
+    expect(videoGameConsoleVisualScore(hard, CONSOLE_TARGET).score).toBe(90);
+    expect(videoGameConsoleVisualScore(missing, CONSOLE_TARGET).score).toBe(90);
+    eligible.forEach((row) => expect(videoGameConsoleVisualScore(row, CONSOLE_TARGET).score).toBe(60));
     const input = [hard, missing, ...eligible];
     const before = structuredClone(input);
     const modelCallsBefore = vi.mocked(invokeLLM).mock.calls.length;
     const withoutMissing = await publicNoTarget([hard, ...eligible]);
     const withMissing = await publicNoTarget(input);
-    expect(selectedNoTargetIds(withoutMissing.contextListings ?? [])).toEqual(eligible.slice(0, 2).map((row) => row.id));
+    expect(selectedNoTargetIds(withoutMissing.contextListings ?? [])).toEqual(eligible.slice(0, 4).map((row) => row.id));
     const rows = withMissing.contextListings ?? [];
     expect(selectedNoTargetIds(rows)).toEqual(eligible.slice(0, 8).map((row) => row.id));
     expect(rows).toHaveLength(input.length);

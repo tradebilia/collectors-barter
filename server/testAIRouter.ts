@@ -1265,24 +1265,24 @@ export function videoGameVisualCap(highestScore: number): number {
   if (highestScore >= 80) return 5;
   if (highestScore >= 60) return 3;
   if (highestScore >= 50) return 4;
+  if (highestScore >= 40) return 2;
   return 0;
 }
-
 export function selectVideoGameVisualCandidates(listings: any[]): { selected: any[]; excluded: any[]; cap: number } {
   const highestScore = Number(listings[0]?.metadataMatchScore ?? 0);
   const cap = videoGameVisualCap(highestScore);
-  const qualifying = listings.filter((listing) => Number(listing.metadataMatchScore ?? 0) >= 50);
+  const qualifying = listings.filter((listing) => Number(listing.metadataMatchScore ?? 0) >= 40);
   const selected = qualifying.slice(0, cap);
   const selectedKeys = new Set(selected.map((listing) => listing.itemUrl ?? listing.url ?? listing.saleId ?? listing.title));
   const excluded = listings.filter((listing) => !selectedKeys.has(listing.itemUrl ?? listing.url ?? listing.saleId ?? listing.title)).map((listing) => ({
     ...listing,
     evidenceDisposition: 'pre_vision_score_excluded' as const,
     visualReviewStatus: 'not_reviewed' as const,
-    visualReviewRationale: Number(listing.metadataMatchScore ?? 0) < 50
-      ? `Metadata score ${Number(listing.metadataMatchScore ?? 0)}/100 is below the Video Game visual-review minimum of 50.`
+    visualReviewRationale: Number(listing.metadataMatchScore ?? 0) < 40
+      ? `Metadata score ${Number(listing.metadataMatchScore ?? 0)}/100 is below the Video Game visual-review minimum of 40.`
       : `Candidate ranked below the Video Game visual-review cap of ${cap}; higher-scoring candidates were selected first.`,
-    evidenceReasons: [Number(listing.metadataMatchScore ?? 0) < 50
-      ? `metadata score below minimum (50)`
+    evidenceReasons: [Number(listing.metadataMatchScore ?? 0) < 40
+      ? `metadata score below minimum (40)`
       : `visual-review cap reached (${cap})`],
   }));
   return { selected, excluded, cap };
