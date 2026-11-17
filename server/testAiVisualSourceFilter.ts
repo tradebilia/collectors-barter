@@ -3296,9 +3296,15 @@ function gradeCompanyConflict(targetMetadata: string, candidate: NormalizedVisua
   if (normalizedChoice(metadataValue(targetMetadata, "category")) === "disney_pins") return null;
   if (targetExplicitGradingState(targetMetadata) !== "graded") return null;
   const expected = targetGrader(targetMetadata);
-  const actual = candidateGrader(candidate);
+  const category = normalizedChoice(metadataValue(targetMetadata, "category"));
+  const itemType = normalizedChoice(metadataValue(targetMetadata, "itemType"));
+  const structured = candidateGrader(candidate);
+  const titleVga = /\bVGA\b/i.test(candidate.title);
+  const actual = category === "video_games" && itemType === "console" && structured === "WATA" && titleVga
+    ? "VGA"
+    : structured;
   if (!expected || !actual || expected === actual) return null;
-  const videoGamePsaWataEquivalent = normalizedChoice(metadataValue(targetMetadata, "category")) === "video_games"
+  const videoGamePsaWataEquivalent = category === "video_games"
     && ((expected === "PSA" && actual === "WATA") || (expected === "WATA" && actual === "PSA"));
   if (videoGamePsaWataEquivalent) return null;
   return `Grading company differs: target explicitly declares ${expected}, but the candidate explicitly declares ${actual}.`;
@@ -5589,6 +5595,22 @@ function videoGameScoreGradingCompany(targetValue: unknown, listing: VisualSourc
   if (!candidate || /^(?:unknown|n a|na|none|raw|ungraded|not applicable)$/.test(candidate)) return null;
   return scoreMatch(canonicalVideoGameGrader('video_games', candidate) === canonicalVideoGameGrader('video_games', target), witness);
 }
+function videoGameConsoleScoreGradingCompany(targetValue: unknown, listing: VisualSourceCandidate): ScorePredicate {
+  const target = videoGameScoreText(targetValue);
+  if (!target || /^(?:unknown|n a|na|none|raw|ungraded|not applicable)$/.test(target)) return null;
+  const structured = scoreCandidateEvidence(listing, ['gradingCompany', 'certificationCompany', 'grader']);
+  const titleEvidence = titleGradeEvidence(canonicalCandidateTitle(listing));
+  // WATA is a video-game grader, not a console grader. For consoles, explicit
+  // VGA title evidence takes precedence over a provider's WATA label.
+  const structuredIsWata = structured && /^WATA$/i.test(String(structured.value));
+  const titleIsVga = titleEvidence?.grader && /^VGA$/i.test(String(titleEvidence.grader));
+  const witness = structuredIsWata && titleIsVga
+    ? { value: titleEvidence.grader, source: 'title' as const, field: 'gradingCompany' }
+    : structured ?? (titleEvidence?.grader ? { value: titleEvidence.grader, source: 'title' as const, field: 'gradingCompany' } : null);
+  const candidate = videoGameScoreText(witness?.value || '');
+  if (!candidate || /^(?:unknown|n a|na|none|raw|ungraded|not applicable)$/.test(candidate)) return null;
+  return scoreMatch(canonicalVideoGameGrader('video_games', candidate) === canonicalVideoGameGrader('video_games', target), witness);
+}
 function videoGameScoreGrade(targetValue: unknown, listing: VisualSourceCandidate): ScorePredicate {
   const target = videoGameScoreText(targetValue);
   if (!target || /^(?:unknown|n a|na|none|raw|ungraded|not applicable)$/.test(target)) return null;
@@ -5641,7 +5663,7 @@ function videoGameScore<T extends readonly (readonly [string, number])[]>(
     add('cablesIncluded', 5, videoGameScoreBoolean(target.cablesIncluded, listing, ['cablesIncluded', 'cables'], [/(?:cables?\s+included|no\s+cables?)/i]));
     add('controllersIncluded', 5, videoGameScoreBoolean(target.controllersIncluded, listing, ['controllersIncluded', 'controllers'], [/(?:controllers?\s+included|no\s+controllers?)/i]));
     add('isGraded', 5, videoGameScoreIsGraded(firstMeaningfulValue(metadataValue(targetMetadata, 'isGraded'), target.isGraded, target.graded), listing));
-    add('gradingCompany', 5, videoGameScoreGradingCompany(firstMeaningfulValue(metadataValue(targetMetadata, 'certificationCompany'), target.gradingCompany, target.certificationCompany, target.grader), listing));
+    add('gradingCompany', 5, videoGameConsoleScoreGradingCompany(firstMeaningfulValue(metadataValue(targetMetadata, 'certificationCompany'), target.gradingCompany, target.certificationCompany, target.grader), listing));
     add('grade', 5, videoGameScoreGrade(firstMeaningfulValue(metadataValue(targetMetadata, 'grade'), target.grade, target.numericGrade), listing));
   } else {
     add('accessoryType', 20, videoGameAccessoryScoreValueMatches(target.accessoryType, listing, ['accessoryType', 'type', 'accessory_type', 'itemType'], [], 'type'));

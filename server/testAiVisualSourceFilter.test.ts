@@ -888,6 +888,11 @@ describe("visual source filter", () => {
     const consoleScore = videoGameConsoleVisualScore({ title: "Nintendo NES NES-001 Working NTSC-U VGA 8.0", isGraded: "Yes", itemDetails: JSON.stringify({ modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes", certificationCompany: "VGA", grade: "8.0" }) }, consoleTarget);
     expect(consoleScore.score).toBe(100);
     expect(consoleScore.matched).toEqual(expect.arrayContaining(["consoleName", "modelNumber", "region", "workingCondition", "originalBoxIncluded", "cablesIncluded", "controllersIncluded", "isGraded", "gradingCompany", "grade"]));
+    const wataProviderVgaTitle = { title: "NES Nintendo Action Set Red Zapper System Console VGA Grade 8.0 Qualified", isGraded: "Yes", itemDetails: JSON.stringify({ modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes", certificationCompany: "WATA", grade: "8.0" }) };
+    const consoleTitleGraderScore = videoGameConsoleVisualScore(wataProviderVgaTitle, consoleTarget);
+    expect(consoleTitleGraderScore.matched).toContain("gradingCompany");
+    expect(consoleTitleGraderScore.awards.find(award => award.field === "gradingCompany")?.awardedPoints).toBe(5);
+    expect(prepareUniversalVisualCandidates([wataProviderVgaTitle], consoleTarget).contextReasons.size).toBe(0);
 
     const accessoryTarget = buildVisualTargetMetadata({ title: "NES Controller", category: "video_games", itemType: "accessory", isGraded: "No", fullItemDetails: { accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" } });
     const accessoryScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller Working", isGraded: "No", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" }) }, accessoryTarget);
