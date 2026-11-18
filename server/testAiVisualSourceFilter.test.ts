@@ -3597,6 +3597,12 @@ describe("visual source filter", () => {
       { title: "Nintendo NES Power Glove Large L New Open Box Complete", condition: "Like New", imageUrl: "https://example.com/candidate.jpg" },
     ], metadata)).toEqual([]);
   });
+  it("treats CIB title evidence as Complete in Box for Video Games accessories", () => {
+    const metadata = `title=Nintendo NES Power Set Console; category=video_games; itemType=accessory; fullItemDetails=${JSON.stringify({ accessoryType: "Power Set", accessoryName: "Power Set", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", completeInBox: "yes" })}`;
+    expect(buildDeclaredIdentityReviews([
+      { title: "Nintendo NES Power Set Console, CIB, Tested & Working", imageUrl: "https://example.com/candidate.jpg" },
+    ], metadata)).toEqual([]);
+  });
   it("does not hard-exclude a Video Games accessory solely because its title says Set", () => {
     const metadata = `title=NES Power Glove; category=video_games; itemType=accessory; fullItemDetails=${JSON.stringify({ accessoryType: "Controller", accessoryName: "Power Glove", platform: "NES" })}`;
     expect(isMultiItemLot({ title: "Nintendo NES Power Glove Accessory Set", imageUrl: "https://example.com/candidate.jpg" }, metadata)).toBe(false);

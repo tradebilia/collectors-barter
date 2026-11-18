@@ -3676,7 +3676,7 @@ function videoGameAccessoryValuesAgree(targetValue: unknown, candidateValue: unk
   if (label === "complete in box" || label === "original packaging") {
     const state = (value: unknown) => {
       const normalized = videoGameAccessoryCanonicalValue(value);
-      if (/^(?:yes|true|1|original_packaging|original_box|included|with_packaging|with_box|open_box|boxed|complete_with_box|complete_with_manuals|with_manuals)$/.test(normalized)) return "yes";
+      if (/^(?:yes|true|1|cib|complete_in_box|complete_box|original_packaging|original_box|included|with_packaging|with_box|open_box|boxed|complete_with_box|complete_with_manuals|with_manuals)$/.test(normalized)) return "yes";
       if (/^(?:no|false|0|no_packaging|no_box|missing|without_packaging|without_box)$/.test(normalized)) return "no";
       return normalized;
     };
