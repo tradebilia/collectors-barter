@@ -550,6 +550,15 @@ describe('Step 6 bounded ranking-aware Mercari full chain', () => {
     noAuthority(result);
   });
 
+  it('status-held Mercari rows retain the ranking snapshot without becoming valuation eligible', async () => {
+    fixtures = [() => json({ items: [sold(game, 'active', { status: 'active', title: 'Metroid NES CIB' })] })];
+    const result = await caller().getMercariSoldCompsData(game) as unknown as Row;
+    const held = retained(result).find(row => row.saleId === 'mercari:active');
+    expect(held?.metadataMatchScore).toBeTypeOf('number');
+    expect(held?.metadataMatchRank).toBeTypeOf('number');
+    expect(held?.valuationEligible).toBe(false);
+  });
+
   it('no-target-image early return keeps wrong/active siblings and the eligible row once each', async () => {
     fixtures = [() => json({ items: [sold(game, 'active', { status: 'active' }), sold(game, 'wrong', { title: 'Other Game NES CIB' }), sold(game)] })];
     const result = await caller().getMercariSoldCompsData(game) as unknown as Row;

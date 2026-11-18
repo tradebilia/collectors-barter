@@ -1140,7 +1140,10 @@ function prepareMercariSourceIngress(rows: readonly AdditionalSoldCompsListing[]
     ignoreSubjectiveConditionDifferences: true,
     targetGameTitle: resolveTestAiDetailValue(details, 'gameTitle') || resolveTestAiDetailValue(details, 'videoGameTitle') || input.title,
   }) : { eligible: soldLabeled, excluded: [] as SoldCompsPreVisionAssessment[] };
-  return { population, statusHeld, assessment };
+  // A requested-mode/status mismatch is a source-admission hold, not a score
+  // calculation failure. These rows already came from the scored population;
+  // preserve that server-owned snapshot while keeping them review-only.
+  return { population, statusHeld: overlayMetadataRankingPopulation(statusHeld, population), assessment };
 }
 
 type MercariVideoGameRankingArgs = {
