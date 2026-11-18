@@ -529,6 +529,9 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
 // Historical match results remain above for auditability; only this set moves
 // a category/source pair from Pending into Current matching sources.
 const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set<string>([
+  'video games:ebay_active',
+  'video games:sold_comps',
+  'video games:mercari_sold_comps',
   'movies:ebay_active',
   'movies:sold_comps',
   'movies:mercari_sold_comps',

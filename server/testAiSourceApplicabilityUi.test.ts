@@ -173,32 +173,47 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('const coverageKey = item ? `${normalizeCoverageCategory(item.category)}:${source.id}` : undefined;');
   });
 
+  it('promotes only the requested Video Games marketplace sources into matching', () => {
+    expect(source).toContain("'video games:ebay_active',");
+    expect(source).toContain("'video games:sold_comps',");
+    expect(source).toContain("'video games:mercari_sold_comps',");
+    const runtime = extractCoverageRuntime(source);
+    expect(runtime.SOURCE_COVERAGE_CONFIRMED_MATCHES).toEqual(expect.any(Set));
+    for (const key of ['video games:ebay_active', 'video games:sold_comps', 'video games:mercari_sold_comps']) {
+      expect(runtime.SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key)).toBe(true);
+      expect(runtime.SOURCE_TEST_RESULTS[key]).toBe('match');
+    }
+    for (const key of ['video games:pricecharting', 'video games:igdb', 'video games:rawg', 'video games:goldin']) {
+      expect(runtime.SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key)).toBe(false);
+    }
+  });
+
   it('executes the current source coverage tracker with isolated fixtures and only Rich confirmations promote matches', () => {
     const runtime = extractCoverageRuntime(source);
     const initialMarkup = renderToStaticMarkup(React.createElement(runtime.SourceCoverageTracker));
-    expect(initialMarkup).toContain('13 matched');
+    expect(initialMarkup).toContain('16 matched');
     expect(initialMarkup).toContain('Movies');
     expect(initialMarkup).toContain('Music');
     expect(initialMarkup).toContain('Autographs');
     expect(initialMarkup).toContain('Disney Pins');
-    expect(initialMarkup).toContain('21 pending');
-    expect((initialMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(21);
-    expect((initialMarkup.match(/eBay Active/g) ?? []).length).toBe(11);
-    expect((initialMarkup.match(/eBay Sold/g) ?? []).length).toBe(11);
-    expect((initialMarkup.match(/Mercari Sold/g) ?? []).length).toBe(11);
+    expect(initialMarkup).toContain('18 pending');
+    expect((initialMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(18);
+    expect((initialMarkup.match(/eBay Active/g) ?? []).length).toBe(10);
+    expect((initialMarkup.match(/eBay Sold/g) ?? []).length).toBe(10);
+    expect((initialMarkup.match(/Mercari Sold/g) ?? []).length).toBe(10);
     expect(initialMarkup).toContain('Goldin');
     expect(initialMarkup).not.toContain('NGC Auction Central');
 
     runtime.SOURCE_COVERAGE_CONFIRMED_MATCHES.add('music:ebay_active');
     const confirmedMarkup = renderToStaticMarkup(React.createElement(runtime.SourceCoverageTracker));
-    expect(confirmedMarkup).toContain('13 matched');
+    expect(confirmedMarkup).toContain('16 matched');
     expect(confirmedMarkup).toContain('eBay Active');
     expect(confirmedMarkup).toContain('Matched');
-    expect(confirmedMarkup).toContain('21 pending');
-    expect((confirmedMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(21);
-    expect((confirmedMarkup.match(/eBay Active/g) ?? []).length).toBe(11);
-    expect((confirmedMarkup.match(/eBay Sold/g) ?? []).length).toBe(11);
-    expect((confirmedMarkup.match(/Mercari Sold/g) ?? []).length).toBe(11);
+    expect(confirmedMarkup).toContain('18 pending');
+    expect((confirmedMarkup.match(/>Pending<\/span>/g) ?? []).length).toBe(18);
+    expect((confirmedMarkup.match(/eBay Active/g) ?? []).length).toBe(10);
+    expect((confirmedMarkup.match(/eBay Sold/g) ?? []).length).toBe(10);
+    expect((confirmedMarkup.match(/Mercari Sold/g) ?? []).length).toBe(10);
     expect(confirmedMarkup).toContain('Goldin');
     expect(runtime.SOURCE_TEST_RESULTS['music:ebay_active']).toBe('match');
   });
