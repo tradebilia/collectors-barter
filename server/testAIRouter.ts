@@ -1032,7 +1032,22 @@ function mercariFinalizationKey(row: any): string {
   const titleKey = mercariSafeScalarText(row?.title ?? row?.listingTitle).trim();
   return `mercari-null-row:${titleKey}|${priceKey}|${currencyKey}`;
 }
-
+function preserveMercariRankingSnapshot(base: any, overlay: any): any {
+  const overlayScore = Number(overlay?.metadataMatchScore);
+  const baseScore = Number(base?.metadataMatchScore);
+  if (Number.isFinite(overlayScore) || !Number.isFinite(baseScore)) return overlay;
+  return {
+    ...overlay,
+    metadataMatchScore: base.metadataMatchScore,
+    metadataMatchRank: base.metadataMatchRank,
+    metadataMatchReasons: base.metadataMatchReasons,
+    metadataUnknownFields: base.metadataUnknownFields,
+    metadataScoreAwards: base.metadataScoreAwards,
+    metadataMatchLabel: base.metadataMatchLabel,
+    metadataFieldComparisons: base.metadataFieldComparisons,
+    metadataRanking: base.metadataRanking,
+  };
+}
 /** Apply one private source observation to every branch; never refill submission slots. */
 export function finalizeMercariContextResult(payload: any, originals: readonly AdditionalSoldCompsListing[], approvalContext?: MercariApprovalContext) {
   const byId = new Map(originals.map(row => [mercariFinalizationKey(row), row]));
@@ -1046,7 +1061,7 @@ export function finalizeMercariContextResult(payload: any, originals: readonly A
     const original = byId.get(key);
     if (!original) return mercariContextProjection(row, observed(row));
     if (!projections.has(key)) {
-      const current = { ...row, ...advanced.get(key) };
+      const current = preserveMercariRankingSnapshot(row, { ...row, ...advanced.get(key) });
       const recoveredUsableMatch = hasUsableRecoveredMercariMatch(payload);
       const finalized = approvalContext && !payload.error
         && (!payload.processingDiagnostic || recoveredUsableMatch)
