@@ -95,7 +95,10 @@ describe('visual acceptance is the final identity decision', () => {
     const sale = { title: 'U2 Rattle and Hum Vinyl Record', price: 14.25, currency: 'USD', date: now.toISOString(),
       saleId: 'u2-ebay', url: 'https://www.ebay.com/itm/u2-ebay', sourceId: 'sold_comps', originMarketplace: 'ebay',
       saleStatus: 'completed', priceBasis: 'sold', visualRequirement: 'required', visualReviewStatus: 'match',
-      evidenceDisposition: 'valuation_eligible', visualEvidence: evidence, visualAudit, evidenceReasons: [],
+      // These are stale pre-visual diagnostics. A confirmed server-returned
+      // visual match must clear them before signing final approval.
+      evidenceDisposition: 'context_only', visualEvidence: evidence, visualAudit,
+      evidenceReasons: ['CATEGORY_REVIEW_REQUIRED', 'IDENTITY_SCORE_BELOW_THRESHOLD'],
       normalizedStructuredMetadata: { artist: 'Wrong parsed artist', format: 'Cassette' } } as MarketSale;
     const sealed = sealSoldCompsFinalVisualListings([sale], { target, reviewedTarget: target, targetMetadata: metadata,
       targetImageReference: image, expectedImageReference: image, acquiredAt: now, query: target.title, signingKey: 'post-visual-synthetic-key' });

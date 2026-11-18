@@ -306,7 +306,7 @@ describe('Stage 6 transaction integrity — actual signed normalization and fina
 
     expect(sealed.evidenceDisposition).toBe('context_only');
     expect(sealed.evidenceReasons).toContain(
-      'Final approval rejected: APPROVAL_FACTS_OR_REVIEW_INVALID: source facts failed the approval policy, or a matched visual audit is missing.',
+      'Final approval rejected: APPROVAL_DECIDING_EVIDENCE_MISSING: deciding pass did not record its own visual evidence.',
     );
   });
 

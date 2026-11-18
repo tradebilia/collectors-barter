@@ -1988,9 +1988,28 @@ export function sealSoldCompsFinalVisualListings<T extends MarketSale>(sales: T[
       visualAudit: audit,
       visualDifferences: row.visualDifferences,
     };
+    const existingEvidenceReasons = Array.isArray(sale.evidenceReasons)
+      ? sale.evidenceReasons.map((reason) => String(reason ?? '').trim()).filter(Boolean)
+      : [];
+    // A completed visual match is the final identity decision. Clear only the
+    // stale pre-visual admission labels before issuing the signed approval;
+    // preserve explicit economic/security blockers so approval stays fail-closed.
+    const securityEvidenceReasons = existingEvidenceReasons.filter((reason) =>
+      /multi-item lot|high-value price safety gate|cancelled|invalid price|unsupported currency|unknown currency/i.test(reason));
+    const restrictiveDisposition = sale.evidenceDisposition === 'omitted_by_cap'
+      || sale.evidenceDisposition === 'rejected_objective_conflict'
+      || sale.evidenceDisposition === 'not_visually_reviewed_window';
+    const finalVisualAcceptanceCandidate = sale.visualRequirement === 'required'
+      && sale.visualReviewStatus === 'match'
+      && Boolean(audit)
+      && !restrictiveDisposition
+      && (sale.visualExecution as { hardExclusion?: boolean } | undefined)?.hardExclusion !== true;
+    const approvalSale = finalVisualAcceptanceCandidate && securityEvidenceReasons.length === 0
+      ? { ...sale, evidenceDisposition: 'valuation_eligible' as const, evidenceReasons: [] }
+      : sale;
     const approvalFailures: string[] = [];
     const approval = context.target && audit && context.targetImageReference && context.expectedImageReference
-      ? createServerFinalIdentityApproval({ sale, target: context.target, reviewedTarget: context.reviewedTarget,
+      ? createServerFinalIdentityApproval({ sale: approvalSale, target: context.target, reviewedTarget: context.reviewedTarget,
           targetImageReference: context.targetImageReference, expectedImageReference: context.expectedImageReference,
           targetMetadata: context.targetMetadata, review, acquiredAt, visualAcceptanceIsFinal: true,
           onRejected: reason => approvalFailures.push(reason) })
@@ -2010,7 +2029,7 @@ export function sealSoldCompsFinalVisualListings<T extends MarketSale>(sales: T[
           ...(structuredApprovalFailure ? { approvalFailure: structuredApprovalFailure } : {}),
           ...(sale.evidenceDisposition === 'valuation_eligible' ? { evidenceDisposition: 'context_only' as const } : {}),
           evidenceReasons: [...new Set([...(sale.evidenceReasons ?? []), finalApprovalReason])] }
-      : structuredApprovalFailure ? { ...sale, approvalFailure: structuredApprovalFailure } : sale;
+      : structuredApprovalFailure ? { ...approvalSale, approvalFailure: structuredApprovalFailure } : approvalSale;
     const sealed = sealCanonicalObservation('sold_comps', sealedSale, {
       acquiredAt, signingKey: context.signingKey, query: context.query, identityApproval: approval ?? undefined,
     });
