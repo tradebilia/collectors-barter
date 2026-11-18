@@ -5025,9 +5025,9 @@ export default function TestAI() {
     rightSearchItem ? buildSoldCompsApprovalInput({ title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl, visualProvider }, effectiveRightItem ?? rightSearchItem) : { title: '', category: '' },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('sold_comps') }
   );
-  // Invalidate both columns' old context-only / pre-policy Mercari receipts.
+  // Invalidate both columns' scoreless pre-parser-fix Mercari responses.
   // This changes only the existing query key, not request scope or budgets.
-  const mercariVisualReviewVersion = 'mercari-undated-sold-v2-admission-reasons';
+  const mercariVisualReviewVersion = 'mercari-v3-accessory-scalar-metadata';
   const leftMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
     leftSearchItem ? buildSoldCompsApprovalInput({ title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion, visualProvider }, effectiveLeftItem ?? leftSearchItem) : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('mercari_sold_comps'), retry: false }

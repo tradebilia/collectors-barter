@@ -13,6 +13,7 @@ import { testAIRouter, buildSoldCompsQueryCandidates, testAiEvidenceSummarySchem
 import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
 import { TestAiRetrievalLadder } from '../client/src/components/TestAiRetrievalLadder';
 import { TestAiProcessCompleteNotice } from '../client/src/components/TestAiCandidateStatus';
+import { TestAiCandidateMasterList } from '../client/src/components/TestAiCandidateMasterList';
 import { verifyCanonicalObservation } from './testAiCanonicalObservation';
 import { collectionLotGuard } from '../shared/testAiItemType';
 
@@ -830,6 +831,34 @@ describe('Mercari status cross-layer reviewed regressions', () => {
 });
 
 describe('Mercari ranked processing failure receipt retention', () => {
+  it('scores the live accessory provider shape without coercing null-prototype observation wrappers', async () => {
+    const target = { title: 'NES Nintendo Power Glove', category: 'video_games', itemType: 'accessory',
+      condition: 'very_good', itemDetails: JSON.stringify({ accessoryName: 'Power Glove', accessoryType: 'controller',
+        isGraded: 'no', manufacturer: 'Nintendo', originalPackaging: 'yes', platform: 'NES', workingCondition: 'Working' }) };
+    const raw = { brand: 'Nintendo', categoryId: 803, categoryName: 'Other', condition: 'Fair', conditionId: 4,
+      currency: 'USD', itemId: 'live-accessory', marketplace: 'mercari', originalPrice: '129.99', price: '100.00',
+      status: 'active', imageUrl: 'https://example.test/live-accessory.jpg',
+      title: 'Nintendo Entertainment System NES Power Glove Large W/IR Sensor UNTESTED',
+      url: 'https://www.mercari.com/us/item/live-accessory/' };
+    fixtures = Array.from({ length: 4 }, () => () => json({ items: [raw] }));
+    const result = await caller().getMercariSoldCompsData(target) as unknown as Row;
+    expect(result.processingDiagnostic).toBeUndefined();
+    expect(result.reviewOpportunity?.processingIssues).toEqual([]);
+    const row = retained(result)[0];
+    expect(row.metadataMatchScore).toBeTypeOf('number');
+    expect(row.metadataMatchScore).toBeGreaterThan(0);
+    expect(row.metadataMatchRank).toBe(1);
+    expect(row.metadataRanking.score).toBe(row.metadataMatchScore);
+    expect(row.metadataScoreAwards).toEqual(expect.any(Array));
+    expect(row.metadataFieldComparisons.length).toBeGreaterThan(0);
+    const markup = renderToStaticMarkup(createElement(TestAiCandidateMasterList, {
+      listings: retained(result), sourceLabel: 'Mercari', reconciled: true,
+    }));
+    expect(markup).toContain(`Score ${row.metadataMatchScore}/100`);
+    expect(markup).toContain('Rank #1');
+    expect(markup).not.toContain('Score unavailable');
+    expect(boundaries.llm).not.toHaveBeenCalled();
+  });
   it('does not erase established comparisons or invent a not-dispatched receipt when image processing fails after ranking', async () => {
     const target = { title: 'Metroid NES 1987 CIB', category: 'video_games', itemType: 'game',
       imageUrl: 'https://example.test/mercari-processing/target.jpg',

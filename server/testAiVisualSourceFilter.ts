@@ -3611,14 +3611,28 @@ function videoGameCandidateValue(listing: VisualSourceCandidate, aliases: string
   return "";
 }
 function videoGameAccessoryMetadataKey(value: unknown): string {
-  return String(value ?? "").trim().replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  return videoGameAccessoryMetadataText(value).replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+}
+/** Provider/audit wrappers are not field values. Never execute object coercion. */
+function videoGameAccessoryMetadataText(value: unknown): string {
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : '';
+  if (typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.map(entry => {
+    if (typeof entry === 'string') return entry.trim();
+    if (typeof entry === 'number' && Number.isFinite(entry)) return String(entry);
+    if (typeof entry === 'boolean') return String(entry);
+    return '';
+  }).filter(Boolean).join(', ');
+  return '';
 }
 function videoGameAccessoryDetails(listing: VisualSourceCandidate): Record<string, unknown> {
   const details: Record<string, unknown> = { ...candidateStructuredDetails(listing) };
   const add = (key: unknown, value: unknown) => {
     const normalizedKey = videoGameAccessoryMetadataKey(key);
-    if (!normalizedKey || value == null || !String(value).trim()) return;
-    if (details[normalizedKey] == null) details[normalizedKey] = value;
+    const fieldValue = videoGameAccessoryMetadataText(value);
+    if (!normalizedKey || !fieldValue) return;
+    if (details[normalizedKey] == null) details[normalizedKey] = fieldValue;
   };
   const collect = (value: unknown): void => {
     if (Array.isArray(value)) {
@@ -3627,7 +3641,7 @@ function videoGameAccessoryDetails(listing: VisualSourceCandidate): Record<strin
         const record = entry as Record<string, unknown>;
         const key = record.name ?? record.Name ?? record.key ?? record.label ?? record.propertyName;
         const fieldValue = record.value ?? record.Value ?? record.values ?? record.propertyValue;
-        if (key != null && fieldValue != null) add(key, Array.isArray(fieldValue) ? fieldValue.join(", ") : fieldValue);
+        if (key != null && fieldValue != null) add(key, fieldValue);
         else collect(entry);
       }
       return;
@@ -3647,8 +3661,10 @@ function videoGameAccessoryDetails(listing: VisualSourceCandidate): Record<strin
 function videoGameAccessoryValue(listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[] = []): string {
   const details = videoGameAccessoryDetails(listing);
   for (const alias of aliases) {
-    const value = listing[alias] ?? details[alias] ?? details[videoGameAccessoryMetadataKey(alias)];
-    if (value != null && String(value).trim()) return String(value);
+    for (const value of [listing[alias], details[alias], details[videoGameAccessoryMetadataKey(alias)]]) {
+      const fieldValue = videoGameAccessoryMetadataText(value);
+      if (fieldValue) return fieldValue;
+    }
   }
   const title = canonicalCandidateTitle(listing);
   for (const pattern of patterns) {

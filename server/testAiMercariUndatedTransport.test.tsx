@@ -209,6 +209,6 @@ describe('Mercari page integration source assertions (no routes invoked)', () =>
       expect(input).toContain('visualReviewVersion: mercariVisualReviewVersion');
       expect(input).toContain("has('mercari_sold_comps')");
     }
-    expect(page).toContain("const mercariVisualReviewVersion = 'mercari-undated-sold-v2-admission-reasons';");
+    expect(page).toContain("const mercariVisualReviewVersion = 'mercari-v3-accessory-scalar-metadata';");
   });
 });
