@@ -2549,8 +2549,8 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     conditionalLogic: 'Is Graded = yes',
   },
   {
-    name: 'originalPackaging',
-    label: 'Original Packaging',
+    name: 'completeInBox',
+    label: 'Complete in Box',
     inputType: 'dropdown',
     requirement: 'recommended',
     dropdownOptions: ['yes', 'no'],

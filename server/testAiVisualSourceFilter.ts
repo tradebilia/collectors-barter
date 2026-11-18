@@ -3673,7 +3673,7 @@ function videoGameAccessoryCanonicalValue(value: unknown): string {
   return normalized;
 }
 function videoGameAccessoryValuesAgree(targetValue: unknown, candidateValue: unknown, label: string): boolean {
-  if (label === "original packaging") {
+  if (label === "complete in box" || label === "original packaging") {
     const state = (value: unknown) => {
       const normalized = videoGameAccessoryCanonicalValue(value);
       if (/^(?:yes|true|1|original_packaging|original_box|included|with_packaging|with_box|open_box|boxed|complete_with_box|complete_with_manuals|with_manuals)$/.test(normalized)) return "yes";
@@ -3758,7 +3758,7 @@ function videoGameIdentityConflict(targetMetadata: string, listing: VisualSource
     checks.push([details.platform, "compatible platform", ["platform", "compatiblePlatform", "compatibleSystem", "console", "system"], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|PlayStation|PS[1-5]|Xbox|Sega|PC)\b/i]]);
     checks.push([details.manufacturer, "manufacturer", ["manufacturer", "brand", "maker"], []]);
     checks.push([details.workingCondition, "working condition", ["workingCondition", "functionality", "tested", "working_status"], [/(\bWorking\b|\bTested\b|\bNot Working\b|\bFor Parts\b|\bUntested\b)/i]]);
-    checks.push([details.originalPackaging, "original packaging", ["originalPackaging", "packaging", "packageType", "boxIncluded"], [/(\bOriginal Packaging\b|\bOriginal Box\b|\bOpen Box\b|\bWith Box\b|\bBoxed\b|\bComplete with (?:Box|Manuals?|Instructions?)\b|\bWith (?:Manuals?|Instructions?)\b|\bNo Packaging\b|\bNo Box\b)/i]]);
+    checks.push([details.completeInBox ?? details.originalPackaging, "complete in box", ["completeInBox", "originalPackaging", "packaging", "packageType", "boxIncluded"], [/(\bComplete in Box\b|\bCIB\b|\bOriginal Packaging\b|\bOriginal Box\b|\bOpen Box\b|\bWith Box\b|\bBoxed\b|\bComplete with (?:Box|Manuals?|Instructions?)\b|\bWith (?:Manuals?|Instructions?)\b|\bNo Packaging\b|\bNo Box\b)/i]]);
   }
   for (const [targetValue, label, aliases, patterns] of checks) {
     const targetComparable = videoGameCanonicalValue(targetValue);
@@ -5389,7 +5389,7 @@ const VIDEO_GAME_CONSOLE_SCORE_FIELDS = [
   ['consoleName', 30], ['modelNumber', 10], ['region', 15], ['workingCondition', 10], ['originalBoxIncluded', 10], ['cablesIncluded', 5], ['controllersIncluded', 5], ['isGraded', 5], ['gradingCompany', 5], ['grade', 5],
 ] as const;
 const VIDEO_GAME_ACCESSORY_SCORE_FIELDS = [
-  ['accessoryType', 20], ['accessoryName', 25], ['compatiblePlatform', 20], ['manufacturer', 10], ['workingCondition', 10], ['originalPackaging', 10], ['isGraded', 5],
+  ['accessoryType', 20], ['accessoryName', 25], ['compatiblePlatform', 20], ['manufacturer', 10], ['workingCondition', 10], ['completeInBox', 10], ['isGraded', 5],
 ] as const;
 const AUTOGRAPH_SCORE_FIELDS = [
   ['signer', 35], ['signedItemType', 25], ['autographCategory', 10], ['authenticationIncluded', 10], ['authenticationCompany', 10], ['inscription', 10],
@@ -5544,7 +5544,7 @@ function videoGameAccessoryScoreBoolean(targetValue: unknown, listing: VisualSou
   const target = videoGameAccessoryCanonicalValue(targetValue);
   if (!target || !/^(?:yes|no|true|false|1|0)$/.test(target)) return null;
   const explicit = scoreCandidateEvidence(listing, aliases, [], { details: videoGameAccessoryDetails(listing) });
-  if (!explicit && aliases.some((alias) => ["originalPackaging", "packaging", "boxIncluded"].includes(alias))) {
+  if (!explicit && aliases.some((alias) => ["completeInBox", "originalPackaging", "packaging", "boxIncluded"].includes(alias))) {
     const titleState = titlePackagingState(listing.title);
     if (titleState !== "unknown") return scoreMatch(target === "yes" || target === "true" || target === "1" ? titleState === "yes" : titleState === "no", { value: titleState, source: 'title', field: aliases[0] });
   }
@@ -5671,7 +5671,7 @@ function videoGameScore<T extends readonly (readonly [string, number])[]>(
     add('compatiblePlatform', 20, videoGameAccessoryScoreValueMatches(target.platform, listing, ['platform', 'compatiblePlatform', 'compatibleSystem', 'console', 'system'], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|PlayStation|PS[1-5]|Xbox|Sega|PC)/i], 'platform'));
     add('manufacturer', 10, videoGameAccessoryScoreValueMatches(target.manufacturer, listing, ['manufacturer', 'brand', 'maker'], [], 'manufacturer'));
     add('workingCondition', 10, videoGameAccessoryScoreValueMatches(target.workingCondition, listing, ['workingCondition', 'functionality', 'tested', 'working_status'], [/(?:Working|Tested|For\s+Parts|Not\s+Working|Untested)/i], 'working'));
-    add('originalPackaging', 10, videoGameAccessoryScoreBoolean(target.originalPackaging, listing, ['originalPackaging', 'packaging', 'packageType', 'boxIncluded'], [/(?:original\s+(?:packaging|box)|no\s+(?:packaging|box))/i]));
+    add('completeInBox', 10, videoGameAccessoryScoreBoolean(firstMeaningfulValue(target.completeInBox, target.originalPackaging), listing, ['completeInBox', 'originalPackaging', 'packaging', 'packageType', 'boxIncluded'], [/(?:complete\s+in\s+box|cib|original\s+(?:packaging|box)|no\s+(?:packaging|box))/i]));
     add('isGraded', 5, videoGameScoreIsGraded(firstMeaningfulValue(metadataValue(targetMetadata, 'isGraded'), target.isGraded, target.graded), listing));
   }
   void fields;

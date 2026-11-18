@@ -897,15 +897,19 @@ describe("visual source filter", () => {
     const accessoryTarget = buildVisualTargetMetadata({ title: "NES Controller", category: "video_games", itemType: "accessory", isGraded: "No", fullItemDetails: { accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" } });
     const accessoryScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller Working", isGraded: "No", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" }) }, accessoryTarget);
     expect(accessoryScore.score).toBe(100);
-    expect(accessoryScore.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "workingCondition", "originalPackaging"]));
+    expect(accessoryScore.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "workingCondition", "completeInBox"]));
+    const canonicalAccessoryTarget = buildVisualTargetMetadata({ title: "NES Controller", category: "video_games", itemType: "accessory", isGraded: "No", fullItemDetails: { accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", completeInBox: "Yes" } });
+    const canonicalAccessoryScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller Working Complete in Box", isGraded: "No", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", completeInBox: "Yes" }) }, canonicalAccessoryTarget);
+    expect(canonicalAccessoryScore.score).toBe(100);
+    expect(canonicalAccessoryScore.matched).toContain("completeInBox");
     const cosmeticConditionScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller", condition: "Like New", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", originalPackaging: "Yes" }) }, accessoryTarget);
     expect(cosmeticConditionScore.matched).not.toContain("workingCondition");
     expect(cosmeticConditionScore.score).toBe(85);
     expect(cosmeticConditionScore.matched).not.toContain('isGraded');
     const powerGloveTarget = buildVisualTargetMetadata({ title: "NES Power Glove", category: "video_games", itemType: "accessory", fullItemDetails: { accessoryType: "Controller", accessoryName: "Power Glove", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" } });
     for (const [title, expectedScore, expectedFields] of [
-      ["VTG Nintendo NES Power Glove Controller Large Extremely RARE Sz L Original Box", 85, ["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "originalPackaging"]],
-      ["Nintendo NES Power Glove Large L New Open Box Complete w/ Manuals Mattel", 65, ["accessoryName", "compatiblePlatform", "manufacturer", "originalPackaging"]],
+      ["VTG Nintendo NES Power Glove Controller Large Extremely RARE Sz L Original Box", 85, ["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "completeInBox"]],
+      ["Nintendo NES Power Glove Large L New Open Box Complete w/ Manuals Mattel", 65, ["accessoryName", "compatiblePlatform", "manufacturer", "completeInBox"]],
     ] as const) {
       const titleScore = videoGameAccessoryVisualScore({ title }, powerGloveTarget);
       expect(titleScore.score).toBe(expectedScore);
@@ -986,7 +990,7 @@ describe("visual source filter", () => {
     };
     const score = videoGameAccessoryVisualScore(candidate, target);
     expect(score.score).toBe(100);
-    expect(score.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "workingCondition", "originalPackaging"]));
+    expect(score.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "workingCondition", "completeInBox"]));
     expect(buildDeclaredIdentityReviews([candidate], target)).toEqual([]);
   });
 
@@ -3585,7 +3589,7 @@ describe("visual source filter", () => {
     expect(reviews.map((review) => review.rationale).join(" ")).toContain("compatible platform differs");
     expect(reviews.map((review) => review.rationale).join(" ")).toContain("manufacturer differs");
     expect(reviews.map((review) => review.rationale).join(" ")).toContain("working condition differs");
-    expect(reviews.map((review) => review.rationale).join(" ")).toContain("original packaging differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("complete in box differs");
   });
   it("does not compare cosmetic marketplace condition to Video Game working condition", () => {
     const metadata = `title=NES Power Glove; category=video_games; itemType=accessory; fullItemDetails=${JSON.stringify({ accessoryType: "Controller", accessoryName: "Power Glove", platform: "NES", workingCondition: "Working" })}`;

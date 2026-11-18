@@ -31,7 +31,7 @@ export const video_gamesAccessoryLayout: ItemTypeLayoutConfig = {
       columns: 2,
       fieldLayout: {
         quantity: { colSpan: 'half', position: 1 },
-        originalPackaging: { colSpan: 'half', position: 2 },
+        completeInBox: { colSpan: 'half', position: 2 },
         manufacturer: { colSpan: 'half', position: 3 },
       },
     },
