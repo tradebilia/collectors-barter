@@ -867,6 +867,15 @@ function mercariVisualMatch(row: any): boolean {
     || row?.visualExecution?.identity?.result === 'match'
     || row?.visualIdentityResult === 'match';
 }
+function mercariSafeScalarText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value);
+  return '';
+}
+function mercariSafeNumber(value: unknown): number {
+  const text = mercariSafeScalarText(value);
+  return text ? Number(text) : NaN;
+}
 
 /** Only fresh private adapter observations plus the actual bound visual row can authorize this exception. */
 function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsListing, context: MercariApprovalContext) {
@@ -902,8 +911,8 @@ function sealMercariFinalVisualListing(row: any, original: AdditionalSoldCompsLi
   const sourceConflict = report.economicIssues.includes('marketplace_conflict')
     || report.fields.originMarketplace?.present && report.fields.originMarketplace.value !== 'mercari';
   const originalMetadata = original.rawMetadata ?? original.providerMetadata ?? {};
-  const originalLotConflict = Number(originalMetadata.lotQuantity ?? row.lotQuantity) > 1
-    || /\b(?:lot|bundle|components?|accessory[- ]only|manual[- ]only|box[- ]only)\b/i.test(String(originalMetadata.saleForm ?? row.saleForm ?? ''));
+  const originalLotConflict = mercariSafeNumber(originalMetadata.lotQuantity ?? row.lotQuantity) > 1
+    || /\b(?:lot|bundle|components?|accessory[- ]only|manual[- ]only|box[- ]only)\b/i.test(mercariSafeScalarText(originalMetadata.saleForm ?? row.saleForm));
   if (originalLotConflict) return blocked(['MERCARI_TRANSACTION_LOT_CONFLICT: this transaction is an explicit lot, bundle or partial product, not one comparable item.']);
   if (!Number.isFinite(price) || price <= 0 || currency !== 'USD' || hasUnvalidatedDate || cancelled || priceConflict || sourceConflict) {
     return blocked([
@@ -1017,10 +1026,11 @@ export function hasUsableRecoveredMercariMatch(payload: any): boolean {
 function mercariFinalizationKey(row: any): string {
   if (typeof row?.saleId === 'string' && usableMercariProviderId(row.saleId)) return row.saleId;
   const rawPrice = row?.price ?? row?.soldPrice;
-  const numericPrice = Number(rawPrice);
-  const priceKey = Number.isFinite(numericPrice) ? numericPrice.toFixed(2) : String(rawPrice ?? '');
-  const currencyKey = String(row?.currency ?? row?.soldCurrency ?? '').trim().toUpperCase();
-  return `mercari-null-row:${String(row?.title ?? row?.listingTitle ?? '').trim()}|${priceKey}|${currencyKey}`;
+  const numericPrice = mercariSafeNumber(rawPrice);
+  const priceKey = Number.isFinite(numericPrice) ? numericPrice.toFixed(2) : mercariSafeScalarText(rawPrice);
+  const currencyKey = mercariSafeScalarText(row?.currency ?? row?.soldCurrency).trim().toUpperCase();
+  const titleKey = mercariSafeScalarText(row?.title ?? row?.listingTitle).trim();
+  return `mercari-null-row:${titleKey}|${priceKey}|${currencyKey}`;
 }
 
 /** Apply one private source observation to every branch; never refill submission slots. */
