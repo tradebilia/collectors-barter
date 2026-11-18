@@ -1033,9 +1033,12 @@ function mercariFinalizationKey(row: any): string {
   return `mercari-null-row:${titleKey}|${priceKey}|${currencyKey}`;
 }
 function preserveMercariRankingSnapshot(base: any, overlay: any): any {
-  const overlayScore = Number(overlay?.metadataMatchScore);
-  const baseScore = Number(base?.metadataMatchScore);
-  if (Number.isFinite(overlayScore) || !Number.isFinite(baseScore)) return overlay;
+  // Number(null) is 0, but null means the later projection has no score. Only
+  // an actual finite numeric value is allowed to replace the server snapshot.
+  const isFiniteScore = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+  const overlayScore = overlay?.metadataMatchScore;
+  const baseScore = base?.metadataMatchScore;
+  if (isFiniteScore(overlayScore) || !isFiniteScore(baseScore)) return overlay;
   return {
     ...overlay,
     metadataMatchScore: base.metadataMatchScore,
@@ -1051,6 +1054,7 @@ function preserveMercariRankingSnapshot(base: any, overlay: any): any {
 /** Apply one private source observation to every branch; never refill submission slots. */
 export function finalizeMercariContextResult(payload: any, originals: readonly AdditionalSoldCompsListing[], approvalContext?: MercariApprovalContext) {
   const byId = new Map(originals.map(row => [mercariFinalizationKey(row), row]));
+  const originalLedger = Array.isArray(payload.audit?.ledger) ? payload.audit.ledger : originals;
   const observed = (row: any) => {
     const original = byId.get(mercariFinalizationKey(row));
     return original ? getMercariObservedFacts(original)?.report ?? null : null;
@@ -1061,7 +1065,8 @@ export function finalizeMercariContextResult(payload: any, originals: readonly A
     const original = byId.get(key);
     if (!original) return mercariContextProjection(row, observed(row));
     if (!projections.has(key)) {
-      const current = preserveMercariRankingSnapshot(row, { ...row, ...advanced.get(key) });
+      const rankingBase = originalLedger.find((candidate: any) => mercariFinalizationKey(candidate) === key) ?? row;
+      const current = preserveMercariRankingSnapshot(rankingBase, { ...row, ...advanced.get(key) });
       const recoveredUsableMatch = hasUsableRecoveredMercariMatch(payload);
       const finalized = approvalContext && !payload.error
         && (!payload.processingDiagnostic || recoveredUsableMatch)
@@ -1076,7 +1081,6 @@ export function finalizeMercariContextResult(payload: any, originals: readonly A
     }
     return projections.get(key);
   };
-  const originalLedger = Array.isArray(payload.audit?.ledger) ? payload.audit.ledger : originals;
   const advanced = new Map<string, any>();
   const stage = (row: any) => row?.visualAudit || (Array.isArray(row?.visualExecution?.attempts) && row.visualExecution.attempts.length > 0) ? 3
     : row?.visualExecution?.hardExclusion === true

@@ -98,6 +98,28 @@ describe('Mercari status is not completed-price authority', () => {
     expect(returned.metadataScoreAwards).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'movieTitle', awardedPoints: 25 })]));
     expect(returned.metadataFieldComparisons.find((entry: any) => entry.targetField === 'Movie title')?.rankingContribution?.awardedPoints).toBe(25);
   });
+
+  it('does not let a null Mercari hold projection erase the server ranking score', () => {
+    const targetDefinition = { title: 'Nintendo NES Power Set', category: 'video_games', itemType: 'accessory',
+      itemDetails: JSON.stringify({ accessoryName: 'Power Set', platform: 'NES' }) };
+    const targetMetadata = buildVisualTargetMetadata(targetDefinition);
+    const ranked = { saleId: 'mercari:null-score-hold', title: 'Nintendo NES Power Set', price: 64.8, currency: 'USD',
+      metadataMatchScore: 55, metadataMatchRank: 1, metadataScoreAwards: [{ field: 'accessoryName', awardedPoints: 30 }],
+      metadataRanking: { populationId: 'mercari-full-run', sourceId: 'mercari_sold_comps', occurrenceKey: 'mercari-full-run:occ:0' },
+      metadataFieldComparisons: [], evidenceDisposition: 'context_only' as const };
+    const holdProjection = { ...ranked, metadataMatchScore: null, metadataMatchRank: null,
+      metadataScoreAwards: null, metadataFieldComparisons: null, visualReviewStatus: 'not_reviewed' as const };
+    const original = { saleId: ranked.saleId, title: ranked.title, price: ranked.price, currency: ranked.currency,
+      itemUrl: 'https://www.mercari.com/us/item/null-score-hold/' };
+    const result = finalizeMercariContextResult({ listings: [holdProjection], visualFilter: { contextListings: [holdProjection] },
+      audit: { ledger: [ranked] } }, [original] as any, {
+      input: targetDefinition as any, effectiveTarget: targetDefinition, targetMetadata,
+      targetImageReference: null, approvalImageReference: null,
+    });
+    expect(result.audit.ledger[0].metadataMatchScore).toBe(55);
+    expect(result.audit.ledger[0].metadataMatchRank).toBe(1);
+    expect(result.audit.ledger[0].metadataScoreAwards).toEqual(ranked.metadataScoreAwards);
+  });
 });
 
 describe('normal repository registration remains explicit', () => {
