@@ -54,6 +54,18 @@ describe('Stage 5 actual candidate display merge boundary', () => {
       expect(row.metadataScoreAwards).toEqual(parent.metadataScoreAwards); expect(row.visualExecution).toEqual(completed);
     }
   });
+  it('does not let a bound scoreless Mercari projection replace the authoritative ranking snapshot', () => {
+    const [parent] = population('mercari_sold_comps', 'mercari-run');
+    const scorelessHold = { ...parent, metadataOriginOccurrenceKey: parent.metadataRanking.occurrenceKey,
+      metadataRanking: { sourceId: 'mercari_sold_comps', populationId: 'mercari-run' },
+      metadataMatchScore: null, metadataMatchRank: null, metadataScoreAwards: null, metadataFieldComparisons: null };
+    const [row] = mergeCandidateDisplayGroups([[parent], [scorelessHold]]);
+    expect(row.metadataMatchScore).toBe(parent.metadataMatchScore);
+    expect(row.metadataMatchRank).toBe(parent.metadataMatchRank);
+    expect(row.metadataScoreAwards).toEqual(parent.metadataScoreAwards);
+    expect(row.metadataFieldComparisons).toEqual(parent.metadataFieldComparisons);
+    expect(row.metadataRanking).toEqual(parent.metadataRanking);
+  });
   it('does not collapse repeated IDs, identical titles/prices or missing-ID retained occurrences', () => {
     const rows = population();
     expect(mergeCandidateDisplayGroups([rows, rows.map((row) => ({ ...row }))])).toHaveLength(4);

@@ -85,6 +85,28 @@ function laterDecision(a: CandidateDisplayRow, b: CandidateDisplayRow): Candidat
   // No linguistic heuristics; equal known decisions preserve first producer projection.
   return a;
 }
+const rankingDisplayFields = ['metadataMatchScore', 'metadataMatchRank', 'metadataMatchReasons',
+  'metadataUnknownFields', 'metadataScoreAwards', 'metadataFieldComparisons', 'metadataRanking'] as const;
+function hasUsableRankingSnapshot(row: CandidateDisplayRow): boolean {
+  const score = Number(row.metadataMatchScore);
+  return Number.isFinite(score) && score >= 0 && score <= 100
+    && Number.isFinite(Number(row.metadataMatchRank)) && Array.isArray(row.metadataScoreAwards)
+    && Array.isArray(row.metadataFieldComparisons) && Boolean(row.metadataRanking);
+}
+function preserveBoundRankingSnapshot(parent: CandidateDisplayRow, projection: CandidateDisplayRow, result: CandidateDisplayRow): CandidateDisplayRow {
+  const parentOrigin = originatingRankingOccurrence(parent);
+  const projectionOrigin = originatingRankingOccurrence(projection);
+  const bound = Boolean(parentOrigin && projectionOrigin && parentOrigin === projectionOrigin)
+    || parent.metadataRanking?.occurrenceKey === projectionOrigin
+    || projection.metadataRanking?.occurrenceKey === parentOrigin;
+  if (!bound) return result;
+  const source = hasUsableRankingSnapshot(parent) ? parent : hasUsableRankingSnapshot(projection) ? projection : null;
+  if (!source) return result;
+  for (const field of rankingDisplayFields) {
+    if (source[field] !== undefined && source[field] !== null) result[field] = source[field];
+  }
+  return result;
+}
 /** Presentation enrichment is independent of the latest deciding fields. */
 export function mergeCandidateDisplayProjection(parent: CandidateDisplayRow, projection: CandidateDisplayRow): CandidateDisplayRow {
   const deciding = laterDecision(parent, projection);
@@ -99,6 +121,7 @@ export function mergeCandidateDisplayProjection(parent: CandidateDisplayRow, pro
   // Final server use is never replaced by a pre-selection display projection.
   result.valuationUse = parent.valuationUse ?? projection.valuationUse;
   result.candidatePricingLink = parent.candidatePricingLink ?? projection.candidatePricingLink;
+  preserveBoundRankingSnapshot(parent, projection, result);
   const knownParent = parent.metadataRanking?.occurrenceKey === originatingRankingOccurrence(projection) ? parent
     : projection.metadataRanking?.occurrenceKey === originatingRankingOccurrence(parent) ? projection : null;
   return knownParent ? preserveParentDisplayRanking(knownParent, result) : result;

@@ -415,6 +415,27 @@ describe('Stage 4 ACTUAL source route population and display projections', () =>
     }
   });
 
+  it('Mercari accessory status-held rows retain the Power Glove score through every server boundary', async () => {
+    const accessory = { title: 'Nintendo NES Power Glove', category: 'video_games', itemType: 'accessory',
+      itemDetails: JSON.stringify({ accessoryName: 'Power Glove', accessoryType: 'controller', platform: 'NES', manufacturer: 'Nintendo', isGraded: 'No' }) };
+    const mercariRows = [{ ...providerRows(1)[0], title: 'Nintendo Entertainment System NES Power Glove Large W/IR Sensor UNTESTED',
+      saleId: null, itemUrl: null,
+      price: 100, currency: 'USD', status: 'active', sourceId: 'mercari_sold_comps',
+      sourceLabel: 'Sold-Comps (Mercari Sold)', marketplace: 'Mercari', evidenceDisposition: 'warning_review', evidenceReasons: [] }];
+    boundaries.mercari.mockResolvedValue({ query: accessory.title, listings: mercariRows, metrics: null, error: null });
+    const result = await caller().getMercariSoldCompsData(accessory) as unknown as Row;
+    const groups = [result.visualFilter?.listings, result.visualFilter?.contextListings,
+      result.preVisionExcludedListings, result.visualReviewListings, result.listings, result.contextListings]
+      .flatMap((group) => Array.isArray(group) ? group : []) as Row[];
+    expect(result.audit.ledger[0].metadataMatchScore).toBeTypeOf('number');
+    expect(result.audit.ledger[0].metadataMatchScore).toBeGreaterThan(0);
+    expect(result.audit.ledger[0].metadataMatchRank).toBe(1);
+    expect(groups).toHaveLength(2);
+    expect(groups.every((row) => row.metadataMatchScore === result.audit.ledger[0].metadataMatchScore)).toBe(true);
+    expect(groups.every((row) => Array.isArray(row.metadataScoreAwards))).toBe(true);
+    expect(result.audit.ledger[0].metadataFieldComparisons).toEqual(expect.any(Array));
+  });
+
   it('subset route never trusts browser ranks/scores/awards; only originating occurrence hint survives for local client merge', async () => {
     const requestRows = providerRows(2).map((row, index) => ({ ...row,
       metadataMatchScore: index ? 1000000 : -99, metadataMatchRank: index ? 1 : 999,
