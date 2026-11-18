@@ -97,7 +97,7 @@ describe('visual acceptance is the final identity decision', () => {
       saleStatus: 'completed', priceBasis: 'sold', visualRequirement: 'required', visualReviewStatus: 'match',
       // These are stale pre-visual diagnostics. A confirmed server-returned
       // visual match must clear them before signing final approval.
-      evidenceDisposition: 'context_only', visualEvidence: evidence, visualAudit,
+      evidenceDisposition: 'rejected_objective_conflict', visualEvidence: evidence, visualAudit,
       evidenceReasons: ['CATEGORY_REVIEW_REQUIRED', 'IDENTITY_SCORE_BELOW_THRESHOLD'],
       normalizedStructuredMetadata: { artist: 'Wrong parsed artist', format: 'Cassette' } } as MarketSale;
     const sealed = sealSoldCompsFinalVisualListings([sale], { target, reviewedTarget: target, targetMetadata: metadata,

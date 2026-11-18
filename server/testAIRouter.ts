@@ -1996,8 +1996,10 @@ export function sealSoldCompsFinalVisualListings<T extends MarketSale>(sales: T[
     // preserve explicit economic/security blockers so approval stays fail-closed.
     const securityEvidenceReasons = existingEvidenceReasons.filter((reason) =>
       /multi-item lot|high-value price safety gate|cancelled|invalid price|unsupported currency|unknown currency/i.test(reason));
+    // A completed server-returned visual match is the final identity decision.
+    // Clear stale pre-visual objective-conflict labels here; explicit hard
+    // exclusions and economic/security evidence remain authoritative below.
     const restrictiveDisposition = sale.evidenceDisposition === 'omitted_by_cap'
-      || sale.evidenceDisposition === 'rejected_objective_conflict'
       || sale.evidenceDisposition === 'not_visually_reviewed_window';
     const finalVisualAcceptanceCandidate = sale.visualRequirement === 'required'
       && sale.visualReviewStatus === 'match'
